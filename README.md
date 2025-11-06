@@ -22,13 +22,6 @@
 
 ---
 
-## 🧑‍💻 Créditos
-
-Desenvolvido por **Zerivan Lima**, com suporte técnico do **ChatGPT (OpenAI)**.
-# ZLPix-Premiado-Fullstack
-🏆 ZLPix Premiado - Sistema de Sorteios com Pagamento via Pix (React + Vite + Node + Prisma)
----
-
 ## 🧰 Tecnologias
 
 - React + Vite + TailwindCSS  
