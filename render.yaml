@@ -2,7 +2,7 @@ services:
   # 🔵 BACKEND (Node + Express + Prisma)
   - type: web
     name: zlpix-premiado-backend
-    rootDir: zlpix-premiado-backend
+    rootDir: backend
     env: node
     plan: free
     buildCommand: npm install && npx prisma generate && npm run build
@@ -18,6 +18,6 @@ services:
   # 🟠 FRONTEND (React + Vite)
   - type: static
     name: zlpix-premiado-frontend
-    rootDir: zlpix-premiado-frontend
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
