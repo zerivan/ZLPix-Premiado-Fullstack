@@ -1,4 +1,4 @@
-name: Build ZLPix Premiado Fullstack
+name: Build and Test ZLPix Premiado
 
 on:
   push:
@@ -11,36 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: 📦 Checkout repositório
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: 🟢 Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Build Backend (Node + Express + Prisma)
-      working-directory: ./zlpix-premiado-backend
-      run: |
-        echo "📦 Instalando dependências do backend..."
-        npm install
-        echo "🏗️ Compilando o backend..."
-        npm run build || echo "⚠️ Nenhum build configurado"
-        echo "✅ Backend finalizado!"
+      # BACKEND
+      - name: ⚙️ Instalar dependências do backend
+        working-directory: ./zlpix-premiado-backend
+        run: |
+          npm install
+          npx prisma generate || echo "Sem Prisma"
 
-    - name: Build Frontend (React + Vite)
-      working-directory: ./zlpix-premiado-frontend
-      run: |
-        echo "📦 Instalando dependências do frontend..."
-        npm install
-        echo "🏗️ Compilando o frontend..."
-        npm run build || echo "⚠️ Nenhum build configurado"
-        echo "✅ Frontend finalizado!"
+      - name: 🏗️ Build backend
+        working-directory: ./zlpix-premiado-backend
+        run: npm run build || echo "Sem build script"
 
-    - name: Final message
-      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"        npm run build || echo "⚠️ Build padrão executado."
-        echo "✅ Frontend finalizado!"
+      # FRONTEND
+      - name: ⚙️ Instalar dependências do frontend
+        working-directory: ./zlpix-premiado-frontend
+        run: npm install
 
-    # 5️⃣ Confirmação final
-    - name: Build concluído
-      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
+      - name: 🧱 Build frontend
+        working-directory: ./zlpix-premiado-frontend
+        run: npm run build
