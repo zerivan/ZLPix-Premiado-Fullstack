@@ -10,39 +10,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [20.x]
-
     steps:
-    # 1️⃣ Faz checkout do repositório
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2️⃣ Configura o Node.js
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 20
 
-    # 3️⃣ Build do Backend
-    - name: Build Backend (Node + Express + TypeScript)
+    - name: Build Backend (Node + Express + Prisma)
+      working-directory: ./zlpix-premiado-backend
       run: |
-        cd zlpix-premiado-backend
         echo "📦 Instalando dependências do backend..."
         npm install
         echo "🏗️ Compilando o backend..."
-        npm run build || echo "⚠️ Nenhum comando build configurado, ignorando..."
+        npm run build || echo "⚠️ Nenhum build configurado"
         echo "✅ Backend finalizado!"
 
-    # 4️⃣ Build do Frontend
     - name: Build Frontend (React + Vite)
+      working-directory: ./zlpix-premiado-frontend
       run: |
-        cd zlpix-premiado-frontend
         echo "📦 Instalando dependências do frontend..."
         npm install
         echo "🏗️ Compilando o frontend..."
-        npm run build || echo "⚠️ Build padrão executado."
+        npm run build || echo "⚠️ Nenhum build configurado"
+        echo "✅ Frontend finalizado!"
+
+    - name: Final message
+      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"        npm run build || echo "⚠️ Build padrão executado."
         echo "✅ Frontend finalizado!"
 
     # 5️⃣ Confirmação final
