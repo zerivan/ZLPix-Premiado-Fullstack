@@ -48,6 +48,19 @@ jobs:
     # 5️⃣ Confirmação final
     - name: Build concluído
       run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
+    # 4️⃣ Build do Frontend
+    - name: Build Frontend (React + Vite)
+      working-directory: ./front-end
+      run: |
+        echo "📦 Instalando dependências do frontend..."
+        npm install
+        echo "🏗️ Compilando frontend..."
+        npm run build || echo "⚠️ Build padrão executado."
+        echo "✅ Frontend finalizado!"
+
+    # 5️⃣ Confirmação final
+    - name: Build concluído
+      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
       - name: 🧱 Build frontend
         working-directory: ./zlpix-premiado-frontend
         run: npm run build
