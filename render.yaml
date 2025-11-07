@@ -1,8 +1,10 @@
+# 🚀 Render Configuration File - ZLPix Premiado Fullstack
+
 services:
-  # BACKEND (Node + Express + Prisma)
+  # 🔵 BACKEND (Node + Express + Prisma)
   - type: web
-    name: zlpix-premiado-backend
-    rootDir: zlpix-premiado-backend
+    name: zlpix-backend
+    rootDir: backend
     env: node
     plan: free
     buildCommand: npm install && npx prisma generate && npm run build
@@ -17,12 +19,12 @@ services:
       - key: PIX_KEY
         value: teste@pix.com.br
 
-  # FRONTEND (React + Vite)
+  # 🟢 FRONTEND (React + Vite)
   - type: static
-    name: zlpix-premiado-frontend
-    rootDir: zlpix-premiado-frontend
+    name: zlpix-frontend
+    rootDir: front-end
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://zlpix-premiado-backend.onrender.com
+        value: https://zlpix-backend.onrender.com
