@@ -26,7 +26,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     # 3️⃣ Build do Backend
-    - name: Build Backend (Node + Express + Prisma)
+    - name: 🧱 Build backend
       working-directory: ./backend
       run: |
         echo "📦 Instalando dependências do backend..."
@@ -36,7 +36,7 @@ jobs:
         echo "✅ Backend finalizado!"
 
     # 4️⃣ Build do Frontend
-    - name: Build Frontend (React + Vite)
+    - name: 🧱 Build frontend
       working-directory: ./front-end
       run: |
         echo "📦 Instalando dependências do frontend..."
@@ -48,19 +48,3 @@ jobs:
     # 5️⃣ Confirmação final
     - name: Build concluído
       run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
-    # 4️⃣ Build do Frontend
-    - name: Build Frontend (React + Vite)
-      working-directory: ./front-end
-      run: |
-        echo "📦 Instalando dependências do frontend..."
-        npm install
-        echo "🏗️ Compilando frontend..."
-        npm run build || echo "⚠️ Build padrão executado."
-        echo "✅ Frontend finalizado!"
-
-    # 5️⃣ Confirmação final
-    - name: Build concluído
-      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
-      - name: 🧱 Build frontend
-        working-directory: ./zlpix-premiado-frontend
-        run: npm run build
