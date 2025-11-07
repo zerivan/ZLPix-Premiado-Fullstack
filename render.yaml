@@ -1,5 +1,5 @@
 services:
-  # 🟦 BACKEND (Node + Express + Prisma)
+  # BACKEND (Node + Express + Prisma)
   - type: web
     name: zlpix-premiado-backend
     rootDir: zlpix-premiado-backend
@@ -17,7 +17,7 @@ services:
       - key: PIX_KEY
         value: teste@pix.com.br
 
-  # 🟨 FRONTEND (React + Vite)
+  # FRONTEND (React + Vite)
   - type: static
     name: zlpix-premiado-frontend
     rootDir: zlpix-premiado-frontend
@@ -25,8 +25,4 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://zlpix-premiado-backend.onrender.com        echo "✅ Frontend finalizado!"
-
-    # 5️⃣ Confirmação final
-    - name: Build concluído
-      run: echo "🎉 ZLPix Premiado Fullstack compilado com sucesso!"
+        value: https://zlpix-premiado-backend.onrender.com
