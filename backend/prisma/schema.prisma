@@ -1,5 +1,4 @@
-// backend/prisma/schema.prisma
-
+// Prisma Schema for ZLPix Premiado
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,35 +8,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 👤 Usuário
 model Usuario {
-  id        Int       @id @default(autoincrement())
-  nome      String
-  email     String    @unique
-  senha     String
-  criadoEm  DateTime  @default(now())
-  bilhetes  Bilhete[]
+  id         Int       @id @default(autoincrement())
+  nome       String
+  email      String    @unique
+  senha      String
+  criadoEm   DateTime  @default(now())
+  bilhetes   Bilhete[]
 }
 
-// 🎫 Bilhete
 model Bilhete {
   id          Int          @id @default(autoincrement())
-  numeros     String
+  numeros     String        // Ex: "12,34,56"
   criadoEm    DateTime      @default(now())
-  confirmado  Boolean       @default(false)
-  pago        Boolean       @default(false)
-  usuarioId   Int?
-  usuario     Usuario?      @relation(fields: [usuarioId], references: [id])
-  pagamento   Pagamento?    @relation("BilhetePagamento")
+  usuarioId   Int
+  usuario     Usuario       @relation(fields: [usuarioId], references: [id])
+  pagamento   Pagamento?
 }
 
-// 💰 Pagamento
 model Pagamento {
   id          Int       @id @default(autoincrement())
   chavePix    String
   valor       Float
   status      String    @default("pendente") // pendente | pago | cancelado
   criadoEm    DateTime  @default(now())
-  bilheteId   Int
+  bilheteId   Int       @unique
   bilhete     Bilhete   @relation("BilhetePagamento", fields: [bilheteId], references: [id])
 }
