@@ -6,18 +6,18 @@ services:
     env: node
     plan: free
     buildCommand: |
-      echo "📦 Instalando dependências (incluindo dev)..."
+      echo "📦 Instalando TODAS dependências (incluindo dev)..."
       npm install --include=dev
       echo "⚙️ Gerando Prisma Client..."
       npx prisma generate
       echo "🏗️ Compilando TypeScript..."
       npx tsc -p tsconfig.build.json
-    startCommand: npm start
+    startCommand: node dist/server.js
     envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
       - key: NODE_ENV
-        value: production
+        value: development
       - key: PIX_KEY
         value: teste@pix.com.br
 
@@ -25,5 +25,7 @@ services:
   - type: static
     name: zlpix-premiado-frontend
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: |
+      npm install
+      npm run build
     staticPublishPath: dist
