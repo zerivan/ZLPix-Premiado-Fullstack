@@ -9,7 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 👤 Usuário do sistema
+// 👤 Usuário
 model Usuario {
   id        Int       @id @default(autoincrement())
   nome      String
@@ -19,10 +19,10 @@ model Usuario {
   bilhetes  Bilhete[]
 }
 
-// 🎫 Bilhete de aposta
+// 🎫 Bilhete
 model Bilhete {
   id          Int          @id @default(autoincrement())
-  numeros     String        // Ex: "03,15,88"
+  numeros     String
   criadoEm    DateTime      @default(now())
   confirmado  Boolean       @default(false)
   pago        Boolean       @default(false)
@@ -31,7 +31,7 @@ model Bilhete {
   pagamento   Pagamento?    @relation("BilhetePagamento")
 }
 
-// 💰 Pagamento via Pix
+// 💰 Pagamento
 model Pagamento {
   id          Int       @id @default(autoincrement())
   chavePix    String
@@ -40,10 +40,7 @@ model Pagamento {
   criadoEm    DateTime  @default(now())
   bilheteId   Int
   bilhete     Bilhete   @relation("BilhetePagamento", fields: [bilheteId], references: [id])
-}  id          Int       @id @default(autoincrement())
-  chavePix    String
-  valor       Float
-  status      String    @default("pendente") // pendente | pago | cancelado
+}  status      String    @default("pendente") // pendente | pago | cancelado
   criadoEm    DateTime  @default(now())
   bilheteId   Int
   bilhete     Bilhete   @relation(fields: [bilheteId], references: [id])
