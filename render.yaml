@@ -26,8 +26,8 @@ services:
     name: zlpix-premiado-frontend
     rootDir: frontend
     buildCommand: |
-      echo "📦 Instalando dependências do frontend..."
-      npm install
-      echo "🏗️ Compilando frontend com Vite..."
+      echo "📦 Instalando dependências..."
+      npm install --include=dev
+      echo "🏗️ Gerando build de produção..."
       npm run build
     staticPublishPath: dist
