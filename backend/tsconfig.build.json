@@ -1,31 +1,25 @@
-services:
-  # 🔵 BACKEND (Node + Express + Prisma)
-  - type: web
-    name: zlpix-premiado-backend
-    rootDir: backend
-    env: node
-    plan: free
-    buildCommand: |
-      echo "📦 Instalando dependências (incluindo dev)..."
-      npm install --include=dev
-      echo "🧩 Reinstalando tipos..."
-      npm install --save-dev typescript @types/node @types/express @types/cors @types/qrcode
-      echo "⚙️ Gerando Prisma Client..."
-      npx prisma generate
-      echo "🏗️ Compilando TypeScript..."
-      npm run build
-    startCommand: npm start
-    envVars:
-      - key: DATABASE_URL
-        value: file:./prisma/dev.db
-      - key: NODE_ENV
-        value: production
-      - key: PIX_KEY
-        value: teste@pix.com.br
-
-  # 🟠 FRONTEND (React + Vite)
-  - type: static
-    name: zlpix-premiado-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "express",
+      "cors",
+      "qrcode"
+    ]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
