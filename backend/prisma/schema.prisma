@@ -40,8 +40,4 @@ model Pagamento {
   criadoEm    DateTime  @default(now())
   bilheteId   Int
   bilhete     Bilhete   @relation("BilhetePagamento", fields: [bilheteId], references: [id])
-}  status      String    @default("pendente") // pendente | pago | cancelado
-  criadoEm    DateTime  @default(now())
-  bilheteId   Int
-  bilhete     Bilhete   @relation(fields: [bilheteId], references: [id])
 }
