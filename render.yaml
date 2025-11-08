@@ -1,4 +1,29 @@
-services:
+Easily identify and fix slow SQL queries in your app. Optimize helps you enhance your visibility: https://pris.ly/--optimize
+> zlpix-premiado-backend@1.0.0 build
+> tsc -p tsconfig.build.json
+src/Index.ts(1,21): error TS7016: Could not find a declaration file for module 'express'. '/opt/render/project/src/backend/node_modules/express/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/express` if it exists or add a new declaration (.d.ts) file containing `declare module 'express';`
+src/Index.ts(2,18): error TS7016: Could not find a declaration file for module 'cors'. '/opt/render/project/src/backend/node_modules/cors/lib/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/cors` if it exists or add a new declaration (.d.ts) file containing `declare module 'cors';`
+src/Index.ts(4,23): error TS2307: Cannot find module './routes/pixRoutes' or its corresponding type declarations.
+src/Index.ts(14,15): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/Index.ts(14,18): error TS7006: Parameter 'res' implicitly has an 'any' type.
+src/Index.ts(18,14): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+src/controllers/pixcontrollers.ts(1,35): error TS7016: Could not find a declaration file for module 'express'. '/opt/render/project/src/backend/node_modules/express/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/express` if it exists or add a new declaration (.d.ts) file containing `declare module 'express';`
+src/controllers/pixcontrollers.ts(2,20): error TS7016: Could not find a declaration file for module 'qrcode'. '/opt/render/project/src/backend/node_modules/qrcode/lib/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/qrcode` if it exists or add a new declaration (.d.ts) file containing `declare module 'qrcode';`
+src/routes/pixroutes.ts(1,24): error TS7016: Could not find a declaration file for module 'express'. '/opt/render/project/src/backend/node_modules/express/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/express` if it exists or add a new declaration (.d.ts) file containing `declare module 'express';`
+src/routes/pixroutes.ts(2,26): error TS2307: Cannot find module '../controllers/pixController' or its corresponding type declarations.
+src/server.ts(1,44): error TS7016: Could not find a declaration file for module 'express'. '/opt/render/project/src/backend/node_modules/express/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/express` if it exists or add a new declaration (.d.ts) file containing `declare module 'express';`
+src/server.ts(2,18): error TS7016: Could not find a declaration file for module 'cors'. '/opt/render/project/src/backend/node_modules/cors/lib/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/cors` if it exists or add a new declaration (.d.ts) file containing `declare module 'cors';`
+src/server.ts(17,14): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+==> Build failed 😞
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+Need better ways to work with logs? Try the:
   - type: web
     name: zlpix-premiado-backend
     rootDir: backend
