@@ -23,7 +23,7 @@ model Bilhete {
   criadoEm    DateTime      @default(now())
   usuarioId   Int
   usuario     Usuario       @relation(fields: [usuarioId], references: [id])
-  pagamento   Pagamento?
+  pagamento   Pagamento?    @relation("BilhetePagamento")
 }
 
 model Pagamento {
