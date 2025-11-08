@@ -6,9 +6,11 @@ services:
     env: node
     plan: free
     buildCommand: |
-      npm install
-      npm install --save-dev typescript @types/node @types/express @types/cors @types/qrcode
+      echo "📦 Instalando dependências (incluindo dev)..."
+      npm install --include=dev
+      echo "⚙️ Gerando Prisma Client..."
       npx prisma generate
+      echo "🏗️ Compilando TypeScript..."
       npm run build
     startCommand: npm start
     envVars:
@@ -23,5 +25,9 @@ services:
   - type: static
     name: zlpix-premiado-frontend
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: |
+      echo "📦 Instalando dependências do frontend..."
+      npm install
+      echo "🏗️ Compilando frontend com Vite..."
+      npm run build
     staticPublishPath: dist
