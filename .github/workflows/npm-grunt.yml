@@ -1,4 +1,4 @@
-name: NodeJS with Grunt
+name: NodeJS Backend Build (ZLPix Premiado)
 
 on:
   push:
@@ -12,17 +12,30 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
 
     steps:
-    - uses: actions/checkout@v4
+      - name: 🧾 Checkout do repositório
+        uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: 🧰 Configurar Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Build
-      run: |
-        npm install
-        grunt
+      - name: 📦 Instalar dependências (incluindo dev)
+        run: npm install --include=dev
+        working-directory: backend
+
+      - name: ⚙️ Gerar Prisma Client
+        run: npx prisma generate
+        working-directory: backend
+
+      - name: 🏗️ Compilar TypeScript
+        run: npm run build
+        working-directory: backend
+
+      - name: ✅ Testar build final
+        run: node dist/server.js
+        working-directory: backend
