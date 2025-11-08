@@ -1,6 +1,8 @@
-import { writeFileSync, execSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
+// backend/fix-config.js
+import { writeFileSync } from "fs";
+import { execSync } from "child_process";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -26,14 +28,15 @@ const config = {
 };
 
 writeFileSync(
-  `${__dirname}/tsconfig.build.json`,
+  join(__dirname, "tsconfig.build.json"),
   JSON.stringify(config, null, 2)
 );
 
 console.log("✅ tsconfig.build.json recriado com sucesso!");
 
-// Instalar tipos se faltarem
 console.log("📦 Instalando pacotes de tipos...");
 execSync("npm install --save-dev @types/node @types/express @types/cors @types/qrcode", { stdio: "inherit" });
+
+console.log("✨ Tudo pronto! Faça commit e push para o GitHub.");execSync("npm install --save-dev @types/node @types/express @types/cors @types/qrcode", { stdio: "inherit" });
 
 console.log("✨ Tudo pronto! Faça commit e push para o GitHub.");
