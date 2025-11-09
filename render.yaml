@@ -1,22 +1,19 @@
 services:
-  # 🔵 BACKEND (Node + Express + Prisma)
   - type: web
     name: zlpix-premiado-backend
-    rootDir: backend
     env: node
     plan: free
+    rootDir: backend
     buildCommand: |
-      echo "🚀 Iniciando deploy automatizado..."
-      chmod +x fix-deploy.sh || true
-      ./fix-deploy.sh || (
-        echo "⚙️ Rodando fallback manual..."
-        rm -rf dist node_modules
-        npm cache clean --force
-        npm install --production=false
-        npx prisma generate
-        npm run build
-      )
-    startCommand: npm start
+      echo "📦 Entrando no backend e instalando dependências..."
+      cd backend
+      npm install
+      echo "⚙️ Instalando Prisma e gerando client..."
+      npm install @prisma/client prisma
+      npx prisma generate
+      echo "🏗️ Compilando TypeScript..."
+      npm run build
+    startCommand: cd backend && npm start
     envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
@@ -24,10 +21,3 @@ services:
         value: production
       - key: PIX_KEY
         value: teste@pix.com.br
-
-  # 🟠 FRONTEND (React + Vite)
-  - type: static
-    name: zlpix-premiado-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
