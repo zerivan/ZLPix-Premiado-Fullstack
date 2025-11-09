@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: zlpix-premiado-backend
+    rootDir: backend
+    env: node
+    plan: free
+    buildCommand: |
+      echo "📦 Instalando dependências..."
+      npm install
+      echo "📦 Instalando Prisma e client manualmente..."
+      npm install @prisma/client prisma
+      echo "⚙️ Gerando Prisma Client..."
+      npx prisma generate
+      echo "🏗️ Compilando TypeScript..."
+      npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        value: file:./prisma/dev.db
+      - key: NODE_ENV
+        value: production
+      - key: PIX_KEY
+        value: teste@pix.com.br
