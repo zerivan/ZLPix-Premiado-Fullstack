@@ -3,12 +3,24 @@ import QRCode from "qrcode";
 
 export async function gerarPix(req: Request, res: Response) {
   try {
-    const { nome, valor } = req.body;
-    const payload = `00020126360014BR.GOV.BCB.PIX0114+558199999999520400005303986540${valor}5802BR5913${nome}6009SAO PAULO62070503***6304ABCD`;
-    
-    const qrCode = await QRCode.toDataURL(payload);
-    res.json({ sucesso: true, payload, qrCode });
-  } catch (error) {
-    res.status(500).json({ sucesso: false, erro: "Falha ao gerar Pix" });
+    const { chave, valor, descricao } = req.body;
+
+    if (!chave || !valor) {
+      return res.status(400).json({ erro: "Chave Pix e valor são obrigatórios." });
+    }
+
+    const payload = `00020126360014BR.GOV.BCB.PIX0114${chave}520400005303986540${valor.toFixed(
+      2
+    )}5802BR5914ZLPix Premiado6009SaoPaulo62070503***6304`;
+    const qrCodeDataURL = await QRCode.toDataURL(payload);
+
+    res.status(200).json({
+      payload,
+      qrCode: qrCodeDataURL,
+      mensagem: "Pix gerado com sucesso ✅",
+    });
+  } catch (erro) {
+    console.error("Erro ao gerar Pix:", erro);
+    res.status(500).json({ erro: "Erro interno ao gerar o Pix" });
   }
-      }
+}
