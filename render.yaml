@@ -6,20 +6,22 @@ services:
     env: node
     plan: free
     buildCommand: |
-      echo "📦 Instalando dependências (incluindo dev)..."
-      npm install --production=false
-      echo "⚙️ Gerando Prisma Client..."
-      npx prisma generate
-      echo "🏗️ Compilando TypeScript..."
-      npm run build
-    startCommand: node dist/server.js
+      echo "🚀 Iniciando deploy automatizado..."
+      chmod +x fix-deploy.sh || true
+      ./fix-deploy.sh || (
+        echo "⚙️ Rodando fallback manual..."
+        rm -rf dist node_modules
+        npm cache clean --force
+        npm install --production=false
+        npx prisma generate
+        npm run build
+      )
+    startCommand: npm start
     envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: PIX_KEY
         value: teste@pix.com.br
 
