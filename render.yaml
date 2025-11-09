@@ -1,13 +1,15 @@
 services:
-  # 🔵 BACKEND (Node + Express + Prisma)
   - type: web
     name: zlpix-premiado-backend
     rootDir: backend
     env: node
     plan: free
     buildCommand: |
-      echo "📦 Instalando dependências (incluindo dev)..."
-      npm install --include=dev
+      echo "📦 Limpando cache e instalando dependências..."
+      rm -rf node_modules package-lock.json
+      npm install
+      echo "📘 Instalando tipos Node e Express..."
+      npm install --save-dev typescript @types/node @types/express @types/cors @types/qrcode
       echo "⚙️ Gerando Prisma Client..."
       npx prisma generate
       echo "🏗️ Compilando TypeScript..."
