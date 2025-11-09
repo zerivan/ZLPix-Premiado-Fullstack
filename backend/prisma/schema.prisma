@@ -1,37 +1,15 @@
-// Prisma Schema for ZLPix Premiado
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
-model Usuario {
-  id         Int       @id @default(autoincrement())
-  nome       String
-  email      String    @unique
-  senha      String
-  criadoEm   DateTime  @default(now())
-  bilhetes   Bilhete[]
-}
-
-model Bilhete {
-  id          Int          @id @default(autoincrement())
-  numeros     String        // Ex: "12,34,56"
-  criadoEm    DateTime      @default(now())
-  usuarioId   Int
-  usuario     Usuario       @relation(fields: [usuarioId], references: [id])
-  pagamento   Pagamento?    @relation("BilhetePagamento")
-}
-
-model Pagamento {
-  id          Int       @id @default(autoincrement())
-  chavePix    String
-  valor       Float
-  status      String    @default("pendente") // pendente | pago | cancelado
-  criadoEm    DateTime  @default(now())
-  bilheteId   Int       @unique
-  bilhete     Bilhete   @relation("BilhetePagamento", fields: [bilheteId], references: [id])
+model Pix {
+  id         Int      @id @default(autoincrement())
+  chave      String
+  valor      Float
+  criadoEm   DateTime @default(now())
 }
