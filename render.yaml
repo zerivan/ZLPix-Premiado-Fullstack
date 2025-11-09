@@ -6,12 +6,12 @@ services:
     env: node
     plan: free
     buildCommand: |
-      echo "📦 Instalando dependências (incluindo dev)..."
-      npm install --include=dev
-      echo "⚙️ Gerando Prisma Client..."
-      npx prisma generate
-      echo "🏗️ Compilando TypeScript..."
-      npx tsc -p tsconfig.build.json
+  echo "📦 Instalando dependências..."
+  npm install --include=dev
+  echo "⚙️ Gerando Prisma Client..."
+  npx prisma generate
+  echo "🏗️ Compilando TypeScript..."
+  npm run build
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
