@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node"]
+    "types": ["node", "express", "cors", "qrcode"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
