@@ -6,13 +6,14 @@ services:
     rootDir: backend
     buildCommand: |
       echo "📦 Instalando dependências..."
+      cd backend
       npm install
       echo "⚙️ Instalando Prisma e gerando client..."
       npm install @prisma/client prisma
       npx prisma generate
       echo "🏗️ Compilando TypeScript..."
       npm run build
-    startCommand: npm start
+    startCommand: cd backend && npm start
     envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
