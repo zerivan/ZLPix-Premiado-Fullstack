@@ -5,8 +5,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: |
-      echo "📦 Entrando no backend e instalando dependências..."
-      cd backend
+      echo "📦 Instalando dependências..."
       npm install
       echo "⚙️ Instalando Prisma e gerando client..."
       npm install @prisma/client prisma
@@ -15,7 +14,7 @@ services:
       npm run build
     startCommand: |
       echo "🚀 Iniciando servidor backend..."
-      cd backend && npm start
+      npm start
     envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
