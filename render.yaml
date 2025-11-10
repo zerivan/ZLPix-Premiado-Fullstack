@@ -5,11 +5,12 @@ services:
     plan: free
     rootDir: backend
     buildCommand: |
-      echo "📦 Entrando no backend e instalando dependências..."
       cd backend
+      echo "📦 Instalando dependências..."
       npm install
-      echo "⚙️ Instalando Prisma e gerando client..."
+      echo "📦 Instalando Prisma e client..."
       npm install @prisma/client prisma
+      echo "⚙️ Gerando Prisma Client..."
       npx prisma generate
       echo "🏗️ Compilando TypeScript..."
       npm run build
