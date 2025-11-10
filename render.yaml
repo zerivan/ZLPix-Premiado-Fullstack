@@ -14,8 +14,7 @@ services:
       npm run build
     startCommand: |
       echo "🚀 Iniciando servidor backend..."
-      npm start
-    envVars:
+      npm start                                                 envVars:
       - key: DATABASE_URL
         value: file:./prisma/dev.db
       - key: NODE_ENV
