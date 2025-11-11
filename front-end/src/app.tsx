@@ -1,60 +1,116 @@
 import React, { useState } from "react";
-import { api } from "./api/client";
+import { Lock, User, X } from "lucide-react"; // ícones profissionais
 
-export default function App() {
-  const [premio, setPremio] = useState<string | null>(null);
+interface Props {
+  onClose: () => void;
+}
+
+export default function AdminLoginModal({ onClose }: Props) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const sortearPremio = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
     setLoading(true);
-    try {
-      const response = await api.get("/api/premio");
-      setPremio(response.data.premio);
-    } catch (error) {
-      console.error("Erro ao sortear prêmio:", error);
-      setPremio("Erro ao conectar ao servidor 🛑");
-    } finally {
-      setLoading(false);
+
+    // Simulação de autenticação
+    await new Promise((res) => setTimeout(res, 800));
+
+    if (username === "admin" && password === "123456") {
+      alert("✅ Login realizado com sucesso!");
+      onClose();
+    } else {
+      setError("⚠️ Usuário ou senha incorretos!");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-blue-900 to-indigo-800 text-white font-sans">
-      {/* Header */}
-      <header className="w-full text-center py-8 shadow-md bg-gradient-to-r from-indigo-700 to-blue-600">
-        <h1 className="text-4xl font-extrabold tracking-wide">🎯 ZLPix Premiado</h1>
-        <p className="text-lg opacity-80 mt-2">Teste sua sorte e ganhe prêmios incríveis!</p>
-      </header>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white w-11/12 max-w-md rounded-2xl shadow-2xl p-8 relative animate-fadeIn">
+        {/* Botão Fechar */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition"
+          title="Fechar"
+        >
+          <X className="w-6 h-6" />
+        </button>
 
-      {/* Conteúdo principal */}
-      <main className="flex flex-col items-center justify-center flex-grow px-4 text-center">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 max-w-md w-full border border-white/20">
-          <h2 className="text-2xl font-semibold mb-6 text-yellow-300">🎁 Sorteio de Prêmios</h2>
+        {/* Cabeçalho */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-indigo-600 mb-1">
+            Painel Administrativo
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Acesso restrito — insira suas credenciais.
+          </p>
+        </div>
+
+        {/* Formulário */}
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Usuário
+            </label>
+            <div className="flex items-center border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+              <User className="ml-3 text-gray-400" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full p-2.5 bg-transparent focus:outline-none"
+                placeholder="Digite seu usuário"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Senha
+            </label>
+            <div className="flex items-center border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+              <Lock className="ml-3 text-gray-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2.5 bg-transparent focus:outline-none"
+                placeholder="Digite sua senha"
+                required
+              />
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-red-600 text-center text-sm font-medium">
+              {error}
+            </p>
+          )}
 
           <button
-            onClick={sortearPremio}
+            type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-lg font-bold text-lg transition-all duration-300 ${
+            className={`w-full py-3 rounded-lg font-semibold transition-all ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:scale-105 hover:shadow-lg"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white"
             }`}
           >
-            {loading ? "🔄 Sorteando..." : "✨ Sortear Prêmio"}
+            {loading ? "Entrando..." : "Entrar"}
           </button>
+        </form>
 
-          {premio && (
-            <div className="mt-6 p-4 rounded-xl bg-black/40 border border-yellow-400 animate-pulse">
-              <p className="text-2xl font-bold text-yellow-300">{premio}</p>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Rodapé */}
-      <footer className="w-full bg-black/50 text-center py-4 text-sm border-t border-white/10">
-        <p>© 2025 <span className="font-semibold text-yellow-400">ZLPix Premiado</span> - Todos os direitos reservados.</p>
-      </footer>
+        {/* Rodapé */}
+        <p className="mt-6 text-xs text-gray-400 text-center">
+          © 2025 ZLPix Premiado — Acesso autorizado apenas para administradores.
+        </p>
+      </div>
     </div>
   );
 }
