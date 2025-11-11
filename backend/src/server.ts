@@ -9,16 +9,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Rota principal
+// ✅ Rota inicial
 app.get("/", (req, res) => {
   res.send("🚀 Backend ZLPix Premiado rodando com sucesso!");
 });
 
-// ✅ Rotas de sorteio
+// ✅ Rota de sorteio
 app.use("/api", premioRoutes);
 
-// ✅ Porta do servidor
+// ✅ Porta
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
 });

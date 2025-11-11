@@ -11,14 +11,14 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-// ✅ Rota principal
+// ✅ Rota inicial
 app.get("/", (req, res) => {
     res.send("🚀 Backend ZLPix Premiado rodando com sucesso!");
 });
-// ✅ Rotas de sorteio
+// ✅ Rota de sorteio
 app.use("/api", premioRoutes_js_1.default);
-// ✅ Porta do servidor
+// ✅ Porta
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, () => {
     console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
