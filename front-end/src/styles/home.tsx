@@ -1,60 +1,32 @@
-import React, { useState } from "react";
-import { NumeroButton } from "../components/NumeroButton";
-import { BilheteCard } from "../components/BilheteCard";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-export default function Home() {
-  const [selecionadas, setSelecionadas] = useState<number[]>([]);
+/* 🎨 Estilos globais do ZLPix Premiado */
+body {
+  @apply bg-dark text-white font-sans antialiased flex items-center justify-center min-h-screen;
+}
 
-  const toggleNumero = (numero: number) => {
-    if (selecionadas.includes(numero)) {
-      setSelecionadas(selecionadas.filter((n) => n !== numero));
-    } else if (selecionadas.length < 3) {
-      setSelecionadas([...selecionadas, numero]);
-    }
-  };
+button {
+  @apply transition-transform duration-200 ease-in-out;
+}
 
-  const gerarAutomatico = () => {
-    const numeros: number[] = [];
-    while (numeros.length < 3) {
-      const n = Math.floor(Math.random() * 100);
-      if (!numeros.includes(n)) numeros.push(n);
-    }
-    setSelecionadas(numeros);
-  };
+button:hover {
+  @apply scale-105;
+}
 
-  const limpar = () => setSelecionadas([]);
+/* 🎁 Animação suave de entrada */
+.fade-in {
+  animation: fadeIn 0.8s ease-in-out forwards;
+}
 
-  return (
-    <div className="flex flex-col items-center p-6">
-      <h1 className="text-3xl font-bold text-gold mb-4">ZLPix Premiado 💰</h1>
-
-      <div className="grid grid-cols-10 gap-2 max-w-md">
-        {Array.from({ length: 100 }, (_, i) => (
-          <NumeroButton
-            key={i}
-            numero={i}
-            selecionado={selecionadas.includes(i)}
-            onClick={() => toggleNumero(i)}
-          />
-        ))}
-      </div>
-
-      <div className="flex gap-4 mt-4">
-        <button
-          onClick={gerarAutomatico}
-          className="bg-gold text-black px-4 py-2 rounded font-bold hover:bg-yellow-400"
-        >
-          Gerar Automático
-        </button>
-        <button
-          onClick={limpar}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500"
-        >
-          Limpar
-        </button>
-      </div>
-
-      {selecionadas.length === 3 && <BilheteCard dezenas={selecionadas} />}
-    </div>
-  );
-        }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
