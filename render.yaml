@@ -20,9 +20,11 @@ services:
     env: node
     rootDir: front-end
     buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    startCommand: npx serve -s dist
     envVars:
       - key: NODE_VERSION
         value: 18.19.0
+      - key: VITE_API_URL
+        value: https://zlpix-backend.onrender.com
     plan: free
     autoDeploy: true
