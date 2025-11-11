@@ -1,76 +1,40 @@
 import React, { useState } from "react";
 
-interface Props {
-  onClose: () => void;
-}
+export default function AdminLoginModal({ onClose, onSuccess } : { onClose: ()=>void; onSuccess: ()=>void }) {
+  const [user,setUser]=useState("");
+  const [pass,setPass]=useState("");
+  const [err,setErr]=useState("");
 
-export default function AdminLoginModal({ onClose }: Props) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handle = (e:React.FormEvent) => {
     e.preventDefault();
-    if (username === "admin" && password === "123456") {
-      alert("✅ Login realizado com sucesso!");
+    // demo: credenciais padrão (mude depois)
+    if(user==="admin" && pass==="123456"){
+      onSuccess();
       onClose();
     } else {
-      setError("⚠️ Usuário ou senha incorretos!");
+      setErr("Usuário ou senha inválidos.");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-11/12 max-w-sm p-6 text-gray-800">
-        <h2 className="text-xl font-bold mb-4 text-center text-indigo-600">
-          Painel Administrativo
-        </h2>
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Usuário
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Digite seu usuário"
-              required
-            />
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-card" onClick={e=>e.stopPropagation()}>
+        <h2>Login Administrativo</h2>
+        <form onSubmit={handle} style={{marginTop:12}}>
+          <div className="field">
+            <label>Usuário</label>
+            <input value={user} onChange={e=>setUser(e.target.value)} placeholder="admin" />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Senha
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Digite sua senha"
-              required
-            />
+          <div className="field">
+            <label>Senha</label>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="senha" />
           </div>
-
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-
-          <button
-            type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold transition-all"
-          >
-            Entrar
-          </button>
+          {err && <div style={{color:"#ffdddd", marginBottom:8}}>{err}</div>}
+          <div style={{display:"flex", gap:10}}>
+            <button className="btn primary" type="submit">Entrar</button>
+            <button className="btn gray" type="button" onClick={onClose}>Cancelar</button>
+          </div>
         </form>
-
-        <button
-          onClick={onClose}
-          className="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold"
-        >
-          Fechar
-        </button>
       </div>
     </div>
   );
