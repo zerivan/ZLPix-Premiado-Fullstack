@@ -1,27 +1,28 @@
 services:
+  # === BACKEND ===
   - type: web
-    name: zlpix-premiado-backend
+    name: zlpix-backend
     env: node
-    plan: free
     rootDir: backend
-
-    buildCommand: |
-      echo "📦 Instalando dependências..."
-      npm install
-      echo "⚙️ Instalando Prisma e gerando client..."
-      npm install
-      npx prisma generate
-      echo "🏗️ Compilando TypeScript..."
-      npm run build
-
-    startCommand: |
-      echo "🚀 Iniciando servidor backend..."
-      npm start
-
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
-      - key: DATABASE_URL
-        value: file:./prisma/dev.db
-      - key: NODE_ENV
-        value: production
-      - key: PIX_KEY
-        value: teste@pix.com.br
+      - key: NODE_VERSION
+        value: 18.19.0
+      - key: PORT
+        value: 10000
+    plan: free
+    autoDeploy: true
+
+  # === FRONTEND ===
+  - type: web
+    name: zlpix-frontend
+    env: node
+    rootDir: front-end
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: NODE_VERSION
+        value: 18.19.0
+    plan: free
+    autoDeploy: true
