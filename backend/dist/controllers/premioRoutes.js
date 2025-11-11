@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const pixcontrollers_1 = require("../controllers/pixcontrollers");
+const premioController_1 = require("../controllers/premioController");
 const router = (0, express_1.Router)();
-// Rota para gerar um código Pix
-router.post("/gerar", pixcontrollers_1.gerarPix);
+router.get("/premio", premioController_1.sortearPremio);
 exports.default = router;

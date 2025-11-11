@@ -1,16 +1,24 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-dotenv.config();
-const app = express();
-app.use(cors());
-app.use(express.json());
-// ✅ Rota inicial (teste de funcionamento)
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const premioRoutes_js_1 = __importDefault(require("./routes/premioRoutes.js"));
+dotenv_1.default.config();
+const app = (0, express_1.default)();
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
+// ✅ Rota principal
 app.get("/", (req, res) => {
     res.send("🚀 Backend ZLPix Premiado rodando com sucesso!");
 });
-// ✅ Configuração da porta
+// ✅ Rotas de sorteio
+app.use("/api", premioRoutes_js_1.default);
+// ✅ Porta do servidor
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Servidor rodando na porta ${PORT}`);
 });

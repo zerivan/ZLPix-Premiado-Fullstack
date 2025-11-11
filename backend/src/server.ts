@@ -1,6 +1,7 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import premioRoutes from "./routes/premioRoutes.js";
 
 dotenv.config();
 
@@ -8,13 +9,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Rota inicial (teste de funcionamento)
-app.get("/", (req: Request, res: Response) => {
+// ✅ Rota principal
+app.get("/", (req, res) => {
   res.send("🚀 Backend ZLPix Premiado rodando com sucesso!");
 });
 
-// ✅ Configuração da porta
+// ✅ Rotas de sorteio
+app.use("/api", premioRoutes);
+
+// ✅ Porta do servidor
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
