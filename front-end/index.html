@@ -1,26 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZLPix Premiado 🎉</title>
-    <meta name="description" content="Participe do ZLPix Premiado — sorteios e prêmios via PIX!" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="theme-color" content="#0d6efd" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZLPIX PREMIADO — Neon Edition</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+</head>
 
-    <!-- Fonte moderna e responsiva -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<body class="fundo-gradiente">
+  <header>
+    <div class="logo">💎 ZLPIX PREMIADO</div>
+    <nav>
+      <a href="#" class="ativo">Aposta</a>
+      <a href="#">Resultado</a>
+      <a href="#">Ganhadores</a>
+      <a href="#">Histórico</a>
+      <a href="#">Adm</a>
+    </nav>
+  </header>
 
-    <!-- CSS Global (será substituído pelo build do Vite) -->
-    <link rel="stylesheet" href="/src/styles/index.css" />
+  <main class="container-principal">
+    <div>
+      <div class="bloco bloco-destaque">
+        <div class="contador-regressivo">Sorteio em: <span id="contador"></span></div>
+        <div class="valor-premio">R$ 5.000.000</div>
+        <p>Escolha <strong>três dezenas</strong> de cada vez e confirme sua aposta.</p>
+      </div>
 
-    <!-- Script do Vite para ambiente dev -->
-    <script type="module" src="/src/main.tsx"></script>
-  </head>
-  <body>
-    <div id="root"></div>
+      <div class="bloco">
+        <h3>Como funciona</h3>
+        <p>Selecione suas dezenas manualmente ou clique em <strong>Gerar Dezenas</strong> para escolher automaticamente.</p>
+        <div class="info-exemplo">Exemplo: Bilhete <strong>(12, 45, 89)</strong> — R$5,00</div>
+      </div>
+    </div>
 
-    <!-- Fallback para quando o JavaScript estiver desabilitado -->
-    <noscript>Por favor, habilite o JavaScript para usar o ZLPix Premiado.</noscript>
-  </body>
+    <div class="bloco-sorteio">
+      <h3>Painel de Apostas</h3>
+      <div id="painel" class="painel-dezenas"></div>
+
+      <div class="botoes-acao">
+        <button id="gerar" class="botao btn-laranja">Gerar Dezenas</button>
+        <button id="desfazer" class="botao btn-rosa">Desfazer</button>
+        <button id="confirmar" class="botao btn-azul">Confirmar</button>
+      </div>
+
+      <div class="bloco-pagamento">
+        <h3>Pagamento PIX</h3>
+        <img src="assets/qr_placeholder.png" alt="QR Code Pix">
+        <p class="info-pix">Chave Pix: <span id="pixKey">zlpixpremiado@pix.com</span></p>
+        <button id="copiar" class="botao btn-verde">Copiar Chave Pix</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="rodape">
+    ZLPIX PREMIADO © 2025 — Todos os direitos reservados
+  </footer>
+
+  <script src="script.js"></script>
+</body>
 </html>
