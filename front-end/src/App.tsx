@@ -1,56 +1,39 @@
-import React, { useState } from "react";
-import confetti from "canvas-confetti";
-import { api } from "./api/client";
-
-export default function App() {
-  const [resultado, setResultado] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(false);
-
-  async function sortearPremio() {
-    setCarregando(true);
-    try {
-      const response = await api.get("/premio"); // rota simulada
-      const mensagem = response.data?.mensagem || "🎉 Você ganhou!";
-      setResultado(mensagem);
-      soltarConfete(); // chama o efeito!
-    } catch (error) {
-      setResultado("❌ Erro ao se conectar com o servidor");
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  function soltarConfete() {
-    confetti({
-      particleCount: 180,
-      spread: 100,
-      origin: { y: 0.6 },
-    });
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-yellow-400 via-amber-500 to-yellow-700 text-dark">
-      <h1 className="text-4xl md:text-5xl font-extrabold mb-8 text-white drop-shadow-lg">
-        🎯 ZLPIX PREMIADO
-      </h1>
-
-      <button
-        onClick={sortearPremio}
-        disabled={carregando}
-        className="bg-black text-yellow-400 px-8 py-3 rounded-2xl text-lg font-bold shadow-lg hover:bg-yellow-500 hover:text-black transition-all"
-      >
-        {carregando ? "🔄 Sorteando..." : "🎁 Sortear Prêmio"}
-      </button>
-
-      {resultado && (
-        <div className="mt-6 text-center text-2xl font-semibold text-white animate-bounce">
-          {resultado}
-        </div>
-      )}
-
-      <footer className="mt-16 text-sm text-gray-200">
-        © 2025 ZLPix Premiado - Todos os direitos reservados
-      </footer>
-    </div>
-  );
-}
+import React,{useState}from"react";
+import Navbar from"./components/navbar";
+import GanhadoresModal from"./components/ganhadoresmodal";
+import HistoricoModal from"./components/historicomodal";
+import AdminLoginModal from"./components/adminloginmodal";
+import ApostaPanel from"./components/apostapanel";
+import"./styles/index.css";
+export default function App(){
+const[showG,setShowG]=useState(false);
+const[showH,setShowH]=useState(false);
+const[showAdminLogin,setShowAdminLogin]=useState(false);
+const[showAdminDashboard,setShowAdminDashboard]=useState(false);
+const[paymentSelection,setPaymentSelection]=useState<string[]|null>(null);
+return(<div className="app-wrap">
+<Navbar onOpenGanhadores={()=>setShowG(true)}onOpenHistorico={()=>setShowH(true)}onOpenAdmin={()=>setShowAdminLogin(true)}/>
+<div className="card">
+<div className="ticket-info"><h2>Informações do Bilhete</h2><p className="small-muted">Valor do Bilhete: R$10.00 • Próxima extração: --</p></div>
+<ApostaPanel onOpenPayment={(sel)=>{if(sel.length===3)setPaymentSelection(sel);else alert("Selecione 3 dezenas antes de pagar.")}}/>
+<div style={{height:80}}/></div>
+<footer className="site-footer">© 2025 ZLPix Premiado — Desenvolvido por você</footer>
+{showG&&<GanhadoresModal onClose={()=>setShowG(false)}/>}
+{showH&&<HistoricoModal onClose={()=>setShowH(false)}/>}
+{showAdminLogin&&<AdminLoginModal onClose={()=>setShowAdminLogin(false)}onSuccess={()=>setShowAdminDashboard(true)}/>}
+{showAdminDashboard&&(<div className="modal-backdrop"onClick={()=>setShowAdminDashboard(false)}>
+<div className="modal-card"onClick={(e)=>e.stopPropagation()}><h2>Painel Administrativo</h2>
+<p className="small-muted">Aqui você pode editar valores, ver apostas e gerar relatórios. (Interface de exemplo)</p>
+<div style={{display:"flex",gap:10,marginTop:12}}>
+<button className="btn primary"onClick={()=>alert("Abrir Configurações (em breve)")}>Configurações do Bilhete</button>
+<button className="btn gray"onClick={()=>setShowAdminDashboard(false)}>Fechar</button>
+</div></div></div>)}
+{paymentSelection&&(<div className="modal-backdrop"onClick={()=>setPaymentSelection(null)}>
+<div className="modal-card"onClick={(e)=>e.stopPropagation()}><h2>Pagamento Pix</h2>
+<p>Dezenas:<strong>{paymentSelection.join(", ")}</strong></p>
+<p className="small-muted">QR Code e chave de teste (mock)</p>
+<div style={{display:"flex",gap:10,marginTop:12}}>
+<button className="btn primary"onClick={()=>{alert("Simulando pagamento via Pix");setPaymentSelection(null);}}>Copiar chave / Pagar</button>
+<button className="btn gray"onClick={()=>setPaymentSelection(null)}>Cancelar</button>
+</div></div></div>)}
+</div>)}
