@@ -20,7 +20,7 @@ services:
     env: node
     rootDir: front-end
     buildCommand: npm install && npm run build
-    startCommand: npx serve -s dist
+    startCommand: npx serve -s dist -l 10000
     envVars:
       - key: NODE_VERSION
         value: 18.19.0
