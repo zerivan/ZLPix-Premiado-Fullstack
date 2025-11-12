@@ -4,14 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZLPIX PREMIADO — Neon Edition</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
 </head>
-
-<body class="fundo-gradiente">
-  <header>
-    <div class="logo">💎 ZLPIX PREMIADO</div>
-    <nav>
+<body>
+  <header class="topo">
+    <div class="logo">💎 ZLPIX <span>PREMIADO</span></div>
+    <nav class="menu">
       <a href="#" class="ativo">Aposta</a>
       <a href="#">Resultado</a>
       <a href="#">Ganhadores</a>
@@ -20,106 +18,71 @@
     </nav>
   </header>
 
-  <main class="container-principal">
-    <div>
-      <div class="bloco bloco-destaque">
-        <div class="contador-regressivo">Sorteio em: <span id="contador"></span></div>
-        <div class="valor-premio">R$ 5.000.000</div>
-        <p>Escolha <strong>três dezenas</strong> de cada vez e confirme sua aposta.</p>
+  <main class="container">
+    <!-- BLOCO DE LOGIN -->
+    <section class="coluna-esquerda">
+      <div class="bloco-login">
+        <input type="text" placeholder="Nome completo">
+        <input type="tel" placeholder="Telefone">
+        <input type="text" placeholder="Pix">
+        <button class="btn-azul">LOGIN</button>
+        <button class="btn-roxo">CADASTRAR</button>
+        <p class="info-sec">Segurança nível jogos online</p>
       </div>
 
-      <div class="bloco">
-        <h3>Como funciona</h3>
-        <p>Selecione suas dezenas manualmente ou clique em <strong>Gerar Dezenas</strong> para escolher automaticamente.</p>
-        <div class="info-exemplo">Exemplo: Bilhete <strong>(12, 45, 89)</strong> — R$5,00</div>
+      <div class="bloco-info">
+        <div class="titulo-sec">Como funciona?</div>
+        <p>Escolha <strong>três dezenas</strong> e confirme sua aposta. Exemplo:</p>
+        <div class="bilhete">Bilhete (89, 12, 45) — R$5,00</div>
       </div>
-    </div>
+    </section>
 
-    <div class="bloco-sorteio">
-      <h3>Painel de Apostas</h3>
-      <div id="painel" class="painel-dezenas"></div>
-
-      <div class="botoes-acao">
-        <button id="gerar" class="botao btn-laranja">Gerar Dezenas</button>
-        <button id="desfazer" class="botao btn-rosa">Desfazer</button>
-        <button id="confirmar" class="botao btn-azul">Confirmar</button>
+    <!-- BLOCO PRINCIPAL -->
+    <section class="coluna-direita">
+      <div class="painel-premio">
+        <h3>Sorteio em</h3>
+        <div class="valor">R$ 5.000.000</div>
+        <p>Você só poderá escolher <strong>três dezenas</strong> por vez.</p>
       </div>
 
-      <div class="bloco-pagamento">
-        <h3>Pagamento PIX</h3>
-        <img src="assets/qr_placeholder.png" alt="QR Code Pix">
-        <p class="info-pix">Chave Pix: <span id="pixKey">zlpixpremiado@pix.com</span></p>
-        <button id="copiar" class="botao btn-verde">Copiar Chave Pix</button>
+      <div class="painel-numeros">
+        <h3>Bloco de Sorteio de Prêmios</h3>
+        <div class="grade">
+          <!-- 100 dezenas (00–99) -->
+          <script>
+            document.addEventListener("DOMContentLoaded", () => {
+              const grid = document.querySelector('.grade');
+              for (let i = 0; i < 100; i++) {
+                const num = i.toString().padStart(2, '0');
+                const el = document.createElement('div');
+                el.textContent = num;
+                el.className = 'dezena';
+                el.onclick = () => el.classList.toggle('selecionada');
+                grid.appendChild(el);
+              }
+            });
+          </script>
+        </div>
+        <div class="acoes">
+          <button class="btn-laranja">Gerar Dezenas</button>
+          <button class="btn-rosa">Desfazer</button>
+          <button class="btn-verde">Confirmar</button>
+        </div>
       </div>
-    </div>
+
+      <div class="pagamento">
+        <h3>Forma de Pagamento (Pix)</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=ZLPIXPREMIADO&size=150x150" alt="QR Code Pix">
+        <p class="pix-key">Chave Pix: zlpixpremiado@pix.com</p>
+        <button class="btn-azul">Copiar Chave Pix</button>
+        <button class="btn-verde">PAGAR AGORA</button>
+        <p class="info-sec">Receba seu bilhete por E-mail ou WhatsApp.</p>
+      </div>
+    </section>
   </main>
 
-  <footer class="rodape">
-    ZLPIX PREMIADO © 2025 — Todos os direitos reservados
+  <footer>
+    ZLPIX PREMIADO © 2025 — Todos os direitos reservados | Termos de Uso | Política de Privacidade
   </footer>
-
-  <script src="script.js"></script>
-</body>
-</html> html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZLPIX PREMIADO — Neon Edition</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-</head>
-
-<body class="fundo-gradiente">
-  <header>
-    <div class="logo">💎 ZLPIX PREMIADO</div>
-    <nav>
-      <a href="#" class="ativo">Aposta</a>
-      <a href="#">Resultado</a>
-      <a href="#">Ganhadores</a>
-      <a href="#">Histórico</a>
-      <a href="#">Adm</a>
-    </nav>
-  </header>
-
-  <main class="container-principal">
-    <div>
-      <div class="bloco bloco-destaque">
-        <div class="contador-regressivo">Sorteio em: <span id="contador"></span></div>
-        <div class="valor-premio">R$ 5.000.000</div>
-        <p>Escolha <strong>três dezenas</strong> de cada vez e confirme sua aposta.</p>
-      </div>
-
-      <div class="bloco">
-        <h3>Como funciona</h3>
-        <p>Selecione suas dezenas manualmente ou clique em <strong>Gerar Dezenas</strong> para escolher automaticamente.</p>
-        <div class="info-exemplo">Exemplo: Bilhete <strong>(12, 45, 89)</strong> — R$5,00</div>
-      </div>
-    </div>
-
-    <div class="bloco-sorteio">
-      <h3>Painel de Apostas</h3>
-      <div id="painel" class="painel-dezenas"></div>
-
-      <div class="botoes-acao">
-        <button id="gerar" class="botao btn-laranja">Gerar Dezenas</button>
-        <button id="desfazer" class="botao btn-rosa">Desfazer</button>
-        <button id="confirmar" class="botao btn-azul">Confirmar</button>
-      </div>
-
-      <div class="bloco-pagamento">
-        <h3>Pagamento PIX</h3>
-        <img src="assets/qr_placeholder.png" alt="QR Code Pix">
-        <p class="info-pix">Chave Pix: <span id="pixKey">zlpixpremiado@pix.com</span></p>
-        <button id="copiar" class="botao btn-verde">Copiar Chave Pix</button>
-      </div>
-    </div>
-  </main>
-
-  <footer class="rodape">
-    ZLPIX PREMIADO © 2025 — Todos os direitos reservados
-  </footer>
-
-  <script src="script.js"></script>
 </body>
 </html>
