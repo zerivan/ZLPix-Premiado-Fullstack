@@ -17,10 +17,10 @@ services:
   # === FRONTEND ===
   - type: web
     name: zlpix-frontend
-    env: static
-    rootDir: front-end
+    env: node
+    rootDir: font-end      # 👈 corrigido aqui
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    startCommand: npm run preview
     envVars:
       - key: NODE_VERSION
         value: 18.19.0
