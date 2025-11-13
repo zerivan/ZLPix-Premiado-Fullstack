@@ -1,1 +1,75 @@
-hfd
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>ZLPIX PREMIADO - Cadastro</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#2b2bee",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101022",
+          },
+          fontFamily: { display: ["Spline Sans"] },
+          borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+    }
+    body { min-height: max(884px, 100dvh); }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+  <div class="flex min-h-screen flex-col items-center justify-center px-4">
+    <div class="w-full max-w-md bg-white dark:bg-[#191933] rounded-2xl shadow-lg p-8 space-y-6">
+      <h1 class="text-2xl font-bold text-center text-slate-900 dark:text-white">Criar Conta</h1>
+      <form class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome completo</label>
+          <input type="text" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="Seu nome completo" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">E-mail</label>
+          <input type="email" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="exemplo@email.com" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Telefone</label>
+          <input type="tel" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="(00) 00000-0000" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">CPF</label>
+          <input type="text" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="000.000.000-00" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Senha</label>
+          <input type="password" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="••••••••" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar senha</label>
+          <input type="password" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-4 py-3 text-slate-900 dark:text-white" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="w-full flex justify-center items-center h-12 rounded-full bg-primary text-white font-bold text-lg hover:bg-primary/90 transition-all">
+          Criar conta
+        </button>
+      </form>
+      <p class="text-center text-slate-600 dark:text-slate-400 text-sm">
+        Já tem uma conta?
+        <a href="login.html" class="text-primary font-semibold hover:underline">Entrar</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
