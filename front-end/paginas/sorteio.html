@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZLPIX PREMIADO - Geração de Dezenas</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#00C853",
+            accent: "#FFD700",
+            "background-light": "#F5F5F5",
+            "background-dark": "#111122",
+            "card-dark": "#191933",
+            "card-light": "#FFFFFF",
+            "text-dark-primary": "#212121",
+            "text-light-primary": "#FFFFFF",
+            "text-dark-secondary": "#616161",
+            "text-light-secondary": "#9292c9",
+          },
+          fontFamily: {
+            display: ["Spline Sans", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 24px;
+    }
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .number {
+      transition: all 0.2s ease-in-out;
+    }
+    .number.active {
+      transform: scale(1.2);
+      background-color: #00C853;
+      color: white;
+    }
+    .number.spin {
+      animation: spin 0.1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate
