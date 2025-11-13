@@ -4,7 +4,7 @@ services:
     name: zlpix-backend
     env: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
@@ -17,10 +17,10 @@ services:
   # === FRONTEND ===
   - type: web
     name: zlpix-frontend
-    env: node
-    rootDir: front-end       # ✅ agora está igual à pasta correta
-    buildCommand: cd front-end && npm install && npm run build
-    startCommand: npm run preview
+    env: static
+    rootDir: front-end
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
         value: 18.19.0
