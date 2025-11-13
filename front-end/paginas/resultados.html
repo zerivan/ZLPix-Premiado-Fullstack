@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZLPIX PREMIADO - Resultados dos Sorteios</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00C853", // Green for ZLPIX
+                        "background-light": "#F5F5F5",
+                        "background-dark": "#111122",
+                        "card-dark": "#191933",
+                        "card-light": "#FFFFFF",
+                        "text-dark-primary": "#212121",
+                        "text-light-primary": "#FFFFFF",
+                        "text-dark-secondary": "#616161",
+                        "text-light-secondary": "#9292c9",
+                        "accent": "#FFD700" // Gold/Yellow
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 24px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+<div class="flex items-center p-4">
+<div class="text-text-dark-primary dark:text-text-light-primary flex size-12 shrink-0 items-center justify-start">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<h1 class="text-text-dark-primary dark:text-text-light-primary text-xl font-bold leading-tight tracking-tight flex-1 text-center">Resultados dos Sorteios</h1>
+<div class="flex size-12 shrink-0 items-center"></div> <!-- Spacer -->
+</div>
+<!-- Search Bar -->
+<div class="px-4 pb-4">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-full h-full">
+<div class="text-text-dark-secondary dark:text-text-light-secondary flex border-none bg-black/5 dark:bg-white/5 items-center justify-center pl-4 rounded-l-full border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-full text-text-dark-primary dark:text-text-light-primary focus:outline-0 focus:ring-0 border-none bg-black/5 dark:bg-white/5 h-full placeholder:text-text-dark-secondary placeholder:dark:text-text-light-secondary px-4 text-base font-normal leading-normal" placeholder="Buscar por nome, número ou data" value=""/>
+</div>
+</label>
+</div>
+</header>
+<!-- Main Content - List of Cards -->
+<main class="flex flex-col gap-4 p-4 pt-0">
+<!-- Card 1 -->
+<div class="flex flex-col items-stretch justify-start rounded-lg bg-card-light dark:bg-card-dark shadow-sm">
+<div class="p-4">
+<div class="flex items-center justify-between gap-4">
+<div>
+<p class="text-sm font-medium text-text-dark-secondary dark:text-text-light-secondary">Sorteio #102 - 15/08/2024</p>
+<p class="text-lg font-bold leading-tight tracking-tight text-text-dark-primary dark:text-text-light-primary">Especial de Aniversário - Carro 0km</p>
+</div>
+<button class="flex items-center justify-center text-text-dark-secondary dark:text-text-light-secondary">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+<div class="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 p-4">
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">12</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">25</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">33</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">47</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">51</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">60</span>
+</div>
+</div>
+<div class="border-t border-black/10 dark:border-white/10 p-4">
+<p class="mb-3 text-base font-bold text-text-dark-primary dark:text-text-light-primary">Ganhadores</p>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<p class="font-semibold text-text-dark-primary dark:text-text-light-primary">Carlos M.</p>
+<p class="text-sm text-text-dark-secondary dark:text-text-light-secondary">São Paulo, SP</p>
+</div>
+<div class="flex items-center gap-2 rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-accent-dark dark:text-accent">
+<span class="material-symbols-outlined !text-base">emoji_events</span>
+<span>Fiat Mobi 0km</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="flex flex-col items-stretch justify-start rounded-lg bg-card-light dark:bg-card-dark shadow-sm">
+<div class="p-4">
+<div class="flex items-center justify-between gap-4">
+<div>
+<p class="text-sm font-medium text-text-dark-secondary dark:text-text-light-secondary">Sorteio #101 - 08/08/2024</p>
+<p class="text-lg font-bold leading-tight tracking-tight text-text-dark-primary dark:text-text-light-primary">Sorteio Semanal - R$5.000 no PIX</p>
+</div>
+<button class="flex items-center justify-center text-text-dark-secondary dark:text-text-light-secondary">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+<div class="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 p-4">
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">05</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">18</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">29</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">31</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">42</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">55</span>
+</div>
+</div>
+<button class="m-4 mt-0 flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full h-12 px-4 bg-primary text-white text-base font-bold leading-normal">
+<span class="truncate">Ver Ganhadores</span>
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+<!-- Card 3 -->
+<div class="flex flex-col items-stretch justify-start rounded-lg bg-card-light dark:bg-card-dark shadow-sm">
+<div class="p-4">
+<div class="flex items-center justify-between gap-4">
+<div>
+<p class="text-sm font-medium text-text-dark-secondary dark:text-text-light-secondary">Sorteio #100 - 01/08/2024</p>
+<p class="text-lg font-bold leading-tight tracking-tight text-text-dark-primary dark:text-text-light-primary">Sorteio Centenário - Moto Elétrica</p>
+</div>
+<button class="flex items-center justify-center text-text-dark-secondary dark:text-text-light-secondary">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+<div class="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg bg-black/5 dark:bg-white/5 p-4">
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">07</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">11</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">23</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">39</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">44</span>
+<span class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-background-dark text-lg font-bold text-primary">58</span>
+</div>
+</div>
+<div class="border-t border-black/10 dark:border-white/10 p-4">
+<p class="mb-3 text-base font-bold text-text-dark-primary dark:text-text-light-primary">Ganhadores</p>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<p class="font-semibold text-text-dark-primary dark:text-text-light-primary">Juliana A.</p>
+<p class="text-sm text-text-dark-secondary dark:text-text-light-secondary">Recife, PE</p>
+</div>
+<div class="flex items-center gap-2 rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-accent-dark dark:text-accent">
+<span class="material-symbols-outlined !text-base">emoji_events</span>
+<span>Moto Elétrica</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
