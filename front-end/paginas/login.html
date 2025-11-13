@@ -1,74 +1,227 @@
-<!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZLPIX PREMIADO - Login</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin — Login | ZLPIX Premiado</title>
 
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <!-- Minimal reset + font -->
+  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0f1220;
+      --card:#141622;
+      --muted:#9aa0be;
+      --accent:#00d28a; /* neon green */
+      --accent-2:#2be7b3;
+      --glass: rgba(255,255,255,0.03);
+      --danger:#ff6b6b;
+      --radius:14px;
+      --shadow: 0 8px 30px rgba(3,6,23,0.6);
+      font-family: "Spline Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: linear-gradient(180deg, #070816 0%, var(--bg) 100%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:28px;
+      align-items:center;
+    }
+
+    /* Left: branding / promo */
+    .side{
+      padding:28px;
+      border-radius:var(--radius);
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow:var(--shadow);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .logo{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo-badge{
+      width:66px;height:66px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;color:#07121a;font-size:20px;
+      box-shadow: 0 6px 18px rgba(0,210,138,0.16), inset 0 -6px 12px rgba(0,0,0,0.25);
+    }
+    h1{ margin: 12px 0 0; font-size:20px; letter-spacing: -0.01em; }
+    p.lead{ color:var(--muted); margin-top:12px; line-height:1.5 }
+
+    .features{ margin-top:22px; display:grid; gap:10px }
+    .feature{ display:flex; gap:12px; align-items:flex-start; color:var(--muted) }
+    .dot{ width:10px;height:10px;border-radius:50%; background:var(--accent); margin-top:6px; box-shadow:0 6px 18px rgba(0,210,138,0.12) }
+
+    /* Right: card */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:26px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow: var(--shadow);
+    }
+    .card h2{ margin:0 0 10px; font-size:18px; }
+    .muted{ color:var(--muted); font-size:13px; margin-bottom:16px; }
+
+    .form-row{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+    label{ font-size:13px; color:var(--muted) }
+    input[type="text"], input[type="password"]{
+      background:var(--glass);
+      border:1px solid rgba(255,255,255,0.03);
+      padding:12px 14px;
+      border-radius:12px;
+      color: #eaf6f0;
+      font-size:15px;
+      outline: none;
+      transition: box-shadow .18s, transform .12s, border-color .12s;
+    }
+    input:focus{
+      box-shadow: 0 6px 22px rgba(0,210,138,0.08);
+      border-color: rgba(0,210,138,0.5);
+      transform: translateY(-1px);
+    }
+
+    .row-inline{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .checkbox { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px }
+
+    .btn{
+      display:inline-flex; align-items:center; gap:10px;
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      padding:12px 14px; border-radius:12px; color:#07121a; font-weight:700;
+      border:none; cursor:pointer; box-shadow: 0 10px 30px rgba(0,210,138,0.12);
+      transition: transform .12s ease, filter .12s;
+    }
+    .btn:active{ transform: translateY(1px) scale(.997) }
+    .btn.ghost{
+      background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); font-weight:600;
+      box-shadow:none;
+    }
+
+    .help{ font-size:13px; color:var(--muted); margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+
+    .error{ color:var(--danger); font-size:13px; margin-top:6px; display:none; }
+
+    /* small */
+    @media (max-width:980px){
+      .wrap{ grid-template-columns:1fr; max-width:520px }
+      .logo-badge{ width:54px; height:54px }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Promo / Branding -->
+    <aside class="side" aria-hidden="true">
+      <div class="logo">
+        <div class="logo-badge">ZL</div>
+        <div>
+          <div style="font-weight:700;font-size:16px">ZLPIX PREMIADO</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px">Painel de administração</div>
+        </div>
+      </div>
+
+      <h1>Controle rápido e seguro</h1>
+      <p class="lead">Acesse o painel para gerenciar sorteios, bilhetes, e visualizar logs de pagamento. Layout pensado para mobile e desktop.</p>
+
+      <div class="features">
+        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Temas</strong><div style="font-size:13px;color:var(--muted)">Mudar paleta, botões e contraste</div></div></div>
+        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Notificações</strong><div style="font-size:13px;color:var(--muted)">Alertas em tempo real</div></div></div>
+        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Logs</strong><div style="font-size:13px;color:var(--muted)">Acesso e ações</div></div></div>
+      </div>
+    </aside>
+
+    <!-- Login card -->
+    <form class="card" id="loginForm" onsubmit="return handleLogin(event)">
+      <h2>Entrar no Painel</h2>
+      <div class="muted">Use um usuário administrativo válido</div>
+
+      <div class="form-row">
+        <label for="user">E-mail ou usuário</label>
+        <input id="user" name="user" type="text" autocomplete="username" placeholder="admin@exemplo.com" required />
+      </div>
+
+      <div class="form-row">
+        <label for="pass">Senha</label>
+        <input id="pass" name="pass" type="password" autocomplete="current-password" placeholder="••••••••" required />
+      </div>
+
+      <div class="row-inline">
+        <label class="checkbox"><input id="remember" type="checkbox" /> Manter conectado</label>
+        <a class="muted" href="#" onclick="alert('Recuperação de senha ainda não implementada.');return false">Esqueci a senha</a>
+      </div>
+
+      <div id="error" class="error">Usuário ou senha inválidos.</div>
+
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button type="submit" class="btn">Entrar</button>
+        <button type="button" class="btn ghost" onclick="location.href='../index.html'">Voltar ao site</button>
+      </div>
+
+      <div class="help">
+        <div style="color:var(--muted)">Versão: <strong>1.0.0</strong></div>
+        <div style="color:var(--muted)">Último acesso: —</div>
+      </div>
+    </form>
+  </div>
 
   <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: "#00C853",
-            accent: "#FFD700",
-            "background-light": "#F5F5F5",
-            "background-dark": "#111122",
-            "text-dark-primary": "#212121",
-            "text-light-primary": "#FFFFFF"
-          },
-          fontFamily: {
-            display: ["Spline Sans", "sans-serif"]
-          }
-        }
+    // Demo login: replace with real auth endpoint later
+    const MOCK_USER = { user: "admin@exemplo.com", pass: "senha123" };
+
+    function showError(msg){
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(()=> el.style.opacity = 1, 10);
+    }
+
+    function handleLogin(ev){
+      ev.preventDefault();
+      document.getElementById('error').style.display = 'none';
+      const u = document.getElementById('user').value.trim();
+      const p = document.getElementById('pass').value;
+
+      // simple client-side validation
+      if(u.length < 3 || p.length < 4){
+        showError('Preencha usuário e senha corretamente.');
+        return false;
       }
+
+      // demo auth (replace this with fetch to backend)
+      if(u === MOCK_USER.user && p === MOCK_USER.pass){
+        // optionally persist a token
+        localStorage.setItem('zl_admin', JSON.stringify({ user:u, loggedAt: Date.now()}));
+        // nice success pulse before redirect
+        document.querySelector('.btn').textContent = 'Entrando...';
+        setTimeout(()=> {
+          window.location.href = 'index.html'; // admin index (criar depois)
+        }, 700);
+        return false;
+      }
+
+      showError('Usuário ou senha inválidos.');
+      return false;
     }
   </script>
-</head>
-
-<body class="bg-background-light dark:bg-background-dark font-display flex flex-col items-center justify-center min-h-screen p-6">
-  <div class="bg-card-light dark:bg-card-dark shadow-md rounded-2xl p-8 w-full max-w-sm">
-    <h1 class="text-2xl font-bold text-center text-primary mb-6">Entrar na Conta</h1>
-
-    <form class="flex flex-col gap-4">
-      <div>
-        <label class="block text-sm font-medium text-text-dark-primary dark:text-text-light-primary mb-1">
-          E-mail
-        </label>
-        <input type="email" placeholder="seuemail@exemplo.com"
-               class="w-full rounded-full border-none bg-black/5 dark:bg-white/10 px-4 py-3 text-text-dark-primary dark:text-text-light-primary focus:ring-2 focus:ring-primary focus:outline-none">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-text-dark-primary dark:text-text-light-primary mb-1">
-          Senha
-        </label>
-        <input type="password" placeholder="********"
-               class="w-full rounded-full border-none bg-black/5 dark:bg-white/10 px-4 py-3 text-text-dark-primary dark:text-text-light-primary focus:ring-2 focus:ring-primary focus:outline-none">
-      </div>
-
-      <button type="submit"
-              class="mt-4 w-full bg-primary text-white font-bold py-3 rounded-full hover:bg-green-600 transition">
-        Entrar
-      </button>
-    </form>
-
-    <p class="text-center text-sm text-text-dark-secondary dark:text-text-light-secondary mt-6">
-      Não tem uma conta?
-      <a href="cadastro.html" class="text-primary font-semibold hover:underline">Cadastre-se</a>
-    </p>
-
-    <p class="text-center text-sm text-text-dark-secondary dark:text-text-light-secondary mt-4">
-      <a href="../index.html" class="flex items-center justify-center gap-1 text-primary hover:underline">
-        <span class="material-symbols-outlined text-base">arrow_back</span>
-        Voltar ao início
-      </a>
-    </p>
-  </div>
 </body>
 </html>
