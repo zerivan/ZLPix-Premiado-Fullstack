@@ -1,35 +1,339 @@
 <!DOCTYPE html>
-<html class="dark" lang="pt-BR">
+<html class="dark" lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ZLPIX PREMIADO - Seleção</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ZLPIX Premiado - Seleção de Números</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+  body { min-height: max(884px, 100dvh); }
+  /* coin particle */
+  .coin {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff6b3 0%, #ffd54a 35%, #ffb300 100%);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    pointer-events: none;
+    transform-origin: center;
+  }
+  /* simple sparkle for pop */
+  @keyframes popScale {
+    0% { transform: scale(.6); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .pop {
+    animation: popScale 280ms ease-out;
+  }
+  .slot {
+    min-width: 72px;
+    min-height: 72px;
+  }
+  .flashing { filter: brightness(1.25) saturate(1.05); transform: translateY(-3px); transition: transform .12s linear; }
+</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark">
+<div class="relative flex min-h-screen w-full flex-col">
+  <!-- Header -->
+  <header class="flex items-center justify-between p-4">
+    <div class="flex size-10 items-center justify-center rounded-full">
+      <span class="material-symbols-outlined text-2xl">arrow_back</span>
+    </div>
+    <h1 class="flex-1 text-center text-lg font-bold tracking-tight">Escolha seus números da sorte</h1>
+    <div id="progress" class="flex size-10 items-center justify-center rounded-full bg-chip-light dark:bg-chip-dark text-base font-bold">0/3</div>
+  </header>
 
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <!-- Top slots -->
+  <main class="flex-1 px-4 pt-4 pb-2">
+    <div class="flex justify-center gap-3 py-6">
+      <div id="slot1" class="slot flex items-center justify-center rounded-full border-2 border-primary bg-primary/10 text-2xl font-bold text-primary">--</div>
+      <div id="slot2" class="slot flex items-center justify-center rounded-full border-2 border-primary bg-primary/10 text-2xl font-bold text-primary">--</div>
+      <div id="slot3" class="slot flex items-center justify-center rounded-full border-2 border-primary bg-primary/10 text-2xl font-bold text-primary">--</div>
+    </div>
 
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: "#00C853",
-            "background-light": "#f6f6f8",
-            "background-dark": "#101022",
-            "text-light": "#333333",
-            "text-dark": "#E0E0E0",
-            "text-dark-muted": "#BDBDBD",
-            "border-dark": "#323267",
-            "surface-dark": "#191933"
-          },
-          fontFamily: {
-            display: ["Spline Sans", "sans-serif"]
-          },
-          borderRadius: {
-            DEFAULT: "1rem",
-            lg: "2rem",
-            xl: "3rem",
-            full: "9999px"
-          }
+    <!-- Actions -->
+    <div class="flex justify-center gap-4 py-6">
+      <button id="autoBtn" class="flex min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-full bg-secondary-action px-5 py-3 text-sm font-bold text-white shadow-lg">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        <span>Gerar Dezenas</span>
+      </button>
+      <button id="undoBtn" class="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 rounded-full bg-chip-light dark:bg-chip-dark px-5 py-3 text-sm font-bold">
+        <span class="material-symbols-outlined">undo</span>
+        <span>Desfazer</span>
+      </button>
+    </div>
+
+    <!-- Grid 00..99 -->
+    <div id="grid" class="grid grid-cols-10 gap-2 px-2">
+      <!-- JS irá popular a grade -->
+    </div>
+  </main>
+
+  <!-- Footer CTA -->
+  <footer class="sticky bottom-0 bg-background-light/80 p-4 pt-2 backdrop-blur-sm dark:bg-background-dark/80">
+    <button id="confirmBtn" class="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-base font-bold text-background-dark shadow-lg">Confirmar</button>
+  </footer>
+</div>
+
+<!-- container for coins -->
+<div id="particles" class="pointer-events-none fixed inset-0 z-50"></div>
+
+<script>
+/* ---------- LÓGICA DA SELEÇÃO E EFEITOS ---------- */
+
+const maxSelection = 3;
+let selected = []; // array de strings '00'..'99'
+
+const gridEl = document.getElementById('grid');
+const progressEl = document.getElementById('progress');
+const slotEls = [document.getElementById('slot1'), document.getElementById('slot2'), document.getElementById('slot3')];
+const autoBtn = document.getElementById('autoBtn');
+const undoBtn = document.getElementById('undoBtn');
+const confirmBtn = document.getElementById('confirmBtn');
+const particles = document.getElementById('particles');
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function updateSlots(){
+  for(let i=0;i<3;i++){
+    slotEls[i].textContent = selected[i] ?? '--';
+    if(selected[i]) { slotEls[i].classList.add('pop'); setTimeout(()=>slotEls[i].classList.remove('pop'), 350); }
+  }
+  progressEl.textContent = `${selected.length}/${maxSelection}`;
+}
+
+/* cria grade 00..99 */
+for(let i=0;i<100;i++){
+  const val = pad(i);
+  const cell = document.createElement('div');
+  cell.className = 'flex aspect-square cursor-pointer items-center justify-center rounded-full bg-chip-light dark:bg-chip-dark select-none';
+  cell.innerHTML = `<p class="font-medium">${val}</p>`;
+  cell.dataset.value = val;
+  cell.addEventListener('click', () => toggleSelect(cell));
+  gridEl.appendChild(cell);
+}
+
+function findCellEl(val){
+  return Array.from(gridEl.children).find(c => c.dataset.value === val);
+}
+
+function toggleSelect(cell){
+  const val = cell.dataset.value;
+  // se já selecionado — desmarca
+  const idx = selected.indexOf(val);
+  if(idx !== -1){
+    selected.splice(idx,1);
+    cell.classList.remove('bg-primary','text-background-dark','shadow-lg');
+    updateSlots();
+    return;
+  }
+  // se espaço disponível
+  if(selected.length < maxSelection){
+    selected.push(val);
+    cell.classList.add('bg-primary','text-background-dark','shadow-lg');
+    updateSlots();
+  } else {
+    // se já tem 3, dá um pequeno feedback (shake / flash)
+    flashSlots();
+  }
+}
+
+function flashSlots(){
+  slotEls.forEach(el => {
+    el.classList.add('flashing');
+    setTimeout(()=>el.classList.remove('flashing'), 350);
+  });
+}
+
+/* ---------- UNDO ---------- */
+undoBtn.addEventListener('click', () => {
+  if(selected.length === 0) return;
+  const val = selected.pop();
+  const cell = findCellEl(val);
+  if(cell) cell.classList.remove('bg-primary','text-background-dark','shadow-lg');
+  updateSlots();
+});
+
+/* ---------- SINTETIZADOR DE SOM (WebAudio) ---------- */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new (AudioCtx)();
+
+function playSpinSound(duration = 3000){
+  // cria um oscillator e faz sweep de frequência para dar sensação de "roleta"
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(220, audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + duration/1000);
+  g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.05, audioCtx.currentTime + 0.15);
+  // fade out no final
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration/1000);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + duration/1000 + 0.05);
+}
+
+function playCoinBurst(){
+  // vários "clicks" curtos para imitar moedas
+  const now = audioCtx.currentTime;
+  for(let i=0;i<8;i++){
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1200 - i*60, now + i*0.03);
+    g.gain.setValueAtTime(0.0001, now + i*0.03);
+    g.gain.linearRampToValueAtTime(0.1, now + i*0.03 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + i*0.03 + 0.12);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(now + i*0.03);
+    osc.stop(now + i*0.03 + 0.12);
+  }
+}
+
+/* ---------- PARTICLES DE MOEDAS ---------- */
+function spawnCoins(originX, originY, count=18){
+  const rect = particles.getBoundingClientRect();
+  for(let i=0;i<count;i++){
+    const c = document.createElement('div');
+    c.className = 'coin';
+    particles.appendChild(c);
+    // random direction
+    const angle = Math.random()*Math.PI - Math.PI/2; // para cima +/- 
+    const speed = 120 + Math.random()*240;
+    const vx = Math.cos(angle)*speed;
+    const vy = -Math.abs(Math.sin(angle))* (80 + Math.random()*220);
+    // start pos (page coords)
+    c.style.left = (originX - rect.left) + 'px';
+    c.style.top = (originY - rect.top) + 'px';
+    // animate with JS (requestAnimationFrame)
+    const start = performance.now();
+    const lifetime = 1100 + Math.random()*700;
+    const rot = (Math.random()>0.5?1:-1)*(200 + Math.random()*800);
+    (function animate(now){
+      const t = now - start;
+      const p = t / lifetime;
+      if(p >= 1){
+        c.remove();
+        return;
+      }
+      // simple physics + gravity
+      const x = vx * p;
+      const y = vy * p + 300 * p * p; // gravity
+      c.style.transform = `translate(${x}px, ${y}px) rotate(${rot * p}deg) scale(${1 - p*0.2})`;
+      c.style.opacity = `${1 - p}`;
+      requestAnimationFrame(animate);
+    })(start);
+  }
+}
+
+/* ---------- GERAÇÃO ALEATÓRIA (única, 3 dezenas, sem repetição) ---------- */
+function randomTicket(){
+  const pool = Array.from({length:100}, (_,i)=>pad(i));
+  // shuffle partially
+  for(let i=pool.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0,3);
+}
+
+/* ---------- ANIMAÇÃO "ROULETTE" e integração com audio/particles ---------- */
+let spinning = false;
+autoBtn.addEventListener('click', async () => {
+  if(spinning) return;
+  spinning = true;
+  // prioridade: se já tem 3 manualmente, substituir? aqui vamos substituir tudo pela geração.
+  // Se desejar manter manuais, pode comentar next line.
+  // selected = []; Array.from(gridEl.children).forEach(c=>c.classList.remove('bg-primary','text-background-dark','shadow-lg'));
+  // updateSlots();
+
+  // duração do spin (ms)
+  const duration = 3000;
+  const start = performance.now();
+
+  // toca som de spin (sintetizado)
+  // resume audio context se necessário (user gesture)
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  playSpinSound(duration);
+
+  // durante o spin: piscar números aleatórios nos slots
+  const flashInterval = 60; // ms
+  const intervalId = setInterval(()=> {
+    // escolhe números aleatórios para mostrar piscando
+    const a = pad(Math.floor(Math.random()*100));
+    const b = pad(Math.floor(Math.random()*100));
+    const c = pad(Math.floor(Math.random()*100));
+    slotEls[0].textContent = a;
+    slotEls[1].textContent = b;
+    slotEls[2].textContent = c;
+    slotEls.forEach(s => s.classList.add('flashing'));
+    setTimeout(()=>slotEls.forEach(s=>s.classList.remove('flashing')), 120);
+  }, flashInterval);
+
+  // anima também um destaque aleatório na grade (procura visual)
+  const highlightInterval = setInterval(()=>{
+    // remove todos highlights temporários
+    Array.from(gridEl.children).forEach(c => c.classList.remove('ring-2','ring-primary','scale-105'));
+    const idx = Math.floor(Math.random()*100);
+    const e = gridEl.children[idx];
+    e.classList.add('ring-2','ring-primary','scale-105');
+    setTimeout(()=>e.classList.remove('ring-2','ring-primary','scale-105'), 220);
+  }, 140);
+
+  // espera o tempo definido
+  await new Promise(res => setTimeout(res, duration));
+
+  // para animações
+  clearInterval(intervalId);
+  clearInterval(highlightInterval);
+  // gera ticket final
+  const ticket = randomTicket();
+  // atualiza seleção visual: limpa anteriores e marca novos
+  // limpa classes de seleção
+  Array.from(gridEl.children).forEach(c=>{
+    c.classList.remove('bg-primary','text-background-dark','shadow-lg');
+  });
+  selected = [];
+  // marca
+  ticket.forEach(v=>{
+    selected.push(v);
+    const cell = findCellEl(v);
+    if(cell) cell.classList.add('bg-primary','text-background-dark','shadow-lg');
+  });
+  // efeito pop nos slots
+  for(let i=0;i<3;i++){
+    slotEls[i].textContent = ticket[i];
+    slotEls[i].classList.add('pop');
+    setTimeout(()=>slotEls[i].classList.remove('pop'), 420);
+  }
+  updateSlots();
+
+  // spawn coins (use center of top slots area)
+  const rect = slotEls[1].getBoundingClientRect();
+  spawnCoins(rect.left + rect.width/2, rect.top + rect.height/2, 20);
+  // play coin sound
+  playCoinBurst();
+
+  spinning = false;
+});
+
+/* ---------- Confirm: apenas demonstração ---------- */
+confirmBtn.addEventListener('click', () => {
+  if(selected.length < 1){
+    flashSlots();
+    return alert('Selecione ou gere pelo menos 1 dezena antes de confirmar.');
+  }
+  alert('Bilhete confirmado: ' + selected.join(', '));
+});
+
+/* ---------- Inicialização ---------- */
+updateSlots();
+</script>
+</body>
+</html>
