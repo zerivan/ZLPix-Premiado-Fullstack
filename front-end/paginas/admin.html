@@ -11,82 +11,96 @@
 
 <body>
 
-<div class="admin-container">
+    <!-- MENU PRINCIPAL -->
+    <div id="menu-principal"></div>
 
-    <h1>Painel Administrativo</h1>
+    <script>
+        // Carrega automaticamente o menu.html
+        fetch("../componentes/menu.html")
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById("menu-principal").innerHTML = html;
+            })
+            .catch(err => console.error("Erro ao carregar o menu:", err));
+    </script>
 
-    <!-- CARDS RÁPIDOS -->
-    <div class="card-grid">
+    <!-- CONTEÚDO DO ADMIN -->
+    <div class="admin-container">
 
-        <div class="card">
-            <h3>Total de Bilhetes</h3>
-            <p id="totalBilhetes">0</p>
-            <button class="btn" onclick="atualizarBilhetes()">Atualizar</button>
+        <h1>Painel Administrativo</h1>
+
+        <!-- CARDS RÁPIDOS -->
+        <div class="card-grid">
+
+            <div class="card">
+                <h3>Total de Bilhetes</h3>
+                <p id="totalBilhetes">0</p>
+                <button class="btn" onclick="atualizarBilhetes()">Atualizar</button>
+            </div>
+
+            <div class="card">
+                <h3>Sorteio Atual</h3>
+                <p id="sorteioAtual">Carregando...</p>
+                <button class="btn" onclick="carregarSorteio()">Ver Sorteio</button>
+            </div>
+
+            <div class="card">
+                <h3>Usuários Registrados</h3>
+                <p id="totalUsers">0</p>
+                <button class="btn" onclick="carregarUsers()">Atualizar</button>
+            </div>
+
+            <div class="card">
+                <h3>Configurações</h3>
+                <button class="btn" onclick="abrirConfig()">Abrir</button>
+            </div>
+
         </div>
 
-        <div class="card">
-            <h3>Sorteio Atual</h3>
-            <p id="sorteioAtual">Carregando...</p>
-            <button class="btn" onclick="carregarSorteio()">Ver Sorteio</button>
-        </div>
+        <!-- LISTA DE BILHETES -->
+        <h2 class="section-title">Lista de Bilhetes</h2>
+        <input type="text" class="neon-input" placeholder="Buscar bilhete..." onkeyup="buscarBilhete(this.value)">
 
-        <div class="card">
-            <h3>Usuários Registrados</h3>
-            <p id="totalUsers">0</p>
-            <button class="btn" onclick="carregarUsers()">Atualizar</button>
-        </div>
-
-        <div class="card">
-            <h3>Configurações</h3>
-            <button class="btn" onclick="abrirConfig()">Abrir</button>
-        </div>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Número</th>
+                <th>Usuário</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="listaBilhetes">
+            <tr>
+                <td colspan="4">Nenhum dado carregado</td>
+            </tr>
+            </tbody>
+        </table>
 
     </div>
 
-    <!-- LISTA DE BILHETES -->
-    <h2 class="section-title">Lista de Bilhetes</h2>
-    <input type="text" class="neon-input" placeholder="Buscar bilhete..." onkeyup="buscarBilhete(this.value)">
+    <!-- Arquivo JS separado futuramente -->
+    <script>
+        function atualizarBilhetes() {
+            alert("Aqui vai carregar a API real dos bilhetes.");
+        }
 
-    <table>
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Número</th>
-            <th>Usuário</th>
-            <th>Status</th>
-        </tr>
-        </thead>
-        <tbody id="listaBilhetes">
-        <tr>
-            <td colspan="4">Nenhum dado carregado</td>
-        </tr>
-        </tbody>
-    </table>
+        function carregarSorteio() {
+            alert("Aqui vai exibir o sorteio atual.");
+        }
 
-</div>
+        function carregarUsers() {
+            alert("Aqui vai carregar o total de usuários.");
+        }
 
-<!-- Arquivo JS separado futuramente -->
-<script>
-    function atualizarBilhetes() {
-        alert("Aqui vai carregar a API real dos bilhetes.");
-    }
+        function abrirConfig() {
+            alert("Tela de configurações será adicionada em seguida.");
+        }
 
-    function carregarSorteio() {
-        alert("Aqui vai exibir o sorteio atual.");
-    }
-
-    function carregarUsers() {
-        alert("Aqui vai carregar o total de usuários.");
-    }
-
-    function abrirConfig() {
-        alert("Tela de configurações será adicionada em seguida.");
-    }
-
-    function buscarBilhete(txt) {
-        console.log("Busca:", txt);
-    }
-</script>
+        function buscarBilhete(txt) {
+            console.log("Busca:", txt);
+        }
+    </script>
 
 </body>
 </html>
