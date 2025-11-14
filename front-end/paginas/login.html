@@ -1,258 +1,111 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin — Login | ZLPIX Premiado</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - ZLPix Premiado</title>
 
-  <!-- Minimal reset + font -->
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0b0b0b;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-  <style>
-    :root{
-      --bg:#0f1220;
-      --card:#141622;
-      --muted:#9aa0be;
-      --accent:#00d28a; /* neon green */
-      --accent-2:#2be7b3;
-      --glass: rgba(255,255,255,0.03);
-      --danger:#ff6b6b;
-      --radius:14px;
-      --shadow: 0 8px 30px rgba(3,6,23,0.6);
-      font-family: "Spline Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
+        .container {
+            width: 90%;
+            max-width: 360px;
+            background: #111;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #00ffbb88;
+            text-align: center;
+        }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background: linear-gradient(180deg, #070816 0%, var(--bg) 100%);
-      color:#e6eef6;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-    }
+        h2 {
+            margin-bottom: 20px;
+            color: #00ffbb;
+        }
 
-    .wrap{
-      width:100%;
-      max-width:980px;
-      display:grid;
-      grid-template-columns: 1fr 420px;
-      gap:28px;
-      align-items:center;
-    }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            background: #222;
+            color: #fff;
+            font-size: 1rem;
+        }
 
-    /* Left: branding / promo */
-    .side{
-      padding:28px;
-      border-radius:var(--radius);
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      box-shadow:var(--shadow);
-      border: 1px solid rgba(255,255,255,0.03);
-    }
-    .logo{
-      display:flex;
-      gap:12px;
-      align-items:center;
-    }
-    .logo-badge{
-      width:66px;height:66px;border-radius:12px;
-      background:linear-gradient(135deg,var(--accent),var(--accent-2));
-      display:flex;align-items:center;justify-content:center;
-      font-weight:700;color:#07121a;font-size:20px;
-      box-shadow: 0 6px 18px rgba(0,210,138,0.16), inset 0 -6px 12px rgba(0,0,0,0.25);
-    }
-    h1{ margin: 12px 0 0; font-size:20px; letter-spacing: -0.01em; }
-    p.lead{ color:var(--muted); margin-top:12px; line-height:1.5 }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00ffbb;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #000;
+        }
 
-    .features{ margin-top:22px; display:grid; gap:10px }
-    .feature{ display:flex; gap:12px; align-items:flex-start; color:var(--muted) }
-    .dot{ width:10px;height:10px;border-radius:50%; background:var(--accent); margin-top:6px; box-shadow:0 6px 18px rgba(0,210,138,0.12) }
+        button:hover {
+            background: #00e6aa;
+        }
 
-    /* Right: card */
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      padding:26px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,0.03);
-      box-shadow: var(--shadow);
-    }
-    .card h2{ margin:0 0 10px; font-size:18px; }
-    .muted{ color:var(--muted); font-size:13px; margin-bottom:16px; }
-
-    .form-row{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
-    label{ font-size:13px; color:var(--muted) }
-    input[type="text"], input[type="password"]{
-      background:var(--glass);
-      border:1px solid rgba(255,255,255,0.03);
-      padding:12px 14px;
-      border-radius:12px;
-      color: #eaf6f0;
-      font-size:15px;
-      outline: none;
-      transition: box-shadow .18s, transform .12s, border-color .12s;
-    }
-    input:focus{
-      box-shadow: 0 6px 22px rgba(0,210,138,0.08);
-      border-color: rgba(0,210,138,0.5);
-      transform: translateY(-1px);
-    }
-
-    .row-inline{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; }
-    .checkbox { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px }
-
-    .btn{
-      display:inline-flex; align-items:center; gap:10px;
-      background: linear-gradient(90deg,var(--accent),var(--accent-2));
-      padding:12px 14px; border-radius:12px; color:#07121a; font-weight:700;
-      border:none; cursor:pointer; box-shadow: 0 10px 30px rgba(0,210,138,0.12);
-      transition: transform .12s ease, filter .12s;
-    }
-    .btn:active{ transform: translateY(1px) scale(.997) }
-    .btn.ghost{
-      background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); font-weight:600;
-      box-shadow:none;
-    }
-
-    .help{ font-size:13px; color:var(--muted); margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
-
-    .error{ color:var(--danger); font-size:13px; margin-top:6px; display:none; }
-
-    /* small */
-    @media (max-width:980px){
-      .wrap{ grid-template-columns:1fr; max-width:520px }
-      .logo-badge{ width:54px; height:54px }
-    }
-  </style>
+        .link {
+            margin-top: 15px;
+            display: block;
+            color: #00ffbb;
+            text-decoration: none;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <!-- Promo / Branding -->
-    <aside class="side" aria-hidden="true">
-      <div class="logo">
-        <div class="logo-badge">ZL</div>
-        <div>
-          <div style="font-weight:700;font-size:16px">ZLPIX PREMIADO</div>
-          <div style="color:var(--muted);font-size:13px;margin-top:4px">Painel de administração</div>
-        </div>
-      </div>
 
-      <h1>Controle rápido e seguro</h1>
-      <p class="lead">Acesse o painel para gerenciar sorteios, bilhetes, e visualizar logs de pagamento. Layout pensado para mobile e desktop.</p>
+    <div class="container">
+        <h2>Entrar</h2>
 
-      <div class="features">
-        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Temas</strong><div style="font-size:13px;color:var(--muted)">Mudar paleta, botões e contraste</div></div></div>
-        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Notificações</strong><div style="font-size:13px;color:var(--muted)">Alertas em tempo real</div></div></div>
-        <div class="feature"><div class="dot"></div><div><strong style="color:#fff">Logs</strong><div style="font-size:13px;color:var(--muted)">Acesso e ações</div></div></div>
-      </div>
-    </aside>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="senha" placeholder="Senha" />
 
-    <!-- Login card -->
-    <form class="card" id="loginForm" onsubmit="return handleLogin(event)">
-      <h2>Entrar no Painel</h2>
-      <div class="muted">Use um usuário administrativo válido</div>
+        <button onclick="fazerLogin()">Login</button>
 
-      <div class="form-row">
-        <label for="user">E-mail ou usuário</label>
-        <input id="user" name="user" type="text" autocomplete="username" placeholder="admin@exemplo.com" required />
-      </div>
+        <a class="link" href="cadastro.html">Criar conta</a>
+        <a class="link" href="index.html">Voltar ao início</a>
+    </div>
 
-      <div class="form-row">
-        <label for="pass">Senha</label>
-        <input id="pass" name="pass" type="password" autocomplete="current-password" placeholder="••••••••" required />
-      </div>
+    <!-- ============================= -->
+    <!--   SCRIPT DO LOGIN FICA AQUI   -->
+    <!-- ============================= -->
+    <script>
+        function fazerLogin() {
+            const email = document.getElementById("email").value.trim();
+            const senha = document.getElementById("senha").value.trim();
 
-      <div class="row-inline">
-        <label class="checkbox"><input id="remember" type="checkbox" /> Manter conectado</label>
-        <a class="muted" href="#" onclick="alert('Recuperação de senha ainda não implementada.');return false">Esqueci a senha</a>
-      </div>
+            if (email === "" || senha === "") {
+                alert("Preencha todos os campos!");
+                return;
+            }
 
-      <div id="error" class="error">Usuário ou senha inválidos.</div>
+            // Simulação de login (futuramente será conectado ao backend)
+            if (email === "admin@teste.com" && senha === "1234") {
+                alert("Login realizado!");
+                window.location.href = "resultados.html";
+            } else {
+                alert("Email ou senha incorretos!");
+            }
+        }
+    </script>
 
-      <div style="display:flex;gap:12px;margin-top:8px">
-        <button type="submit" class="btn">Entrar</button>
-        <button type="button" class="btn ghost" onclick="location.href='../index.html'">Voltar ao site</button>
-      </div>
-
-      <div class="help">
-        <div style="color:var(--muted)">Versão: <strong>1.0.0</strong></div>
-        <div style="color:var(--muted)">Último acesso: —</div>
-      </div>
-    </form>
-  </div>
-<!-- LAYOUT DO PAINEL -->
-<div class="admin-layout">
-
-    <!-- MENU LATERAL -->
-    <aside class="sidebar">
-        <h2>Painel Admin</h2>
-        <nav>
-            <ul>
-                <li>⚙️ Aparência</li>
-                <li>🎨 Paleta de Cores</li>
-                <li>🔤 Tipografia</li>
-                <li>🔘 Botões</li>
-                <li>📦 Componentes</li>
-                <li>🧩 Widgets</li>
-                <li>🔔 Sons & Efeitos</li>
-                <li>🗂 Gerenciar Telas</li>
-            </ul>
-        </nav>
-    </aside>
-
-    <!-- ÁREA PRINCIPAL -->
-    <main class="content">
-        <header>
-            <h1>Configurações Gerais</h1>
-        </header>
-
-        <section id="painelConteudo">
-            <p>Selecione uma opção no menu para começar.</p>
-        </section>
-    </main>
-
-</div>
-  <script>
-    // Demo login: replace with real auth endpoint later
-    const MOCK_USER = { user: "admin@exemplo.com", pass: "senha123" };
-
-    function showError(msg){
-      const el = document.getElementById('error');
-      el.textContent = msg;
-      el.style.display = 'block';
-      setTimeout(()=> el.style.opacity = 1, 10);
-    }
-
-    function handleLogin(ev){
-      ev.preventDefault();
-      document.getElementById('error').style.display = 'none';
-      const u = document.getElementById('user').value.trim();
-      const p = document.getElementById('pass').value;
-
-      // simple client-side validation
-      if(u.length < 3 || p.length < 4){
-        showError('Preencha usuário e senha corretamente.');
-        return false;
-      }
-
-      // demo auth (replace this with fetch to backend)
-      if(u === MOCK_USER.user && p === MOCK_USER.pass){
-        // optionally persist a token
-        localStorage.setItem('zl_admin', JSON.stringify({ user:u, loggedAt: Date.now()}));
-        // nice success pulse before redirect
-        document.querySelector('.btn').textContent = 'Entrando...';
-        setTimeout(()=> {
-          window.location.href = 'index.html'; // admin index (criar depois)
-        }, 700);
-        return false;
-      }
-
-      showError('Usuário ou senha inválidos.');
-      return false;
-    }
-  </script>
 </body>
 </html>
