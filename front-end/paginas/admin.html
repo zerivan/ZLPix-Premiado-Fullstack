@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - ZLPix Premiado</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Google Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#00C853",
+                        "background-dark": "#0B0B0B",
+                        card: "#111111",
+                        card2: "#191919",
+                        neon: "#00FFBB"
+                    },
+                    fontFamily: {
+                        display: ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: #0B0B0B;
+        }
+        .material-symbols-outlined {
+            font-size: 24px;
+            font-variation-settings: 'wght' 400;
+        }
+    </style>
+</head>
+
+<body class="text-white font-display">
+
+<!-- ========================== -->
+<!--     MENU SUPERIOR (TOP BAR) -->
+<!-- ========================== -->
+<header class="w-full bg-[#111111]/90 backdrop-blur-md border-b border-[#00FFBB33] sticky top-0 z-50">
+    <div class="flex items-center justify-between px-4 py-3">
+        <h1 class="text-neon font-bold text-xl">ZLPix Painel Admin</h1>
+
+        <nav class="flex items-center gap-6 text-sm">
+            <a href="#" class="hover:text-neon flex items-center gap-1">
+                <span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+            <a href="#" class="hover:text-neon flex items-center gap-1">
+                <span class="material-symbols-outlined">confirmation_number</span>
+                Sorteios
+            </a>
+            <a href="#" class="hover:text-neon flex items-center gap-1">
+                <span class="material-symbols-outlined">group</span>
+                Usuários
+            </a>
+            <a href="#" class="hover:text-neon flex items-center gap-1">
+                <span class="material-symbols-outlined">settings</span>
+                Configurações
+            </a>
+
+            <button onclick="logout()" class="flex items-center gap-1 text-red-400 hover:text-red-300">
+                <span class="material-symbols-outlined">logout</span>
+                Sair
+            </button>
+        </nav>
+    </div>
+</header>
+
+<!-- ========================== -->
+<!--     CONTEÚDO PRINCIPAL      -->
+<!-- ========================== -->
+<main class="px-4 py-6 space-y-6">
+
+    <!-- CARD 1 -->
+    <div class="rounded-xl bg-card p-5 border border-[#00FFBB22] shadow">
+        <h2 class="text-lg font-bold text-neon mb-3">Resumo Geral</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+
+            <div class="bg-card2 p-4 rounded-xl border border-[#00FFBB22]">
+                <p class="text-sm text-gray-300">Total de Usuários</p>
+                <p class="text-2xl font-bold text-neon">1.254</p>
+            </div>
+
+            <div class="bg-card2 p-4 rounded-xl border border-[#00FFBB22]">
+                <p class="text-sm text-gray-300">Sorteios Ativos</p>
+                <p class="text-2xl font-bold text-neon">4</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CARD 2 -->
+    <div class="rounded-xl bg-card p-5 border border-[#00FFBB22] shadow">
+        <h2 class="text-lg font-bold text-neon mb-3">Últimas Atividades</h2>
+
+        <ul class="space-y-3 text-gray-300 text-sm">
+            <li>• Novo usuário cadastrado</li>
+            <li>• Bilhete #544 vendido</li>
+            <li>• Sorteio “Mega R$50.000” atualizado</li>
+            <li>• Usuário solicitou saque</li>
+        </ul>
+    </div>
+
+</main>
+
+<!-- ========================== -->
+<!--          SCRIPTS            -->
+<!-- ========================== -->
+<script>
+    function logout() {
+        alert("Saindo do painel...");
+        window.location.href = "login.html";
+    }
+</script>
+
+</body>
+</html>
