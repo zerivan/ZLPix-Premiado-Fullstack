@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+
+    <!-- Estilo neon -->
+    <style>
+        body {
+            background: #0b0f16;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #27ff72;
+            text-shadow: 0 0 10px #27ff72;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: #131a26;
+            border: 1px solid #1c2836;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #0d151f;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 15px #27ff72;
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            color: #27ff72;
+        }
+
+        .btn {
+            background: #27ff72;
+            color: #000;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #1aff60;
+        }
+
+        .section-title {
+            margin-top: 50px;
+            font-size: 22px;
+            color: #27ff72;
+            text-shadow: 0 0 10px #27ff72;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: #111722;
+        }
+
+        th, td {
+            border: 1px solid #222c3a;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #18212f;
+            color: #27ff72;
+        }
+
+        tr:hover {
+            background: #0f1621;
+        }
+
+        .neon-input {
+            background: #0f1621;
+            border: 1px solid #27ff72;
+            padding: 8px;
+            width: 100%;
+            color: #fff;
+            border-radius: 6px;
+        }
+
+        .neon-input:focus {
+            box-shadow: 0 0 10px #27ff72;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+
+    <h1>Painel Administrativo</h1>
+
+    <!-- CARDS RÁPIDOS -->
+    <div class="card-grid">
+
+        <div class="card">
+            <h3>Total de Bilhetes</h3>
+            <p id="totalBilhetes">0</p>
+            <button class="btn" onclick="atualizarBilhetes()">Atualizar</button>
+        </div>
+
+        <div class="card">
+            <h3>Sorteio Atual</h3>
+            <p id="sorteioAtual">Carregando...</p>
+            <button class="btn" onclick="carregarSorteio()">Ver Sorteio</button>
+        </div>
+
+        <div class="card">
+            <h3>Usuários Registrados</h3>
+            <p id="totalUsers">0</p>
+            <button class="btn" onclick="carregarUsers()">Atualizar</button>
+        </div>
+
+        <div class="card">
+            <h3>Configurações</h3>
+            <button class="btn" onclick="abrirConfig()">Abrir</button>
+        </div>
+
+    </div>
+
+    <!-- LISTA DE BILHETES -->
+    <h2 class="section-title">Lista de Bilhetes</h2>
+    <input type="text" class="neon-input" placeholder="Buscar bilhete..." onkeyup="buscarBilhete(this.value)">
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Número</th>
+            <th>Usuário</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody id="listaBilhetes">
+        <tr>
+            <td colspan="4">Nenhum dado carregado</td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Arquivo JS separado futuramente -->
+<script>
+    function atualizarBilhetes() {
+        alert("Aqui vai carregar a API real dos bilhetes.");
+    }
+
+    function carregarSorteio() {
+        alert("Aqui vai exibir o sorteio atual.");
+    }
+
+    function carregarUsers() {
+        alert("Aqui vai carregar o total de usuários.");
+    }
+
+    function abrirConfig() {
+        alert("Tela de configurações será adicionada em seguida.");
+    }
+
+    function buscarBilhete(txt) {
+        console.log("Busca:", txt);
+    }
+</script>
+
+</body>
+</html>
