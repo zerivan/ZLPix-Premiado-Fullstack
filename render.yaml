@@ -19,10 +19,5 @@ services:
     name: zlpix-frontend
     env: static
     rootDir: front-end
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: NODE_VERSION
-        value: 18.19.0
-    plan: free
+    staticPublishPath: .
     autoDeploy: true
