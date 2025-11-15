@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seleção - ZLPIX</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header>
+    <a href="../index.html">← Início</a>
+    <h1>Escolha suas dezenas</h1>
+  </header>
+
+  <main class="container">
+    <p id="status">Números selecionados: <span id="count">0</span>/3</p>
+    <div id="grid" class="grid-10"></div>
+
+    <div class="controls">
+      <button id="gerar">Gerar Dezenas</button>
+      <button id="desfazer">Desfazer</button>
+      <button id="confirmar">Confirmar (Gerar Bilhete)</button>
+    </div>
+  </main>
+
+  <script>
+  // Grid generator + seleção (simples)
+  const gridEl = document.getElementById('grid');
+  const countEl = document.getElementById('count');
+  let selected = [];
+
+  function renderGrid() {
+    gridEl.innerHTML = '';
+    for (let i=0;i<100;i++){
+      const num = i.toString().padStart(2,'0');
+      const cell = document.createElement('button');
+      cell.className = 'cell';
+      cell.textContent = num;
+      if (selected.includes(num)) cell.classList.add('selected');
+      cell.onclick = () => toggleNum(num, cell);
+      gridEl.appendChild(cell);
+    }
+  }
+  function toggleNum(num, cell){
+    if (selected.includes(num)) {
+      selected = selected.filter(n=>n!==num);
+      cell.classList.remove('selected');
+    } else {
+      if (selected.length>=3) return alert('Máx. 3 dezenas');
+      selected.push(num); cell.classList.add('selected');
+    }
+    countEl.textContent = selected.length;
+  }
+  document.getElementById('gerar').onclick = () => {
+    selected = [];
+    while(selected.length<3){
+      const r = String(Math.floor(Math.random()*100)).padStart(2,'0');
+      if (!selected.includes(r)) selected.push(r);
+    }
+    renderGrid();
+    countEl.textContent = selected.length;
+  };
+  document.getElementById('desfazer').onclick = () => {
+    selected.pop();
+    renderGrid();
+    countEl.textContent = selected.length;
+  };
+  document.getElementById('confirmar').onclick = () => {
+    if (selected.length!==3){ alert('Selecione 3 dezenas'); return; }
+    // salva o bilhete (localStorage) e vai para pagamento
+    localStorage.setItem('pending_ticket', JSON.stringify({numbers:selected, value:25, ts:Date.now()}));
+    location.href = '../pagamento.html';
+  };
+
+  renderGrid();
+  </script>
+</body>
+</html>
