@@ -1,151 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pagamento - ZLPIX</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header>
+    <a href="../paginas/selecao.html">← Voltar</a>
+    <h1>Pagamento Pix</h1>
+  </header>
 
-<html class="dark" lang="pt-BR"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ZLPIX Premiado - Finalizar Pagamento</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "primary": "#00B853",
-            "background-light": "#F5F5F5",
-            "background-dark": "#101022",
-            "accent": "#FFD700",
-            "text-light-primary": "#333333",
-            "text-dark-primary": "#FFFFFF",
-            "text-light-secondary": "#666666",
-            "text-dark-secondary": "#aab2c0",
-            "card-light": "#FFFFFF",
-            "card-dark": "#19192E"
-          },
-          fontFamily: {
-            "display": ["Spline Sans", "sans-serif"]
-          },
-          borderRadius: {
-            "DEFAULT": "1rem",
-            "lg": "1.5rem",
-            "xl": "2rem",
-            "full": "9999px"
-          },
-        },
-      },
-    }
+  <main class="container">
+    <!-- Tela QR -->
+    <section id="screen-qr">
+      <h2>Resumo do pedido</h2>
+      <div id="ticket-summary"></div>
+      <div class="qr-box">
+        <img src="../assets/imgs/qr-placeholder.png" alt="QR Code" />
+      </div>
+      <p>Tempo restante: <span id="timer">10:00</span></p>
+      <button id="copiar">Copiar Chave</button>
+      <button id="ja-paguei" class="primary">Já paguei, confirmar</button>
+    </section>
+
+    <!-- Tela Confirmação (inicialmente escondida) -->
+    <section id="screen-confirm" style="display:none">
+      <div class="success">
+        <h2>Pagamento confirmado</h2>
+        <p>Bilhete gerado com sucesso!</p>
+        <p>Nº do bilhete: <span id="ticket-id"></span></p>
+      </div>
+      <a href="../index.html" class="btn">Voltar ao Início</a>
+      <a href="../paginas/bilhetes.html" class="btn">Meus Bilhetes</a>
+    </section>
+  </main>
+
+  <script>
+  // script simples para alternar telas e preencher dados do bilhete
+  const pending = JSON.parse(localStorage.getItem('pending_ticket')||'null');
+  const summaryEl = document.getElementById('ticket-summary');
+  const screenQR = document.getElementById('screen-qr');
+  const screenConfirm = document.getElementById('screen-confirm');
+  const ticketIdEl = document.getElementById('ticket-id');
+
+  if (!pending) {
+    summaryEl.innerHTML = '<p>Nenhum bilhete encontrado. Volte e selecione suas dezenas.</p>';
+    document.getElementById('ja-paguei').disabled = true;
+  } else {
+    summaryEl.innerHTML = `<p>Dezenas: ${pending.numbers.join(', ')}</p><p>Valor: R$ ${pending.value.toFixed(2)}</p>`;
+  }
+
+  document.getElementById('ja-paguei').onclick = () => {
+    // Simular confirmação: gerar id e mostrar tela de confirmação
+    const id = 'ZLPIX-'+Date.now().toString().slice(-6);
+    ticketIdEl.textContent = id;
+    // limpar pending e salvar em bilhetes
+    const storage = JSON.parse(localStorage.getItem('my_tickets')||'[]');
+    storage.push({...pending, id, createdAt: new Date().toISOString()});
+    localStorage.setItem('my_tickets', JSON.stringify(storage));
+    localStorage.removeItem('pending_ticket');
+    screenQR.style.display='none';
+    screenConfirm.style.display='block';
+  };
+
+  document.getElementById('copiar').onclick = () => {
+    navigator.clipboard?.writeText('CHAVE_PIX_EXEMPLO_000').then(()=> alert('Chave copiada!'));
+  };
   </script>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
-<body class="bg-background-light dark:bg-background-dark font-display">
-<div class="relative flex min-h-screen w-full flex-col">
-<!-- Top App Bar -->
-<header class="flex items-center p-4 pb-2 justify-between sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm z-10">
-<button class="flex size-10 shrink-0 items-center justify-center rounded-full text-text-light-primary dark:text-text-dark-primary">
-<span class="material-symbols-outlined text-2xl">arrow_back</span>
-</button>
-<h1 class="text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center text-text-light-primary dark:text-text-dark-primary">Finalize seu Pagamento</h1>
-<div class="size-10 shrink-0"></div>
-</header>
-<main class="flex-grow px-4 pb-6">
-<!-- Order Summary Card -->
-<section class="mt-4 rounded-lg bg-card-light dark:bg-card-dark p-4 shadow-sm">
-<h2 class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary mb-2">Resumo do Pedido</h2>
-<div class="flex items-center justify-between">
-<p class="text-base font-semibold text-text-light-primary dark:text-text-dark-primary">Sorteio BMW 320i</p>
-<p class="text-base font-semibold text-text-light-primary dark:text-text-dark-primary">1 Bilhete</p>
-</div>
-<div class="mt-3 pt-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-<p class="text-base font-bold text-text-light-primary dark:text-text-dark-primary">Total a pagar:</p>
-<p class="text-2xl font-bold text-primary">R$ 29,90</p>
-</div>
-</section>
-<!-- Headline & Timer -->
-<section class="mt-8">
-<h2 class="text-text-light-primary dark:text-text-dark-primary tracking-tight text-2xl font-bold leading-tight px-4 text-center">Este QR Code expira em:</h2>
-<div class="flex gap-3 py-4 max-w-sm mx-auto">
-<div class="flex grow basis-0 flex-col items-stretch gap-2">
-<div class="flex h-16 grow items-center justify-center rounded-lg px-3 bg-card-light dark:bg-card-dark shadow-sm">
-<p class="text-accent text-3xl font-bold leading-tight tracking-[-0.015em]">09</p>
-</div>
-<div class="flex items-center justify-center">
-<p class="text-text-light-secondary dark:text-text-dark-secondary text-xs font-normal leading-normal">Minutos</p>
-</div>
-</div>
-<div class="flex items-start pt-2 text-accent text-3xl font-bold">:</div>
-<div class="flex grow basis-0 flex-col items-stretch gap-2">
-<div class="flex h-16 grow items-center justify-center rounded-lg px-3 bg-card-light dark:bg-card-dark shadow-sm">
-<p class="text-accent text-3xl font-bold leading-tight tracking-[-0.015em]">59</p>
-</div>
-<div class="flex items-center justify-center">
-<p class="text-text-light-secondary dark:text-text-dark-secondary text-xs font-normal leading-normal">Segundos</p>
-</div>
-</div>
-</div>
-</section>
-<!-- QR Code -->
-<section class="flex w-full justify-center mt-2 p-4">
-<div class="w-full max-w-[280px] overflow-hidden rounded-xl bg-white p-4 shadow-lg">
-<div class="w-full bg-center bg-no-repeat bg-cover aspect-square" data-alt="QR Code for Pix payment" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBKpRwNpZIjLtUrKniVohrxBvq07_XmwTZY9N2D5bp8S87nBvElLlBgV8C8oxYnwPz3lypzrnVUMlD_Fgl9ejroNa-arw-78kGvxA72kcxuL1PaexKg7iN29iAT5nHsJb1p5LGAulH2tOHYtMCZnDOw3U7kFosDcrbs2qtpCSGyJQYHiid43EOJuj7_vSxgJwP4dtOSJ-dzvsw0vVUn2c5B2TCY_NHlE0U5JcqZC46I_IX-0KpoBbirevIAASnVA2oiroxYmR5AMEg");'></div>
-</div>
-</section>
-<!-- Copy Pix Key -->
-<section class="mt-4 px-2">
-<p class="text-center text-sm text-text-light-secondary dark:text-text-dark-secondary mb-3">Ou copie o código e pague no seu app</p>
-<div class="relative flex items-center justify-center rounded-full h-14 px-5 bg-card-light dark:bg-card-dark shadow-sm">
-<p class="font-mono text-sm text-text-light-secondary dark:text-text-dark-secondary truncate">00020126...br.gov.bcb.pix...5303986</p>
-</div>
-<div class="flex px-4 py-4">
-<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-5 flex-1 bg-primary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
-<span class="material-symbols-outlined">content_copy</span>
-<span class="truncate">Copiar Chave Pix</span>
-</button>
-</div>
-</section>
-<!-- Instructions -->
-<section class="mt-6">
-<div class="rounded-lg bg-card-light dark:bg-card-dark p-5">
-<h3 class="text-base font-bold text-text-light-primary dark:text-text-dark-primary mb-4">Como Pagar:</h3>
-<ol class="space-y-4">
-<li class="flex items-start gap-3">
-<div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-sm">1</div>
-<p class="flex-1 text-sm text-text-light-primary dark:text-text-dark-primary">Abra o app do seu banco e escolha a opção Pix.</p>
-</li>
-<li class="flex items-start gap-3">
-<div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-sm">2</div>
-<p class="flex-1 text-sm text-text-light-primary dark:text-text-dark-primary">Escaneie o QR Code ou use a chave 'Copia e Cola'.</p>
-</li>
-<li class="flex items-start gap-3">
-<div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-sm">3</div>
-<p class="flex-1 text-sm text-text-light-primary dark:text-text-dark-primary">Confirme o pagamento e pronto!</p>
-</li>
-</ol>
-</div>
-</section>
-<!-- Confirmation Section (Example State) -->
-<section class="mt-6 text-center">
-<div class="rounded-lg bg-primary/10 dark:bg-primary/20 p-6 border border-dashed border-primary/50">
-<div class="flex justify-center mb-4">
-<div class="flex size-16 items-center justify-center rounded-full bg-primary text-white">
-<span class="material-symbols-outlined text-4xl">check_circle</span>
-</div>
-</div>
-<h2 class="text-xl font-bold text-primary">Pagamento Aprovado!</h2>
-<p class="mt-2 text-sm text-text-light-primary dark:text-text-dark-primary">Seu bilhete foi enviado para o seu E-mail e WhatsApp. Boa sorte!</p>
-<div class="flex justify-center gap-4 mt-6">
-<button class="flex size-12 items-center justify-center rounded-full bg-white dark:bg-card-dark text-text-light-primary dark:text-text-dark-primary shadow-sm"><span class="material-symbols-outlined text-2xl">mail</span></button>
-<button class="flex size-12 items-center justify-center rounded-full bg-white dark:bg-card-dark text-text-light-primary dark:text-text-dark-primary shadow-sm"><span class="material-symbols-outlined text-2xl">sms</span></button>
-</div>
-</div>
-</section>
-</main>
-</div>
-</body></html>
+</body>
+</html>
