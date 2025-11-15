@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="pt-BR"><head>
+<html class="dark" lang="pt-BR">
+<head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>ZLPIX PREMIADO - Cadastro</title>
@@ -15,7 +15,7 @@
       theme: {
         extend: {
           colors: {
-            "primary": "#2b2bee",
+            "primary": "#2b2bee", /* Aqui usei o blue que estava no seu código original do cadastro.html */
             "background-light": "#f6f6f8",
             "background-dark": "#101022",
             "action-green": "#00B894",
@@ -50,20 +50,22 @@
       min-height: max(884px, 100dvh);
     }
   </style>
-  </head>
+</head>
 <body class="font-display bg-background-light dark:bg-background-dark">
 <div class="relative flex min-h-screen w-full flex-col items-center justify-center p-4">
 <div class="flex w-full max-w-md flex-col items-center">
 <!-- Logo -->
 <div class="mb-8">
-<div class="w-32 h-32 bg-center bg-no-repeat bg-contain" data-alt="Logotipo do ZLPIX PREMIADO, um trevo de quatro folhas estilizado com um cifrão no centro" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTZzkw-GFsW5OG_1HRkUbJaNvj8085dtqDKfHAjJhf5i3dudYG_QmuAro-RwrcRcTtO-0xI4ISUWI7GReI0AmdTlkkChtPxMOnj8nemgp_KhuxmOKh6WUlS3uXF8945-MKoWtADiXhFBC1Qa9PgwauBr9-w7WTrcSxw1VizIyyJeqQVJuqDbIBpKSCksbUFCQ4GNkWTTXyRH0Pe4U7KRWsBACeylTc7OtQElx_7y0nQzFYw0npXLFqHgIqCPXNnVfak4YCnujPcqI");'></div>
+<!-- ATENÇÃO: Caminho da imagem ajustado para assets/img/logo.png (relativo à frontend/pastas/) -->
+<div class="w-32 h-32 bg-center bg-no-repeat bg-contain" data-alt="Logotipo do ZLPIX PREMIADO" style='background-image: url("assets/img/logo.png");'></div>
 </div>
 <!-- Headline -->
 <h1 class="text-text-dark dark:text-white text-3xl font-bold leading-tight text-center mb-8">
         Crie sua Conta
       </h1>
 <!-- Form -->
-<form class="w-full space-y-4">
+<!-- ATENÇÃO: Adicionado onclick ao botão de submit para redirecionar para o index.html na raiz -->
+<form class="w-full space-y-4" onsubmit="event.preventDefault(); window.location.href='../../index.html';">
 <!-- Nome Completo -->
 <div class="relative">
 <label class="text-text-dark dark:text-gray-300 text-sm font-medium" for="fullName">Nome Completo</label>
@@ -108,11 +110,13 @@
 <div class="mt-8 text-center">
 <p class="text-sm text-gray-600 dark:text-gray-400">
           Já tem uma conta?
-          <a class="font-semibold text-action-green hover:underline" href="#">
+          <!-- ATENÇÃO: Link para "Faça Login" ajustado para login.html (na mesma pasta) -->
+<a class="font-semibold text-action-green hover:underline" href="login.html">
             Faça Login
           </a>
 </p>
 </div>
 </div>
 </div>
-</body></html>
+</body>
+</html>
