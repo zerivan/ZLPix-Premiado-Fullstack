@@ -19,5 +19,8 @@ services:
     name: zlpix-frontend
     env: static
     rootDir: front-end
-    staticPublishPath: .
+    staticPublishPath: "."
     autoDeploy: true
+    routes:
+      - src: "/(.*)"
+        dest: "/$1"
