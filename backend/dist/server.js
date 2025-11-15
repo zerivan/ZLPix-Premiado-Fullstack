@@ -1,24 +1,44 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const premioRoutes_js_1 = __importDefault(require("./routes/premioRoutes.js"));
-dotenv_1.default.config();
-const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-// ✅ Rota inicial
-app.get("/", (req, res) => {
-    res.send("🚀 Backend ZLPix Premiado rodando com sucesso!");
+import express from "express";
+import cors from "cors";
+import path from "path";
+import pixroutes from "./routes/pixroutes.js";
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Sobe um nível (sai de /backend e vai para a raiz do projeto)
+const root = path.join(path.resolve(), "..");
+
+// =============================
+// 🔥 SERVE O DIST DO FRONT-END
+// =============================
+app.use(express.static(path.join(root, "front-end/dist")));
+
+// =============================
+// 🔥 SERVE SUBPASTAS NORMAIS
+// =============================
+app.use("/paginas", express.static(path.join(root, "front-end/paginas")));
+app.use("/css", express.static(path.join(root, "front-end/css")));
+app.use("/js", express.static(path.join(root, "front-end/js")));
+app.use("/img", express.static(path.join(root, "front-end/img")));
+
+// =============================
+// 🔥 ROTAS DO BACKEND
+// =============================
+app.use("/pix", pixroutes);
+
+// =============================
+// 🔥 FALLBACK
+// =============================
+app.get("*", (req, res) => {
+  res.sendFile(path.join(root, "front-end/dist/index.html"));
 });
-// ✅ Rota de sorteio
-app.use("/api", premioRoutes_js_1.default);
-// ✅ Porta
-const PORT = process.env.PORT || 10000;
+
+// =============================
+// 🔥 PORTA
+// =============================
+const PORT = process.env.PORT || 3333;
 app.listen(PORT, () => {
-    console.log(`✅ Servidor rodando na porta ${PORT}`);
+  console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
