@@ -1,66 +1,39 @@
-<!DOCTYPE html>
-<html class="dark" lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ZLPIX PREMIADO - Início</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-    <style>
-        body { min-height: max(884px, 100dvh); }
-    </style>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#FFD700",
-                        "background-light": "#f5f5f5",
-                        "background-dark": "#101022",
-                    },
-                    fontFamily: {
-                        "display": ["Spline Sans", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "1rem",
-                        "lg": "2rem",
-                        "xl": "3rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ZLPIX PREMIADO</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display">
-    <div class="relative flex h-auto min-h-screen w-full flex-col items-center justify-center p-4">
-        <div class="flex w-full max-w-sm flex-col items-center gap-6">
-            <!-- Logo - Assumindo que a logo está em frontend/pastas/assets/img/logo.png -->
-            <div class="flex w-full justify-center">
-                <div class="w-48 h-auto flex justify-center items-center">
-                    <img class="w-full h-auto object-contain" data-alt="Logotipo do ZLPIX PREMIADO" src="frontend/pastas/assets/img/logo.png"/>
-                </div>
-            </div>
-            <!-- Headline -->
-            <div class="text-center">
-                <h1 class="text-slate-900 dark:text-white text-3xl font-bold tracking-tight">Bem-vindo ao ZLPIX PREMIADO!</h1>
-                <p class="text-slate-600 dark:text-slate-300 text-base font-normal mt-2">Sua plataforma de apostas e prêmios.</p>
-            </div>
-            <!-- Botões de Ação -->
-            <div class="flex w-full flex-col gap-4 mt-6">
-                <!-- Botão para Entrar -->
-                <a href="frontend/pastas/login.html" class="flex h-14 w-full items-center justify-center rounded-lg bg-primary text-slate-900 font-bold text-base transition-transform active:scale-95">
-                    Entrar
-                </a>
-                <!-- Botão para Cadastrar-se -->
-                <a href="frontend/pastas/cadastro.html" class="flex h-14 w-full items-center justify-center rounded-lg border border-primary text-primary font-bold text-base transition-transform active:scale-95">
-                    Cadastre-se
-                </a>
-            </div>
-        </div>
-    </div>
+<body>
+  <header class="topbar">
+    <div class="brand">ZLPIX PREMIADO</div>
+    <nav class="nav">
+      <a href="paginas/selecao.html">Aposta</a>
+      <a href="paginas/resultados.html">Resultados</a>
+      <a href="paginas/bilhetes.html">Bilhetes</a>
+      <a href="paginas/admin.html">ADM</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Prêmio Atual</h1>
+      <div class="premio">R$ 10.000,00</div>
+      <div id="contador">00:15:32</div>
+      <p>Escolha até 3 dezenas por vez.</p>
+      <div class="actions">
+        <a class="btn" href="paginas/selecao.html">Fazer Aposta</a>
+        <a class="btn outline" href="paginas/login.html">Entrar / Cadastrar</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a href="paginas/termos.html">Termos</a> • <a href="paginas/privacidade.html">Política</a>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
