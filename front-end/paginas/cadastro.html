@@ -1,57 +1,118 @@
 <!DOCTYPE html>
-<html class="dark" lang="pt-BR">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ZLPIX PREMIADO - Cadastro</title>
 
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-
-  <script>
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZLPIX PREMIADO - Cadastro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
     tailwind.config = {
       darkMode: "class",
       theme: {
         extend: {
           colors: {
-            primary: "#00C853",
+            "primary": "#2b2bee",
             "background-light": "#f6f6f8",
             "background-dark": "#101022",
-            "text-light": "#333333",
-            "text-dark": "#E0E0E0",
-            "text-dark-muted": "#BDBDBD",
-            "border-dark": "#323267",
-            "surface-dark": "#191933"
+            "action-green": "#00B894",
+            "error-red": "#D63031",
+            "text-dark": "#2D3436",
+            "placeholder-gray": "#B2BEC3",
           },
           fontFamily: {
-            display: ["Spline Sans", "sans-serif"]
+            "display": ["Spline Sans", "sans-serif"]
           },
           borderRadius: {
-            DEFAULT: "1rem",
-            lg: "2rem",
-            xl: "3rem",
-            full: "9999px"
-          }
-        }
-      }
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+        },
+      },
     }
   </script>
-
-  <style>
+<style>
     .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      font-size: 24px;
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 300,
+        'GRAD' 0,
+        'opsz' 24
     }
+  </style>
+<style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
-</head>
-
-<body class="bg-background-light dark:bg-background-dark font-display">
-  <div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden">
-    
-    <main class="flex flex-col items-center justify-center w-full max-w-md mx-auto px-4 py-8">
-      <h1 class="text-text-light dark:text-white text-3xl font-bold text-center pb-2 pt-6">
-        ZLPIX PREMIADO
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center p-4">
+<div class="flex w-full max-w-md flex-col items-center">
+<!-- Logo -->
+<div class="mb-8">
+<div class="w-32 h-32 bg-center bg-no-repeat bg-contain" data-alt="Logotipo do ZLPIX PREMIADO, um trevo de quatro folhas estilizado com um cifrão no centro" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDTZzkw-GFsW5OG_1HRkUbJaNvj8085dtqDKfHAjJhf5i3dudYG_QmuAro-RwrcRcTtO-0xI4ISUWI7GReI0AmdTlkkChtPxMOnj8nemgp_KhuxmOKh6WUlS3uXF8945-MKoWtADiXhFBC1Qa9PgwauBr9-w7WTrcSxw1VizIyyJeqQVJuqDbIBpKSCksbUFCQ4GNkWTTXyRH0Pe4U7KRWsBACeylTc7OtQElx_7y0nQzFYw0npXLFqHgIqCPXNnVfak4YCnujPcqI");'></div>
+</div>
+<!-- Headline -->
+<h1 class="text-text-dark dark:text-white text-3xl font-bold leading-tight text-center mb-8">
+        Crie sua Conta
+      </h1>
+<!-- Form -->
+<form class="w-full space-y-4">
+<!-- Nome Completo -->
+<div class="relative">
+<label class="text-text-dark dark:text-gray-300 text-sm font-medium" for="fullName">Nome Completo</label>
+<div class="relative mt-1">
+<span class="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-placeholder-gray">person</span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-dark dark:text-white placeholder-placeholder-gray py-3 pl-12 pr-4 text-base focus:border-action-green focus:ring-action-green" id="fullName" name="fullName" placeholder="Nome Completo" type="text"/>
+</div>
+</div>
+<!-- E-mail -->
+<div class="relative">
+<label class="text-text-dark dark:text-gray-300 text-sm font-medium" for="email">E-mail</label>
+<div class="relative mt-1">
+<span class="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-placeholder-gray">mail</span>
+<input class="form-input w-full rounded-lg border border-error-red dark:border-error-red bg-white dark:bg-gray-800 text-text-dark dark:text-white placeholder-placeholder-gray py-3 pl-12 pr-4 text-base focus:border-action-green focus:ring-action-green" id="email" name="email" placeholder="Seu melhor e-mail" type="email"/>
+</div>
+<p class="mt-1 text-sm text-error-red">E-mail inválido</p>
+</div>
+<!-- Telefone -->
+<div class="relative">
+<label class="text-text-dark dark:text-gray-300 text-sm font-medium" for="phone">Telefone</label>
+<div class="relative mt-1">
+<span class="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-placeholder-gray">phone</span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-dark dark:text-white placeholder-placeholder-gray py-3 pl-12 pr-4 text-base focus:border-action-green focus:ring-action-green" id="phone" name="phone" placeholder="Telefone (XX) XXXXX-XXXX" type="tel"/>
+</div>
+</div>
+<!-- Chave Pix -->
+<div class="relative">
+<label class="text-text-dark dark:text-gray-300 text-sm font-medium" for="pixKey">Chave Pix</label>
+<div class="relative mt-1">
+<span class="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-placeholder-gray">qr_code_2</span>
+<input class="form-input w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-dark dark:text-white placeholder-placeholder-gray py-3 pl-12 pr-4 text-base focus:border-action-green focus:ring-action-green" id="pixKey" name="pixKey" placeholder="Sua Chave Pix" type="text"/>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-4">
+<button class="w-full rounded-lg bg-action-green py-3.5 text-base font-bold text-white transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-action-green focus:ring-offset-2 dark:focus:ring-offset-background-dark" type="submit">
+            Cadastrar
+          </button>
+</div>
+</form>
+<!-- Login Link -->
+<div class="mt-8 text-center">
+<p class="text-sm text-gray-600 dark:text-gray-400">
+          Já tem uma conta?
+          <a class="font-semibold text-action-green hover:underline" href="#">
+            Faça Login
+          </a>
+</p>
+</div>
+</div>
+</div>
+</body></html>
