@@ -1,272 +1,71 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html class="dark" lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZLPIX PREMIADO - Início</title>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-
-  <!-- Tailwind Config -->
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: "#00C853",
-            "background-light": "#F5F5F5",
-            "background-dark": "#111122",
-            "card-dark": "#191933",
-            "card-light": "#FFFFFF",
-            accent: "#FFD700",
-            "dark-blue": "#1A237E"
-          },
-          fontFamily: {
-            display: ["Spline Sans", "sans-serif"]
-          },
-          borderRadius: {
-            DEFAULT: "1rem",
-            full: "9999px"
-          }
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ZLPIX PREMIADO - Login</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FFD700",
+                        "background-light": "#f5f5f5",
+                        "background-dark": "#101022",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
         }
-      }
-    }
-  </script>
-
-  <style>
-    body { min-height: max(884px, 100dvh); }
-    .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      font-size: 24px;
-    }
-    /* small tweak para quebra de menu em telas pequenas */
-    @media (max-width:640px){
-      .top-nav { gap: 8px; }
-      .top-nav a span { display:block; font-size:11px; }
-    }
-  </style>
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
 </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col items-center justify-center p-4">
+        <div class="flex w-full max-w-sm flex-col items-center gap-6">
+            <!-- Logo -->
+            <div class="flex w-full justify-center">
+                <div class="w-48 h-auto flex justify-center items-center">
+                    <img class="w-full h-auto object-contain" data-alt="Logotipo do ZLPIX PREMIADO" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"/>
+                </div>
+            </div>
 
-<body class="bg-background-light dark:bg-background-dark font-display flex flex-col min-h-screen">
+            <!-- Headline -->
+            <div class="text-center">
+                <h1 class="text-slate-900 dark:text-white text-3xl font-bold tracking-tight">Bem-vindo de volta!</h1>
+                <p class="text-slate-600 dark:text-slate-300 text-base font-normal mt-2">Faça seu login para continuar</p>
+            </div>
 
-<!-- CONTEÚDO DO SITE -->
-<div class="relative flex min-h-screen w-full flex-col">
-
-  <!-- HEADER: título + topo de navegação -->
-  <header class="sticky top-0 z-20 w-full bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-sm border-b border-slate-200/5">
-    <div class="max-w-5xl mx-auto px-4">
-      <div class="flex items-center justify-between py-3">
-        <!-- Logo / Nome -->
-        <a href="./index.html" class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span class="material-symbols-outlined text-primary">local_activity</span>
-          </div>
-          <div>
-            <h1 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">ZLPIX PREMIADO</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 -mt-1">Sorteios e prêmios via PIX</p>
-          </div>
-        </a>
-
-        <!-- Top navigation -->
-        <nav class="hidden sm:flex items-center top-nav gap-4">
-          <a href="./index.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">home</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Início</span>
-          </a>
-          <a href="./paginas/bilhetes.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">confirmation_number</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Bilhetes</span>
-          </a>
-          <a href="./paginas/resultados.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">emoji_events</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Resultados</span>
-          </a>
-          <a href="./paginas/selecao.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">toggle_on</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Seleção</span>
-          </a>
-          <a href="./paginas/cadastro.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">person</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Perfil</span>
-          </a>
-          <a href="./paginas/admin.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <span class="text-sm font-medium text-slate-900 dark:text-white">Admin</span>
-          </a>
-        </nav>
-
-        <!-- Mobile menu toggle -->
-        <div class="sm:hidden flex items-center gap-2">
-          <button id="mobileMenuBtn" class="p-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile nav (hidden by default) -->
-      <div id="mobileNav" class="sm:hidden hidden pb-3">
-        <div class="flex flex-col gap-2">
-          <a href="./index.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">home</span> Início
-          </a>
-          <a href="./paginas/bilhetes.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">confirmation_number</span> Bilhetes
-          </a>
-          <a href="./paginas/resultados.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">emoji_events</span> Resultados
-          </a>
-          <a href="./paginas/selecao.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">toggle_on</span> Seleção
-          </a>
-          <a href="./paginas/cadastro.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">person</span> Perfil
-          </a>
-          <a href="./paginas/admin.html" class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-100/60 dark:hover:bg-white/4">
-            <span class="material-symbols-outlined">admin_panel_settings</span> Admin
-          </a>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- MAIN -->
-  <main class="flex-1 px-4 pb-28 max-w-5xl mx-auto w-full">
-
-    <!-- SALDO -->
-    <div class="p-0 @container mb-6">
-      <div class="flex flex-col items-stretch justify-start rounded-xl bg-dark-blue/20 dark:bg-dark-blue/50 p-4">
-        <div class="flex grow flex-col gap-1">
-          <p class="text-slate-500 dark:text-[#9292c9] text-sm">Seu Saldo</p>
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-gold text-2xl">account_balance_wallet</span>
-            <p class="text-slate-900 dark:text-white text-lg font-bold">R$ 12,50</p>
-          </div>
-        </div>
-
-        <div class="flex items-end justify-end mt-4">
-          <button class="h-10 px-5 bg-primary text-white rounded-full text-sm font-medium">Adicionar Saldo</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PRÓXIMO SORTEIO -->
-    <div class="flex flex-col items-center justify-center rounded-xl bg-dark-blue p-6 text-center shadow-lg">
-      <p class="text-gold text-sm font-medium pb-2 uppercase">Próximo Sorteio</p>
-      <h2 class="text-white text-5xl font-bold" style="text-shadow:0px 2px 8px rgba(255,215,0,0.3);">R$ 50.000</h2>
-      <p class="text-slate-300 text-sm pt-2">Termina em:</p>
-    </div>
-
-    <!-- CONTADOR -->
-    <div class="flex gap-2 py-6">
-      <div class="flex grow flex-col items-center gap-2">
-        <div class="flex h-16 w-full items-center justify-center rounded-lg bg-slate-200 dark:bg-[#232348]">
-          <p class="text-slate-900 dark:text-white text-4xl font-bold">02</p>
-        </div>
-        <p class="text-slate-500 dark:text-white text-xs">Dias</p>
-      </div>
-
-      <div class="flex grow flex-col items-center gap-2">
-        <div class="flex h-16 w-full items-center justify-center rounded-lg bg-slate-200 dark:bg-[#232348]">
-          <p class="text-slate-900 dark:text-white text-4xl font-bold">18</p>
-        </div>
-        <p class="text-slate-500 dark:text-white text-xs">Horas</p>
-      </div>
-
-      <div class="flex grow flex-col items-center gap-2">
-        <div class="flex h-16 w-full items-center justify-center rounded-lg bg-slate-200 dark:bg-[#232348]">
-          <p class="text-slate-900 dark:text-white text-4xl font-bold">45</p>
-        </div>
-        <p class="text-slate-500 dark:text-white text-xs">Minutos</p>
-      </div>
-
-      <div class="flex grow flex-col items-center gap-2">
-        <div class="flex h-16 w-full items-center justify-center rounded-lg bg-slate-200 dark:bg-[#232348]">
-          <p class="text-slate-900 dark:text-white text-4xl font-bold">33</p>
-        </div>
-        <p class="text-slate-500 dark:text-white text-xs">Segundos</p>
-      </div>
-    </div>
-
-    <!-- COMO FUNCIONA -->
-    <div class="space-y-4">
-      <h3 class="text-slate-900 dark:text-white text-lg font-bold">Como Funciona</h3>
-
-      <details class="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4" open>
-        <summary class="flex justify-between cursor-pointer text-base font-medium">
-          Como participar?
-          <span class="transition group-open:rotate-180 material-symbols-outlined">expand_more</span>
-        </summary>
-        <p class="mt-4 text-slate-600 dark:text-slate-400">
-          Para participar, basta adicionar saldo e escolher os números da sorte.
-        </p>
-      </details>
-
-      <details class="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
-        <summary class="flex justify-between cursor-pointer text-base font-medium">
-          Regulamento do sorteio
-          <span class="transition group-open:rotate-180 material-symbols-outlined">expand_more</span>
-        </summary>
-        <p class="mt-4 text-slate-600 dark:text-slate-400">
-          O sorteio segue os resultados da Loteria Federal.
-        </p>
-      </details>
-
-    </div>
-  </main>
-
-  <!-- MENU INFERIOR (mantive o original) -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-background-light/80 dark:bg-background-dark/80 border-t backdrop-blur-sm z-10">
-    <div class="mx-auto flex h-20 max-w-md items-center justify-around px-4">
-      <a class="flex flex-col items-center text-primary" href="./index.html">
-        <span class="material-symbols-outlined" style="font-variation-settings:'FILL'1;">home</span>
-        <span class="text-xs font-bold">Início</span>
-      </a>
-
-      <a class="flex flex-col items-center text-slate-500 dark:text-slate-400" href="./paginas/bilhetes.html">
-        <span class="material-symbols-outlined">confirmation_number</span>
-        <span class="text-xs font-medium">Bilhetes</span>
-      </a>
-
-      <a class="flex flex-col items-center text-slate-500 dark:text-slate-400" href="./paginas/resultados.html">
-        <span class="material-symbols-outlined">emoji_events</span>
-        <span class="text-xs font-medium">Resultados</span>
-      </a>
-
-      <a class="flex flex-col items-center text-slate-500 dark:text-slate-400" href="./paginas/cadastro.html">
-        <span class="material-symbols-outlined">person</span>
-        <span class="text-xs font-medium">Perfil</span>
-      </a>
-    </div>
-  </nav>
-
-</div>
-
-<!-- Pequeno script para toggle do menu mobile -->
-<script>
-  document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-    const nav = document.getElementById('mobileNav');
-    if(!nav) return;
-    nav.classList.toggle('hidden');
-  });
-
-  // Se desejar: realçar link ativo (pega o pathname)
-  (function highlightActive(){
-    const links = Array.from(document.querySelectorAll('a'));
-    const current = location.pathname.split('/').pop() || 'index.html';
-    links.forEach(a=>{
-      const href = a.getAttribute('href')?.split('/').pop();
-      if(href === current){
-        a.classList.add('ring-1','ring-primary/30','rounded-md');
-      }
-    });
-  })();
-</script>
-
-</body>
-</html>
+            <!-- Form -->
+            <form action="login-endpoint.php" method="POST" class="flex w-full flex-col gap-4">
+                <!-- E-mail Field -->
+                <div class="flex w-full flex-col">
+                    <label class="flex flex-col flex-1">
+                        <p class="text-slate-700 dark:text-slate-200 text-sm font-medium pb-2">E-mail</p>
+                        <div class="relative flex w-full items-center">
+                            <span class="material-symbols-outlined absolute left-4 text-slate-400 dark:text-slate-500">mail</span>
+                            <input class="form-input" type="email" name="email" required placeholder
