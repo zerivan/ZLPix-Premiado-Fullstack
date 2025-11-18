@@ -1,60 +1,201 @@
-import React, { useState } from "react";
-import { NumeroButton } from "../components/NumeroButton";
-import { BilheteCard } from "../components/BilheteCard";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export default function Home() {
-  const [selecionadas, setSelecionadas] = useState<number[]>([]);
+  // Timer real
+  const [time, setTime] = useState({
+    dias: 2,
+    horas: 18,
+    minutos: 45,
+    segundos: 33,
+  });
 
-  const toggleNumero = (numero: number) => {
-    if (selecionadas.includes(numero)) {
-      setSelecionadas(selecionadas.filter((n) => n !== numero));
-    } else if (selecionadas.length < 3) {
-      setSelecionadas([...selecionadas, numero]);
-    }
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime((old) => {
+        let { dias, horas, minutos, segundos } = old;
 
-  const gerarAutomatico = () => {
-    const numeros: number[] = [];
-    while (numeros.length < 3) {
-      const n = Math.floor(Math.random() * 100);
-      if (!numeros.includes(n)) numeros.push(n);
-    }
-    setSelecionadas(numeros);
-  };
+        if (segundos > 0) segundos--;
+        else {
+          segundos = 59;
+          if (minutos > 0) minutos--;
+          else {
+            minutos = 59;
+            if (horas > 0) horas--;
+            else {
+              horas = 23;
+              if (dias > 0) dias--;
+            }
+          }
+        }
+        return { dias, horas, minutos, segundos };
+      });
+    }, 1000);
 
-  const limpar = () => setSelecionadas([]);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="flex flex-col items-center p-6">
-      <h1 className="text-3xl font-bold text-gold mb-4">ZLPix Premiado 💰</h1>
+    <div className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col w-full">
 
-      <div className="grid grid-cols-10 gap-2 max-w-md">
-        {Array.from({ length: 100 }, (_, i) => (
-          <NumeroButton
-            key={i}
-            numero={i}
-            selecionado={selecionadas.includes(i)}
-            onClick={() => toggleNumero(i)}
-          />
-        ))}
-      </div>
+      {/* HEADER */}
+      <header className="sticky top-0 z-10 w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className="flex items-center p-4 justify-between">
+          <h1 className="text-slate-900 dark:text-white text-xl font-bold">
+            ZLPIX PREMIADO
+          </h1>
 
-      <div className="flex gap-4 mt-4">
-        <button
-          onClick={gerarAutomatico}
-          className="bg-gold text-black px-4 py-2 rounded font-bold hover:bg-yellow-400"
-        >
-          Gerar Automático
-        </button>
-        <button
-          onClick={limpar}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500"
-        >
-          Limpar
-        </button>
-      </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-gold text-2xl">
+                account_balance_wallet
+              </span>
+              <p className="text-slate-900 dark:text-white font-bold">R$ 12,50</p>
+            </div>
 
-      {selecionadas.length === 3 && <BilheteCard dezenas={selecionadas} />}
+            <button className="relative flex items-center justify-center p-2 text-slate-900 dark:text-white">
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-0 right-0 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN */}
+      <main className="flex-1 px-4 pb-28">
+        <div className="max-w-3xl mx-auto">
+
+          {/* SALDO */}
+          <div className="my-6">
+            <div className="flex flex-col lg:flex-row items-stretch gap-4 bg-dark-blue/20 dark:bg-dark-blue/50 p-4 rounded-xl">
+              <div className="flex-1">
+                <p className="text-slate-500 dark:text-[#9292c9] text-sm">Seu Saldo</p>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-gold text-2xl">
+                    account_balance_wallet
+                  </span>
+                  <p className="text-slate-900 dark:text-white text-lg font-bold">
+                    R$ 12,50
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-end">
+                <button className="min-w-[120px] h-10 px-4 rounded-full bg-primary text-white font-medium">
+                  Adicionar Saldo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* PRINCIPAL - SORTEIO */}
+          <div className="flex flex-col items-center justify-center rounded-xl bg-dark-blue p-6 text-center shadow-lg mb-6">
+            <p className="text-gold text-sm font-medium uppercase tracking-wider">
+              Próximo Sorteio
+            </p>
+            <h2 className="text-white text-5xl font-bold leading-tight mt-2">
+              R$ 50.000
+            </h2>
+            <p className="text-slate-300 text-sm mt-2">Termina em:</p>
+          </div>
+
+          {/* TIMER */}
+          <div className="flex gap-2 sm:gap-4 py-4">
+            {[
+              { label: "Dias", value: time.dias },
+              { label: "Horas", value: time.horas },
+              { label: "Minutos", value: time.minutos },
+              { label: "Segundos", value: time.segundos },
+            ].map((t) => (
+              <div key={t.label} className="flex grow basis-0 flex-col items-stretch gap-2">
+                <div className="flex h-16 sm:h-20 items-center justify-center rounded-lg bg-slate-200 dark:bg-[#232348]">
+                  <p className="text-slate-900 dark:text-white text-3xl sm:text-4xl font-bold">
+                    {String(t.value).padStart(2, "0")}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <p className="text-slate-500 dark:text-white text-xs sm:text-sm">{t.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* COMO FUNCIONA */}
+          <div className="space-y-4 mb-10">
+            <h3 className="text-slate-900 dark:text-white text-lg font-bold">Como Funciona</h3>
+
+            <details className="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4" open>
+              <summary className="flex items-center justify-between cursor-pointer text-base font-medium text-slate-900 dark:text-white">
+                Como participar?
+                <span className="transition group-open:rotate-180">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </span>
+              </summary>
+              <p className="mt-4 text-slate-600 dark:text-slate-400">
+                Adicione saldo, escolha seus números e confirme a aposta.
+              </p>
+            </details>
+
+            <details className="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+              <summary className="flex items-center justify-between cursor-pointer text-base font-medium text-slate-900 dark:text-white">
+                Regulamento do sorteio
+                <span className="transition group-open:rotate-180">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </span>
+              </summary>
+              <p className="mt-4 text-slate-600 dark:text-slate-400">
+                O sorteio é baseado na Loteria Federal. Prêmios pagos via PIX.
+              </p>
+            </details>
+
+            <details className="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4">
+              <summary className="flex items-center justify-between cursor-pointer text-base font-medium text-slate-900 dark:text-white">
+                Perguntas Frequentes
+                <span className="transition group-open:rotate-180">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </span>
+              </summary>
+              <p className="mt-4 text-slate-600 dark:text-slate-400">
+                Dúvidas? Veja perguntas frequentes.
+              </p>
+            </details>
+          </div>
+        </div>
+      </main>
+
+      {/* NAV INFERIOR */}
+      <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200/50 dark:border-slate-800/50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+        <div className="mx-auto flex h-20 max-w-md items-center justify-around px-4">
+
+          <Link className="flex flex-col items-center justify-center gap-1 text-primary" to="/home">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
+            <span className="text-xs font-bold">Início</span>
+          </Link>
+
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/sorteio">
+            <span className="material-symbols-outlined">confirmation_number</span>
+            <span className="text-xs font-medium">Aposta</span>
+          </Link>
+
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/bilhetes">
+            <span className="material-symbols-outlined">receipt_long</span>
+            <span className="text-xs font-medium">Bilhetes</span>
+          </Link>
+
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/resultado">
+            <span className="material-symbols-outlined">emoji_events</span>
+            <span className="text-xs font-medium">Resultados</span>
+          </Link>
+
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/perfil">
+            <span className="material-symbols-outlined">person</span>
+            <span className="text-xs font-medium">Perfil</span>
+          </Link>
+
+        </div>
+      </nav>
     </div>
   );
-        }
+}
