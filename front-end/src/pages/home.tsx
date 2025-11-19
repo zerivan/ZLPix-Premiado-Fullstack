@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  // Timer real
   const [time, setTime] = useState({
     dias: 2,
     horas: 18,
@@ -12,22 +11,23 @@ export default function Home() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime((old) => {
-        let { dias, horas, minutos, segundos } = old;
+      setTime((t) => {
+        let { dias, horas, minutos, segundos } = t;
 
-        if (segundos > 0) segundos--;
-        else {
+        segundos--;
+        if (segundos < 0) {
           segundos = 59;
-          if (minutos > 0) minutos--;
-          else {
+          minutos--;
+          if (minutos < 0) {
             minutos = 59;
-            if (horas > 0) horas--;
-            else {
+            horas--;
+            if (horas < 0) {
               horas = 23;
-              if (dias > 0) dias--;
+              dias = Math.max(0, dias - 1);
             }
           }
         }
+
         return { dias, horas, minutos, segundos };
       });
     }, 1000);
@@ -70,7 +70,7 @@ export default function Home() {
 
           {/* SALDO */}
           <div className="my-6">
-            <div className="flex flex-col lg:flex-row items-stretch gap-4 bg-dark-blue/20 dark:bg-dark-blue/50 p-4 rounded-xl">
+            <div className="flex flex-col sm:flex-row items-stretch gap-4 bg-dark-blue/20 dark:bg-dark-blue/50 p-4 rounded-xl">
               <div className="flex-1">
                 <p className="text-slate-500 dark:text-[#9292c9] text-sm">Seu Saldo</p>
                 <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* PRINCIPAL - SORTEIO */}
+          {/* PRÓXIMO SORTEIO */}
           <div className="flex flex-col items-center justify-center rounded-xl bg-dark-blue p-6 text-center shadow-lg mb-6">
             <p className="text-gold text-sm font-medium uppercase tracking-wider">
               Próximo Sorteio
@@ -116,15 +116,19 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex items-center justify-center">
-                  <p className="text-slate-500 dark:text-white text-xs sm:text-sm">{t.label}</p>
+                  <p className="text-slate-500 dark:text-white text-xs sm:text-sm">
+                    {t.label}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* COMO FUNCIONA */}
-          <div className="space-y-4 mb-10">
-            <h3 className="text-slate-900 dark:text-white text-lg font-bold">Como Funciona</h3>
+          <div className="space-y-4">
+            <h3 className="text-slate-900 dark:text-white text-lg font-bold">
+              Como Funciona
+            </h3>
 
             <details className="group rounded-lg bg-slate-200/50 dark:bg-slate-800/50 p-4" open>
               <summary className="flex items-center justify-between cursor-pointer text-base font-medium text-slate-900 dark:text-white">
@@ -165,7 +169,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* NAV INFERIOR */}
+      {/* NAV BOTTOM */}
       <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200/50 dark:border-slate-800/50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
         <div className="mx-auto flex h-20 max-w-md items-center justify-around px-4">
 
@@ -174,22 +178,22 @@ export default function Home() {
             <span className="text-xs font-bold">Início</span>
           </Link>
 
-          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/sorteio">
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary" to="/sorteio">
             <span className="material-symbols-outlined">confirmation_number</span>
             <span className="text-xs font-medium">Aposta</span>
           </Link>
 
-          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/bilhetes">
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary" to="/bilhetes">
             <span className="material-symbols-outlined">receipt_long</span>
             <span className="text-xs font-medium">Bilhetes</span>
           </Link>
 
-          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/resultado">
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary" to="/resultado">
             <span className="material-symbols-outlined">emoji_events</span>
             <span className="text-xs font-medium">Resultados</span>
           </Link>
 
-          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/perfil">
+          <Link className="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400 hover:text-primary" to="/perfil">
             <span className="material-symbols-outlined">person</span>
             <span className="text-xs font-medium">Perfil</span>
           </Link>
