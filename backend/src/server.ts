@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
-import { load, save, loadMeta, saveMeta } from "../jsondb";
+import { load, save, loadMeta, saveMeta } from "./jsondb";
 
 const app = express();
 app.use(cors());

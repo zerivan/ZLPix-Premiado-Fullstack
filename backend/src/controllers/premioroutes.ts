@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sortearPremio } from "../controllers/premioController";
+import { sortearPremio } from "./premioController";
 
 const router = Router();
 
