@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
   res.json({
     ok: true,
     message: "🔥 Backend do ZLPix funcionando!",
-    timestamp: now()
+    timestamp: now(),
   });
 });
 
