@@ -10,7 +10,7 @@ const jsondb_1 = require("./jsondb");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 const ADMIN_TOKEN = "zlpix-admin-token";
 // ====== Funções auxiliares ======
 const now = () => Math.floor(Date.now() / 1000);
