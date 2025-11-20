@@ -4,7 +4,7 @@ services:
     name: zlpix-backend
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install
     startCommand: node dist/server.js
     envVars:
       - key: NODE_VERSION
