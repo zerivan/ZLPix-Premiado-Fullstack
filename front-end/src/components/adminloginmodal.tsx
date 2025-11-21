@@ -1,5 +1,5 @@
 import React,{useState}from"react";
-export default function AdminLoginModal({onClose,onSuccess}:{onClose:()=>void;onSuccess:()=>void}){
+export default function adminloginmodal({onClose,onSuccess}:{onClose:()=>void;onSuccess:()=>void}){
 const[user,setUser]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");
 function handle(e:React.FormEvent){e.preventDefault();
 if(user==="admin"&&pass==="123456"){onSuccess();onClose();}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AdminLoginModal from "./AdminLoginModal";
+import adminloginmodal from "./adminloginmodal";
 
 export default function Header() {
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -18,7 +18,7 @@ export default function Header() {
       </header>
 
       {showAdminModal && (
-        <AdminLoginModal onClose={() => setShowAdminModal(false)} />
+        <adminloginmodal onClose={() => setShowAdminModal(false)} />
       )}
     </>
   );

@@ -1,7 +1,7 @@
 import React,{useState}from"react";
 import{api}from"../api/client";
 type Bet={id:string;dezenas:string[];valor:number;data:string};
-export default function ApostaPanel({onOpenPayment}:{onOpenPayment:(dezenas:string[])=>void}){
+export default function apostapanel({onOpenPayment}:{onOpenPayment:(dezenas:string[])=>void}){
 const[selected,setSelected]=useState<string[]>([]);const[history,setHistory]=useState<Bet[]>([]);
 const numbers=Array.from({length:100}).map((_,i)=>String(i).padStart(2,"0"));
 function toggle(n:string){setSelected(prev=>{
