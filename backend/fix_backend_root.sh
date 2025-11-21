@@ -1,3 +1,8 @@
+#!/bin/bash
+echo "🔧 Removendo rota raiz HTML e deixando backend limpo..."
+
+# Reescreve o server.ts corretamente
+cat << 'TS' > src/server.ts
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
@@ -22,3 +27,11 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log("🔥 Backend rodando na porta", PORT);
 });
+TS
+
+echo "📌 server.ts corrigido!"
+echo "📦 Recriando build..."
+rm -rf dist
+npm run build
+echo "🚀 Pronto! Agora faça:"
+echo "git add -A && git commit -m 'fix: backend root route clean' && git push --force"
