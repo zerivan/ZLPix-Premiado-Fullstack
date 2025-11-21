@@ -1,80 +1,31 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZLPIX PREMIADO</title>
 
-    <title>ZLPix Premiado</title>
+    <!-- Fonte Spline Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
 
-    <meta name="description" content="ZLPix Premiado — selecione suas dezenas, pague com Pix e concorra a prêmios reais com resultados baseados na extração oficial da Loteria Federal." />
-    <meta name="theme-color" content="#0ea5e9" />
+    <!-- Material Symbols (icons) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
 
-    <style>
-      /* Container da frase */
-      .hero {
-        text-align: center;
-        margin-top: 80px;
-        font-family: 'Manrope', sans-serif;
-      }
-
-      /* Animação principal: fade-in suave */
-      .fade-in {
-        animation: fadeIn 1.8s ease forwards;
-        opacity: 0;
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-15px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-
-      /* Glow leve e elegante */
-      .glow {
-        color: #0ea5e9;
-        text-shadow: 0 0 12px rgba(14, 165, 233, 0.5);
-      }
-
-      /* Shine effect (luz passando no texto) */
-      .shine {
-        position: relative;
-        overflow: hidden;
-        display: inline-block;
-      }
-
-      .shine::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 80%;
-        height: 100%;
-        background: linear-gradient(
-          120deg,
-          transparent 0%,
-          rgba(255, 255, 255, 0.4) 50%,
-          transparent 100%
-        );
-        animation: shineMove 2.8s infinite;
-      }
-
-      @keyframes shineMove {
-        from { left: -100%; }
-        to   { left: 120%; }
-      }
-    </style>
+    <!-- React (Vite) -->
+    <script type="module" src="/src/main.jsx"></script>
   </head>
 
-  <body class="bg-gray-100">
+  <body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display"
+  >
     <div id="root"></div>
-
-    <!-- HERO com animação -->
-    <div class="hero fade-in">
-      <h1 class="shine glow" style="font-size: 1.8rem; font-weight: 800;">
-        ZLPix Premiado — selecione suas dezenas, pague com Pix e concorra a prêmios reais com resultados baseados na extração oficial da Loteria Federal.
-      </h1>
-    </div>
-
-    <!-- React/Vite -->
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
