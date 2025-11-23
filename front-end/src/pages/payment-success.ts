@@ -1,4 +1,4 @@
-.// src/pages/payment-success.tsx
+// src/pages/payment-success.tsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
