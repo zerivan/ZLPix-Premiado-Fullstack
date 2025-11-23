@@ -1,48 +1,36 @@
 // src/pages/meusbilhetes.tsx
 import React, { useState } from "react";
-import Header from "../components/header"; // ajuste o path se necessário
-import NavBottom from "../components/NavBottom";
+import Header from "../components/header";
+import NavBottom from "../components/navbottom";
+
 type TicketStatus = "premiado" | "pendente" | "nao-premiado";
 
 type Ticket = {
   id: string;
-  nums: string[]; // ex: ["98","56","00"]
-  value: number; // em centavos ou reais (aqui uso reais)
-  createdAt: string; // ISO string
+  nums: string[];
+  value: number;
+  createdAt: string;
   status: TicketStatus;
-  sorteio?: string; // opcional, ex: "Sorteio #5678"
+  sorteio?: string;
 };
 
 function formatCurrency(v: number) {
-  // v em reais já (ex.: 5 => "R$ 5,00")
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatDate(iso: string) {
   try {
     const d = new Date(iso);
-    return d.toLocaleString("pt)
-  createdAt: string; // ISO string
-  status: TicketStatus;
-  sorteio?: string; // opcional, ex: "Sorteio #5678"
-};
-
-function formatCurrency(v: number) {
-  // v em reais já (ex.: 5 => "R$ 5,00")
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatDate(iso: string) {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    return d.toLocaleString("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
   } catch {
     return iso;
   }
 }
 
 export default function MeusBilhetes() {
-  // exemplo de dados — troque pelo fetch do backend quando integrar
   const [tickets] = useState<Ticket[]>([
     {
       id: "tkt_01_abcd12",
@@ -83,15 +71,15 @@ export default function MeusBilhetes() {
   }
 
   async function shareTicket(t: Ticket) {
-    const text = `Meu bilhete ${t.id}\nNúmeros: ${t.nums.join(", ")}\nValor: ${formatCurrency(
-      t.value
-    )}\nGerado em: ${formatDate(t.createdAt)}`;
+    const text = `Meu bilhete ${t.id}\nNúmeros: ${t.nums.join(
+      ", "
+    )}\nValor: ${formatCurrency(t.value)}\nGerado em: ${formatDate(
+      t.createdAt
+    )}`;
     if ((navigator as any).share) {
       try {
         await (navigator as any).share({ title: "Meu Bilhete", text });
-      } catch {
-        // usuário cancelou ou erro
-      }
+      } catch {}
     } else {
       copyTicketText(t);
     }
@@ -105,6 +93,7 @@ export default function MeusBilhetes() {
           <span className="text-xs font-medium text-green-700">Premiado</span>
         </div>
       );
+
     if (s === "pendente")
       return (
         <div className="flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1">
@@ -112,6 +101,7 @@ export default function MeusBilhetes() {
           <span className="text-xs font-medium text-orange-700">Pendente</span>
         </div>
       );
+
     return (
       <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1">
         <span className="h-2 w-2 rounded-full bg-zinc-500" />
@@ -136,11 +126,17 @@ export default function MeusBilhetes() {
           <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary text-white px-4">
             <span className="text-sm font-medium">Todos</span>
           </button>
+
           <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-zinc-200 dark:bg-primary/20 px-4">
-            <span className="text-sm font-medium text-zinc-700 dark:text-white">Premiados</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-white">
+              Premiados
+            </span>
           </button>
+
           <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-zinc-200 dark:bg-primary/20 px-4">
-            <span className="text-sm font-medium text-zinc-700 dark:text-white">Pendentes</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-white">
+              Pendentes
+            </span>
           </button>
         </nav>
 
@@ -152,13 +148,11 @@ export default function MeusBilhetes() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  {/* números em círculos verdes */}
                   <div className="flex gap-2 items-center">
                     {t.nums.map((n, i) => (
                       <div
                         key={i}
                         className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-white font-bold"
-                        title={`Dezena ${n}`}
                       >
                         {n}
                       </div>
@@ -169,57 +163,14 @@ export default function MeusBilhetes() {
                     <div className="text-sm text-slate-700 dark:text-slate-200 font-semibold">
                       {t.sorteio ?? "Sorteio"}
                     </div>
-                    <divtext-white">
-                    {formatCurrency(t.value)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs text-slate-500 dark:text-slate-400">ID: #{t.id.slice(-6)}</div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => copyTicketText(t)}
-                    className="flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs"
-                  >
-                    <span className="material-symbols-outlined text-sm">content_copy</span>
-                    <span>Copiar</span>
-                  </button>
-
-                  <button
-                    onClick={() => shareTicket(t)}
-                    className="flex items-center gap-2 rounded-full bg-primary text-white px-3 py-2 text-xs"
-                  >
-                    <span className="material-symbols-outlined text-sm">share</span>
-                    <span>Compartilhar</span>
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        {tickets.length === 0 && (
-          <div className="mt-8 rounded-lg border border-dashed border-zinc-300 p-8 text-center">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">Você ainda não possui bilhetes</p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">Gere seu primeiro bilhete na tela de apostas.</p>
-          </div>
-        )}
-      </main>
-
-      <NavBottom />
-    <v>
-  );
-}
-="text-xs text-slate-500 dark:text-slate-400">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
                       Gerado em: {formatDate(t.createdAt)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <div>{statusBadge(t.status)}</div>
+                  {statusBadge(t.status)}
                   <div className="text-sm font-medium text-slate-800 dark:text-white">
                     {formatCurrency(t.value)}
                   </div>
@@ -227,7 +178,9 @@ export default function MeusBilhetes() {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <div className="text-xs text-slate-500 dark:text-slate-400">ID: #{t.id.slice(-6)}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  ID: #{t.id.slice(-6)}
+                </div>
 
                 <div className="flex gap-2">
                   <button
@@ -235,7 +188,7 @@ export default function MeusBilhetes() {
                     className="flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs"
                   >
                     <span className="material-symbols-outlined text-sm">content_copy</span>
-                    <span>Copiar</span>
+                    Copiar
                   </button>
 
                   <button
@@ -243,7 +196,7 @@ export default function MeusBilhetes() {
                     className="flex items-center gap-2 rounded-full bg-primary text-white px-3 py-2 text-xs"
                   >
                     <span className="material-symbols-outlined text-sm">share</span>
-                    <span>Compartilhar</span>
+                    Compartilhar
                   </button>
                 </div>
               </div>
@@ -253,8 +206,12 @@ export default function MeusBilhetes() {
 
         {tickets.length === 0 && (
           <div className="mt-8 rounded-lg border border-dashed border-zinc-300 p-8 text-center">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">Você ainda não possui bilhetes</p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">Gere seu primeiro bilhete na tela de apostas.</p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              Você ainda não possui bilhetes
+            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+              Gere seu primeiro bilhete na tela de apostas.
+            </p>
           </div>
         )}
       </main>
