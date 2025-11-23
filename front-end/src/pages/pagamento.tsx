@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/header";
-import NavBottom from "../components/navbar";
+import NavBottom from "../components/NavBottom";
 
 // Pagamento Pix — arquivo gerado para o projeto ZLPix Premiado
 // Local: src/pages/pagamento.tsx
