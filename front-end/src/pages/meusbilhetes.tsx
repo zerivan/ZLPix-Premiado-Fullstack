@@ -1,7 +1,7 @@
 // src/pages/meusbilhetes.tsx
 import React, { useState } from "react";
 import Header from "../components/header";
-import NavBottom from "../components/navbottom";
+import NavBottom from "../components/NavBottom";
 
 type TicketStatus = "premiado" | "pendente" | "nao-premiado";
 
