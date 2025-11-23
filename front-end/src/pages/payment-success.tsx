@@ -1,85 +1,80 @@
-// src/pages/payment-success.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface PaymentSuccessProps {
-  numbers?: string[]; // ex.: ["85","03","27"]
-}
-
-export default function PaymentSuccess({ numbers = ["85", "03", "27"] }: PaymentSuccessProps) {
+export default function PaymentSuccess() {
   const navigate = useNavigate();
 
+  // redireciona automaticamente para home após 4 segundos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate("/");
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
+  // dezenas de exemplo (depois você substitui pelo valor real que virá do backend)
+  const dezenas = ["08", "50", "32"];
+
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col">
-      {/* Top App Bar */}
-      <header className="flex items-center p-4 pb-2 justify-between sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
-        <div className="flex size-12 items-center justify-center text-text-light dark:text-text-dark">
-          <span className="material-symbols-outlined text-3xl cursor-pointer"
-            onClick={() => navigate("/")}
-          >close</span>
-        </div>
-        <h2 className="text-lg font-bold text-text-light dark:text-text-dark flex-1 text-center">
-          Confirmação
-        </h2>
-        <div className="size-12"></div>
-      </header>
-
-      {/* Body */}
-      <main className="flex-grow flex flex-col justify-center items-center px-4 py-8">
-
-        {/* Success Icon */}
-        <div className="flex items-center justify-center size-24 bg-primary/20 rounded-full mb-6">
-          <div className="flex items-center justify-center size-16 bg-primary rounded-full">
-            <span className="material-symbols-outlined text-white text-5xl">check</span>
+    <div className="min-h-screen flex flex-col items-center justify-between bg-background-light dark:bg-background-dark pb-8 pt-10 px-6 font-display">
+      
+      {/* Ícone de sucesso */}
+      <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center w-28 h-28 rounded-full bg-green-500/20 mb-6">
+          <div className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-5xl">
+              check
+            </span>
           </div>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-[32px] font-bold text-center text-text-light dark:text-text-dark px-4">
-          Sua compra foi aprovada!
+        {/* Título */}
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white text-center mb-2">
+          Pagamento Aprovado!
         </h1>
 
-        <p className="text-base text-text-light/80 dark:text-text-dark/80 text-center mt-2 mb-6">
-          Boa sorte! Seu bilhete é:
+        {/* Subtexto */}
+        <p className="text-zinc-600 dark:text-zinc-300 text-center text-base px-6">
+          Boa sorte! Seu bilhete foi enviado para seu E-mail e WhatsApp.
         </p>
+      </div>
 
-        {/* Ticket Numbers – bolinhas verdes */}
-        <div className="w-full max-w-sm p-4">
-          <div className="flex flex-col items-center rounded-xl bg-white dark:bg-secondary-dark shadow-lg py-6">
-            
-            <div className="flex items-center justify-center gap-4">
-              {numbers.map((n, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white text-2xl font-bold shadow-md"
-                >
-                  {n}
-                </div>
-              ))}
-            </div>
+      {/* Bilhete */}
+      <div className="w-full max-w-sm mt-8">
+        <div className="rounded-xl bg-white dark:bg-zinc-900 shadow-lg p-6 flex flex-col items-center">
+          <h2 className="text-zinc-700 dark:text-zinc-300 text-sm mb-3">
+            Suas dezenas
+          </h2>
 
-            <p className="mt-4 text-text-light/70 dark:text-text-dark/70 text-base">
-              Seu Bilhete
-            </p>
+          <div className="flex gap-4 mb-2">
+            {dezenas.map((d, i) => (
+              <div
+                key={i}
+                className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-xl font-bold shadow-md"
+              >
+                {d}
+              </div>
+            ))}
           </div>
+
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Bilhete Gerado</p>
         </div>
+      </div>
 
-        {/* Info */}
-        <p className="text-sm text-text-light/80 dark:text-text-dark/80 text-center max-w-xs mt-6">
-          Uma cópia do seu bilhete e os detalhes do sorteio foram enviados para o seu e-mail e WhatsApp cadastrados.
+      {/* Info */}
+      <div className="text-center px-6 mt-6">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Você será redirecionado automaticamente para a página inicial.
         </p>
+      </div>
 
-      </main>
-
-      {/* Bottom Button */}
-      <footer className="sticky bottom-0 w-full p-4 bg-background-light dark:bg-background-dark">
-        <button
-          className="w-full flex items-center justify-center rounded-full bg-primary px-6 py-4 text-white text-lg font-bold"
-          onClick={() => navigate("/home")}
-        >
-          Voltar para o Início
-        </button>
-      </footer>
+      {/* Botão de voltar manual (caso precise) */}
+      <button
+        onClick={() => navigate("/")}
+        className="w-full max-w-sm h-14 rounded-full bg-green-500 text-white font-bold shadow-lg mt-6"
+      >
+        Voltar para o início agora
+      </button>
     </div>
   );
 }
