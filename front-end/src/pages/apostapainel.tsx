@@ -1,7 +1,7 @@
 // src/apostapainel.tsx
 import React, { useEffect, useRef, useState } from "react";
 import Header from "./components/header"; // ajuste se o seu header estiver em outro path
-import NavBottom from "./components/navbar"; // ajuste se o seu nav estiver em outro path
+import NavBottom from "./components/NavBottom"; // ajuste se o seu nav estiver em outro path
 import { useNavigate } from "react-router-dom";
 
 /**
