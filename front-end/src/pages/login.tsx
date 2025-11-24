@@ -6,6 +6,14 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
+  function handleLogin() {
+    // simulação de login – coloca token
+    localStorage.setItem("TOKEN_ZLPIX", "logado");
+
+    // redireciona para a Home REAL
+    navigate("/");
+  }
+
   return (
     <div className="bg-background-light dark:bg-background-dark min-h-screen w-full flex items-center justify-center p-4 font-display">
       <div className="w-full max-w-sm flex flex-col items-center gap-6">
@@ -96,7 +104,7 @@ export default function Login() {
 
           {/* Botão Login */}
           <button
-            onClick={() => navigate("/home")}
+            onClick={handleLogin}
             className="h-14 w-full rounded-lg bg-primary text-slate-900
             font-bold text-base active:scale-95"
           >
@@ -109,13 +117,14 @@ export default function Login() {
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Não tem uma conta?
             <span
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/cadastro")}
               className="font-bold text-primary ml-1 hover:underline cursor-pointer"
             >
               Cadastre-se agora
             </span>
           </p>
         </div>
+
       </div>
     </div>
   );
