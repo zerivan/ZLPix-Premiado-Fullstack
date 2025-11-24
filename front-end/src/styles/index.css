@@ -25,43 +25,68 @@
   padding: 0;
 }
 
-html,
-body,
-#root {
+html, body, #root {
   height: 100%;
 }
 
-/* IMPORTANTE!!!
-   Esse fundo azul aqui vinha QUEBRANDO o layout!
-   Ajustei para só aplicar em páginas que usam classes customizadas. */
 body {
   font-family: Inter, Arial, sans-serif;
-  background: var(--bg-light); /* Fundo NEUTRO universal */
-  color: var(--text-dark);
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  color: var(--text-light);
   overflow-x: hidden;
 }
 
 /* ===================================
-   COMPONENTES GERAIS
+   LOGIN
    =================================== */
 
-.card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
-  border-radius: 16px;
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
   padding: 20px;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+
+.login-box {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card-bg-dark);
+  padding: 24px;
+  border-radius: 18px;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+}
+
+.login-box h1 {
+  text-align: center;
+  margin-bottom: 6px;
+  font-size: 26px;
+  color: var(--gold);
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  margin-top: 3px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+input:focus {
+  outline: 2px solid var(--gold);
 }
 
 .btn {
-  display: inline-block;
   padding: 12px 16px;
   border-radius: 12px;
   font-weight: 600;
-  cursor: pointer;
   text-align: center;
   border: none;
-  transition: transform .15s ease;
+  cursor: pointer;
 }
 
 .btn-primary {
@@ -71,112 +96,4 @@ body {
 
 .btn-primary:active {
   transform: scale(0.95);
-}
-
-.btn-outline {
-  border: 2px solid var(--gold);
-  color: var(--gold);
-  background: transparent;
-}
-
-/* NAVBAR */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  z-index: 50;
-}
-
-.bottom-nav a {
-  text-align: center;
-  font-size: 12px;
-  color: var(--gold-strong);
-  font-weight: 600;
-}
-
-.bottom-nav .icon {
-  font-size: 24px;
-}
-
-/* ===================================
-   LOGIN – Ajustado e Centralizado
-   =================================== */
-
-.login-wrapper {
-  display: flex;
-  min-height: 100vh;
-  justify-content: center;
-  align-items: center;
-  padding: 22px;
-
-  /* Fundo azul só no login */
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  color: var(--text-light);
-}
-
-.login-box {
-  width: 100%;
-  max-width: 380px;
-  background: var(--card-bg-dark);
-  padding: 26px;
-  border-radius: 20px;
-  box-shadow: 0px 6px 32px rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.login-box h1 {
-  text-align: center;
-  margin-bottom: 12px;
-  font-size: 26px;
-  color: var(--gold);
-  font-weight: 700;
-}
-
-/* Inputs corrigidos – Agora perfeitos */
-input {
-  width: 100%;
-  padding: 15px;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255,255,255,0.18);
-  color: white;
-  margin-top: 4px;
-  margin-bottom: 16px;
-  font-size: 1rem;
-}
-
-input::placeholder {
-  color: rgba(255,255,255,0.7);
-}
-
-input:focus {
-  outline: 2px solid var(--gold);
-}
-
-/* ===================================
-   HOME – Banner Azul/Dourado
-   =================================== */
-
-.home-banner {
-  background: var(--primary-dark);
-  padding: 28px;
-  border-radius: 20px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  color: var(--text-light);
-}
-
-.home-banner h2 {
-  font-size: 42px;
-  font-weight: 800;
-  color: var(--gold);
-  text-shadow: 0 3px 10px rgba(255,215,0,0.45);
 }
