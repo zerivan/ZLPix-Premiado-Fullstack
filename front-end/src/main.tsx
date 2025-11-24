@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/index.css";
 
-import { api } from "./api/client";
-import AppRoutes from "./routes/index";
+import { api } from "./api/client.ts";   // ✅ AJUSTADO
+import AppRoutes from "./routes/index.tsx"; // ⚠️ AJUSTADO TAMBÉM
 
 import { BrowserRouter } from "react-router-dom";
 
