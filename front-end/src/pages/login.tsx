@@ -16,18 +16,21 @@ export default function Login() {
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
             alt="Logo ZLPix"
-            className="w-40 h-auto object-contain"
+            className="w-44 h-auto object-contain drop-shadow-xl"
           />
         </div>
 
         {/* TÍTULO */}
-        <h1>Bem-vindo de volta!</h1>
+        <h1 className="text-center mb-1">Bem-vindo de volta!</h1>
+
         <p className="text-center mb-6" style={{ opacity: 0.8 }}>
           Faça login para continuar
         </p>
 
-        {/* CAMPOS */}
-        <label>E-mail</label>
+        {/* CAMPO EMAIL */}
+        <label className="mt-2 font-semibold" style={{ color: "var(--gold)" }}>
+          E-mail
+        </label>
         <input
           type="email"
           placeholder="seuemail@exemplo.com"
@@ -35,7 +38,10 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <label>Senha</label>
+        {/* CAMPO SENHA */}
+        <label className="mt-2 font-semibold" style={{ color: "var(--gold)" }}>
+          Senha
+        </label>
         <input
           type="password"
           placeholder="Sua senha"
@@ -45,26 +51,27 @@ export default function Login() {
 
         {/* BOTÃO LOGIN */}
         <button
-          className="btn btn-primary w-full mt-2"
-          style={{ height: "48px", fontSize: "1rem" }}
+          className="btn btn-primary w-full mt-3"
+          style={{ height: "50px", fontSize: "1.05rem", fontWeight: 700 }}
           onClick={() => navigate("/")}
         >
           Entrar
         </button>
 
-        {/* LINK PARA CADASTRO */}
-        <p className="center mt-4">
+        {/* LINK CADASTRO */}
+        <p className="center mt-4 text-sm">
           Não tem conta?
           <span
             onClick={() => navigate("/cadastro")}
             className="cursor-pointer"
-            style={{ color: "var(--gold)", fontWeight: 700, marginLeft: 4 }}
+            style={{ color: "var(--gold)", fontWeight: 700, marginLeft: 6 }}
           >
             Cadastre-se
           </span>
         </p>
 
       </div>
+
     </div>
   );
 }
