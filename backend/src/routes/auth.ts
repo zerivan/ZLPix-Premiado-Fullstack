@@ -10,7 +10,9 @@ const prisma = new PrismaClient();
 // em produção você coloca isso no .env
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-zlpix-change-me";
 
-// POST /auth/register
+/* ============================================================
+   POST /auth/register  → criar conta
+============================================================ */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, phone, pixKey, password } = req.body || {};
@@ -21,13 +23,16 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    // verifica duplicado
     const exists = await prisma.user.findUnique({ where: { email } });
+
     if (exists) {
       return res.status(409).json({
         message: "Já existe um usuário com esse e-mail.",
       });
     }
 
+    // hash seguro
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -60,7 +65,9 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// POST /auth/login
+/* ============================================================
+   POST /auth/login  → autenticar usuário
+============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -80,6 +87,7 @@ router.post("/login", async (req, res) => {
     }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
+
     if (!ok) {
       return res.status(401).json({
         message: "E-mail ou senha inválidos.",
