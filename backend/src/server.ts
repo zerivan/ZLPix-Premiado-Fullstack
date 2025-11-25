@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 
-import authroutes from "./routes/auth";   // <-- nome é authroutes (minúsculo)
+import authroutes from "./routes/auth";  // <- nome correto
 
 import { load, save, loadMeta, saveMeta } from "./jsondb.js";
 
@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
 /* ============================
       ROTAS DE AUTENTICAÇÃO
 =============================== */
-app.use("/auth", authroutes);   // <-- AQUI TAMBÉM: authroutes certinho
+app.use("/auth", authroutes);   // <-- nome corrigido aqui
 
 /* ============================
       INICIAR SERVIDOR
