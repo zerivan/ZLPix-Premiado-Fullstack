@@ -1,7 +1,12 @@
 // backend/src/server.ts
 import express from "express";
 import cors from "cors";
-import authroutes from "./routes/auth"; // <-- IMPORT CORRETO (tudo minúsculo!)
+
+// rotas
+import authroutes from "./routes/auth";   // login + registro
+import usersroutes from "./routes/users"; // nova rota de lista de clientes
+
+// jsondb (mantido como estava)
 import { load, save, loadMeta, saveMeta } from "./jsondb.js";
 
 const app = express();
@@ -25,6 +30,11 @@ app.get("/", (req, res) => {
    ROTAS DE AUTENTICAÇÃO
 ============================================================ */
 app.use("/auth", authroutes);
+
+/* ============================================================
+   ROTAS DE USUÁRIOS (NOVA)
+============================================================ */
+app.use("/users", usersroutes);
 
 /* ============================================================
    INICIAR SERVIDOR
