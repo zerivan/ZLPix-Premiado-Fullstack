@@ -15,103 +15,118 @@
   --text-light: #ffffff;
 
   --card-bg-light: rgba(255, 255, 255, 0.9);
-  --card-bg-dark: rgba(255, 255, 255, 0.10);
+  --card-bg-dark: rgba(255, 255, 255, 0.12);
 }
 
 /* RESET */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 html, body, #root {
   height: 100%;
-}
-
-body {
-  font-family: Inter, Arial, sans-serif;
   background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  color: var(--text-light);
-  overflow-x: hidden;
+  overflow: hidden; /* AQUI MATA O ESPAÇO DO RODAPÉ */
 }
 
 /* ===================================
-   LOGIN
+   LOGIN (VERSÃO FINAL)
    =================================== */
 
 .login-wrapper {
+  height: 100vh;               /* ocupa a tela inteira */
   display: flex;
-  min-height: 100vh;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start; /* NÃO empurra nada pra fora */
   align-items: center;
-  padding: 20px;
+  padding-top: 40px;
+  overflow-y: auto;            /* permite scroll sem quebrar layout */
 }
 
-/* 🔥 Ajustei AQUI: caixa maior e mais proporcional */
 .login-box {
-  width: 100%;
-  max-width: 480px; /* antes era 380px — agora bem melhor */
-  background: var(--card-bg-dark);
-  padding: 26px;
+  width: 92%;
+  max-width: 420px;
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(12px);
   border-radius: 22px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
+  padding: 26px 22px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
 }
 
-/* Título */
-.login-box h1 {
+/* LOGO */
+.login-box img {
+  width: 180px;
+  height: auto;
+  margin-bottom: 12px;
+}
+
+/* TÍTULOS */
+.login-title {
   text-align: center;
-  margin-bottom: 8px;
-  font-size: 28px;
   color: var(--gold);
-  font-weight: 800;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-/* Inputs */
+.login-subtitle {
+  text-align: center;
+  color: #e0e6ff;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+/* LABEL + INPUT */
 label {
   font-weight: 600;
+  font-size: 15px;
   color: var(--gold);
-  margin-top: 6px;
-  margin-bottom: 4px;
 }
 
 input {
   width: 100%;
-  padding: 15px;
+  padding: 14px;
   border-radius: 12px;
+  margin-top: 4px;
+  margin-bottom: 16px;
   border: none;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.18);
   color: white;
-  margin-bottom: 14px;
-  font-size: 1rem;
-}
-
-input::placeholder {
-  color: rgba(255,255,255,0.6);
+  font-size: 16px;
 }
 
 input:focus {
   outline: 2px solid var(--gold);
 }
 
-/* Botão */
-.btn {
-  padding: 14px 18px;
-  border-radius: 14px;
-  font-weight: 700;
-  text-align: center;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
+/* BOTÃO */
 .btn-primary {
+  width: 100%;
   background: var(--gold);
   color: #222;
-  font-size: 1.1rem;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  border: none;
+  margin-top: 8px;
 }
 
 .btn-primary:active {
   transform: scale(0.96);
+}
+
+/* LINK CADASTRO */
+.login-footer {
+  text-align: center;
+  margin-top: 16px;
+  color: white;
+}
+
+.login-footer span {
+  color: var(--gold);
+  font-weight: 700;
+  margin-left: 3px;
 }
