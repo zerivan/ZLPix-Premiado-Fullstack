@@ -1,6 +1,6 @@
 /* ================================
    ZLPIX – LAYOUT PADRÃO RESPONSIVO
-   CARD MÉDIO (85% ALTURA)
+   ALTURA CORRIGIDA • CARD FLEXÍVEL
    ================================ */
 
 :root {
@@ -22,7 +22,9 @@
   box-sizing: border-box;
 }
 
-/* ISSO AQUI É O QUE RESOLVE O BUG! */
+/* =============================
+   CORRIGINDO BUG DE ALTURA
+   ============================= */
 html, body {
   min-height: 100%;
   height: auto;
@@ -41,39 +43,39 @@ body {
 }
 
 /* ===================================
-   WRAPPER PADRÃO PARA TODAS AS PÁGINAS
+   WRAPPER PADRÃO
    =================================== */
-
 .page-wrapper {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  align-items: flex-start;   /* <-- NÃO centraliza vertical */
+  padding: 30px 20px;
+  padding-top: 60px;         /* espaço ideal no topo */
 }
 
 /* ===================================
-   CARD PADRÃO (LOGIN, CADASTRO, ETC)
+   CARD PADRÃO — ALTURA AJUSTADA
    =================================== */
-
 .page-card {
   width: 100%;
   max-width: 420px;
-  height: 85vh;
+
+  /* Ajuste PRINCIPAL! */
+  height: auto;
+  min-height: 65vh;
+
   background: var(--card-bg);
   backdrop-filter: blur(14px);
   border-radius: 22px;
-  padding: 22px;
+  padding: 24px;
   color: white;
 
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
+  justify-content: flex-start;
 
-.page-card::-webkit-scrollbar {
-  display: none;
+  overflow-y: visible; /* NÃO cria scroll interno */
 }
 
 /* TÍTULOS */
