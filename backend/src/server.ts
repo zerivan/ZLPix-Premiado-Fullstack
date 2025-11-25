@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 
-import authroutes from "./routes/auth";   // <- ADICIONADO
+import authroutes from "./routes/auth";   // <-- nome é authroutes (minúsculo)
 
 import { load, save, loadMeta, saveMeta } from "./jsondb.js";
 
@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
 /* ============================
       ROTAS DE AUTENTICAÇÃO
 =============================== */
-app.use("/auth", authRoutes);   // <- ADICIONADO
+app.use("/auth", authroutes);   // <-- AQUI TAMBÉM: authroutes certinho
 
 /* ============================
       INICIAR SERVIDOR
