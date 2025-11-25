@@ -11,6 +11,7 @@ import Pagamento from "../pages/pagamento";
 import PaymentSuccess from "../pages/payment-success";
 import Resultado from "../pages/resultado";
 import AdminLogin from "../pages/adminlogin";
+import RecuperarSenha from "../pages/recuperar-senha"; // 🔥 ADICIONADO
 
 function isLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -26,6 +27,9 @@ export default function AppRoutes() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
+
+      {/* 🔥 NOVO - PÁGINA LIVRE */}
+      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
       <Route
         path="/aposta"
