@@ -7,6 +7,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,12 +35,7 @@ export default function Login() {
         return;
       }
 
-      // guarda token pro isLoggedIn() das rotas
       localStorage.setItem("TOKEN_ZLPIX", token);
-
-      // futuro: guardar nome/email também se quiser
-      // localStorage.setItem("ZLPIX_USER", JSON.stringify(response.data.user));
-
       navigate("/");
     } catch (err: any) {
       const msg =
@@ -54,24 +50,25 @@ export default function Login() {
   return (
     <div className="page-wrapper">
       <div className="page-card">
+
         {/* LOGO */}
-        <div style={{ textAlign: "center", marginBottom: "18px" }}>
+        <div style={{ textAlign: "center", marginBottom: "14px" }}>
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
             alt="Logo ZLPix"
-            style={{ width: "150px", height: "auto" }}
+            style={{ width: "140px", height: "auto" }}
           />
         </div>
 
-        {/* TÍTULO */}
         <h1 className="page-title" style={{ marginTop: 0 }}>
           Entrar na sua conta
         </h1>
         <p className="page-subtitle">Aposte e acompanhe seus resultados</p>
 
         <form onSubmit={handleSubmit}>
+
           {/* E-MAIL */}
-          <label>E-mail</label>
+          <label className="label">E-mail</label>
           <input
             className="page-input"
             type="email"
@@ -80,16 +77,34 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* SENHA */}
-          <label>Senha</label>
-          <input
-            className="page-input"
-            type="password"
-            placeholder="Digite sua senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-          />
+          {/* SENHA COM ÍCONE */}
+          <label className="label">Senha</label>
+          <div style={{ position: "relative" }}>
+            <input
+              className="page-input"
+              type={mostrarSenha ? "text" : "password"}
+              placeholder="Digite sua senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+            />
+            <span
+              onClick={() => setMostrarSenha(!mostrarSenha)}
+              style={{
+                position: "absolute",
+                right: 12,
+                top: 13,
+                cursor: "pointer",
+                color: "var(--gold)",
+                fontSize: 18,
+                userSelect: "none",
+              }}
+              className="material-symbols-outlined"
+            >
+              {mostrarSenha ? "visibility_off" : "visibility"}
+            </span>
+          </div>
 
+          {/* ERRO */}
           {erro && (
             <p
               style={{
@@ -105,17 +120,27 @@ export default function Login() {
           )}
 
           {/* BOTÃO */}
-          <button
-            type="submit"
-            className="page-btn"
-            disabled={loading}
-          >
+          <button type="submit" className="page-btn" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          {/* ESQUECI SENHA */}
+          <p
+            style={{
+              textAlign: "right",
+              marginTop: 10,
+              fontSize: "0.85rem",
+              color: "var(--gold)",
+              cursor: "pointer",
+            }}
+            onClick={() => navigate("/recuperar-senha")}
+          >
+            Esqueci minha senha
+          </p>
         </form>
 
         {/* CADASTRO */}
-        <p style={{ textAlign: "center", marginTop: "18px" }}>
+        <p style={{ textAlign: "center", marginTop: "16px" }}>
           Não tem conta?
           <span
             className="page-link"
