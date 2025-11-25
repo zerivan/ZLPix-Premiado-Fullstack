@@ -1,6 +1,6 @@
 /* ================================
    ZLPIX – LAYOUT PADRÃO RESPONSIVO
-   ALTURA CORRIGIDA E MAIS COMPACTO
+   ALTURA CORRIGIDA E SIMÉTRICA
    ================================ */
 
 :root {
@@ -22,7 +22,7 @@
   box-sizing: border-box;
 }
 
-/* AJUSTA ALTURA */
+/* ALTURA GLOBAL */
 html, body {
   min-height: 100%;
 }
@@ -40,7 +40,7 @@ body {
 }
 
 /* ===================================
-   WRAPPER — MAIS FECHADO
+   WRAPPER PADRÃO — ESPAÇOS IGUAIS
    =================================== */
 .page-wrapper {
   flex: 1;
@@ -48,9 +48,8 @@ body {
   justify-content: center;
   align-items: flex-start;
 
-  /* REDUZI O ESPAÇO AQUI 👇 */
-  padding: 20px 16px;
-  padding-top: 25px;
+  /* ESPAÇO IGUAL EM CIMA E EMBAIXO */
+  padding: 25px 16px;
 }
 
 /* ===================================
@@ -60,15 +59,13 @@ body {
   width: 100%;
   max-width: 420px;
 
-  /* REDUZIDO! 👇 */
   height: auto;
-  min-height: 55vh;
+  min-height: auto;  /* REMOVE O ESTICAMENTO */
 
   background: var(--card-bg);
   backdrop-filter: blur(14px);
   border-radius: 22px;
 
-  /* REDUZIDO! 👇 */
   padding: 18px;
 
   color: white;
@@ -76,7 +73,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
 
-  overflow-y: visible;
+  overflow-y: visible; /* sem scroll interno */
 }
 
 /* TÍTULOS */
@@ -86,7 +83,7 @@ body {
   text-align: center;
   color: var(--gold);
 
-  margin-top: 6px;   /* MENOR */
+  margin-top: 6px;
   margin-bottom: 4px;
 }
 
@@ -117,15 +114,16 @@ body {
   width: 100%;
   background: var(--gold);
   color: #222;
-
-  /* MENOR 👇 */
   padding: 12px;
-
   border-radius: 12px;
   font-weight: 700;
   font-size: 1.05rem;
   margin-top: 8px;
   border: none;
+}
+
+.page-btn:active {
+  transform: scale(0.96);
 }
 
 /* LINKS */
