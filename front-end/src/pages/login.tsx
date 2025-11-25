@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,16 +12,18 @@ export default function Login() {
       <div className="page-card">
 
         {/* LOGO */}
-        <div style={{ textAlign: "center", marginBottom: "10px" }}>
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
             alt="Logo ZLPix"
-            style={{ width: "140px", height: "auto" }}
+            style={{ width: "150px", height: "auto" }}
           />
         </div>
 
         {/* TÍTULO */}
-        <h1 className="page-title">Entrar na sua conta</h1>
+        <h1 className="page-title" style={{ marginTop: "0" }}>
+          Entrar na sua conta
+        </h1>
         <p className="page-subtitle">Aposte e acompanhe seus resultados</p>
 
         {/* E-MAIL */}
@@ -44,21 +47,19 @@ export default function Login() {
         />
 
         {/* BOTÃO */}
-        <button
-          className="page-btn"
-          onClick={() => navigate("/")}
-        >
+        <button className="page-btn" onClick={() => navigate("/")}>
           Entrar
         </button>
 
         {/* CADASTRO */}
-        <p style={{ textAlign: "center", marginTop: "14px" }}>
+        <p style={{ textAlign: "center", marginTop: "18px" }}>
           Não tem conta?
           <span
             className="page-link"
             style={{ cursor: "pointer" }}
             onClick={() => navigate("/cadastro")}
           >
+            {" "}
             Cadastre-se
           </span>
         </p>
