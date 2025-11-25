@@ -4,49 +4,44 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-const JWT_SECRET = process.env.JWT_SECRET || "zlpix-fallback-secret";
-
-// POST /auth/register
+// ------------------------
+//  REGISTER (cadastro)
+// ------------------------
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, name, phone, pixKey } = req.body;
+    const { name, email, phone, pixKey, password } = req.body;
 
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        message: "Nome, e-mail e senha são obrigatórios."
-      });
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Nome, e-mail e senha são obrigatórios." });
     }
 
     const existing = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existing) {
-      return res.status(409).json({ message: "E-mail já cadastrado." });
+      return res.status(409).json({ message: "E-mail já está cadastrado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
-        email,
-        passwordHash,
         name,
+        email,
         phone,
         pixKey,
-      }
+        passwordHash,
+      },
     });
 
     return res.status(201).json({
       message: "Usuário cadastrado com sucesso.",
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        pixKey: user.pixKey
-      }
+      user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
     console.error("Erro em /auth/register:", err);
@@ -54,18 +49,20 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// POST /auth/login
+// ------------------------
+//  LOGIN
+// ------------------------
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
@@ -82,4 +79,14 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res
+    return res.json({
+      message: "Login realizado com sucesso.",
+      token,
+    });
+  } catch (err) {
+    console.error("Erro em /auth/login:", err);
+    return res.status(500).json({ message: "Erro ao fazer login." });
+  }
+});
+
+export default router;
