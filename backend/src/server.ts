@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth";
-import { prisma } from "./lib/prisma";
+import usersRoutes from "./routes/users";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -10,25 +10,16 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Health check / teste rápido
+// ROTA INICIAL / TESTE
 app.get("/", (_req, res) => {
-  res.json({ ok: true, message: "ZLPix backend rodando." });
+  res.json({ status: "ok", message: "ZLPix backend rodando." });
 });
 
-// Rotas de autenticação
+// ROTAS
 app.use("/auth", authRoutes);
+app.use("/users", usersRoutes);
 
-// Manter Prisma estável no Render
-process.on("SIGTERM", async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-process.on("SIGINT", async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
+// START SERVER
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
