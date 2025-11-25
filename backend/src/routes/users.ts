@@ -1,15 +1,14 @@
 // backend/src/routes/users.ts
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * GET /users
  * Retorna lista de usuários (sem mostrar senha)
  */
-router.get("/", async (req, res) => {
+router.get("/", async (_req, res) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -22,7 +21,7 @@ router.get("/", async (req, res) => {
       },
     });
 
-    return res.json({ users });
+    return res.json(users);
   } catch (err: any) {
     console.error("Erro ao listar usuários:", err);
     return res.status(500).json({ message: "Erro ao buscar usuários." });
