@@ -1,7 +1,7 @@
 // src/pages/apostapainel.tsx
 import React, { useEffect, useRef, useState } from "react";
-import Header from "../components/header";
-import NavBottom from "../components/navbottom";
+import header from "../components/header";
+import navbottom from "../components/navbottom";
 import { useNavigate } from "react-router-dom";
 
 function formatNum(n: number) {
