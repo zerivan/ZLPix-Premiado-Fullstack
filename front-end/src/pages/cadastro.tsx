@@ -1,6 +1,7 @@
 // src/pages/cadastro.tsx  
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api/client";
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function Cadastro() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPass) {
@@ -22,15 +23,29 @@ export default function Cadastro() {
       return;
     }
 
-    console.log({
-      fullName,
-      email,
-      phone,
-      pixKey,
-      password,
-    });
+    if (!fullName || !email || !password) {
+      alert("Preencha nome, e-mail e senha.");
+      return;
+    }
 
-    alert("Conta criada! (Dados enviados ao console)");
+    try {
+      const response = await api.post("/auth/register", {
+        name: fullName,
+        email,
+        phone,
+        pixKey,
+        password
+      });
+
+      alert("Conta criada com sucesso!");
+      navigate("/login");
+
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        "Erro ao criar conta. Tente novamente.";
+      alert(msg);
+    }
   };
 
   return (
@@ -50,6 +65,7 @@ export default function Cadastro() {
         <p className="page-subtitle">É rápido e fácil</p>
 
         <form onSubmit={handleSubmit}>
+          
           {/* Nome */}
           <label>Nome Completo</label>
           <input
