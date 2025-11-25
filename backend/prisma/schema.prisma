@@ -4,22 +4,13 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
-model Pix {
-  id        Int      @id @default(autoincrement())
-  chave     String
-  valor     Float
-  criadoEm  DateTime @default(now())
+  url      = env("DATABASE_URL")
 }
 
 model User {
   id           Int      @id @default(autoincrement())
-  name         String
   email        String   @unique
-  phone        String?
-  pixKey       String?
   passwordHash String
+  name         String?
   createdAt    DateTime @default(now())
 }

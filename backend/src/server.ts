@@ -1,44 +1,20 @@
-// backend/src/server.ts
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-
-// rotas
-import authroutes from "./routes/auth";   // login + registro
-import usersroutes from "./routes/users"; // nova rota de lista de clientes
-
-// jsondb (mantido como estava)
-import { load, save, loadMeta, saveMeta } from "./jsondb.js";
+import authRoutes from "./routes/auth";
 
 const app = express();
+const PORT = process.env.PORT || 4000;
+
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 4000;
-
-/* ============================================================
-   ROTA RAIZ (TESTE)
-============================================================ */
-app.get("/", (req, res) => {
-  res.json({
-    ok: true,
-    api: "ZLPix Backend ativo",
-    version: "1.0",
-  });
+app.get("/", (_req, res) => {
+  res.json({ ok: true, message: "ZLPix backend rodando." });
 });
 
-/* ============================================================
-   ROTAS DE AUTENTICAÇÃO
-============================================================ */
-app.use("/auth", authroutes);
+app.use("/auth", authRoutes);
 
-/* ============================================================
-   ROTAS DE USUÁRIOS (NOVA)
-============================================================ */
-app.use("/users", usersroutes);
-
-/* ============================================================
-   INICIAR SERVIDOR
-============================================================ */
 app.listen(PORT, () => {
-  console.log("🔥 Backend rodando na porta", PORT);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
