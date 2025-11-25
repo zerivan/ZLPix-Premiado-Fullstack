@@ -1,7 +1,9 @@
-import authroutes from "./routes/auth";
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
+
+import authroutes from "./routes/auth";   // <- ADICIONADO
+
 import { load, save, loadMeta, saveMeta } from "./jsondb.js";
 
 const app = express();
@@ -10,7 +12,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
 
-// ====== TESTE SIMPLES DO BACKEND ======
+/* ============================
+      ROTA RAIZ / TESTE
+=============================== */
 app.get("/", (req, res) => {
   res.json({
     ok: true,
@@ -19,7 +23,14 @@ app.get("/", (req, res) => {
   });
 });
 
-// ====== Iniciar servidor ======
+/* ============================
+      ROTAS DE AUTENTICAÇÃO
+=============================== */
+app.use("/auth", authRoutes);   // <- ADICIONADO
+
+/* ============================
+      INICIAR SERVIDOR
+=============================== */
 app.listen(PORT, () => {
   console.log("🔥 Backend rodando na porta", PORT);
 });
