@@ -22,8 +22,16 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
-  height: 100%;
+/* ISSO AQUI É O QUE RESOLVE O BUG! */
+html, body {
+  min-height: 100%;
+  height: auto;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 body {
@@ -37,11 +45,11 @@ body {
    =================================== */
 
 .page-wrapper {
-  min-height: 100vh;
-  padding: 20px;
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 /* ===================================
@@ -54,15 +62,14 @@ body {
   height: 85vh;
   background: var(--card-bg);
   backdrop-filter: blur(14px);
-  border-radius: 22px;     /* OPÇÃO 1 — BORDAS REDONDAS MÉDIAS */
+  border-radius: 22px;
   padding: 22px;
   color: white;
 
   display: flex;
   flex-direction: column;
-  justify-content: start;
-  overflow-y: auto;        /* scroll suave dentro do card */
-  scrollbar-width: none;   /* remove barra */
+  overflow-y: auto;
+  scrollbar-width: none;
 }
 
 .page-card::-webkit-scrollbar {
