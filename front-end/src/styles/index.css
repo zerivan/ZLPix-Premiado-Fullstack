@@ -1,5 +1,6 @@
 /* ================================
-   ZLPIX – ESTILO OFICIAL AZUL/DOURADO
+   ZLPIX – LAYOUT PADRÃO RESPONSIVO
+   CARD MÉDIO (85% ALTURA)
    ================================ */
 
 :root {
@@ -8,14 +9,10 @@
   --gold: #ffd760;
   --gold-strong: #ffbe00;
 
-  --bg-light: #f5f7fa;
-  --bg-dark: #0e0e23;
-
   --text-dark: #111827;
   --text-light: #ffffff;
 
-  --card-bg-light: rgba(255, 255, 255, 0.9);
-  --card-bg-dark: rgba(255, 255, 255, 0.12);
+  --card-bg: rgba(255,255,255,0.10);
 }
 
 /* RESET */
@@ -27,106 +24,107 @@
 
 html, body, #root {
   height: 100%;
+}
+
+body {
   background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  overflow: hidden; /* AQUI MATA O ESPAÇO DO RODAPÉ */
+  font-family: Inter, Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 /* ===================================
-   LOGIN (VERSÃO FINAL)
+   WRAPPER PADRÃO PARA TODAS AS PÁGINAS
    =================================== */
 
-.login-wrapper {
-  height: 100vh;               /* ocupa a tela inteira */
+.page-wrapper {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ===================================
+   CARD PADRÃO (LOGIN, CADASTRO, ETC)
+   =================================== */
+
+.page-card {
+  width: 100%;
+  max-width: 420px;
+  height: 85vh;
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  border-radius: 22px;     /* OPÇÃO 1 — BORDAS REDONDAS MÉDIAS */
+  padding: 22px;
+  color: white;
+
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* NÃO empurra nada pra fora */
-  align-items: center;
-  padding-top: 40px;
-  overflow-y: auto;            /* permite scroll sem quebrar layout */
+  justify-content: start;
+  overflow-y: auto;        /* scroll suave dentro do card */
+  scrollbar-width: none;   /* remove barra */
 }
 
-.login-box {
-  width: 92%;
-  max-width: 420px;
-  background: rgba(255,255,255,0.10);
-  backdrop-filter: blur(12px);
-  border-radius: 22px;
-  padding: 26px 22px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
-}
-
-/* LOGO */
-.login-box img {
-  width: 180px;
-  height: auto;
-  margin-bottom: 12px;
+.page-card::-webkit-scrollbar {
+  display: none;
 }
 
 /* TÍTULOS */
-.login-title {
-  text-align: center;
-  color: var(--gold);
+.page-title {
   font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.login-subtitle {
+  font-weight: 800;
   text-align: center;
-  color: #e0e6ff;
-  font-size: 15px;
-  margin-bottom: 20px;
-}
-
-/* LABEL + INPUT */
-label {
-  font-weight: 600;
-  font-size: 15px;
   color: var(--gold);
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 
-input {
+.page-subtitle {
+  text-align: center;
+  opacity: 0.9;
+  margin-bottom: 18px;
+}
+
+/* CAMPOS */
+.page-input {
   width: 100%;
   padding: 14px;
   border-radius: 12px;
-  margin-top: 4px;
-  margin-bottom: 16px;
+  background: rgba(255,255,255,0.15);
   border: none;
-  background: rgba(255,255,255,0.18);
+  margin-bottom: 14px;
   color: white;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
-input:focus {
+.page-input::placeholder {
+  color: rgba(255,255,255,0.65);
+}
+
+.page-input:focus {
   outline: 2px solid var(--gold);
 }
 
 /* BOTÃO */
-.btn-primary {
+.page-btn {
   width: 100%;
   background: var(--gold);
   color: #222;
   padding: 14px;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 1.1rem;
+  margin-top: 10px;
   border: none;
-  margin-top: 8px;
 }
 
-.btn-primary:active {
+.page-btn:active {
   transform: scale(0.96);
 }
 
-/* LINK CADASTRO */
-.login-footer {
-  text-align: center;
-  margin-top: 16px;
-  color: white;
-}
-
-.login-footer span {
+/* LINKS */
+.page-link {
   color: var(--gold);
   font-weight: 700;
-  margin-left: 3px;
+  margin-left: 6px;
 }
