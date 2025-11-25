@@ -1,9 +1,7 @@
+// backend/src/server.ts
 import express from "express";
 import cors from "cors";
-import crypto from "crypto";
-
-import authroutes from "./routes/auth";  // <- nome correto
-
+import authroutes from "./routes/auth"; // <-- IMPORT CORRETO (tudo minúsculo!)
 import { load, save, loadMeta, saveMeta } from "./jsondb.js";
 
 const app = express();
@@ -12,9 +10,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
 
-/* ============================
-      ROTA RAIZ / TESTE
-=============================== */
+/* ============================================================
+   ROTA RAIZ (TESTE)
+============================================================ */
 app.get("/", (req, res) => {
   res.json({
     ok: true,
@@ -23,14 +21,14 @@ app.get("/", (req, res) => {
   });
 });
 
-/* ============================
-      ROTAS DE AUTENTICAÇÃO
-=============================== */
-app.use("/auth", authroutes);   // <-- nome corrigido aqui
+/* ============================================================
+   ROTAS DE AUTENTICAÇÃO
+============================================================ */
+app.use("/auth", authroutes);
 
-/* ============================
-      INICIAR SERVIDOR
-=============================== */
+/* ============================================================
+   INICIAR SERVIDOR
+============================================================ */
 app.listen(PORT, () => {
   console.log("🔥 Backend rodando na porta", PORT);
 });
