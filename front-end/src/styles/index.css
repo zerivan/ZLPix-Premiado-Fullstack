@@ -1,6 +1,6 @@
 /* ================================
    ZLPIX – LAYOUT PADRÃO RESPONSIVO
-   ALTURA CORRIGIDA • CARD FLEXÍVEL
+   ALTURA CORRIGIDA E MAIS COMPACTO
    ================================ */
 
 :root {
@@ -22,12 +22,9 @@
   box-sizing: border-box;
 }
 
-/* =============================
-   CORRIGINDO BUG DE ALTURA
-   ============================= */
+/* AJUSTA ALTURA */
 html, body {
   min-height: 100%;
-  height: auto;
 }
 
 #root {
@@ -43,65 +40,70 @@ body {
 }
 
 /* ===================================
-   WRAPPER PADRÃO
+   WRAPPER — MAIS FECHADO
    =================================== */
 .page-wrapper {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: flex-start;   /* <-- NÃO centraliza vertical */
-  padding: 30px 20px;
-  padding-top: 60px;         /* espaço ideal no topo */
+  align-items: flex-start;
+
+  /* REDUZI O ESPAÇO AQUI 👇 */
+  padding: 20px 16px;
+  padding-top: 25px;
 }
 
 /* ===================================
-   CARD PADRÃO — ALTURA AJUSTADA
+   CARD AJUSTADO — ALTURA PERFEITA
    =================================== */
 .page-card {
   width: 100%;
   max-width: 420px;
 
-  /* Ajuste PRINCIPAL! */
+  /* REDUZIDO! 👇 */
   height: auto;
-  min-height: 65vh;
+  min-height: 55vh;
 
   background: var(--card-bg);
   backdrop-filter: blur(14px);
   border-radius: 22px;
-  padding: 24px;
-  color: white;
 
+  /* REDUZIDO! 👇 */
+  padding: 18px;
+
+  color: white;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 
-  overflow-y: visible; /* NÃO cria scroll interno */
+  overflow-y: visible;
 }
 
 /* TÍTULOS */
 .page-title {
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 800;
   text-align: center;
   color: var(--gold);
-  margin-top: 8px;
+
+  margin-top: 6px;   /* MENOR */
   margin-bottom: 4px;
 }
 
 .page-subtitle {
   text-align: center;
   opacity: 0.9;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 /* CAMPOS */
 .page-input {
   width: 100%;
-  padding: 14px;
+  padding: 13px;
   border-radius: 12px;
   background: rgba(255,255,255,0.15);
   border: none;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   color: white;
   font-size: 1rem;
 }
@@ -110,30 +112,25 @@ body {
   color: rgba(255,255,255,0.65);
 }
 
-.page-input:focus {
-  outline: 2px solid var(--gold);
-}
-
 /* BOTÃO */
 .page-btn {
   width: 100%;
   background: var(--gold);
   color: #222;
-  padding: 14px;
+
+  /* MENOR 👇 */
+  padding: 12px;
+
   border-radius: 12px;
   font-weight: 700;
-  font-size: 1.1rem;
-  margin-top: 10px;
+  font-size: 1.05rem;
+  margin-top: 8px;
   border: none;
-}
-
-.page-btn:active {
-  transform: scale(0.96);
 }
 
 /* LINKS */
 .page-link {
   color: var(--gold);
   font-weight: 700;
-  margin-left: 6px;
+  margin-left: 4px;
 }
