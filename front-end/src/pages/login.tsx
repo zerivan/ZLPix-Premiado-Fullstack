@@ -1,4 +1,4 @@
-
+// src/pages/login.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -12,22 +12,20 @@ export default function Login() {
       <div className="page-card">
 
         {/* LOGO */}
-        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div className="flex justify-center mb-4 mt-2">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
             alt="Logo ZLPix"
-            style={{ width: "150px", height: "auto" }}
+            className="w-[130px] h-auto"
           />
         </div>
 
         {/* TÍTULO */}
-        <h1 className="page-title" style={{ marginTop: "0" }}>
-          Entrar na sua conta
-        </h1>
+        <h1 className="page-title">Entrar na sua conta</h1>
         <p className="page-subtitle">Aposte e acompanhe seus resultados</p>
 
-        {/* E-MAIL */}
-        <label>E-mail</label>
+        {/* INPUT – EMAIL */}
+        <label className="text-white font-semibold mt-2 mb-1">E-mail</label>
         <input
           className="page-input"
           type="email"
@@ -36,8 +34,8 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        {/* SENHA */}
-        <label>Senha</label>
+        {/* INPUT – SENHA */}
+        <label className="text-white font-semibold mt-2 mb-1">Senha</label>
         <input
           className="page-input"
           type="password"
@@ -47,19 +45,17 @@ export default function Login() {
         />
 
         {/* BOTÃO */}
-        <button className="page-btn" onClick={() => navigate("/")}>
+        <button className="page-btn mt-3" onClick={() => navigate("/")}>
           Entrar
         </button>
 
         {/* CADASTRO */}
-        <p style={{ textAlign: "center", marginTop: "18px" }}>
+        <p className="text-center mt-4 text-white">
           Não tem conta?
           <span
-            className="page-link"
-            style={{ cursor: "pointer" }}
+            className="page-link cursor-pointer ml-1"
             onClick={() => navigate("/cadastro")}
           >
-            {" "}
             Cadastre-se
           </span>
         </p>
