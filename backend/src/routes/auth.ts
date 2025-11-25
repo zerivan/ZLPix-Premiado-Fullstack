@@ -10,10 +10,12 @@ const JWT_SECRET = process.env.JWT_SECRET || "zlpix-fallback-secret";
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, phone, pixKey } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
+    if (!email || !password || !name) {
+      return res.status(400).json({
+        message: "Nome, e-mail e senha são obrigatórios."
+      });
     }
 
     const existing = await prisma.user.findUnique({
@@ -30,13 +32,21 @@ router.post("/register", async (req, res) => {
       data: {
         email,
         passwordHash,
-        name
+        name,
+        phone,
+        pixKey,
       }
     });
 
     return res.status(201).json({
       message: "Usuário cadastrado com sucesso.",
-      user: { id: user.id, email: user.email, name: user.name }
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        pixKey: user.pixKey
+      }
     });
   } catch (err) {
     console.error("Erro em /auth/register:", err);
@@ -72,14 +82,4 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res.json({
-      message: "Login realizado com sucesso.",
-      token
-    });
-  } catch (err) {
-    console.error("Erro em /auth/login:", err);
-    return res.status(500).json({ message: "Erro ao fazer login." });
-  }
-});
-
-export default router;
+    return res
