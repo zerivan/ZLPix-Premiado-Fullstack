@@ -1,7 +1,7 @@
 // src/pages/meusbilhetes.tsx
 import React, { useState } from "react";
-import header from "../components/header";
-import navbottom from "../components/NavBottom";
+import Header from "../components/header";
+import NavBottom from "../components/navbottom";
 
 type TicketStatus = "premiado" | "pendente" | "nao-premiado";
 
@@ -15,7 +15,10 @@ type Ticket = {
 };
 
 function formatCurrency(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return v.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }
 
 function formatDate(iso: string) {
@@ -62,23 +65,27 @@ export default function MeusBilhetes() {
     const text = `Bilhete ${t.id} — ${t.nums.join(", ")} — ${formatCurrency(
       t.value
     )} — ${formatDate(t.createdAt)}`;
+
     try {
       await navigator.clipboard.writeText(text);
-      alert("Bilhete copiado para a área de transferência.");
+      alert("Bilhete copiado!");
     } catch {
-      alert("Não foi possível copiar automaticamente. Segure e copie manualmente:\n\n" + text);
+      alert(
+        "Não foi possível copiar automaticamente. Copie manualmente:\n\n" +
+          text
+      );
     }
   }
 
   async function shareTicket(t: Ticket) {
-    const text = `Meu bilhete ${t.id}\nNúmeros: ${t.nums.join(
-      ", "
-    )}\nValor: ${formatCurrency(t.value)}\nGerado em: ${formatDate(
-      t.createdAt
-    )}`;
+    const text = `Meu bilhete ${t.id}
+Números: ${t.nums.join(", ")}
+Valor: ${formatCurrency(t.value)}
+Gerado em: ${formatDate(t.createdAt)}`;
+
     if ((navigator as any).share) {
       try {
-        await (navigator as any).share({ title: "Meu Bilhete", text });
+        await (navigator as any).share({ title: "Bilhete ZLPix", text });
       } catch {}
     } else {
       copyTicketText(t);
@@ -116,12 +123,15 @@ export default function MeusBilhetes() {
 
       <main className="max-w-4xl mx-auto p-4 pb-32">
         <header className="mb-4">
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white">Meus Bilhetes</h1>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+            Meus Bilhetes
+          </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Veja aqui seus bilhetes gerados — toque para copiar ou compartilhar.
+            Veja todos os bilhetes já gerados — toque para copiar ou compartilhar.
           </p>
         </header>
 
+        {/* Filtros */}
         <nav className="flex gap-3 mb-4 overflow-x-auto">
           <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary text-white px-4">
             <span className="text-sm font-medium">Todos</span>
@@ -140,14 +150,15 @@ export default function MeusBilhetes() {
           </button>
         </nav>
 
+        {/* Lista de bilhetes */}
         <section className="flex flex-col gap-3">
           {tickets.map((t) => (
             <article
               key={t.id}
-              className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border border-transparent"
+              className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm"
             >
               <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
+                <div className="flex gap-3">
                   <div className="flex gap-2 items-center">
                     {t.nums.map((n, i) => (
                       <div
@@ -160,42 +171,46 @@ export default function MeusBilhetes() {
                   </div>
 
                   <div className="flex flex-col">
-                    <div className="text-sm text-slate-700 dark:text-slate-200 font-semibold">
-                      {t.sorteio ?? "Sorteio"}
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                      {t.sorteio}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       Gerado em: {formatDate(t.createdAt)}
-                    </div>
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col gap-2 items-end">
                   {statusBadge(t.status)}
-                  <div className="text-sm font-medium text-slate-800 dark:text-white">
+                  <span className="text-sm font-medium text-slate-800 dark:text-white">
                     {formatCurrency(t.value)}
-                  </div>
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   ID: #{t.id.slice(-6)}
-                </div>
+                </span>
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyTicketText(t)}
-                    className="flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs"
+                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-2 text-xs"
                   >
-                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    <span className="material-symbols-outlined text-sm">
+                      content_copy
+                    </span>
                     Copiar
                   </button>
 
                   <button
                     onClick={() => shareTicket(t)}
-                    className="flex items-center gap-2 rounded-full bg-primary text-white px-3 py-2 text-xs"
+                    className="flex items-center gap-2 bg-primary text-white rounded-full px-3 py-2 text-xs"
                   >
-                    <span className="material-symbols-outlined text-sm">share</span>
+                    <span className="material-symbols-outlined text-sm">
+                      share
+                    </span>
                     Compartilhar
                   </button>
                 </div>
@@ -204,13 +219,14 @@ export default function MeusBilhetes() {
           ))}
         </section>
 
+        {/* Sem bilhetes */}
         {tickets.length === 0 && (
           <div className="mt-8 rounded-lg border border-dashed border-zinc-300 p-8 text-center">
             <p className="text-lg font-semibold text-slate-900 dark:text-white">
               Você ainda não possui bilhetes
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Gere seu primeiro bilhete na tela de apostas.
+              Gere seu primeiro bilhete na tela de Apostas.
             </p>
           </div>
         )}
