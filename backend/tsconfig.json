@@ -11,6 +11,5 @@
     "skipLibCheck": true,
     "strict": false,
     "outDir": "src"
-  },
-  "include": ["src"]
-}
+  }
+  
