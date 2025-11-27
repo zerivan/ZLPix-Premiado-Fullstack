@@ -1,19 +1,24 @@
+// backend/src/lib/prisma.ts
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * Instância segura do Prisma para evitar múltiplas conexões em dev (Hot reload)
+ * e garantir tipos corretos.
+ */
+
 declare global {
-  // Evita múltiplas instâncias no modo dev
-  // (precisa usar "var" no global em TS)
-  var prisma: PrismaClient | undefined;
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined;
 }
 
-export const prisma =
-  global.prisma ||
-  new PrismaClient({
-    // Prisma 7 agora exige datasource aqui
-    datasourceUrl: process.env.DATABASE_URL,
-    log: ["query", "error", "warn"],
-  });
+const prisma = global.__prisma ?? new PrismaClient({
+  // não passe opções que possam gerar conflito de tipos aqui.
+  // Se precisa de logging ou outras opções, adicione com tipos corretos.
+});
 
 if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
+  global.__prisma = prisma;
 }
+
+export { prisma };
+export default prisma;
