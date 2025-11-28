@@ -15,4 +15,5 @@ model User {
   pixKey       String?
   passwordHash String
   createdAt    DateTime @default(now())
+
 }
