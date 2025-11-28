@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
 
+    "fix": "bash scripts/fix_render.sh",
+
     "migrate:deploy": "prisma migrate deploy",
 
     "build": "npm run migrate:deploy && prisma generate && tsc -p tsconfig.json",
