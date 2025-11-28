@@ -5,13 +5,18 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+
+    "migrate:deploy": "prisma migrate deploy",
+
+    "build": "npm run migrate:deploy && prisma generate && tsc -p tsconfig.json",
+
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "5.15.1",
+    "@types/node": "^18.19.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -19,12 +24,11 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "prisma": "5.22.0",
+    "prisma": "5.15.1",
     "@types/bcryptjs": "^2.4.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^22.7.4",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
   }
