@@ -5,16 +5,11 @@
     "moduleResolution": "Node",
     "lib": ["ES2020"],
     "types": ["node"],
-    "typeRoots": ["./node_modules/@types"],
-    "paths": {
-      "*": ["node_modules/@types/*"]
-    },
     "esModuleInterop": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
     "outDir": "./dist"
   },
-  "include": ["src/**/*"]
+  "include": ["src"]
 }
