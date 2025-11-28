@@ -5,10 +5,14 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+
+    "migrate:deploy": "prisma migrate deploy",
+
+    "build": "npm run migrate:deploy && prisma generate && tsc -p tsconfig.json",
+
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "5.15.1",
