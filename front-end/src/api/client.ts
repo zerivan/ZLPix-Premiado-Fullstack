@@ -6,7 +6,7 @@ const isLocal =
 
 export const api = axios.create({
   baseURL: isLocal
-    ? "http://localhost:4000" 
-    : "https://zlpix-premiado-fullstack.onrender.com", // ← CORRETO
+    ? "http://localhost:10000" 
+    : "https://zlpix-premiado-fullstack.onrender.com", // ← BACKEND DEPLOY
   timeout: 5000,
 });
