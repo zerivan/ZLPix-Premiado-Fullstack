@@ -10,6 +10,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "fix": "bash scripts/fix_render.sh",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:force": "prisma migrate dev --name init --skip-seed --create-only",
     "build": "npm run migrate:deploy && prisma generate && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate"
