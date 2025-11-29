@@ -4,7 +4,18 @@ services:
     env: node
     region: oregon
     rootDir: backend
-    buildCommand: npm install && npx prisma migrate dev --name add-pixkey --create-only --skip-seed && npx prisma migrate deploy && npm run build
+    buildCommand: |
+      echo "🧹 Limpando migrações antigas..."
+      rm -rf prisma/migrations
+
+      echo "🛠️ Resetando e sincronizando banco de dados..."
+      npx prisma migrate reset --force
+      npx prisma db push
+      npx prisma generate
+
+      echo "📦 Instalando dependências e buildando projeto..."
+      npm install
+      npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
