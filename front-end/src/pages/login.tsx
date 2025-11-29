@@ -1,4 +1,3 @@
-// src/pages/login.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
@@ -22,12 +21,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-
-      const response = await api.post("/auth/login", {
-        email,
-        password: senha,
-      });
-
+      const response = await api.post("/auth/login", { email, password: senha });
       const token = response.data?.token;
 
       if (!token) {
@@ -48,26 +42,44 @@ export default function Login() {
   }
 
   return (
-    <div className="page-wrapper">
-      <div className="page-card">
-
+    <div
+      className="page-wrapper"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        className="page-card"
+        style={{
+          width: "100%",
+          maxWidth: "380px",
+          background: "rgba(255,255,255,0.05)",
+          padding: "30px 24px",
+          borderRadius: "16px",
+          boxShadow: "0 0 20px rgba(0,0,0,0.2)",
+        }}
+      >
         {/* LOGO */}
         <div style={{ textAlign: "center", marginBottom: "14px" }}>
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
             alt="Logo ZLPix"
-            style={{ width: "140px", height: "auto" }}
+            style={{ width: "120px", height: "auto" }}
           />
         </div>
 
-        <h1 className="page-title" style={{ marginTop: 0 }}>
+        <h1 className="page-title" style={{ marginTop: 0, textAlign: "center" }}>
           Entrar na sua conta
         </h1>
-        <p className="page-subtitle">Aposte e acompanhe seus resultados</p>
+        <p className="page-subtitle" style={{ textAlign: "center" }}>
+          Aposte e acompanhe seus resultados
+        </p>
 
         <form onSubmit={handleSubmit}>
-
-          {/* E-MAIL */}
           <label className="label">E-mail</label>
           <input
             className="page-input"
@@ -77,7 +89,6 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* SENHA COM ÍCONE */}
           <label className="label">Senha</label>
           <div style={{ position: "relative" }}>
             <input
@@ -104,7 +115,6 @@ export default function Login() {
             </span>
           </div>
 
-          {/* ERRO */}
           {erro && (
             <p
               style={{
@@ -119,12 +129,15 @@ export default function Login() {
             </p>
           )}
 
-          {/* BOTÃO */}
-          <button type="submit" className="page-btn" disabled={loading}>
+          <button
+            type="submit"
+            className="page-btn"
+            disabled={loading}
+            style={{ marginTop: "12px" }}
+          >
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          {/* ESQUECI SENHA */}
           <p
             style={{
               textAlign: "right",
@@ -139,7 +152,6 @@ export default function Login() {
           </p>
         </form>
 
-        {/* CADASTRO */}
         <p style={{ textAlign: "center", marginTop: "16px" }}>
           Não tem conta?
           <span

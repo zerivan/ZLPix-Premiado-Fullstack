@@ -159,11 +159,11 @@ export default function Home() {
           Início
         </Link>
 
-        <Link to="/bilhetes" className="page-link">
+        <Link to="/meus-bilhetes" className="page-link">
           Bilhetes
         </Link>
 
-        <Link to="/resultados" className="page-link">
+        <Link to="/resultado" className="page-link">
           Resultados
         </Link>
 

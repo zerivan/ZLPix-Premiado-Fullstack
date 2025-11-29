@@ -10,6 +10,7 @@ import MeusBilhetes from "../pages/meusbilhetes";
 import Pagamento from "../pages/pagamento";
 import PaymentSuccess from "../pages/payment-success";
 import Resultado from "../pages/resultado";
+import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha"; // 🔥 ADICIONADO
 
@@ -59,6 +60,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLogin />} />
 
       <Route path="*" element={<Navigate to="/" />} />
+    <Route path="/perfil" element={<Perfil />} />
     </Routes>
   );
 }

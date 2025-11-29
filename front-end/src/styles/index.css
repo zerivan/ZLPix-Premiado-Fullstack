@@ -128,4 +128,4 @@ body {
   color: var(--gold);
   font-weight: 700;
   margin-left: 4px;
-}
+}.promo-section { margin-top: 24px; text-align: center; color: rgba(255,255,255,0.9); font-size: 0.95rem; background: rgba(255,255,255,0.08); padding: 12px; border-radius: 14px; width: 100%; max-width: 420px; backdrop-filter: blur(8px); }
