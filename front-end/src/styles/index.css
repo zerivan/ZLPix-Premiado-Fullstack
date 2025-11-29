@@ -3,6 +3,11 @@
    ALTURA CORRIGIDA E SIMÉTRICA
    ================================ */
 
+/* Importação do Tailwind (necessário para funcionar) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --primary: #1e90ff;
   --primary-dark: #0b5dd8;
@@ -47,8 +52,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-
-  /* ESPAÇO IGUAL EM CIMA E EMBAIXO */
   padding: 25px 16px;
 }
 
@@ -58,22 +61,17 @@ body {
 .page-card {
   width: 100%;
   max-width: 420px;
-
   height: auto;
-  min-height: auto;  /* REMOVE O ESTICAMENTO */
-
+  min-height: auto;
   background: var(--card-bg);
   backdrop-filter: blur(14px);
   border-radius: 22px;
-
   padding: 18px;
-
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-
-  overflow-y: visible; /* sem scroll interno */
+  overflow-y: visible;
 }
 
 /* TÍTULOS */
@@ -82,7 +80,6 @@ body {
   font-weight: 800;
   text-align: center;
   color: var(--gold);
-
   margin-top: 6px;
   margin-bottom: 4px;
 }
