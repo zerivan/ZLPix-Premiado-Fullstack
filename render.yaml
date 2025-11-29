@@ -8,9 +8,8 @@ services:
       echo "🧹 Limpando migrações antigas..."
       rm -rf prisma/migrations
 
-      echo "🛠️ Resetando e sincronizando banco de dados..."
-      npx prisma migrate reset --force
-      npx prisma db push
+      echo "🧩 Sincronizando schema Prisma com o banco existente..."
+      npx prisma db push --accept-data-loss
       npx prisma generate
 
       echo "📦 Instalando dependências e buildando projeto..."
