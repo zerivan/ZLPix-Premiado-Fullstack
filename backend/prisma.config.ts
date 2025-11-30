@@ -1,19 +1,11 @@
 import { defineConfig } from "@prisma/config";
+import { createPostgresAdapter } from "@prisma/adapter-pg";
 
-async function getConfig() {
-  const pg = await import("@prisma/adapter-pg");
-
-  // ✅ Função correta para Prisma 7+
-  const adapter = pg.createPgAdapter({
-    connectionString: process.env.DATABASE_URL!,
-  });
-
-  return defineConfig({
-    datasource: {
-      provider: "postgresql",
-      adapter,
-    },
-  });
-}
-
-export default await getConfig();
+export default defineConfig({
+  datasource: {
+    provider: "postgresql",
+    adapter: createPostgresAdapter({
+      connectionString: process.env.DATABASE_URL!,
+    }),
+  },
+});
