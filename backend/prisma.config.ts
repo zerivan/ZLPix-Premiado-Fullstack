@@ -1,13 +1,19 @@
 import { defineConfig } from "@prisma/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import dotenv from "dotenv";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://neondb_owner:npg_7HWgkJ3QCAXy@ep-dawn-wind-ahjcrny3-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require";
+// ✅ Garante que o .env é carregado ANTES de ler a variável
+dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("❌ Variável DATABASE_URL não encontrada no ambiente.");
+}
 
 if (!connectionString.startsWith("postgresql://")) {
-  throw new Error("❌ DATABASE_URL inválida ou não detectada.");
+  throw new Error("❌ DATABASE_URL inválida. Valor atual: " + connectionString);
 }
 
 const pool = new pg.Pool({ connectionString });
