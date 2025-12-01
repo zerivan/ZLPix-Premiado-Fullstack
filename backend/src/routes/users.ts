@@ -10,7 +10,8 @@ const router = Router();
  */
 router.get("/", async (_req, res) => {
   try {
-    const users = await prisma.user.findMany({
+    // ✅ Corrigido: prisma.user → prisma.users
+    const users = await prisma.users.findMany({
       select: {
         id: true,
         name: true,
