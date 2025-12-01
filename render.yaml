@@ -2,17 +2,15 @@ services:
   - type: web
     name: zlpix-backend
     env: node
-    region: oregon
     rootDir: backend
-    buildCommand: |
-      echo "🚀 Forçando sincronização do Prisma com o banco..."
-      npx prisma db push --accept-data-loss
-      npx prisma generate
-      echo "📦 Instalando dependências..."
-      npm install
-      echo "⚙️  Buildando o backend..."
-      npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
+    plan: free
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 22.16.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
