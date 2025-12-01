@@ -3,12 +3,6 @@
 # 🏆 ZLPix Premiado  
 ### 💸 Sistema de Sorteios com Pagamento via Pix  
 
-**Aplicação Fullstack — React + Vite + Node.js + Prisma + Neon + Render**
-
-<img src="https://i.imgur.com/vMJqT6e.png" alt="ZLPix Premiado Preview" width="800"/>
-
-✨ *“Sorte não é acaso — é código bem escrito.”* ✨  
-
 </div>
 
 ---
