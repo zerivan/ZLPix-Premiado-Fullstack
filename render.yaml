@@ -13,4 +13,5 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
+        value: postgresql://fallback_user:fallback_password@localhost:5432/fallbackdb?sslmode=disable
         sync: false
