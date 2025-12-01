@@ -6,68 +6,53 @@ export default function Perfil() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    } else {
+    try {
+      const userData = localStorage.getItem("USER_ZLPIX");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      } else {
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar usuário:", error);
       navigate("/login");
     }
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("TOKEN_ZLPIX");
+    localStorage.removeItem("USER_ZLPIX");
     navigate("/login");
   };
 
   if (!user) {
     return (
-      <div style={{ textAlign: "center", paddingTop: "50px" }}>
-        <p>Carregando informações...</p>
+      <div className="flex flex-col items-center justify-center h-screen text-white">
+        <p className="text-lg animate-pulse">Carregando informações...</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="page-wrapper"
-      style={{
-        padding: "30px 20px",
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #101010, #1c1c1c)",
-        color: "white",
-      }}
-    >
-      <h1 style={{ fontSize: "1.8rem", marginBottom: "20px" }}>👤 Meu Perfil</h1>
+    <div className="min-h-screen bg-gradient-to-b from-[#101010] to-[#1c1c1c] text-white p-5">
+      <h1 className="text-2xl font-bold mb-6 text-center">👤 Meu Perfil</h1>
 
-      <div
-        style={{
-          background: "rgba(255,255,255,0.1)",
-          padding: "20px",
-          borderRadius: "14px",
-          marginBottom: "20px",
-        }}
-      >
+      <div className="bg-white/10 backdrop-blur-sm p-5 rounded-xl mb-6 space-y-2 shadow-md">
         <p><strong>Nome:</strong> {user.name}</p>
         <p><strong>E-mail:</strong> {user.email}</p>
         {user.phone && <p><strong>Telefone:</strong> {user.phone}</p>}
         {user.pixKey && <p><strong>Chave PIX:</strong> {user.pixKey}</p>}
-        <p><strong>Criado em:</strong> {new Date(user.createdAt).toLocaleString()}</p>
+        {user.createdAt && (
+          <p>
+            <strong>Criado em:</strong>{" "}
+            {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+          </p>
+        )}
       </div>
 
       <button
         onClick={handleLogout}
-        style={{
-          width: "100%",
-          background: "crimson",
-          color: "white",
-          border: "none",
-          padding: "12px",
-          borderRadius: "10px",
-          fontSize: "16px",
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
+        className="w-full bg-red-600 hover:bg-red-700 transition-colors text-white py-3 rounded-lg font-semibold"
       >
         Sair da conta
       </button>
