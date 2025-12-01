@@ -1,5 +1,5 @@
 // front-end/src/components/sorteiotimer.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from. "react";
 
 /**
  * 🔹 Timer simples e compatível com qualquer fuso horário.
