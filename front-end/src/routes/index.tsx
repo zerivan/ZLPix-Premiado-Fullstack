@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// páginas
+// 🧭 Páginas
 import Home from "../pages/home";
 import Login from "../pages/login";
 import Cadastro from "../pages/cadastro";
@@ -12,55 +12,53 @@ import PaymentSuccess from "../pages/payment-success";
 import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
-import RecuperarSenha from "../pages/recuperar-senha"; // 🔥 ADICIONADO
+import RecuperarSenha from "../pages/recuperar-senha";
 
+// ✅ Função simples pra verificar autenticação
 function isLoggedIn() {
-  return !!localStorage.getItem("TOKEN_ZLPIX");
+  return Boolean(localStorage.getItem("TOKEN_ZLPIX"));
+}
+
+// 🚀 Wrapper para proteger rotas privadas
+function PrivateRoute({ children }: { children: JSX.Element }) {
+  return isLoggedIn() ? children : <Navigate to="/login" replace />;
+}
+
+// 🚪 Wrapper para rotas públicas (login, cadastro, etc.)
+function PublicRoute({ children }: { children: JSX.Element }) {
+  return isLoggedIn() ? <Navigate to="/" replace /> : children;
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={isLoggedIn() ? <Home /> : <Navigate to="/login" />}
-      />
+      {/* 🌟 Rota inicial */}
+      <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
 
-      <Route path="/login" element={<Login />} />
-      <Route path="/cadastro" element={<Cadastro />} />
+      {/* 🔐 Autenticação */}
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
+      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
-      {/* 🔥 NOVO - PÁGINA LIVRE */}
-      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+      {/* 💰 Apostas */}
+      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
+      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
 
-      <Route
-        path="/aposta"
-        element={isLoggedIn() ? <ApostaPainel /> : <Navigate to="/login" />}
-      />
+      {/* 💳 Pagamentos */}
+      <Route path="/pagamento" element={<PrivateRoute><Pagamento /></PrivateRoute>} />
+      <Route path="/pagamento/sucesso" element={<PrivateRoute><PaymentSuccess /></PrivateRoute>} />
 
-      <Route
-        path="/meus-bilhetes"
-        element={isLoggedIn() ? <MeusBilhetes /> : <Navigate to="/login" />}
-      />
+      {/* 🏆 Resultados */}
+      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
 
-      <Route
-        path="/pagamento"
-        element={isLoggedIn() ? <Pagamento /> : <Navigate to="/login" />}
-      />
+      {/* 👤 Perfil */}
+      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
 
-      <Route
-        path="/pagamento/sucesso"
-        element={isLoggedIn() ? <PaymentSuccess /> : <Navigate to="/login" />}
-      />
-
-      <Route
-        path="/resultado"
-        element={isLoggedIn() ? <Resultado /> : <Navigate to="/login" />}
-      />
-
+      {/* ⚙️ Admin */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      <Route path="*" element={<Navigate to="/" />} />
-    <Route path="/perfil" element={<Perfil />} />
+      {/* 🚧 Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
