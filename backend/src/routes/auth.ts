@@ -14,15 +14,15 @@ router.post("/register", async (req, res) => {
     const { name, email, phone, pixKey, password } = req.body;
 
     if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Nome, e-mail e senha são obrigatórios." });
+      return res.status(400).json({ message: "Nome, e-mail e senha são obrigatórios." });
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Validação simples de e-mail
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: "E-mail inválido." });
+    }
 
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ message: "E-mail já está cadastrado." });
     }
@@ -30,13 +30,7 @@ router.post("/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        phone,
-        pixKey,
-        passwordHash,
-      },
+      data: { name, email, phone, pixKey, passwordHash },
     });
 
     return res.status(201).json({
@@ -57,13 +51,10 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "E-mail e senha são obrigatórios." });
+      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
-
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
