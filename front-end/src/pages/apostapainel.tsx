@@ -1,7 +1,6 @@
-// src/pages/apostapainel.tsx
 import React, { useEffect, useRef, useState } from "react";
-import header from "../components/header";
-import navbottom from "../components/navbottom";
+import Header from "../components/header";
+import NavBottom from "../components/navbottom";
 import { useNavigate } from "react-router-dom";
 
 function formatNum(n: number) {
@@ -21,12 +20,13 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
-  // cleanup
   useEffect(() => {
     return () => {
       stopSound();
       if (audioCtxRef.current) {
-        try { audioCtxRef.current.close(); } catch {}
+        try {
+          audioCtxRef.current.close();
+        } catch {}
       }
     };
   }, []);
@@ -39,7 +39,6 @@ export default function ApostaPainel() {
     } else if (selected.length < 3) {
       setSelected([...selected, num]);
     } else {
-      // substitui a primeira
       setSelected((prev) => {
         const copy = prev.slice(1);
         copy.push(num);
@@ -118,7 +117,6 @@ export default function ApostaPainel() {
     gainRef.current = null;
   }
 
-  // animação estilo caça-níquel
   async function confirmSelection() {
     if (selected.length === 0 || rolling) return;
 
@@ -139,11 +137,9 @@ export default function ApostaPainel() {
 
     stopSound();
 
-    // moedas
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 1200);
 
-    // bilhete
     const newTicket = {
       nums: selected.slice(0, 3),
       id: Date.now().toString(36),
@@ -170,18 +166,15 @@ export default function ApostaPainel() {
       <Header />
 
       <main className="max-w-5xl mx-auto p-4 pb-32">
-
-        {/* título */}
         <div className="mb-4">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Escolha seus números (máx. 3)
+            Escolha suas dezenas (máx. 3)
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Toque para selecionar — também é possível gerar aleatório.
+            Toque para selecionar — ou gere dezenas aleatórias.
           </p>
         </div>
 
-        {/* grid */}
         <section className="mb-4">
           <div className="grid grid-cols-5 gap-2 md:grid-cols-10">
             {grid.map((n) => {
@@ -209,7 +202,6 @@ export default function ApostaPainel() {
           </div>
         </section>
 
-        {/* ações */}
         <section className="mb-6">
           <div className="flex gap-3 flex-wrap">
             <button
@@ -240,7 +232,6 @@ export default function ApostaPainel() {
           </div>
         </section>
 
-        {/* bilhetes */}
         <section className="mb-24">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
             Bilhetes gerados
@@ -277,7 +268,6 @@ export default function ApostaPainel() {
         </section>
       </main>
 
-      {/* rodapé fixo */}
       <section className="fixed left-0 right-0 bottom-0 p-4 bg-background-light/90 dark:bg-background-dark/90 border-t">
         <div className="max-w-5xl mx-auto flex gap-3">
           <button
@@ -298,7 +288,6 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
-      {/* efeitos */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 z-40 flex items-end justify-center pb-40">
           <div className="relative w-64 h-64">
@@ -310,8 +299,8 @@ export default function ApostaPainel() {
                   width: 12 + Math.random() * 18,
                   height: 12 + Math.random() * 18,
                   background: "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${(Math.random() - 0.5) * 220}px) translateY(-${120 + Math.random() * 220}px) rotate(${Math.random() *
-                    360}deg)`,
+                  transform: `translateX(${(Math.random() - 0.5) * 220}px) translateY(-${120 +
+                    Math.random() * 220}px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
@@ -320,7 +309,6 @@ export default function ApostaPainel() {
         </div>
       )}
 
-      {/* animações */}
       <style>{`
         .shadow-active { box-shadow: 0 8px 24px rgba(59,130,246,0.18); }
         .animate-pulse-scale {
