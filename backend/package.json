@@ -3,20 +3,23 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "ts-node src/index.ts",
+    "migrate:deploy": "npx prisma migrate deploy",
     "build": "npm run migrate:deploy && npx prisma generate && tsc -p tsconfig.json",
-    "migrate:deploy": "npx prisma migrate deploy"
+    "start": "node dist/server.js"
   },
   "engines": {
     "node": "22.16.0"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "6.2.1",
-    "pg": "^8.11.5",
     "prisma": "6.2.1",
+    "pg": "^8.11.5",
     "typescript": "^5.4.0"
   },
   "devDependencies": {
     "ts-node": "^10.9.2"
+  },
+  "prisma": {
+    "enginesVersion": "6.2.1"
   }
 }
