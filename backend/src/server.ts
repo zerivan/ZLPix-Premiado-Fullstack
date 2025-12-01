@@ -4,7 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth";
 // import usersRoutes from "./routes/users"; // descomente quando o arquivo existir
 
-// 🔒 Fallback de variáveis de ambiente
+// 🔒 Garantia de variáveis de ambiente seguras
 const requiredEnv = {
   DATABASE_URL:
     process.env.DATABASE_URL ||
@@ -14,17 +14,18 @@ const requiredEnv = {
   PORT: process.env.PORT || "4000",
 };
 
-// ⚙️ Exibe aviso no console caso alguma esteja em fallback
-Object.entries(requiredEnv).forEach(([key, value]) => {
+// ⚠️ Alerta se estiver usando fallback (útil para debug)
+for (const [key, value] of Object.entries(requiredEnv)) {
   if (String(value).includes("fallback")) {
-    console.warn(`⚠️  AVISO: Variável ${key} não encontrada — usando fallback temporário.`);
+    console.warn(`⚠️ AVISO: Variável ${key} não encontrada — usando fallback temporário.`);
   }
   process.env[key] = value;
-});
+}
 
 const app = express();
-const PORT = Number(requiredEnv.PORT);
+const PORT = Number(requiredEnv.PORT) || 4000;
 
+// 🌐 Middlewares
 app.use(cors());
 app.use(express.json());
 
@@ -34,13 +35,18 @@ app.get("/", (_req, res) => {
     status: "ok",
     message: "ZLPix backend rodando no Render + Neon.",
     environment: process.env.NODE_ENV,
+    database:
+      process.env.DATABASE_URL?.includes("neon.tech")
+        ? "Neon ✅"
+        : "Local ou fallback ⚠️",
   });
 });
 
-// 🔗 Routes
+// 🔗 Rotas principais
 app.use("/auth", authRoutes);
-// app.use("/users", usersRoutes);
+// app.use("/users", usersRoutes); // Descomente quando ativar
 
-app.listen(PORT, () => {
+// 🚀 Inicializa o servidor
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
 });
