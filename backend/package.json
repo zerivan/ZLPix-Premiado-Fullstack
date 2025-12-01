@@ -10,13 +10,13 @@
     "node": "22.16.0"
   },
   "dependencies": {
-    "@prisma/client": "^7.0.1",
     "@prisma/adapter-pg": "^7.0.1",
+    "@prisma/client": "6.2.1",
     "pg": "^8.11.5",
+    "prisma": "6.2.1",
     "typescript": "^5.4.0"
   },
   "devDependencies": {
-    "prisma": "^7.0.1",
     "ts-node": "^10.9.2"
   }
 }
