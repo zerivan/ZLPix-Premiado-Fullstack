@@ -1,97 +1,61 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import SorteioTimer from "../components/SorteioTimer";
+import BottomNav from "../components/BottomNav";
 
-export default function SorteioTimer() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-
-  useEffect(() => {
-    const sorteioTime = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 dias
-
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = sorteioTime - now;
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const circleClass = `
-    flex flex-col items-center justify-center
-    bg-gradient-to-b from-yellow-300 to-green-400
-    text-blue-900 font-extrabold
-    rounded-full shadow-md
-    w-16 h-16 text-xl
-    border border-yellow-200/40
-    animate-pulse-slow
-  `;
-
-  const labelClass = `
-    text-[11px] text-yellow-200 uppercase tracking-wider mt-1
-  `;
+export default function Home() {
+  const navigate = useNavigate();
 
   return (
-    <div className="text-center mt-6 px-4">
-      {/* Cabeçalho */}
-      <h2 className="text-2xl text-yellow-300 font-bold mb-2 flex items-center justify-center gap-2">
-        🎯 Próximo Sorteio
-      </h2>
+    <div className="min-h-screen bg-gradient-to-b from-blue-800 via-blue-700 to-green-600 text-white flex flex-col items-center pt-10 pb-24 relative overflow-hidden">
 
-      <p className="text-4xl font-extrabold text-white mb-3 drop-shadow-lg">
-        💰 R$ 50.000
+      {/* Brilho de fundo */}
+      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-r from-green-400/30 to-yellow-200/10 blur-2xl"></div>
+
+      {/* LOGO */}
+      <img
+        src="/logo.png"
+        alt="ZLPix Premiado"
+        className="w-24 mb-4 drop-shadow-md animate-pulse"
+      />
+
+      {/* Título */}
+      <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-1">
+        ZLPix Premiado
+      </h1>
+      <p className="text-blue-100 text-sm mb-6">
+        Acompanhe tudo sobre seus sorteios 🍀
       </p>
 
-      {/* Timer */}
-      <div className="flex justify-center gap-4 mb-4 flex-wrap">
-        {[
-          { value: timeLeft.days, label: "Dias" },
-          { value: timeLeft.hours, label: "Horas" },
-          { value: timeLeft.minutes, label: "Min" },
-          { value: timeLeft.seconds, label: "Seg" },
-        ].map((item, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <div className={circleClass}>{item.value.toString().padStart(2, "0")}</div>
-            <span className={labelClass}>{item.label}</span>
-          </div>
-        ))}
+      {/* SEU SALDO */}
+      <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-5 w-11/12 text-center mb-6 shadow-lg border border-green-500/30">
+        <p className="text-blue-100 text-sm">Seu saldo</p>
+        <p className="text-4xl font-bold text-yellow-300 mb-3 drop-shadow-md">R$ 12,50</p>
+        <button
+          onClick={() => alert('Função de adicionar saldo em breve!')}
+          className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-semibold px-6 py-2 rounded-full transition"
+        >
+          Adicionar
+        </button>
       </div>
 
-      {/* Texto */}
-      <p className="text-sm text-blue-100 italic mt-1">
-        Sorteio em andamento... 🍀
-      </p>
+      {/* TIMER DO SORTEIO */}
+      <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-6 w-11/12 shadow-lg border border-green-400/20 text-center">
+        <SorteioTimer />
+      </div>
 
-      <style>{`
-        @keyframes pulse-slow {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-          }
-          50% {
-            transform: scale(1.08);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-          }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 2.2s ease-in-out infinite;
-        }
-      `}</style>
+      {/* BOTÃO PRINCIPAL */}
+      <button
+        onClick={() => navigate("/aposta")}
+        className="mt-6 bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg px-10 py-4 rounded-full shadow-lg transition-all animate-bounce"
+      >
+        FAZER APOSTA AGORA
+      </button>
+
+      {/* MENU FIXO */}
+      <div className="w-full fixed bottom-0 left-0 right-0">
+        <BottomNav />
+      </div>
     </div>
   );
 }
