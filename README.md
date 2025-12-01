@@ -26,3 +26,4 @@ Desenvolvido em **React + Vite + Node.js + Prisma ORM**, totalmente integrado e 
 ---
 
 ## 📂 Estrutura do Projeto
+
