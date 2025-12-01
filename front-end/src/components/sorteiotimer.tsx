@@ -1,95 +1,50 @@
+// front-end/src/components/sorteiotimer.tsx
 import React, { useEffect, useState } from "react";
 
+/**
+ * 🔹 Timer simples e compatível com qualquer fuso horário.
+ * 🔹 Usa horário UTC para evitar diferenças entre regiões.
+ */
 export default function SorteioTimer() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+  const [timeLeft, setTimeLeft] = useState("00d 00h 00m 00s");
 
   useEffect(() => {
-    const sorteioTime = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 dias
+    // Sorteio daqui a 3 dias (em UTC)
+    const sorteioTimeUTC = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).getTime();
+
     const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = sorteioTime - now;
+      const nowUTC = new Date().getTime();
+      const diff = sorteioTimeUTC - nowUTC;
 
       if (diff <= 0) {
         clearInterval(timer);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setTimeLeft("00d 00h 00m 00s");
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / (1000 * 60)) % 60);
+      const s = Math.floor((diff / 1000) % 60);
 
-      setTimeLeft({ days, hours, minutes, seconds });
+      setTimeLeft(
+        `${String(d).padStart(2, "0")}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`
+      );
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  const circleClass = `
-    flex flex-col items-center justify-center
-    bg-gradient-to-b from-yellow-300 to-green-400
-    text-blue-900 font-extrabold
-    rounded-full shadow-md
-    w-16 h-16 text-xl
-    border border-yellow-200/40
-    animate-pulse-slow
-  `;
-
-  const labelClass = `
-    text-[11px] text-yellow-200 uppercase tracking-wider mt-1
-  `;
-
   return (
-    <div className="text-center mt-6 px-4">
-      <h2 className="text-2xl text-yellow-300 font-bold mb-2 flex items-center justify-center gap-2">
-        🎯 Próximo Sorteio
-      </h2>
+    <div className="text-center">
+      <h2 className="text-lg font-bold text-yellow-300 mb-1">🎯 Próximo Sorteio</h2>
+      <p className="text-3xl font-bold text-white mb-2">💰 R$ 50.000</p>
 
-      <p className="text-4xl font-extrabold text-white mb-3 drop-shadow-lg">
-        💰 R$ 50.000
-      </p>
-
-      <div className="flex justify-center gap-4 mb-4 flex-wrap">
-        {[
-          { value: timeLeft.days, label: "Dias" },
-          { value: timeLeft.hours, label: "Horas" },
-          { value: timeLeft.minutes, label: "Min" },
-          { value: timeLeft.seconds, label: "Seg" },
-        ].map((item, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <div className={circleClass}>
-              {item.value.toString().padStart(2, "0")}
-            </div>
-            <span className={labelClass}>{item.label}</span>
-          </div>
-        ))}
+      <div className="flex justify-center items-center gap-2 text-yellow-200 font-mono text-lg bg-blue-900/30 px-4 py-2 rounded-xl border border-yellow-400/20 shadow-md">
+        {timeLeft}
       </div>
 
-      <p className="text-sm text-blue-100 italic mt-1">
-        Sorteio em andamento... 🍀
-      </p>
-
-      <style>{`
-        @keyframes pulse-slow {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-          }
-          50% {
-            transform: scale(1.08);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-          }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 2.2s ease-in-out infinite;
-        }
-      `}</style>
+      <p className="text-sm text-blue-100 mt-2 italic">Sorteio em andamento... 🍀</p>
     </div>
   );
 }
