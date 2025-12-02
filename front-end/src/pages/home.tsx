@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import BottomNav from "../components/bottomnav"; // nome minúsculo — igual ao arquivo
+import NavBottom from "../components/navbottom"; // 🔥 Corrigido — igual ao nome do arquivo
 
 export default function Home() {
   const navigate = useNavigate();
@@ -12,7 +12,11 @@ export default function Home() {
 
       {/* Conteúdo principal */}
       <main className="flex flex-col items-center text-center z-10 w-full">
-        <img src="/logo.png" alt="ZLPix Premiado" className="w-28 mb-4 drop-shadow-lg animate-pulse" />
+        <img
+          src="/logo.png"
+          alt="ZLPix Premiado"
+          className="w-28 mb-4 drop-shadow-lg animate-pulse"
+        />
 
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-1 tracking-wide">
           ZLPix Premiado
@@ -46,7 +50,7 @@ export default function Home() {
 
       {/* Menu inferior */}
       <div className="w-full fixed bottom-0 left-0 right-0">
-        <BottomNav />
+        <NavBottom />
       </div>
 
       {/* Animação */}
