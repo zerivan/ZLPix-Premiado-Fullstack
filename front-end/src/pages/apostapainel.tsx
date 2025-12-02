@@ -17,7 +17,6 @@ export default function ApostaPainel() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,7 +32,6 @@ export default function ApostaPainel() {
 
   function toggle(num: string) {
     if (rolling) return;
-
     if (selected.includes(num)) {
       setSelected(selected.filter((s) => s !== num));
     } else if (selected.length < 3) {
@@ -49,14 +47,12 @@ export default function ApostaPainel() {
 
   function gerarAleatorio() {
     if (rolling) return;
-    const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
+    const pool = Array.from({ length: 100 }, (_, i) => formatNum(i + 1));
     const pick: string[] = [];
-
     while (pick.length < 3) {
       const n = pool[Math.floor(Math.random() * pool.length)];
       if (!pick.includes(n)) pick.push(n);
     }
-
     setSelected(pick);
   }
 
@@ -73,17 +69,13 @@ export default function ApostaPainel() {
 
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(220, ctx.currentTime);
       gain.gain.setValueAtTime(0, ctx.currentTime);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-
       gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.05);
-
       oscRef.current = osc;
       gainRef.current = gain;
     } catch {}
@@ -92,10 +84,8 @@ export default function ApostaPainel() {
   function modulateSound(speed = 1) {
     const ctx = audioCtxRef.current;
     if (!ctx || !oscRef.current) return;
-
     const now = ctx.currentTime;
     const base = 220;
-
     oscRef.current.frequency.cancelScheduledValues(now);
     oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.02);
   }
@@ -103,29 +93,23 @@ export default function ApostaPainel() {
   function stopSound() {
     const ctx = audioCtxRef.current;
     if (!ctx || !oscRef.current || !gainRef.current) return;
-
     const now = ctx.currentTime;
-
     gainRef.current.gain.cancelScheduledValues(now);
     gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.25);
-
     try {
       oscRef.current.stop(now + 0.3);
     } catch {}
-
     oscRef.current = null;
     gainRef.current = null;
   }
 
   async function confirmSelection() {
     if (selected.length === 0 || rolling) return;
-
     setRolling(true);
     startSound();
 
     for (let pos = 0; pos < selected.length; pos++) {
       setRollingIndex(pos);
-
       const start = Date.now();
       while (Date.now() - start < 900) {
         const phase = (Date.now() - start) / 900;
@@ -136,15 +120,10 @@ export default function ApostaPainel() {
     }
 
     stopSound();
-
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 1200);
 
-    const newTicket = {
-      nums: selected.slice(0, 3),
-      id: Date.now().toString(36),
-    };
-
+    const newTicket = { nums: selected.slice(0, 3), id: Date.now().toString(36) };
     setTickets((t) => [newTicket, ...t]);
     setRolling(false);
     setRollingIndex(null);
@@ -155,141 +134,123 @@ export default function ApostaPainel() {
       confirmSelection().then(() => navigate("/pagamento"));
       return;
     }
-
     navigate("/pagamento");
   }
 
-  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
+  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i + 1));
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark font-display">
+    <div className="min-h-screen flex flex-col bg-[#0b1221] text-white relative overflow-y-auto">
       <Header />
 
-      <main className="max-w-5xl mx-auto p-4 pb-32">
-        <div className="mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Escolha suas dezenas (máx. 3)
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Toque para selecionar — ou gere dezenas aleatórias.
-          </p>
+      <main className="flex-1 max-w-md mx-auto w-full p-3 pb-28">
+        <h2 className="text-xl font-bold text-yellow-300 mb-2 text-center">
+          Escolha até 3 dezenas
+        </h2>
+
+        {/* Grade compacta */}
+        <div className="grid grid-cols-5 gap-2 mb-5">
+          {grid.map((n) => {
+            const sel = selected.includes(n);
+            const highlight = rolling && rollingIndex !== null && selected[rollingIndex] === n;
+
+            return (
+              <button
+                key={n}
+                onClick={() => toggle(n)}
+                disabled={rolling}
+                className={`h-10 rounded-lg border font-semibold text-sm transition-all ${
+                  sel
+                    ? "bg-yellow-400 text-blue-900 border-yellow-400"
+                    : "bg-[#1c2433] text-white border-[#28334a] hover:bg-blue-700"
+                } ${highlight ? "animate-pulse-scale" : ""}`}
+              >
+                {n}
+              </button>
+            );
+          })}
         </div>
 
-        <section className="mb-4">
-          <div className="grid grid-cols-5 gap-2 md:grid-cols-10">
-            {grid.map((n) => {
-              const sel = selected.includes(n);
-              const highlight =
-                rolling && rollingIndex !== null && selected[rollingIndex] === n;
+        {/* Botões */}
+        <div className="flex justify-center gap-3 mb-5 flex-wrap">
+          <button
+            onClick={gerarAleatorio}
+            className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold px-4 py-2 rounded-full"
+          >
+            Gerar Aleatório
+          </button>
+          <button
+            onClick={desfazer}
+            className="bg-gray-600 text-gray-200 px-4 py-2 rounded-full"
+          >
+            Desfazer
+          </button>
+          <button
+            onClick={confirmSelection}
+            disabled={rolling}
+            className={`px-4 py-2 rounded-full font-bold ${
+              rolling
+                ? "bg-gray-400 text-gray-800 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            Confirmar
+          </button>
+        </div>
 
-              return (
-                <button
-                  key={n}
-                  onClick={() => toggle(n)}
-                  disabled={rolling}
-                  className={
-                    "flex h-12 items-center justify-center rounded-lg border " +
-                    (sel
-                      ? "bg-primary text-white border-primary shadow-active"
-                      : "bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white") +
-                    (highlight ? " animate-pulse-scale" : "")
-                  }
-                >
-                  <span className="text-base font-bold">{n}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mb-6">
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={gerarAleatorio}
-              className="h-12 rounded-full px-4 bg-primary text-white font-medium"
-            >
-              Gerar Aleatório
-            </button>
-
-            <button
-              onClick={desfazer}
-              className="h-12 rounded-full px-4 bg-zinc-200 dark:bg-zinc-700"
-            >
-              Desfazer
-            </button>
-
-            <button
-              onClick={() => !rolling && confirmSelection()}
-              className={
-                "h-12 rounded-full px-4 " +
-                (rolling
-                  ? "bg-zinc-400 cursor-not-allowed"
-                  : "bg-blue-600 text-white")
-              }
-            >
-              Confirmar
-            </button>
-          </div>
-        </section>
-
-        <section className="mb-24">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">
-            Bilhetes gerados
-          </h3>
-
+        {/* Bilhetes */}
+        <div className="mb-6">
+          <h3 className="text-yellow-300 font-bold mb-2">Bilhetes gerados</h3>
           {tickets.length === 0 ? (
-            <div className="p-4 rounded-lg bg-white/80 dark:bg-slate-900 text-slate-600">
-              Nenhum bilhete ainda — confirme a seleção.
+            <div className="p-3 bg-[#1b2233] text-gray-300 rounded-lg">
+              Nenhum bilhete ainda — confirme sua seleção.
             </div>
           ) : (
-            <div className="space-y-2">
-              {tickets.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white/80 dark:bg-slate-900 shadow-sm"
-                >
-                  <div className="flex gap-2">
-                    {t.nums.map((n, i) => (
-                      <div
-                        key={i}
-                        className="h-10 w-14 flex items-center justify-center rounded-md bg-primary/10 text-primary font-bold"
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    #{t.id.slice(-6)}
-                  </span>
+            tickets.map((t) => (
+              <div
+                key={t.id}
+                className="flex justify-between items-center bg-[#1b2233] p-3 rounded-lg mb-2"
+              >
+                <div className="flex gap-2">
+                  {t.nums.map((n) => (
+                    <div
+                      key={n}
+                      className="h-8 w-10 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-bold"
+                    >
+                      {n}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <span className="text-xs text-gray-400">#{t.id.slice(-6)}</span>
+              </div>
+            ))
           )}
-        </section>
-      </main>
-
-      <section className="fixed left-0 right-0 bottom-0 p-4 bg-background-light/90 dark:bg-background-dark/90 border-t">
-        <div className="max-w-5xl mx-auto flex gap-3">
-          <button
-            onClick={() => setSelected([])}
-            className="flex-1 h-14 rounded-full bg-zinc-200 dark:bg-zinc-800"
-          >
-            Limpar
-          </button>
-
-          <button
-            onClick={pagarAgora}
-            className="flex-1 h-14 rounded-full bg-amber-400 text-black font-bold"
-          >
-            Pagar Agora
-          </button>
         </div>
-      </section>
+
+        {/* Botões fixos */}
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-3 bg-[#0b1221]/95 backdrop-blur-sm border-t border-gray-800">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setSelected([])}
+              className="flex-1 bg-gray-700 text-gray-200 rounded-full h-12"
+            >
+              Limpar
+            </button>
+            <button
+              onClick={pagarAgora}
+              className="flex-1 bg-yellow-400 text-blue-900 font-bold rounded-full h-12"
+            >
+              Pagar Agora
+            </button>
+          </div>
+        </div>
+      </main>
 
       <NavBottom />
 
+      {/* Efeito moedas */}
       {coinBurst && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex items-end justify-center pb-40">
+        <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-40 z-40">
           <div className="relative w-64 h-64">
             {Array.from({ length: 10 }).map((_, i) => (
               <div
@@ -299,8 +260,9 @@ export default function ApostaPainel() {
                   width: 12 + Math.random() * 18,
                   height: 12 + Math.random() * 18,
                   background: "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${(Math.random() - 0.5) * 220}px) translateY(-${120 +
-                    Math.random() * 220}px) rotate(${Math.random() * 360}deg)`,
+                  transform: `translateX(${(Math.random() - 0.5) * 220}px) translateY(-${
+                    120 + Math.random() * 220
+                  }px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
@@ -310,13 +272,12 @@ export default function ApostaPainel() {
       )}
 
       <style>{`
-        .shadow-active { box-shadow: 0 8px 24px rgba(59,130,246,0.18); }
         .animate-pulse-scale {
-          animation: pulse-scale 700ms ease-in-out infinite;
+          animation: pulse-scale 0.7s ease-in-out infinite;
         }
         @keyframes pulse-scale {
           0% { transform: scale(1); }
-          50% { transform: scale(1.06); }
+          50% { transform: scale(1.08); }
           100% { transform: scale(1); }
         }
       `}</style>
