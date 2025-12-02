@@ -14,21 +14,32 @@ import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
-// ✅ Função simples pra verificar autenticação
+/**
+ * ✅ Função segura para verificar autenticação
+ * Evita erro no build do Render (que não tem `localStorage` durante o build)
+ */
 function isLoggedIn() {
+  if (typeof window === "undefined") return false; // 🔥 Garante que só roda no navegador
   return Boolean(localStorage.getItem("TOKEN_ZLPIX"));
 }
 
-// 🚀 Wrapper para proteger rotas privadas
+/**
+ * 🔒 Wrapper para rotas privadas (só acessa logado)
+ */
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isLoggedIn() ? children : <Navigate to="/login" replace />;
 }
 
-// 🚪 Wrapper para rotas públicas (login, cadastro, etc.)
+/**
+ * 🚪 Wrapper para rotas públicas (bloqueia login/cadastro se já logado)
+ */
 function PublicRoute({ children }: { children: JSX.Element }) {
   return isLoggedIn() ? <Navigate to="/" replace /> : children;
 }
 
+/**
+ * 🧭 Estrutura principal de rotas
+ */
 export default function AppRoutes() {
   return (
     <Routes>
