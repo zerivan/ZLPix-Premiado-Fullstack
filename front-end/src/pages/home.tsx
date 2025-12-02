@@ -1,29 +1,64 @@
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, Ticket, Trophy, User, Settings } from "lucide-react";
+import BottomNav from "../components/bottomnav"; // nome minúsculo — igual ao arquivo
 
-export default function BottomNav() {
+export default function Home() {
   const navigate = useNavigate();
 
-  const items = [
-    { icon: Home, label: "Início", path: "/home" },
-    { icon: Ticket, label: "Bilhetes", path: "/meusbilhetes" },
-    { icon: Trophy, label: "Resultados", path: "/resultado" },
-    { icon: User, label: "Perfil", path: "/perfil" },
-    { icon: Settings, label: "Admin", path: "/adminlogin" },
-  ];
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-blue-900 py-3 flex justify-around shadow-lg border-t border-blue-700 z-50">
-      {items.map(({ icon: Icon, label, path }) => (
+    <div className="min-h-screen bg-gradient-to-b from-blue-800 via-blue-700 to-green-600 text-white flex flex-col items-center justify-between pt-10 pb-24 relative overflow-hidden">
+      {/* Fundo animado */}
+      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-r from-green-400/30 to-yellow-200/10 blur-2xl animate-pulse-slow"></div>
+
+      {/* Conteúdo principal */}
+      <main className="flex flex-col items-center text-center z-10 w-full">
+        <img src="/logo.png" alt="ZLPix Premiado" className="w-28 mb-4 drop-shadow-lg animate-pulse" />
+
+        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-1 tracking-wide">
+          ZLPix Premiado
+        </h1>
+        <p className="text-blue-100 text-sm mb-6">
+          Aposte, ganhe e celebre sua sorte 🍀
+        </p>
+
+        {/* Saldo */}
+        <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-5 w-11/12 text-center mb-6 shadow-lg border border-green-500/30">
+          <p className="text-blue-100 text-sm">Seu saldo</p>
+          <p className="text-4xl font-bold text-yellow-300 mb-3 drop-shadow-md">
+            R$ 12,50
+          </p>
+          <button
+            onClick={() => alert("Função de adicionar saldo em breve!")}
+            className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-semibold px-6 py-2 rounded-full transition-all shadow-md"
+          >
+            Adicionar
+          </button>
+        </div>
+
+        {/* Botão principal */}
         <button
-          key={label}
-          onClick={() => navigate(path)}
-          title={label} // ✅ Tooltip automático (mostra o nome)
-          className="relative text-yellow-400 hover:text-yellow-300 transition-colors"
+          onClick={() => navigate("/aposta")}
+          className="mt-4 bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg px-10 py-4 rounded-full shadow-lg transition-all animate-bounce"
         >
-          <Icon size={26} strokeWidth={2.2} />
+          FAZER APOSTA AGORA
         </button>
-      ))}
-    </nav>
+      </main>
+
+      {/* Menu inferior */}
+      <div className="w-full fixed bottom-0 left-0 right-0">
+        <BottomNav />
+      </div>
+
+      {/* Animação */}
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.9; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.04); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
   );
 }
