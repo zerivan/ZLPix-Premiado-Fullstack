@@ -19,32 +19,20 @@ export default function ApostaPainel() {
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
-  useEffect(() => {
-    return () => {
-      stopSound();
-      if (audioCtxRef.current) {
-        try {
-          audioCtxRef.current.close();
-        } catch {}
-      }
-    };
-  }, []);
-
+  // 🎵 Inicia som de rotação
   function startSound() {
     try {
       const AC = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AC();
       audioCtxRef.current = ctx;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(220, ctx.currentTime);
-      gain.gain.setValueAtTime(0, ctx.currentTime);
+      osc.type = "square";
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.1);
       oscRef.current = osc;
       gainRef.current = gain;
     } catch {}
@@ -54,8 +42,7 @@ export default function ApostaPainel() {
     const ctx = audioCtxRef.current;
     if (!ctx || !oscRef.current || !gainRef.current) return;
     const now = ctx.currentTime;
-    gainRef.current.gain.cancelScheduledValues(now);
-    gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.25);
+    gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.2);
     try {
       oscRef.current.stop(now + 0.3);
     } catch {}
@@ -64,60 +51,71 @@ export default function ApostaPainel() {
   }
 
   function modulateSound(speed = 1) {
-    const ctx = audioCtxRef.current;
-    if (!ctx || !oscRef.current) return;
-    const now = ctx.currentTime;
-    const base = 220;
+    if (!audioCtxRef.current || !oscRef.current) return;
+    const now = audioCtxRef.current.currentTime;
+    const base = 180;
     oscRef.current.frequency.cancelScheduledValues(now);
-    oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.02);
+    oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
   }
 
-  async function iniciarSorteio() {
+  // 🎯 Clique manual no número
+  function toggle(num: string) {
+    if (rolling) return; // bloqueia durante o sorteio
+    if (selected.includes(num)) {
+      setSelected(selected.filter((s) => s !== num));
+    } else if (selected.length < 3) {
+      setSelected([...selected, num]);
+    }
+  }
+
+  // 🎰 Geração automática
+  async function gerarAleatorio() {
     if (rolling) return;
 
     setRolling(true);
-    startSound();
     setSelected([]);
-    setActiveNumber(null);
+    startSound();
 
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i + 1));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
-      // Simula o giro piscando vários números antes de parar
-      for (let j = 0; j < 20 + Math.random() * 20; j++) {
+      for (let j = 0; j < 30 + Math.random() * 20; j++) {
         const randomNum = pool[Math.floor(Math.random() * pool.length)];
         setActiveNumber(randomNum);
         modulateSound(1 + Math.random() * 4);
-        await new Promise((r) => setTimeout(r, 60 - j));
+        await new Promise((r) => setTimeout(r, 40));
       }
 
-      // Escolhe número final único
       let chosen = pool[Math.floor(Math.random() * pool.length)];
       while (final.includes(chosen)) {
         chosen = pool[Math.floor(Math.random() * pool.length)];
       }
+
       final.push(chosen);
       setSelected((prev) => [...prev, chosen]);
       await new Promise((r) => setTimeout(r, 200));
     }
 
     stopSound();
-
-    // Exibe efeito de moedas/serpentina
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 1200);
+    setRolling(false);
+  }
 
-    // Gera o bilhete
-    const newTicket = { nums: final, id: Date.now().toString(36) };
+  function desfazerUltimo() {
+    if (tickets.length > 0 && !rolling) {
+      setTickets((t) => t.slice(1));
+    }
+  }
+
+  function confirmarBilhete() {
+    if (selected.length !== 3 || rolling) return;
+    const newTicket = { nums: [...selected], id: Date.now().toString(36) };
     setTickets((t) => [newTicket, ...t]);
-
-    // Apaga o painel depois de 1.5s
-    setTimeout(() => {
-      setSelected([]);
-      setActiveNumber(null);
-      setRolling(false);
-    }, 1500);
+    setSelected([]);
+    setCoinBurst(true);
+    setTimeout(() => setCoinBurst(false), 1200);
   }
 
   function pagarAgora() {
@@ -130,26 +128,27 @@ export default function ApostaPainel() {
     <div className="min-h-screen flex flex-col bg-[#0b1221] text-white relative overflow-y-auto">
       <Header />
 
-      <main className="flex-1 max-w-md mx-auto w-full p-3 pb-28">
-        <h2 className="text-lg font-bold text-yellow-300 mb-3 text-center">
-          Sorteie até 3 dezenas
+      <main className="flex-1 max-w-md mx-auto w-full p-2 pb-28">
+        <h2 className="text-base font-bold text-yellow-300 mb-2 text-center">
+          Escolha ou Gere suas dezenas
         </h2>
 
-        {/* Painel compacto */}
-        <div className="grid grid-cols-5 gap-2 mb-6">
+        {/* 🔢 Painel compacto */}
+        <div className="grid grid-cols-5 gap-1 mb-4">
           {grid.map((n) => {
             const sel = selected.includes(n);
             const isActive = activeNumber === n && rolling;
             return (
               <button
                 key={n}
-                disabled
-                className={`h-9 rounded-md border font-semibold text-sm transition-all ${
+                onClick={() => toggle(n)}
+                disabled={rolling}
+                className={`h-7 rounded-md border text-xs font-semibold transition-all ${
                   sel
                     ? "bg-yellow-400 text-blue-900 border-yellow-400 animate-blink"
                     : isActive
                     ? "bg-blue-600 text-white border-blue-400"
-                    : "bg-[#1c2433] text-white border-[#28334a]"
+                    : "bg-[#1c2433] text-gray-200 border-[#28334a] hover:bg-blue-700"
                 }`}
               >
                 {n}
@@ -158,12 +157,12 @@ export default function ApostaPainel() {
           })}
         </div>
 
-        {/* Botões compactos */}
-        <div className="flex justify-between items-center gap-2 mb-6">
+        {/* 🎛️ Botões */}
+        <div className="flex justify-between items-center gap-2 mb-5">
           <button
-            onClick={iniciarSorteio}
+            onClick={gerarAleatorio}
             disabled={rolling}
-            className={`flex-1 py-2 rounded-full text-sm font-bold ${
+            className={`flex-1 py-2 rounded-full text-xs font-bold ${
               rolling
                 ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                 : "bg-yellow-400 hover:bg-yellow-500 text-blue-900"
@@ -173,48 +172,48 @@ export default function ApostaPainel() {
           </button>
 
           <button
-            onClick={() => setSelected([])}
-            disabled={rolling}
-            className="flex-1 bg-gray-600 text-gray-200 py-2 rounded-full text-sm"
+            onClick={confirmarBilhete}
+            disabled={selected.length !== 3 || rolling}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-full text-xs font-bold"
           >
-            Limpar
+            Confirmar
           </button>
 
           <button
-            onClick={pagarAgora}
-            disabled={rolling}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-full text-sm font-bold"
+            onClick={desfazerUltimo}
+            disabled={tickets.length === 0 || rolling}
+            className="flex-1 bg-gray-600 hover:bg-gray-500 text-gray-200 py-2 rounded-full text-xs"
           >
-            Pagar
+            Desfazer
           </button>
         </div>
 
-        {/* Bilhetes */}
+        {/* 🎟️ Bilhetes */}
         <div className="mb-6">
-          <h3 className="text-yellow-300 font-bold mb-2 text-center">
+          <h3 className="text-yellow-300 font-bold mb-2 text-center text-sm">
             Bilhetes Gerados
           </h3>
           {tickets.length === 0 ? (
-            <div className="p-3 bg-[#1b2233] text-gray-300 rounded-lg text-center">
-              Nenhum bilhete ainda — clique em <b>Gerar</b>.
+            <div className="p-3 bg-[#1b2233] text-gray-400 rounded-lg text-center text-xs">
+              Nenhum bilhete — escolha ou gere números.
             </div>
           ) : (
             tickets.map((t) => (
               <div
                 key={t.id}
-                className="flex justify-between items-center bg-[#1b2233] p-3 rounded-lg mb-2"
+                className="flex justify-between items-center bg-[#1b2233] p-2 rounded-lg mb-2"
               >
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   {t.nums.map((n) => (
                     <div
                       key={n}
-                      className="h-8 w-10 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-bold"
+                      className="h-7 w-8 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-bold text-xs"
                     >
                       {n}
                     </div>
                   ))}
                 </div>
-                <span className="text-xs text-gray-400">#{t.id.slice(-6)}</span>
+                <span className="text-[10px] text-gray-500">#{t.id.slice(-6)}</span>
               </div>
             ))
           )}
@@ -223,22 +222,22 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
-      {/* Efeito moedas */}
+      {/* 💰 Efeito moedas */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-40 z-40">
           <div className="relative w-64 h-64">
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full shadow-lg"
                 style={{
-                  width: 10 + Math.random() * 20,
-                  height: 10 + Math.random() * 20,
+                  width: 8 + Math.random() * 16,
+                  height: 8 + Math.random() * 16,
                   background: "linear-gradient(180deg,#ffd700,#ffb400)",
                   transform: `translateX(${(Math.random() - 0.5) * 220}px) translateY(-${
                     120 + Math.random() * 220
                   }px) rotate(${Math.random() * 360}deg)`,
-                  opacity: 0.95,
+                  opacity: 0.9,
                 }}
               />
             ))}
