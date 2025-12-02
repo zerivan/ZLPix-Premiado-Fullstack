@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // 🧭 Páginas
-import Home from "../pages/Home"; // ✅ Corrigido (H maiúsculo — compatível com Render)
+import Home from "../pages/home"; // ✅ Corrigido: tudo minúsculo (compatível com Render/Linux)
 import Login from "../pages/login";
 import Cadastro from "../pages/cadastro";
 import ApostaPainel from "../pages/apostapainel";
