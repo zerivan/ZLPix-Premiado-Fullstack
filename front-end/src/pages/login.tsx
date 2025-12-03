@@ -23,29 +23,25 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // 1️⃣ Faz login
-      const response = await api.post("/auth/login", { email, password: senha });
-      const token = response.data?.token;
-
-      if (!token) {
-        setErro("Resposta inválida do servidor.");
-        return;
-      }
-
-      // 2️⃣ Salva o token
-      localStorage.setItem("TOKEN_ZLPIX", token);
-
-      // 3️⃣ Busca os dados do usuário logado
-      const userRes = await api.get("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
+      // 🔐 Login com backend
+      const response = await api.post("/auth/login", {
+        email,
+        password: senha,
       });
 
-      if (userRes.data) {
-        localStorage.setItem("USER_ZLPIX", JSON.stringify(userRes.data));
+      const token = response.data?.token;
+      const user = response.data?.user;
+
+      if (!token || !user) {
+        throw new Error("Resposta inválida do servidor.");
       }
 
-      // 4️⃣ Vai pra Home
-      navigate("/");
+      // 💾 Salva token e dados do usuário
+      localStorage.setItem("TOKEN_ZLPIX", token);
+      localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
+
+      // ✅ Redireciona para a Home
+      navigate("/home");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -57,21 +53,25 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display"
-    >
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display">
       <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm border border-green-400/30">
+        {/* LOGO */}
         <div className="text-center mb-5">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
-            alt="ZLPix Logo"
+            alt="Logo ZLPix"
             className="w-24 mx-auto mb-3"
           />
-          <h1 className="text-2xl font-bold text-yellow-300">Entrar na Conta</h1>
-          <p className="text-sm text-blue-100">Aposte e acompanhe seus resultados</p>
+          <h1 className="text-2xl font-bold text-yellow-300">
+            Entrar na sua conta
+          </h1>
+          <p className="text-sm text-blue-100">
+            Aposte e acompanhe seus resultados
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* E-mail */}
           <div>
             <label className="text-sm">E-mail</label>
             <input
@@ -83,6 +83,7 @@ export default function Login() {
             />
           </div>
 
+          {/* Senha */}
           <div>
             <label className="text-sm">Senha</label>
             <div className="relative">
@@ -102,10 +103,9 @@ export default function Login() {
             </div>
           </div>
 
-          {erro && (
-            <p className="text-yellow-300 text-sm text-center">{erro}</p>
-          )}
+          {erro && <p className="text-yellow-300 text-sm text-center">{erro}</p>}
 
+          {/* Botão Entrar */}
           <button
             type="submit"
             disabled={loading}
@@ -114,6 +114,15 @@ export default function Login() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
+          {/* Esqueci minha senha */}
+          <p
+            className="text-sm text-yellow-300 cursor-pointer text-right mt-2 hover:underline"
+            onClick={() => navigate("/recuperar-senha")}
+          >
+            Esqueci minha senha
+          </p>
+
+          {/* Cadastro */}
           <p className="text-sm text-center mt-3">
             Não tem conta?{" "}
             <span
