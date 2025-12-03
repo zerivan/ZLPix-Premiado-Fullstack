@@ -1,9 +1,10 @@
+// src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/index.css";
 
-import { api } from "./api/client.ts";   // ✅ AJUSTADO
-import AppRoutes from "./routes/index.tsx"; // ⚠️ AJUSTADO TAMBÉM
+import { api } from "./api/client.ts";
+import AppRoutes from "./routes/approutes.tsx"; // ✅ Corrigido — aponta para o arquivo certo
 
 import { BrowserRouter } from "react-router-dom";
 
