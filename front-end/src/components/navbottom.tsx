@@ -1,26 +1,20 @@
+// src/components/navbottom.tsx
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Ticket, Trophy, User, Shield } from "lucide-react";
+import { Home, Ticket, ListOrdered, Trophy, User, Shield } from "lucide-react";
 
-export default function navbottom() {
+export default function NavBottom() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const items = [
     { icon: Home, label: "Início", path: "/" },
     { icon: Ticket, label: "Apostar", path: "/aposta" },
+    { icon: ListOrdered, label: "Bilhetes", path: "/meus-bilhetes" }, // ✅ Novo item
     { icon: Trophy, label: "Resultados", path: "/resultado" },
     { icon: User, label: "Perfil", path: "/perfil" },
     { icon: Shield, label: "Admin", path: "/admin" },
   ];
-
-  // Função para navegar com vibração leve no celular
-  const handleNavigate = (path: string) => {
-    if (navigator.vibrate) {
-      navigator.vibrate(30); // vibra levemente
-    }
-    navigate(path);
-  };
 
   return (
     <nav
@@ -31,29 +25,26 @@ export default function navbottom() {
         h-16 z-50 shadow-lg backdrop-blur-md
       "
     >
-      <div className="max-w-4xl mx-auto h-full flex items-center justify-around px-2">
+      <div className="max-w-4xl mx-auto h-full flex items-center justify-around">
         {items.map(({ icon: Icon, label, path }) => {
           const active = location.pathname === path;
-
           return (
             <button
               key={label}
-              onClick={() => handleNavigate(path)}
+              onClick={() => navigate(path)}
               className={`
                 flex flex-col items-center justify-center gap-1
-                transition-all duration-200 relative
-                ${active
-                  ? "text-yellow-300 scale-105"
-                  : "text-zinc-300 hover:text-yellow-200"}
+                transition-all duration-200
+                ${active ? "text-yellow-300 scale-105" : "text-zinc-300 hover:text-yellow-200"}
               `}
             >
               <div
                 className={`
                   flex items-center justify-center
-                  h-10 w-10 rounded-full transition-all duration-200
+                  h-10 w-10 rounded-full
                   ${active
-                    ? "bg-yellow-400 text-blue-900 shadow-md scale-110 animate-pop"
-                    : "bg-zinc-700/40 text-yellow-200 hover:bg-yellow-300/20 hover:scale-105"}
+                    ? "bg-yellow-400 text-blue-900 shadow-md scale-110"
+                    : "bg-zinc-700/50 text-yellow-200 hover:bg-yellow-300/20 hover:scale-105"}
                 `}
               >
                 <Icon size={22} strokeWidth={2.2} />
@@ -63,18 +54,6 @@ export default function navbottom() {
           );
         })}
       </div>
-
-      {/* Efeito de animação “pop” */}
-      <style>{`
-        @keyframes pop {
-          0%   { transform: scale(0.9); }
-          50%  { transform: scale(1.15); }
-          100% { transform: scale(1.05); }
-        }
-        .animate-pop {
-          animation: pop 0.25s ease-out;
-        }
-      `}</style>
     </nav>
   );
 }
