@@ -1,89 +1,125 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/home.tsx
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import NavBottom from "../components/navbottom";
 
 export default function Home() {
-  const navigate = useNavigate();
+  const [showInfo, setShowInfo] = useState(false);
 
-  const [premio, setPremio] = useState<number>(25000);
-  const [dataSorteio, setDataSorteio] = useState<string>("04/12/2025");
-
-  // 🧠 Carrega valores do painel admin (futuro)
-  useEffect(() => {
-    const dados = localStorage.getItem("ZLPIX_PREMIO_ATUAL");
-    if (dados) {
-      const { valor, data } = JSON.parse(dados);
-      if (valor) setPremio(valor);
-      if (data) setDataSorteio(data);
-    }
-  }, []);
+  const premioAtual = "R$ 25.000,00";
+  const dataSorteio = "04/12/2025";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center justify-between pt-10 pb-24 font-display relative overflow-hidden">
-      {/* 🌈 Efeito de fundo */}
-      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-r from-green-400/30 to-yellow-200/10 blur-3xl animate-pulse-slow"></div>
-
-      {/* Conteúdo */}
-      <main className="z-10 flex flex-col items-center text-center w-full px-5">
-        {/* 🏆 Cabeçalho */}
-        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-2 tracking-wide">
-          ZLPix Premiado 💰
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
+      
+      {/* 🏆 Cabeçalho */}
+      <header className="text-center py-6 border-b border-white/10 shadow-md">
+        <h1 className="text-2xl font-bold text-yellow-300 drop-shadow-lg">
+          ZLPIX PREMIADO 💰
         </h1>
-        <p className="text-blue-100 text-sm mb-8">
-          Concorra toda <span className="text-yellow-300 font-semibold">quarta-feira</span> com a Loteria Federal 🎯
+        <p className="text-sm text-blue-100">
+          Concorra toda quarta-feira com a Loteria Federal 🎯
         </p>
+      </header>
 
-        {/* 💵 Painel do prêmio */}
-        <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-6 w-11/12 text-center mb-6 shadow-lg border border-green-500/30">
-          <p className="text-blue-100 text-sm mb-1">🏆 Prêmio acumulado</p>
-          <p className="text-4xl font-bold text-yellow-300 mb-3 drop-shadow-md">
-            R$ {premio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-sm text-blue-200 mb-4">
-            Próximo sorteio: <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
-          </p>
+      <main className="flex-1 p-5 space-y-6 flex flex-col items-center text-center">
 
-          {/* 🎯 Botão principal — logo abaixo do prêmio */}
-          <button
-            onClick={() => navigate("/aposta")}
-            className="w-full bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg py-4 rounded-full shadow-lg transition-all"
-          >
-            🎯 FAZER APOSTA AGORA
-          </button>
+        {/* 💎 Valor do prêmio */}
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 shadow-lg border border-yellow-400/30 w-full max-w-md">
+          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
+          <h2 className="text-4xl font-extrabold text-white drop-shadow-sm">
+            {premioAtual}
+          </h2>
+          <p className="text-sm text-blue-100 mt-2">
+            Próximo sorteio:{" "}
+            <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
+          </p>
         </div>
 
-        {/* 📘 Informativo */}
-        <div className="bg-blue-900/40 rounded-xl border border-blue-400/30 px-4 py-5 mb-5 max-w-md text-sm text-blue-100 leading-relaxed">
-          Você concorre do <span className="text-yellow-300 font-bold">1º ao 5º prêmio</span> da Loteria Federal.
-          Se suas dezenas aparecerem em{" "}
-          <span className="text-green-300 font-bold">qualquer uma das centenas sorteadas</span>,
-          seu bilhete é premiado! 💫
-        </div>
-
-        {/* 🔍 Botão informativo */}
-        <button
-          onClick={() => navigate("/resultado")}
-          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-full mb-6 transition-all shadow-lg"
+        {/* 🎯 Botão principal — AGORA LOGO ABAIXO DO PRÊMIO */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg px-10 py-3 rounded-full shadow-lg transition-all w-full max-w-md"
+          onClick={() => window.location.href = "/aposta"}
         >
-          Como funciona o jogo 💡
-        </button>
+          🎯 FAZER APOSTA AGORA
+        </motion.button>
+
+        {/* 📢 Info rápida */}
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-sm text-white/90 shadow-inner w-full max-w-md">
+          Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
+          Se suas dezenas aparecerem em <strong>qualquer uma das centenas sorteadas</strong>,
+          seu bilhete é premiado!
+        </div>
+
+        {/* 📘 Como Funciona */}
+        <div className="w-full max-w-md">
+
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-3 rounded-full shadow-md transition-all"
+          >
+            {showInfo ? "Fechar explicação" : "Como funciona o jogo 🎯"}
+          </button>
+
+          <AnimatePresence>
+            {showInfo && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="mt-4 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
+              >
+                {/* 🧩 Esquema visual */}
+                <div className="flex justify-center">
+                  <pre className="text-xs text-white/90 font-mono bg-black/20 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap w-full max-w-xs">
+{`┌──────────────────────────────┬──────────────────────────────┐
+│   🏆 RESULTADO OFICIAL       │        🎟️ SEU BILHETE        │
+│   (Loteria Federal)          │                              │
+├──────────────────────────────┼──────────────────────────────┤
+│ 🥇 1º Prêmio →  3️⃣2️⃣4️⃣5️⃣  ←───┐                          │
+│ 🥈 2º Prêmio →  4️⃣5️⃣6️⃣7️⃣  ←──┼───┐                      │
+│ 🥉 3º Prêmio →  6️⃣7️⃣8️⃣9️⃣      │   │                      │
+│ 🎖️ 4º Prêmio →  5️⃣6️⃣5️⃣3️⃣      │   │                      │
+│ 🏁 5º Prêmio →  3️⃣3️⃣4️⃣5️⃣  ←──┘   │                      │
+│                              │   │                          │
+│                              │  🔸 (32)                     │
+│                              │  🔸 (45)───────────────🟩────┘
+│                              │  🔸 (98)                     │
+└──────────────────────────────┴──────────────────────────────┘`}
+                  </pre>
+                </div>
+
+                {/* Explicação */}
+                <div className="text-sm space-y-2 text-white/90">
+                  <p>
+                    🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.
+                    Se alguma delas aparecer nas <strong>centenas sorteadas</strong>,
+                    seu bilhete é premiado!
+                  </p>
+
+                  <p>
+                    💰 O prêmio é <strong>fixo por bilhete</strong>.
+                  </p>
+
+                  <p>
+                    🔁 Caso ninguém acerte, o prêmio <strong>acumula</strong>.
+                  </p>
+
+                  <p>
+                    📅 Sorteios oficiais toda{" "}
+                    <strong>quarta-feira</strong> pela Caixa Econômica Federal.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
-      {/* 📱 Menu inferior */}
-      <div className="w-full fixed bottom-0 left-0 right-0">
-        <NavBottom />
-      </div>
-
-      {/* 🎨 Animações */}
-      <style>{`
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.9; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.03); }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 3s ease-in-out infinite;
-        }
-      `}</style>
+      {/* 📱 Menu fixo */}
+      <NavBottom />
     </div>
   );
 }
