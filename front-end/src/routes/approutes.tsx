@@ -2,7 +2,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// 🧭 Páginas — tudo minúsculo nos imports (compatível com Linux)
+// 🧭 Páginas — nomes em minúsculo nos imports (compatível com Linux/Render)
 import Home from "../pages/home";
 import Login from "../pages/login";
 import Cadastro from "../pages/cadastro";
@@ -16,25 +16,73 @@ import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
 /**
- * ✅ Verifica se o usuário está logado
+ * 🧩 Verifica se o usuário está logado
  */
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
-  return Boolean(localStorage.getItem("TOKEN_ZLPIX"));
+  try {
+    return !!localStorage.getItem("TOKEN_ZLPIX");
+  } catch {
+    return false;
+  }
 }
 
 /**
- * 🔒 Rota privada (só acessa logado)
+ * 🔒 Rota privada — só acessa se estiver logado
+ * Inclui delay pra evitar falsos negativos no localStorage
  */
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  return isLoggedIn() ? children : <Navigate to="/login" replace />;
+  const [checked, setChecked] = React.useState(false);
+  const [authorized, setAuthorized] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      const token = localStorage.getItem("TOKEN_ZLPIX");
+      setAuthorized(!!token);
+      setChecked(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Enquanto verifica login
+  if (!checked) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-yellow-300">
+        <p className="text-lg animate-pulse">Verificando login...</p>
+      </div>
+    );
+  }
+
+  // Se estiver logado, libera o acesso
+  return authorized ? children : <Navigate to="/login" replace />;
 }
 
 /**
- * 🚪 Rota pública (bloqueia login/cadastro se já logado)
+ * 🚪 Rota pública — impede login/cadastro se já estiver logado
  */
 function PublicRoute({ children }: { children: JSX.Element }) {
-  return isLoggedIn() ? <Navigate to="/" replace /> : children;
+  const [checked, setChecked] = React.useState(false);
+  const [authorized, setAuthorized] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      const token = localStorage.getItem("TOKEN_ZLPIX");
+      setAuthorized(!!token);
+      setChecked(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!checked) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-yellow-300">
+        <p className="text-lg animate-pulse">Carregando...</p>
+      </div>
+    );
+  }
+
+  // Se já está logado → vai pra Home, senão → mostra login/cadastro
+  return authorized ? <Navigate to="/" replace /> : children;
 }
 
 /**
@@ -43,7 +91,7 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Página inicial */}
+      {/* 🏠 Página inicial — privada */}
       <Route
         path="/"
         element={
@@ -53,7 +101,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Autenticação */}
+      {/* 🔐 Autenticação */}
       <Route
         path="/login"
         element={
@@ -79,7 +127,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Apostas */}
+      {/* 🎯 Apostas */}
       <Route
         path="/aposta"
         element={
@@ -97,7 +145,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Pagamentos */}
+      {/* 💳 Pagamentos */}
       <Route
         path="/pagamento"
         element={
@@ -115,7 +163,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Resultados */}
+      {/* 🏆 Resultados */}
       <Route
         path="/resultado"
         element={
@@ -125,7 +173,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Perfil */}
+      {/* 👤 Perfil */}
       <Route
         path="/perfil"
         element={
@@ -135,14 +183,18 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Admin */}
+      {/* ⚙️ Admin — sem bloqueio */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      {/* Fallback */}
+      {/* 🚧 Fallback inteligente */}
       <Route
         path="*"
         element={
-          isLoggedIn() ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+          isLoggedIn() ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
         }
       />
     </Routes>
