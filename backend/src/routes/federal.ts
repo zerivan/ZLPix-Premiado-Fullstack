@@ -4,21 +4,31 @@ const router = express.Router();
 
 router.get("/", async (_req, res) => {
   try {
-    // Buscar o HTML direto do site da Caixa
     const response = await fetch(
-      "https://loterias.caixa.gov.br/Paginas/Federal.aspx"
+      "https://loterias.caixa.gov.br/Paginas/Federal.aspx",
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml",
+          "Accept-Language": "pt-BR,pt;q=0.9",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+        },
+      }
     );
+
     const html = await response.text();
 
-    // Extrair o número do concurso
+    // Extrair concurso
     const concursoMatch = html.match(/Concurso nº<\/span>\s*([\d]+)/);
     const concurso = concursoMatch ? concursoMatch[1] : "N/A";
 
-    // Extrair a data do sorteio
+    // Extrair data
     const dataMatch = html.match(/data do sorteio:\s*<\/span>\s*([^<]+)/i);
     const dataApuracao = dataMatch ? dataMatch[1].trim() : "N/A";
 
-    // Extrair os números premiados (5 linhas)
+    // Extrair premiados
     const regexPremios =
       /<td class="w-25">([\d]+)<\/td>\s*<td class="w-75">([\d]+)/g;
 
@@ -26,7 +36,6 @@ router.get("/", async (_req, res) => {
     let m;
 
     while ((m = regexPremios.exec(html)) !== null) {
-      // m[2] é o número premiado
       premios.push(m[2]);
     }
 
@@ -39,7 +48,7 @@ router.get("/", async (_req, res) => {
       data: {
         concurso,
         dataApuracao,
-        premios: premios.slice(0, 5), // garante só os 5 primeiros
+        premios: premios.slice(0, 5),
       },
     });
   } catch (err) {
