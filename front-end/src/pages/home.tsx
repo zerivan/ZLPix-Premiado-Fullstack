@@ -1,128 +1,85 @@
-// src/pages/home.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import NavBottom from "../components/navbottom";
 
 export default function Home() {
   const navigate = useNavigate();
-  const [showInfo, setShowInfo] = useState(false);
 
-  const premioAtual = "R$ 25.000,00";
-  const dataSorteio = "04/12/2025";
+  const [premio, setPremio] = useState<number>(25000);
+  const [dataSorteio, setDataSorteio] = useState<string>("04/12/2025");
+
+  useEffect(() => {
+    const dados = localStorage.getItem("ZLPIX_PREMIO_ATUAL");
+    if (dados) {
+      const { valor, data } = JSON.parse(dados);
+      if (valor) setPremio(valor);
+      if (data) setDataSorteio(data);
+    }
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center justify-between pt-10 pb-24 relative overflow-hidden font-display">
+    <div className="min-h-screen w-full bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center pt-10 pb-24 font-display relative overflow-hidden">
       
       {/* 🌈 Fundo animado */}
-      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-r from-green-400/20 to-yellow-200/10 blur-3xl animate-pulse-slow"></div>
+      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-r from-green-400/30 to-yellow-200/10 blur-3xl animate-pulse-slow"></div>
 
       {/* Conteúdo */}
-      <main className="flex flex-col items-center text-center z-10 w-full px-4">
-
-        {/* Logo */}
-        <img
-          src="/logo.png"
-          alt="ZLPix Premiado"
-          className="w-28 mb-4 drop-shadow-lg animate-pulse"
-        />
-
-        {/* Título */}
-        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-1 tracking-wide">
-          ZLPIX PREMIADO 💰
+      <main className="z-10 flex flex-col items-center text-center w-full px-5">
+        {/* 🏆 Cabeçalho */}
+        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-2 tracking-wide">
+          ZLPix Premiado 💰
         </h1>
-        <p className="text-blue-100 text-sm mb-6">Concorra toda quarta-feira 🎯</p>
+        <p className="text-blue-100 text-sm mb-8">
+          Concorra toda <span className="text-yellow-300 font-semibold">quarta-feira</span> com a Loteria Federal 🎯
+        </p>
 
-        {/* 💰 Prêmio */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 w-11/12 max-w-md text-center mb-6 shadow-lg border border-yellow-400/30">
-          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
-          <h2 className="text-4xl font-extrabold text-white drop-shadow-md">
-            {premioAtual}
-          </h2>
-          <p className="text-sm text-blue-100 mt-2">
+        {/* 💵 Painel do prêmio */}
+        <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-6 w-11/12 text-center shadow-lg border border-green-500/30 mb-6">
+          <p className="text-blue-100 text-sm mb-1">🏆 Prêmio acumulado</p>
+          <p className="text-4xl font-bold text-yellow-300 mb-3 drop-shadow-md">
+            R$ {premio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </p>
+          <p className="text-sm text-blue-200">
             Próximo sorteio:{" "}
             <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
           </p>
         </div>
 
-        {/* Texto pequeno fixo */}
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center text-sm text-white/90 shadow-inner mb-4 max-w-md">
-          Você concorre do <strong>1º ao 5º prêmio</strong>.  
-          Se sua dezena aparecer em qualquer <strong>centena sorteada</strong>,
-          seu bilhete é premiado!
-        </div>
-
-        {/* Botão Como funciona */}
+        {/* 🎯 Botão principal */}
         <button
-          onClick={() => setShowInfo(!showInfo)}
-          className="w-11/12 max-w-md bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-3 rounded-full shadow-md transition-all"
-        >
-          {showInfo ? "Fechar explicação" : "Como funciona o jogo 💡"}
-        </button>
-
-        {/* Painel explicativo */}
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35 }}
-              className="mt-4 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg text-sm text-white/90 w-11/12 max-w-md space-y-4"
-            >
-              {/* DIAGRAMA — Centralizado */}
-              <div className="flex justify-center">
-                <pre className="text-[10px] leading-tight text-white/90 font-mono bg-black/20 p-3 rounded-xl shadow-inner w-full max-w-xs whitespace-pre-wrap">
-{`┌────────────────────────┬──────────────────────┐
-│  🏆 FEDERAL             │     🎟️ BILHETE       │
-├────────────────────────┼──────────────────────┤
-│ 1º → 3245               │  🔸 32               │
-│ 2º → 4567               │  🔸 45────────🟩────┐│
-│ 3º → 6789               │  🔸 98             ││
-│ 4º → 5653               │                    ││
-│ 5º → 3345               │                    ││
-└────────────────────────┴──────────────────────┘`}
-                </pre>
-              </div>
-
-              {/* Explicação */}
-              <div className="space-y-2 text-center">
-                <p>
-                  🎯 Você escolhe <strong>3 dezenas</strong> entre 00 e 99.
-                </p>
-                <p>
-                  💡 Se alguma delas aparecer na{" "}
-                  <strong>centena sorteada</strong>, você ganha!
-                </p>
-                <p>
-                  💰 O prêmio é <strong>fixo por bilhete</strong> e acumula.
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Botão Apostar */}
-        <motion.button
           onClick={() => navigate("/aposta")}
-          animate={{ scale: [1, 1.08, 1] }}
-          transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-          className="w-11/12 max-w-md bg-gradient-to-r from-yellow-400 to-green-500 text-blue-900 font-extrabold text-lg py-4 mt-6 rounded-full shadow-lg hover:scale-[1.03] active:scale-95 transition-transform"
+          className="mb-8 bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg px-12 py-4 rounded-full shadow-lg transition-all animate-bounce"
         >
           🎯 FAZER APOSTA AGORA
-        </motion.button>
+        </button>
+
+        {/* 📘 Informativo */}
+        <div className="bg-blue-900/40 rounded-xl border border-blue-400/30 px-4 py-5 mb-6 max-w-md text-sm text-blue-100 leading-relaxed -mt-3">
+          Você concorre do <span className="text-yellow-300 font-bold">1º ao 5º prêmio</span> da Loteria Federal.
+          Se suas dezenas aparecerem em{" "}
+          <span className="text-green-300 font-bold">qualquer uma das centenas sorteadas</span>, 
+          seu bilhete é premiado! 💫
+        </div>
+
+        {/* 🔍 Botão informativo */}
+        <button
+          onClick={() => navigate("/resultado")}
+          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-full mb-6 transition-all shadow-lg"
+        >
+          Como funciona o jogo 💡
+        </button>
       </main>
 
-      {/* Menu inferior */}
+      {/* 📱 Menu inferior */}
       <div className="w-full fixed bottom-0 left-0 right-0">
         <NavBottom />
       </div>
 
-      {/* CSS extra */}
+      {/* 🎨 Animação */}
       <style>{`
         @keyframes pulse-slow {
           0%, 100% { opacity: 0.9; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.04); }
+          50% { opacity: 1; transform: scale(1.03); }
         }
         .animate-pulse-slow {
           animation: pulse-slow 3s ease-in-out infinite;
