@@ -2,7 +2,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// 🧭 Páginas — nomes em minúsculo nos imports (compatível com Linux/Render)
+// 🧭 Páginas — importações todas em minúsculo (compatível com Render/Linux)
 import Home from "../pages/home";
 import Login from "../pages/login";
 import Cadastro from "../pages/cadastro";
@@ -15,22 +15,13 @@ import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
-/**
- * 🧩 Verifica se o usuário está logado
- */
+// ✅ Função auxiliar pra verificar login
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
-  try {
-    return !!localStorage.getItem("TOKEN_ZLPIX");
-  } catch {
-    return false;
-  }
+  return !!localStorage.getItem("TOKEN_ZLPIX");
 }
 
-/**
- * 🔒 Rota privada — só acessa se estiver logado
- * Inclui delay pra evitar falsos negativos no localStorage
- */
+// 🔒 Rotas privadas
 function PrivateRoute({ children }: { children: JSX.Element }) {
   const [checked, setChecked] = React.useState(false);
   const [authorized, setAuthorized] = React.useState(false);
@@ -44,7 +35,6 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Enquanto verifica login
   if (!checked) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-yellow-300">
@@ -53,13 +43,10 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
     );
   }
 
-  // Se estiver logado, libera o acesso
-  return authorized ? children : <Navigate to="/login" replace />;
+  return authorized ? children : <Navigate to="/" replace />;
 }
 
-/**
- * 🚪 Rota pública — impede login/cadastro se já estiver logado
- */
+// 🚪 Rotas públicas
 function PublicRoute({ children }: { children: JSX.Element }) {
   const [checked, setChecked] = React.useState(false);
   const [authorized, setAuthorized] = React.useState(false);
@@ -81,35 +68,25 @@ function PublicRoute({ children }: { children: JSX.Element }) {
     );
   }
 
-  // Se já está logado → vai pra Home, senão → mostra login/cadastro
-  return authorized ? <Navigate to="/" replace /> : children;
+  // Se estiver logado → vai pra home
+  return authorized ? <Navigate to="/home" replace /> : children;
 }
 
-/**
- * 🌍 Estrutura principal das rotas
- */
+// 🌍 Estrutura principal das rotas
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* 🏠 Página inicial — privada */}
+      {/* 🏁 Página inicial (login) */}
       <Route
         path="/"
-        element={
-          <PrivateRoute>
-            <Home />
-          </PrivateRoute>
-        }
-      />
-
-      {/* 🔐 Autenticação */}
-      <Route
-        path="/login"
         element={
           <PublicRoute>
             <Login />
           </PublicRoute>
         }
       />
+
+      {/* 🧾 Cadastro */}
       <Route
         path="/cadastro"
         element={
@@ -118,12 +95,24 @@ export default function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* 🔑 Recuperar senha */}
       <Route
         path="/recuperar-senha"
         element={
           <PublicRoute>
             <RecuperarSenha />
           </PublicRoute>
+        }
+      />
+
+      {/* 🏠 Home — protegida */}
+      <Route
+        path="/home"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
         }
       />
 
@@ -145,7 +134,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 💳 Pagamentos */}
+      {/* 💳 Pagamento */}
       <Route
         path="/pagamento"
         element={
@@ -183,17 +172,17 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ⚙️ Admin — sem bloqueio */}
+      {/* ⚙️ Admin */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      {/* 🚧 Fallback inteligente */}
+      {/* 🚧 Fallback — qualquer rota inválida */}
       <Route
         path="*"
         element={
           isLoggedIn() ? (
-            <Navigate to="/" replace />
+            <Navigate to="/home" replace />
           ) : (
-            <Navigate to="/login" replace />
+            <Navigate to="/" replace />
           )
         }
       />
