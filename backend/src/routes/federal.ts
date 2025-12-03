@@ -5,7 +5,7 @@ const router = express.Router();
 router.get("/", async (_req, res) => {
   try {
     const response = await fetch(
-      "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal/last"
+      "https://loterias-api-svc.onrender.com/api/federal"
     );
 
     const data = await response.json();
@@ -15,10 +15,10 @@ router.get("/", async (_req, res) => {
       data,
     });
   } catch (err) {
-    console.error("Erro ao buscar Federal:", err);
+    console.error("Erro rota federal:", err);
     res.status(500).json({
       ok: false,
-      erro: "Falha ao consultar a Caixa",
+      erro: "Falha ao consultar o serviço intermediário",
     });
   }
 });
