@@ -54,6 +54,20 @@ export default function Perfil() {
     );
   }
 
+  // 🗓️ Função para formatar a data com segurança
+  const getSafeDate = (dateString?: string) => {
+    if (!dateString) return null;
+    const parsedDate = new Date(dateString);
+    if (isNaN(parsedDate.getTime())) return null;
+    return parsedDate.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const createdAtFormatted = getSafeDate(user.createdAt);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white p-6 font-display pb-24 flex flex-col">
       {/* 🧑‍💼 Cabeçalho */}
@@ -64,7 +78,7 @@ export default function Perfil() {
             {user.name?.[0]?.toUpperCase() || "U"}
           </div>
 
-          {/* Ícone editar (futuro) */}
+          {/* Ícone editar (placeholder futuro) */}
           <div className="absolute bottom-1 right-1 bg-yellow-400 p-1.5 rounded-full border border-blue-900 cursor-pointer shadow-md hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-blue-900 text-sm">edit</span>
           </div>
@@ -80,27 +94,31 @@ export default function Perfil() {
           <span className="text-white/70">Nome</span>
           <span className="font-semibold text-yellow-300">{user.name}</span>
         </div>
+
         <div className="flex justify-between border-b border-white/10 pb-1">
           <span className="text-white/70">E-mail</span>
           <span className="font-semibold text-yellow-300">{user.email}</span>
         </div>
+
         {user.phone && (
           <div className="flex justify-between border-b border-white/10 pb-1">
             <span className="text-white/70">Telefone</span>
             <span className="font-semibold text-yellow-300">{user.phone}</span>
           </div>
         )}
+
         {user.pixKey && (
           <div className="flex justify-between border-b border-white/10 pb-1">
             <span className="text-white/70">Chave PIX</span>
             <span className="font-semibold text-yellow-300">{user.pixKey}</span>
           </div>
         )}
-        {user.createdAt && (
+
+        {createdAtFormatted && (
           <div className="flex justify-between">
             <span className="text-white/70">Conta criada em</span>
             <span className="font-semibold text-yellow-300">
-              {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+              {createdAtFormatted}
             </span>
           </div>
         )}
