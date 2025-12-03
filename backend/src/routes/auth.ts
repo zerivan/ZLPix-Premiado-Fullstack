@@ -12,7 +12,9 @@ const serialize = (data: any): any => {
   if (typeof data === "bigint") return data.toString();
   if (Array.isArray(data)) return data.map(serialize);
   if (typeof data === "object") {
-    return Object.fromEntries(Object.entries(data).map(([k, v]) => [k, serialize(v)]));
+    return Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, serialize(v)])
+    );
   }
   return data;
 };
@@ -25,7 +27,9 @@ router.post("/register", async (req, res) => {
     const { name, email, phone, pixKey, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Nome, e-mail e senha são obrigatórios." });
+      return res
+        .status(400)
+        .json({ message: "Nome, e-mail e senha são obrigatórios." });
     }
 
     const existing = await prisma.users.findUnique({ where: { email } });
@@ -44,19 +48,23 @@ router.post("/register", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro em /auth/register:", err);
-    return res.status(500).json({ message: "Erro ao cadastrar usuário.", error: String(err) });
+    return res
+      .status(500)
+      .json({ message: "Erro ao cadastrar usuário.", error: String(err) });
   }
 });
 
 // ------------------------
-//  LOGIN
+//  LOGIN DO USUÁRIO NORMAL
 // ------------------------
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
     }
 
     const user = await prisma.users.findUnique({ where: { email } });
@@ -69,9 +77,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    const token = jwt.sign({ sub: user.id.toString(), email: user.email }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { sub: user.id.toString(), email: user.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     return res.json({
       message: "Login realizado com sucesso.",
@@ -80,7 +90,56 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro em /auth/login:", err);
-    return res.status(500).json({ message: "Erro ao fazer login.", error: String(err) });
+    return res
+      .status(500)
+      .json({ message: "Erro ao fazer login.", error: String(err) });
+  }
+});
+
+// ------------------------
+//  LOGIN ADMIN (NOVA ROTA)
+// ------------------------
+router.post("/admin-login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
+    }
+
+    // Busca admin na tabela "Admins"
+    const admin = await prisma.admins.findUnique({
+      where: { email },
+    });
+
+    if (!admin) {
+      return res.status(401).json({ message: "Admin não encontrado." });
+    }
+
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Senha incorreta." });
+    }
+
+    const token = jwt.sign(
+      { sub: admin.id.toString(), role: "admin" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+      admin: serialize(admin),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/admin-login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
+      error: String(err),
+    });
   }
 });
 
