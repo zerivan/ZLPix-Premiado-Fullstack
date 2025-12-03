@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth";
+import federalRoutes from "./routes/federal"; // <-- AQUI (IMPORT NOVO)
+
 // import usersRoutes from "./routes/users"; // descomente quando o arquivo existir
 
 // 🔒 Garantia de variáveis de ambiente seguras
@@ -44,6 +46,7 @@ app.get("/", (_req, res) => {
 
 // 🔗 Rotas principais
 app.use("/auth", authRoutes);
+app.use("/api/federal", federalRoutes); // <-- AQUI (ROTA NOVA)
 // app.use("/users", usersRoutes); // Descomente quando ativar
 
 // 🚀 Inicializa o servidor
