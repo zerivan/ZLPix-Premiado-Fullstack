@@ -9,16 +9,19 @@ export default function Resultado() {
   useEffect(() => {
     async function fetchFederal() {
       setLoading(true);
-      try {
-        const res = await fetch(
-          "https://loteriascaixa-api.vercel.app/api/federal/latest"
-        );
-        const data = await res.json();
 
-        // A API agora retorna ARRAY direto
-        setResultados(Array.isArray(data) ? data : [data]);
+      try {
+        const res = await fetch("http://SEU-IP:4000/api/federal");
+        const json = await res.json();
+
+        if (!json.ok) {
+          setErro("Erro ao carregar resultados.");
+          return;
+        }
+
+        setResultados([json.data]);
       } catch (err) {
-        console.error("Erro ao buscar Loteria Federal:", err);
+        console.error("Erro ao buscar resultado:", err);
         setErro("Não foi possível carregar os resultados agora.");
       } finally {
         setLoading(false);
@@ -63,7 +66,6 @@ export default function Resultado() {
                 {r.local || r.localSorteio || "Local não informado"}
               </p>
 
-              {/* dezenas — nova chave fallback */}
               <div className="flex justify-center flex-wrap gap-3 mb-4">
                 {(r.dezenasSorteadasOrdemSorteio ||
                   r.dezenas ||
@@ -78,7 +80,6 @@ export default function Resultado() {
                 ))}
               </div>
 
-              {/* premiação — nova chave fallback */}
               <div className="rounded-xl bg-white/5 p-3 border border-white/10">
                 <p className="text-yellow-300 font-semibold mb-2 text-center">
                   💰 Premiação
