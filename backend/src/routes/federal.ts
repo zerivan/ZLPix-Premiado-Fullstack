@@ -12,8 +12,6 @@ router.get("/", async (_req, res) => {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml",
           "Accept-Language": "pt-BR,pt;q=0.9",
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",
         },
       }
     );
@@ -28,19 +26,39 @@ router.get("/", async (_req, res) => {
     const dataMatch = html.match(/data do sorteio:\s*<\/span>\s*([^<]+)/i);
     const dataApuracao = dataMatch ? dataMatch[1].trim() : "N/A";
 
-    // Extrair premiados
-    const regexPremios =
-      /<td class="w-25">([\d]+)<\/td>\s*<td class="w-75">([\d]+)/g;
+    // ================================
+    // NOVO SISTEMA DE EXTRAÇÃO DE PRÊMIOS
+    // ================================
+    let premios: string[] = [];
 
-    const premios: string[] = [];
+    // 1) Tenta extrair padrão mais comum
+    const regex1 = /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
     let m;
+    while ((m = regex1.exec(html)) !== null) premios.push(m[1]);
 
-    while ((m = regexPremios.exec(html)) !== null) {
-      premios.push(m[2]);
+    // 2) Se não achou 5 números, tenta outro formato
+    if (premios.length < 5) {
+      const regex2 = /\dº prêmio[^0-9]*(\d{5})/gi;
+      let x;
+      while ((x = regex2.exec(html)) !== null) premios.push(x[1]);
+    }
+
+    // 3) Última alternativa: busca qualquer número de 5 dígitos dentro da área de resultado
+    if (premios.length < 5) {
+      const regex3 = /(\d{5})/g;
+      const bruto = [...html.matchAll(regex3)].map((m) => m[1]);
+
+      // filtrando repetições irrelevantes
+      const candidatos = bruto.filter(
+        (num) => !["2025", "2024", "2023"].includes(num) // evita datas
+      );
+
+      // pegar os primeiros 5 que fazem sentido
+      premios = candidatos.slice(0, 5);
     }
 
     if (premios.length < 5) {
-      throw new Error("Não foi possível extrair os 5 prêmios.");
+      throw new Error("Não foi possível extrair os números premiados.");
     }
 
     return res.json({
@@ -48,7 +66,7 @@ router.get("/", async (_req, res) => {
       data: {
         concurso,
         dataApuracao,
-        premios: premios.slice(0, 5),
+        premios,
       },
     });
   } catch (err) {
