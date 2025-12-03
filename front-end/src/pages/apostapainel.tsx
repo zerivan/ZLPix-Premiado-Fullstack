@@ -15,6 +15,8 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const oscRef = useRef<OscillatorNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
     const AC = window.AudioContext || (window as any).webkitAudioContext;
@@ -38,6 +40,44 @@ export default function ApostaPainel() {
     } catch {}
   }
 
+  // 🔈 Som de roleta
+  function startRollingSound() {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      oscRef.current = osc;
+      gainRef.current = gain;
+    } catch {}
+  }
+
+  function modulateRollingSound(speed = 1) {
+    if (!audioCtxRef.current || !oscRef.current) return;
+    const now = audioCtxRef.current.currentTime;
+    const base = 180;
+    oscRef.current.frequency.cancelScheduledValues(now);
+    oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
+  }
+
+  function stopRollingSound() {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !oscRef.current || !gainRef.current) return;
+    const now = ctx.currentTime;
+    gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.2);
+    try {
+      oscRef.current.stop(now + 0.3);
+    } catch {}
+    oscRef.current = null;
+    gainRef.current = null;
+  }
+
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
@@ -49,26 +89,31 @@ export default function ApostaPainel() {
     if (rolling) return;
     setRolling(true);
     setSelected([]);
+    startRollingSound(); // 🔊 inicia som da roleta
 
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i + 1));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 20 + Math.random() * 10; j++) {
+      for (let j = 0; j < 25 + Math.random() * 15; j++) {
         const randomNum = pool[Math.floor(Math.random() * pool.length)];
         setActiveNumber(randomNum);
-        await new Promise((r) => setTimeout(r, 25));
+        modulateRollingSound(1 + Math.random() * 4);
+        await new Promise((r) => setTimeout(r, 30));
       }
 
       let chosen = pool[Math.floor(Math.random() * pool.length)];
       while (final.includes(chosen)) chosen = pool[Math.floor(Math.random() * pool.length)];
+
       final.push(chosen);
       setSelected((prev) => [...prev, chosen]);
-      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 120));
     }
 
+    stopRollingSound();
+    setActiveNumber(null);
     setCoinBurst(true);
-    setTimeout(() => setCoinBurst(false), 800);
+    setTimeout(() => setCoinBurst(false), 1000);
     setRolling(false);
   }
 
@@ -81,6 +126,12 @@ export default function ApostaPainel() {
     setTimeout(() => setCoinBurst(false), 1000);
   }
 
+  function desfazerUltimo() {
+    if (tickets.length > 0 && !rolling) {
+      setTickets((t) => t.slice(1));
+    }
+  }
+
   function pagarAgora() {
     navigate("/pagamento");
   }
@@ -89,7 +140,6 @@ export default function ApostaPainel() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
-      {/* Cabeçalho */}
       <div className="py-2 text-center bg-gradient-to-r from-blue-800 via-blue-700 to-green-600 border-b border-green-400/20">
         <h1 className="text-sm font-bold text-yellow-300">
           Escolha até 3 dezenas 🎯
@@ -99,7 +149,6 @@ export default function ApostaPainel() {
         </p>
       </div>
 
-      {/* Painel super compacto */}
       <main className="flex-1 flex flex-col items-center justify-start px-2 pt-2 pb-20">
         <div className="bg-gradient-to-b from-blue-950 via-blue-900 to-green-900 border border-blue-800/40 rounded-xl p-2 shadow-inner w-full max-w-md">
           <div className="grid grid-cols-5 gap-[2px]">
@@ -115,7 +164,7 @@ export default function ApostaPainel() {
                     sel
                       ? "bg-yellow-400 text-blue-900 border-yellow-400 scale-105 shadow-yellow-300/40"
                       : isActive
-                      ? "bg-blue-600 text-white border-blue-400"
+                      ? "bg-blue-600 text-white border-blue-400 animate-pulse-glow"
                       : "bg-blue-950/70 text-gray-200 border-blue-900 hover:bg-blue-800 hover:scale-105"
                   }`}
                 >
@@ -126,25 +175,40 @@ export default function ApostaPainel() {
           </div>
         </div>
 
-        {/* Botões principais */}
+        {/* 🎛️ Botões principais */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
-          <div className="flex gap-3">
+          {/* Linha de 3 botões: Gerar, Confirmar e Desfazer */}
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={gerarAleatorio}
               disabled={rolling}
-              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-2 rounded-full text-sm shadow-lg"
+              className={`py-2 rounded-full text-[12px] font-bold transition-all ${
+                rolling
+                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                  : "bg-yellow-400 hover:bg-yellow-500 text-blue-900 shadow-lg"
+              }`}
             >
               🎲 Gerar
             </button>
+
             <button
               onClick={confirmarBilhete}
               disabled={selected.length !== 3 || rolling}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-full text-sm shadow-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-full text-[12px] font-bold shadow-lg"
             >
               Confirmar
             </button>
+
+            <button
+              onClick={desfazerUltimo}
+              disabled={tickets.length === 0 || rolling}
+              className="bg-gray-600 hover:bg-gray-500 text-gray-200 py-2 rounded-full text-[12px] font-bold shadow-lg"
+            >
+              ↩️ Desfazer
+            </button>
           </div>
 
+          {/* 💳 Botão PAGAR AGORA */}
           <button
             onClick={pagarAgora}
             disabled={tickets.length === 0 || rolling}
@@ -157,7 +221,6 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
-      {/* ✨ Efeito moedas */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-28 z-40">
           <div className="relative w-64 h-64">
@@ -179,6 +242,16 @@ export default function ApostaPainel() {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 6px 2px rgba(255,215,0,0.4); }
+          50% { box-shadow: 0 0 14px 4px rgba(255,215,0,0.7); }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 0.6s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
