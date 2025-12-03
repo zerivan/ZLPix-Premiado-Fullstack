@@ -8,6 +8,9 @@ export default function Home() {
   const [premio, setPremio] = useState<number>(25000);
   const [dataSorteio, setDataSorteio] = useState<string>("04/12/2025");
 
+  // 🔥 Controle para exibir/esconder o bloco "Como Jogar"
+  const [mostrarComoJogar, setMostrarComoJogar] = useState(false);
+
   useEffect(() => {
     const dados = localStorage.getItem("ZLPIX_PREMIO_ATUAL");
     if (dados) {
@@ -25,6 +28,7 @@ export default function Home() {
 
       {/* Conteúdo */}
       <main className="z-10 flex flex-col items-center text-center w-full px-5">
+        
         {/* 🏆 Cabeçalho */}
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-2 tracking-wide">
           ZLPix Premiado 💰
@@ -53,7 +57,7 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </button>
 
-        {/* 📘 Informativo — subido */}
+        {/* 📘 Informativo curto */}
         <div className="bg-blue-900/40 rounded-xl border border-blue-400/30 px-4 py-5 mb-6 max-w-md text-sm text-blue-100 leading-relaxed -mt-4">
           Você concorre do <span className="text-yellow-300 font-bold">1º ao 5º prêmio</span> da Loteria Federal.
           Se suas dezenas aparecerem em{" "}
@@ -63,11 +67,46 @@ export default function Home() {
 
         {/* 🔍 Botão informativo */}
         <button
-          onClick={() => navigate("/resultado")}
+          onClick={() => setMostrarComoJogar(!mostrarComoJogar)}
           className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-full mb-6 transition-all shadow-lg"
         >
-          Como funciona o jogo 💡
+          {mostrarComoJogar ? "Fechar instruções ❌" : "Como funciona o jogo 💡"}
         </button>
+
+        {/* 📝 BLOCO COMO JOGAR — aparece na própria página */}
+        {mostrarComoJogar && (
+          <div className="bg-blue-950/60 border border-blue-600/40 rounded-xl p-5 text-left max-w-md w-full shadow-lg text-sm leading-relaxed text-blue-100">
+            <h2 className="text-yellow-300 font-bold text-lg mb-3 text-center">
+              💡 Como jogar o ZLPix Premiado
+            </h2>
+
+            <p className="mb-2">
+              • Você escolhe **3 dezenas** entre 00 e 99.  
+            </p>
+            <p className="mb-2">
+              • Seu bilhete concorre nos **5 prêmios da Loteria Federal**.
+            </p>
+            <p className="mb-2">
+              • Se sua dezena aparecer em **qualquer uma das centenas sorteadas**, você ganha! 🎉
+            </p>
+            <p className="mb-2">
+              • O prêmio acumula se ninguém acertar.
+            </p>
+            <p className="mb-2">
+              • Você pode gerar dezenas aleatórias ou escolher manualmente.
+            </p>
+
+            <h3 className="text-green-300 font-bold text-md mt-4 mb-1">Exemplo:</h3>
+            <p className="mb-3">
+              Seus números: <span className="text-yellow-300 font-bold">07, 45, 91</span><br />
+              Federal sorteou: 54791 → Você ganhou porque <strong>91</strong> está na centena sorteada!
+            </p>
+
+            <p className="text-center text-green-400 font-bold mt-4">
+              Boa sorte! 🍀💰
+            </p>
+          </div>
+        )}
       </main>
 
       {/* 📱 Menu inferior */}
