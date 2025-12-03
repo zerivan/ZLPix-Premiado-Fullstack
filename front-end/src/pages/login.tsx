@@ -23,21 +23,28 @@ export default function Login() {
     try {
       setLoading(true);
 
+      // 1️⃣ Faz login
       const response = await api.post("/auth/login", { email, password: senha });
       const token = response.data?.token;
-      const user = response.data?.user;
 
       if (!token) {
         setErro("Resposta inválida do servidor.");
         return;
       }
 
-      // Salva token e usuário localmente
+      // 2️⃣ Salva o token
       localStorage.setItem("TOKEN_ZLPIX", token);
-      if (user) {
-        localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
+
+      // 3️⃣ Busca os dados do usuário logado
+      const userRes = await api.get("/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (userRes.data) {
+        localStorage.setItem("USER_ZLPIX", JSON.stringify(userRes.data));
       }
 
+      // 4️⃣ Vai pra Home
       navigate("/");
     } catch (err: any) {
       const msg =
@@ -50,73 +57,68 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 flex items-center justify-center p-5 font-display">
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/10">
-        {/* Logo */}
-        <div className="text-center mb-6">
+    <div
+      className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display"
+    >
+      <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm border border-green-400/30">
+        <div className="text-center mb-5">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
-            alt="Logo ZLPix"
-            className="mx-auto h-16"
+            alt="ZLPix Logo"
+            className="w-24 mx-auto mb-3"
           />
-          <h1 className="text-2xl font-bold text-yellow-300 mt-3">
-            Entrar na sua conta
-          </h1>
-          <p className="text-sm text-white/80">
-            Aposte e acompanhe seus resultados 🎯
-          </p>
+          <h1 className="text-2xl font-bold text-yellow-300">Entrar na Conta</h1>
+          <p className="text-sm text-blue-100">Aposte e acompanhe seus resultados</p>
         </div>
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="E-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <div className="relative">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm">E-mail</label>
             <input
-              type={mostrarSenha ? "text" : "password"}
-              className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="Senha"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/10 text-white placeholder-white/60 focus:ring-2 focus:ring-yellow-300 outline-none"
+              placeholder="seuemail@exemplo.com"
             />
-            <span
-              onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="material-symbols-outlined absolute right-4 top-3 text-yellow-400 cursor-pointer select-none"
-            >
-              {mostrarSenha ? "visibility_off" : "visibility"}
-            </span>
+          </div>
+
+          <div>
+            <label className="text-sm">Senha</label>
+            <div className="relative">
+              <input
+                type={mostrarSenha ? "text" : "password"}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/10 text-white placeholder-white/60 focus:ring-2 focus:ring-yellow-300 outline-none"
+                placeholder="Digite sua senha"
+              />
+              <span
+                onClick={() => setMostrarSenha(!mostrarSenha)}
+                className="material-symbols-outlined absolute right-4 top-3 cursor-pointer text-yellow-300"
+              >
+                {mostrarSenha ? "visibility_off" : "visibility"}
+              </span>
+            </div>
           </div>
 
           {erro && (
-            <p className="text-center text-yellow-300 text-sm mt-1">{erro}</p>
+            <p className="text-yellow-300 text-sm text-center">{erro}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3 mt-1 hover:bg-yellow-500 transition shadow-lg"
+            className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-3 rounded-full shadow-lg transition-all mt-4"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          <p
-            className="text-right text-yellow-300 text-sm mt-2 cursor-pointer"
-            onClick={() => navigate("/recuperar-senha")}
-          >
-            Esqueci minha senha
-          </p>
-
-          <p className="text-center text-sm text-white/80 mt-3">
+          <p className="text-sm text-center mt-3">
             Não tem conta?{" "}
             <span
-              className="text-yellow-300 font-semibold cursor-pointer"
               onClick={() => navigate("/cadastro")}
+              className="text-yellow-300 cursor-pointer hover:underline"
             >
               Cadastre-se
             </span>
