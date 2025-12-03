@@ -1,116 +1,127 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import header from "../components/header";
+import React, { useEffect, useState } from "react";
 import navbottom from "../components/navbottom";
 
-export default function resultados() {
-  const navigate = useNavigate();
+/**
+ * Página de Resultados Oficiais — Loteria Federal
+ * Mostra os concursos mais recentes diretamente da API pública da Caixa.
+ */
+export default function Resultado() {
+  const [resultados, setResultados] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    async function fetchResultados() {
+      setLoading(true);
+      setErro("");
+
+      try {
+        // API alternativa confiável para resultados da Loteria Federal
+        const res = await fetch("https://loteriascaixa-api.herokuapp.com/api/federal");
+        const data = await res.json();
+
+        // Se retornar uma lista, pega os últimos 5
+        const lista = Array.isArray(data) ? data.slice(0, 5).reverse() : [data];
+        setResultados(lista);
+      } catch (err) {
+        console.error("Erro ao buscar resultados da Loteria Federal:", err);
+        setErro("Não foi possível carregar os resultados agora.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchResultados();
+  }, []);
 
   return (
-    <div className="font-display bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 min-h-screen flex flex-col text-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display pb-24">
       {/* Cabeçalho */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-blue-950/60 backdrop-blur-md p-4 pb-2">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Voltar"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition"
-        >
-          <span className="material-symbols-outlined text-2xl text-yellow-300">
-            arrow_back
-          </span>
-        </button>
-
-        <h1 className="flex-1 text-center text-lg font-bold text-yellow-300">
-          Resultados dos Sorteios
+      <header className="text-center py-6">
+        <h1 className="text-2xl font-bold text-yellow-300 drop-shadow-md">
+          🎯 Loteria Federal — Resultados Oficiais
         </h1>
-
-        {/* placeholder */}
-        <div className="h-10 w-10" />
+        <p className="text-sm text-blue-100">
+          Atualizados automaticamente direto da Caixa
+        </p>
       </header>
 
-      {/* Conteúdo */}
-      <main className="flex-1 px-4 pb-28 max-w-4xl mx-auto w-full">
-        <section className="py-4 space-y-5">
-          {/* Card 1 */}
-          <div className="rounded-2xl bg-white/10 p-4 border border-yellow-400/10 shadow-lg">
-            <p className="text-lg font-semibold text-yellow-300 mb-1">
-              Sorteio Especial de Aniversário 🎉
-            </p>
-            <p className="text-sm text-blue-100 mb-3">#5678 — 24/05/2024</p>
+      {/* Conteúdo principal */}
+      <main className="max-w-2xl mx-auto px-4 space-y-6">
+        {loading && (
+          <p className="text-center text-yellow-300 animate-pulse">
+            Carregando resultados...
+          </p>
+        )}
 
-            <div className="flex justify-center gap-2 mb-4">
-              {["05", "15", "25", "35", "50"].map((n) => (
-                <span
-                  key={n}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400 text-blue-900 font-bold"
-                >
-                  {n}
-                </span>
-              ))}
-            </div>
+        {erro && !loading && (
+          <p className="text-center text-red-400">{erro}</p>
+        )}
 
-            <div className="bg-yellow-100/10 rounded-xl p-3 border border-yellow-400/20">
-              <p className="text-sm text-yellow-300 mb-1 font-semibold">
-                Ganhadores
+        {!loading &&
+          !erro &&
+          resultados.map((r, i) => (
+            <article
+              key={i}
+              className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-5 backdrop-blur-sm"
+            >
+              <h2 className="text-lg font-bold text-yellow-300 mb-1 text-center">
+                Concurso {r.concurso} — {r.dataApuracao || r.data}
+              </h2>
+              <p className="text-center text-blue-100 mb-3">
+                {r.localSorteio || "Local não informado"}
               </p>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white">Carlos R. (...54321)</span>
-                  <span className="font-bold text-yellow-400">R$ 50.000,00</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white">Maria S. (...98765)</span>
-                  <span className="font-bold text-yellow-400">R$ 1.000,00</span>
-                </div>
+
+              {/* Dezenas sorteadas */}
+              <div className="flex justify-center flex-wrap gap-3 mb-4">
+                {(r.dezenasSorteadasOrdemSorteio ||
+                  r.dezenasSorteadas ||
+                  []).map((num: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="h-12 w-12 flex items-center justify-center rounded-full bg-yellow-400 text-blue-900 text-lg font-bold shadow-md"
+                  >
+                    {num}
+                  </div>
+                ))}
               </div>
-            </div>
+
+              {/* Premiação */}
+              {r.listaRateioPremio && (
+                <div className="rounded-xl bg-white/5 p-3 border border-white/10">
+                  <p className="text-yellow-300 font-semibold mb-2 text-center">
+                    💰 Premiação
+                  </p>
+                  {r.listaRateioPremio.map((p: any, j: number) => (
+                    <div
+                      key={j}
+                      className="flex justify-between text-sm border-b border-white/10 py-1"
+                    >
+                      <span>{p.descricaoFaixa}</span>
+                      <span>
+                        {p.numeroDeGanhadores} ganhador(es)
+                      </span>
+                      <span className="text-yellow-300 font-semibold">
+                        R$ {Number(p.valorPremio).toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+
+        {/* Caso não haja resultados */}
+        {!loading && resultados.length === 0 && !erro && (
+          <div className="text-center py-8 text-blue-100">
+            Nenhum resultado encontrado.
           </div>
-
-          {/* Card 2 */}
-          <div className="rounded-2xl bg-white/10 p-4 border border-yellow-400/10 shadow-lg">
-            <p className="text-lg font-semibold text-yellow-300 mb-1">
-              Sorteio Semanal 🍀
-            </p>
-            <p className="text-sm text-blue-100 mb-3">#1234 — 15/05/2024</p>
-
-            <div className="flex justify-center gap-2 mb-4">
-              {["23", "45", "67", "89", "10"].map((n) => (
-                <span
-                  key={n}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400 text-blue-900 font-bold"
-                >
-                  {n}
-                </span>
-              ))}
-            </div>
-
-            <div className="bg-yellow-100/10 rounded-xl p-3 border border-yellow-400/20">
-              <p className="text-sm text-yellow-300 mb-1 font-semibold">
-                Ganhador Principal
-              </p>
-              <div className="flex justify-between text-sm">
-                <span className="text-white">João P. (...11223)</span>
-                <span className="font-bold text-yellow-400">R$ 10.000,00</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        )}
       </main>
 
-      {/* Botão fixo */}
-      <div className="fixed bottom-20 left-0 right-0 p-4">
-        <div className="mx-auto max-w-lg">
-          <button
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-yellow-400 text-base font-bold text-blue-900 shadow-lg hover:bg-yellow-300 transition"
-            onClick={() => navigate("/meus-bilhetes")}
-          >
-            <span className="material-symbols-outlined">confirmation_number</span>
-            <span className="truncate">Ver meus bilhetes</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Menu inferior */}
+      {/* Rodapé fixo */}
       <navbottom />
     </div>
   );
