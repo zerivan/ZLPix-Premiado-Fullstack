@@ -18,7 +18,6 @@ export default function Resultado() {
           return;
         }
 
-        // json.data já contém { concurso, dataApuracao, premios }
         setResultados([json.data]);
       } catch (err) {
         console.error("Erro ao buscar resultado:", err);
