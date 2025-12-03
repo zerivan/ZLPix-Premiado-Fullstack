@@ -1,37 +1,41 @@
-// src/pages/perfil.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 
-export default function Perfil() {
+export default function perfil() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const userData = localStorage.getItem("USER_ZLPIX");
-      const token = localStorage.getItem("TOKEN_ZLPIX");
+    const token = localStorage.getItem("TOKEN_ZLPIX");
+    const userData = localStorage.getItem("USER_ZLPIX");
 
-      // Se não estiver logado, manda pra login
-      if (!token || !userData) {
-        navigate("/login");
-        return;
-      }
-
-      setUser(JSON.parse(userData));
-    } catch (error) {
-      console.error("Erro ao carregar usuário:", error);
+    if (!token) {
       navigate("/login");
+      return;
     }
+
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (err) {
+        console.error("Erro ao interpretar usuário:", err);
+        localStorage.removeItem("USER_ZLPIX");
+        navigate("/login");
+      }
+    }
+
+    setLoading(false);
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("TOKEN_ZLPIX");
     localStorage.removeItem("USER_ZLPIX");
-    navigate("/login"); // ✅ volta pro login, não pra home
+    navigate("/login");
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-white bg-gradient-to-b from-blue-900 via-blue-800 to-green-800">
         <p className="text-lg animate-pulse">Carregando perfil...</p>
@@ -39,9 +43,22 @@ export default function Perfil() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-white bg-gradient-to-b from-blue-900 via-blue-800 to-green-800">
+        <p className="text-lg">Nenhum usuário logado.</p>
+        <button
+          onClick={() => navigate("/login")}
+          className="mt-4 px-6 py-3 rounded-full bg-yellow-400 text-blue-900 font-bold"
+        >
+          Fazer Login
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white p-5 font-display pb-24">
-      {/* Cabeçalho */}
       <header className="text-center mb-6">
         <div className="flex flex-col items-center mb-3">
           <div className="w-20 h-20 rounded-full bg-yellow-400 flex items-center justify-center text-blue-900 text-3xl font-extrabold shadow-lg">
@@ -52,14 +69,9 @@ export default function Perfil() {
         <p className="text-sm text-yellow-300">{user.email}</p>
       </header>
 
-      {/* Informações do usuário */}
       <div className="bg-white/10 backdrop-blur-sm p-5 rounded-2xl mb-6 border border-yellow-400/20 shadow-md space-y-2">
-        <p>
-          <strong>Nome:</strong> {user.name || "Não informado"}
-        </p>
-        <p>
-          <strong>E-mail:</strong> {user.email}
-        </p>
+        <p><strong>Nome:</strong> {user.name || "Não informado"}</p>
+        <p><strong>E-mail:</strong> {user.email}</p>
         {user.phone && <p><strong>Telefone:</strong> {user.phone}</p>}
         {user.pixKey && <p><strong>Chave PIX:</strong> {user.pixKey}</p>}
         {user.createdAt && (
@@ -70,7 +82,6 @@ export default function Perfil() {
         )}
       </div>
 
-      {/* Botão de sair */}
       <button
         onClick={handleLogout}
         className="w-full bg-red-600 hover:bg-red-700 transition-colors text-white py-3 rounded-full font-semibold shadow-lg"
@@ -78,7 +89,6 @@ export default function Perfil() {
         Sair da Conta
       </button>
 
-      {/* Menu fixo inferior */}
       <NavBottom />
     </div>
   );
