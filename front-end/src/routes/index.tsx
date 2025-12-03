@@ -2,21 +2,20 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // 🧭 Páginas
-import home from "../pages/home";
-import login from "../pages/login";
-import cadastro from "../pages/cadastro";
-import apostapainel from "../pages/apostapainel";
-import meusbilhetes from "../pages/meusbilhetes";
-import pagamento from "../pages/pagamento";
-import paymentsuccess from "../pages/payment-success";
-import resultado from "../pages/resultado";
-import perfil from "../pages/perfil";
-import adminlogin from "../pages/adminlogin";
-import recuperarsenha from "../pages/recuperar-senha";
+import Home from "../pages/home";
+import Login from "../pages/login";
+import Cadastro from "../pages/cadastro";
+import ApostaPainel from "../pages/apostapainel";
+import MeusBilhetes from "../pages/meusbilhetes";
+import Pagamento from "../pages/pagamento";
+import PaymentSuccess from "../pages/payment-success";
+import Resultado from "../pages/resultado";
+import Perfil from "../pages/perfil";
+import AdminLogin from "../pages/adminlogin";
+import RecuperarSenha from "../pages/recuperar-senha";
 
 /**
  * ✅ Verifica se o usuário está logado
- * Usa typeof window pra evitar erro no build (SSR ou Render)
  */
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
@@ -48,7 +47,7 @@ export default function AppRoutes() {
         path="/"
         element={
           <PrivateRoute>
-            <home />
+            <Home />
           </PrivateRoute>
         }
       />
@@ -58,7 +57,7 @@ export default function AppRoutes() {
         path="/login"
         element={
           <PublicRoute>
-            <login />
+            <Login />
           </PublicRoute>
         }
       />
@@ -66,7 +65,7 @@ export default function AppRoutes() {
         path="/cadastro"
         element={
           <PublicRoute>
-            <cadastro />
+            <Cadastro />
           </PublicRoute>
         }
       />
@@ -74,7 +73,7 @@ export default function AppRoutes() {
         path="/recuperar-senha"
         element={
           <PublicRoute>
-            <recuperarsenha />
+            <RecuperarSenha />
           </PublicRoute>
         }
       />
@@ -84,7 +83,7 @@ export default function AppRoutes() {
         path="/aposta"
         element={
           <PrivateRoute>
-            <apostapainel />
+            <ApostaPainel />
           </PrivateRoute>
         }
       />
@@ -92,7 +91,7 @@ export default function AppRoutes() {
         path="/meus-bilhetes"
         element={
           <PrivateRoute>
-            <meusbilhetes />
+            <MeusBilhetes />
           </PrivateRoute>
         }
       />
@@ -102,7 +101,7 @@ export default function AppRoutes() {
         path="/pagamento"
         element={
           <PrivateRoute>
-            <pagamento />
+            <Pagamento />
           </PrivateRoute>
         }
       />
@@ -110,7 +109,7 @@ export default function AppRoutes() {
         path="/pagamento/sucesso"
         element={
           <PrivateRoute>
-            <paymentsuccess />
+            <PaymentSuccess />
           </PrivateRoute>
         }
       />
@@ -120,7 +119,7 @@ export default function AppRoutes() {
         path="/resultado"
         element={
           <PrivateRoute>
-            <resultado />
+            <Resultado />
           </PrivateRoute>
         }
       />
@@ -130,13 +129,13 @@ export default function AppRoutes() {
         path="/perfil"
         element={
           <PrivateRoute>
-            <perfil />
+            <Perfil />
           </PrivateRoute>
         }
       />
 
       {/* Admin — público */}
-      <Route path="/admin" element={<adminlogin />} />
+      <Route path="/admin" element={<AdminLogin />} />
 
       {/* 🚧 Fallback inteligente */}
       <Route
