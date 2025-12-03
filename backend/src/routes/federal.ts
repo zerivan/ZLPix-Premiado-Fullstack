@@ -12,14 +12,14 @@ router.get("/", async (_req, res) => {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml",
           "Accept-Language": "pt-BR,pt;q=0.9"
-        },
+        }
       }
     );
 
     const html = await response.text();
 
     // ================================
-    // EXTRATOR DE CONCURSO
+    // EXTRAI CONCURSO
     // ================================
     let concurso = "N/A";
     const regexConcurso = /Concurso[^0-9]*([0-9]{3,6})/i;
@@ -27,7 +27,7 @@ router.get("/", async (_req, res) => {
     if (concursoMatch) concurso = concursoMatch[1];
 
     // ================================
-    // EXTRATOR DE DATA
+    // EXTRAI DATA (DD/MM/YYYY)
     // ================================
     let dataApuracao = "N/A";
     const regexData = /(\d{2}\/\d{2}\/\d{4})/;
@@ -35,17 +35,19 @@ router.get("/", async (_req, res) => {
     if (dataMatch) dataApuracao = dataMatch[1];
 
     // ================================
-    // EXTRATOR DE 5 PRÊMIOS
+    // EXTRAI 5 PRÊMIOS
     // ================================
     let premios: string[] = [];
 
-    const regexPremios1 =
+    const regexPremiosTabela =
       /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
 
     let m;
-    while ((m = regexPremios1.exec(html)) !== null) premios.push(m[1]);
+    while ((m = regexPremiosTabela.exec(html)) !== null) {
+      premios.push(m[1]);
+    }
 
-    // Alternativa automática
+    // fallback se a estrutura mudar
     if (premios.length < 5) {
       const fallback = [...html.matchAll(/(\d{5})/g)].map((v) => v[1]);
       premios = fallback.slice(0, 5);
