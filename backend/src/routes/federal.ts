@@ -11,50 +11,44 @@ router.get("/", async (_req, res) => {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "pt-BR,pt;q=0.9",
+          "Accept-Language": "pt-BR,pt;q=0.9"
         },
       }
     );
 
     const html = await response.text();
 
-    // Extrair concurso
-    const concursoMatch = html.match(/Concurso nº<\/span>\s*([\d]+)/);
-    const concurso = concursoMatch ? concursoMatch[1] : "N/A";
-
-    // Extrair data
-    const dataMatch = html.match(/data do sorteio:\s*<\/span>\s*([^<]+)/i);
-    const dataApuracao = dataMatch ? dataMatch[1].trim() : "N/A";
+    // ================================
+    // EXTRATOR DE CONCURSO
+    // ================================
+    let concurso = "N/A";
+    const regexConcurso = /Concurso[^0-9]*([0-9]{3,6})/i;
+    const concursoMatch = html.match(regexConcurso);
+    if (concursoMatch) concurso = concursoMatch[1];
 
     // ================================
-    // NOVO SISTEMA DE EXTRAÇÃO DE PRÊMIOS
+    // EXTRATOR DE DATA
+    // ================================
+    let dataApuracao = "N/A";
+    const regexData = /(\d{2}\/\d{2}\/\d{4})/;
+    const dataMatch = html.match(regexData);
+    if (dataMatch) dataApuracao = dataMatch[1];
+
+    // ================================
+    // EXTRATOR DE 5 PRÊMIOS
     // ================================
     let premios: string[] = [];
 
-    // 1) Tenta extrair padrão mais comum
-    const regex1 = /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
+    const regexPremios1 =
+      /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
+
     let m;
-    while ((m = regex1.exec(html)) !== null) premios.push(m[1]);
+    while ((m = regexPremios1.exec(html)) !== null) premios.push(m[1]);
 
-    // 2) Se não achou 5 números, tenta outro formato
+    // Alternativa automática
     if (premios.length < 5) {
-      const regex2 = /\dº prêmio[^0-9]*(\d{5})/gi;
-      let x;
-      while ((x = regex2.exec(html)) !== null) premios.push(x[1]);
-    }
-
-    // 3) Última alternativa: busca qualquer número de 5 dígitos dentro da área de resultado
-    if (premios.length < 5) {
-      const regex3 = /(\d{5})/g;
-      const bruto = [...html.matchAll(regex3)].map((m) => m[1]);
-
-      // filtrando repetições irrelevantes
-      const candidatos = bruto.filter(
-        (num) => !["2025", "2024", "2023"].includes(num) // evita datas
-      );
-
-      // pegar os primeiros 5 que fazem sentido
-      premios = candidatos.slice(0, 5);
+      const fallback = [...html.matchAll(/(\d{5})/g)].map((v) => v[1]);
+      premios = fallback.slice(0, 5);
     }
 
     if (premios.length < 5) {
@@ -66,14 +60,15 @@ router.get("/", async (_req, res) => {
       data: {
         concurso,
         dataApuracao,
-        premios,
-      },
+        premios
+      }
     });
+
   } catch (err) {
     console.error("Erro scraping Caixa:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao consultar os resultados da Caixa.",
+      erro: "Falha ao consultar os resultados da Caixa."
     });
   }
 });
