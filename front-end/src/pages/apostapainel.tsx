@@ -23,7 +23,7 @@ export default function ApostaPainel() {
     audioCtxRef.current = new AC();
   }, []);
 
-  // 🔊 Clique manual leve
+  // 🔊 Clique manual
   function playClickSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -89,7 +89,7 @@ export default function ApostaPainel() {
     if (rolling) return;
     setRolling(true);
     setSelected([]);
-    startRollingSound(); // 🔊 inicia som da roleta
+    startRollingSound();
 
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i + 1));
     const final: string[] = [];
@@ -149,7 +149,7 @@ export default function ApostaPainel() {
         </p>
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-start px-2 pt-2 pb-20">
+      <main className="flex-1 flex flex-col items-center justify-start px-2 pt-2 pb-24">
         <div className="bg-gradient-to-b from-blue-950 via-blue-900 to-green-900 border border-blue-800/40 rounded-xl p-2 shadow-inner w-full max-w-md">
           <div className="grid grid-cols-5 gap-[2px]">
             {grid.map((n) => {
@@ -177,7 +177,6 @@ export default function ApostaPainel() {
 
         {/* 🎛️ Botões principais */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
-          {/* Linha de 3 botões: Gerar, Confirmar e Desfazer */}
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={gerarAleatorio}
@@ -208,7 +207,6 @@ export default function ApostaPainel() {
             </button>
           </div>
 
-          {/* 💳 Botão PAGAR AGORA */}
           <button
             onClick={pagarAgora}
             disabled={tickets.length === 0 || rolling}
@@ -216,6 +214,37 @@ export default function ApostaPainel() {
           >
             💸 Pagar Agora
           </button>
+        </div>
+
+        {/* 🎟️ Bilhetes Gerados */}
+        <div className="mt-5 w-full max-w-md">
+          <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
+            Bilhetes Gerados
+          </h3>
+          {tickets.length === 0 ? (
+            <div className="bg-blue-950/50 border border-blue-800/30 rounded-lg py-2 text-center text-gray-300 text-xs">
+              Nenhum bilhete — escolha ou gere números.
+            </div>
+          ) : (
+            tickets.map((t) => (
+              <div
+                key={t.id}
+                className="flex justify-between items-center bg-blue-950/70 border border-blue-800/40 rounded-lg p-2 mb-2"
+              >
+                <div className="flex gap-1">
+                  {t.nums.map((n) => (
+                    <span
+                      key={n}
+                      className="h-6 w-8 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-bold text-[11px]"
+                    >
+                      {n}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-[10px] text-gray-400">#{t.id.slice(-6)}</span>
+              </div>
+            ))
+          )}
         </div>
       </main>
 
