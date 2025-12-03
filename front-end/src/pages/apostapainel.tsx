@@ -18,7 +18,7 @@ export default function ApostaPainel() {
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
-  // 🎵 Som da roleta
+  // 🔊 Som
   function startSound() {
     try {
       const AC = window.AudioContext || (window as any).webkitAudioContext;
@@ -57,7 +57,7 @@ export default function ApostaPainel() {
     oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
   }
 
-  // 🎯 Clique manual
+  // 🔘 Seleção manual
   function toggle(num: string) {
     if (rolling) return;
     if (selected.includes(num)) {
@@ -125,16 +125,20 @@ export default function ApostaPainel() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b1221] text-white relative overflow-y-auto">
-      {/* ❌ Menu removido */}
+      {/* 🌈 Cabeçalho azul-verde com gradiente */}
+      <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-green-600 py-3 shadow-lg border-b border-green-400/30">
+        <h1 className="text-center text-lg font-extrabold text-yellow-300 drop-shadow-sm">
+          Escolha até 3 dezenas por jogo 🎯
+        </h1>
+        <p className="text-center text-sm text-blue-100 mt-1">
+          Você escolheu <span className="text-yellow-300">{selected.length}</span> de 3 dezenas
+        </p>
+      </div>
 
       <main className="flex-1 max-w-md mx-auto w-full p-3 pb-28">
-        <h2 className="text-base font-bold text-yellow-300 mb-3 text-center">
-          Escolha ou Gere suas dezenas
-        </h2>
-
-        {/* 🔢 Painel compacto com margem e borda */}
+        {/* 🔢 Painel compacto e centralizado */}
         <div className="border border-[#24304a] rounded-xl p-2 mb-3 bg-[#111a2e] shadow-inner">
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-5 gap-0.5">
             {grid.map((n) => {
               const sel = selected.includes(n);
               const isActive = activeNumber === n && rolling;
@@ -143,9 +147,9 @@ export default function ApostaPainel() {
                   key={n}
                   onClick={() => toggle(n)}
                   disabled={rolling}
-                  className={`h-8 rounded-md border text-[13px] font-bold transition-all ${
+                  className={`h-7 rounded-md border text-[13px] font-bold transition-all ${
                     sel
-                      ? "bg-yellow-400 text-blue-900 border-yellow-400 animate-blink"
+                      ? "bg-yellow-400 text-blue-900 border-yellow-400 animate-pulse-glow"
                       : isActive
                       ? "bg-blue-600 text-white border-blue-400"
                       : "bg-[#1c2433] text-gray-200 border-[#28334a] hover:bg-blue-700"
@@ -158,7 +162,7 @@ export default function ApostaPainel() {
           </div>
         </div>
 
-        {/* 🎛️ Botões pequenos */}
+        {/* 🎛️ Botões de controle */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <button
             onClick={gerarAleatorio}
@@ -189,7 +193,7 @@ export default function ApostaPainel() {
           </button>
         </div>
 
-        {/* 💳 Botão Pagar Agora */}
+        {/* 💳 Botão PAGAR AGORA */}
         <button
           onClick={pagarAgora}
           disabled={tickets.length === 0 || rolling}
@@ -232,7 +236,7 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
-      {/* 💰 Efeito moedas */}
+      {/* ✨ Efeito de moedas */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-40 z-40">
           <div className="relative w-64 h-64">
@@ -256,12 +260,12 @@ export default function ApostaPainel() {
       )}
 
       <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 6px 2px rgba(255,215,0,0.4); }
+          50% { box-shadow: 0 0 14px 4px rgba(255,215,0,0.7); }
         }
-        .animate-blink {
-          animation: blink 0.3s ease-in-out 3;
+        .animate-pulse-glow {
+          animation: pulse-glow 1s ease-in-out infinite;
         }
       `}</style>
     </div>
