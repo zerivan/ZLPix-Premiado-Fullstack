@@ -1,7 +1,7 @@
 // src/pages/meusbilhetes.tsx
 import React, { useState } from "react";
-import header from "../components/header";
-import navbottom from "../components/navbottom";
+import Header from "../components/header";
+import NavBottom from "../components/navbottom";
 
 type TicketStatus = "premiado" | "pendente" | "nao-premiado";
 
@@ -95,58 +95,53 @@ Gerado em: ${formatDate(t.createdAt)}`;
   function statusBadge(s: TicketStatus) {
     if (s === "premiado")
       return (
-        <div className="flex items-center gap-2 rounded-full bg-green-100 px-3 py-1">
-          <span className="h-2 w-2 rounded-full bg-green-600" />
-          <span className="text-xs font-medium text-green-700">Premiado</span>
+        <div className="flex items-center gap-2 rounded-full bg-green-100/20 border border-green-400 px-3 py-1">
+          <span className="h-2 w-2 rounded-full bg-green-400" />
+          <span className="text-xs font-medium text-green-300">Premiado</span>
         </div>
       );
 
     if (s === "pendente")
       return (
-        <div className="flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1">
-          <span className="h-2 w-2 rounded-full bg-orange-500" />
-          <span className="text-xs font-medium text-orange-700">Pendente</span>
+        <div className="flex items-center gap-2 rounded-full bg-yellow-100/20 border border-yellow-400 px-3 py-1">
+          <span className="h-2 w-2 rounded-full bg-yellow-400" />
+          <span className="text-xs font-medium text-yellow-300">Pendente</span>
         </div>
       );
 
     return (
-      <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1">
-        <span className="h-2 w-2 rounded-full bg-zinc-500" />
-        <span className="text-xs font-medium text-zinc-700">Não premiado</span>
+      <div className="flex items-center gap-2 rounded-full bg-gray-100/10 border border-gray-500 px-3 py-1">
+        <span className="h-2 w-2 rounded-full bg-gray-400" />
+        <span className="text-xs font-medium text-gray-300">Não premiado</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark font-display">
-      <Header />
+    <div className="min-h-screen bg-[#0b1221] text-white font-display flex flex-col">
+      {/* 🌈 Cabeçalho azul-verde com título */}
+      <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-green-600 py-3 shadow-lg border-b border-green-400/30">
+        <h1 className="text-center text-lg font-extrabold text-yellow-300 drop-shadow-sm">
+          Meus Bilhetes 🎟️
+        </h1>
+        <p className="text-center text-sm text-blue-100 mt-1">
+          Veja seus bilhetes, compartilhe ou copie para guardar
+        </p>
+      </div>
 
-      <main className="max-w-4xl mx-auto p-4 pb-32">
-        <header className="mb-4">
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white">
-            Meus Bilhetes
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Veja todos os bilhetes já gerados — toque para copiar ou compartilhar.
-          </p>
-        </header>
-
+      <main className="flex-1 max-w-md mx-auto w-full p-4 pb-28">
         {/* Filtros */}
         <nav className="flex gap-3 mb-4 overflow-x-auto">
-          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary text-white px-4">
-            <span className="text-sm font-medium">Todos</span>
+          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-yellow-400 text-blue-900 px-4 font-bold">
+            Todos
           </button>
 
-          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-zinc-200 dark:bg-primary/20 px-4">
-            <span className="text-sm font-medium text-zinc-700 dark:text-white">
-              Premiados
-            </span>
+          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-blue-700 px-4 font-semibold">
+            Premiados
           </button>
 
-          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-zinc-200 dark:bg-primary/20 px-4">
-            <span className="text-sm font-medium text-zinc-700 dark:text-white">
-              Pendentes
-            </span>
+          <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-green-600 px-4 font-semibold">
+            Pendentes
           </button>
         </nav>
 
@@ -155,7 +150,7 @@ Gerado em: ${formatDate(t.createdAt)}`;
           {tickets.map((t) => (
             <article
               key={t.id}
-              className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm"
+              className="flex flex-col gap-3 bg-[#111a2e] p-4 rounded-lg border border-blue-900/30 shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div className="flex gap-3">
@@ -163,7 +158,7 @@ Gerado em: ${formatDate(t.createdAt)}`;
                     {t.nums.map((n, i) => (
                       <div
                         key={i}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-white font-bold"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400 text-blue-900 font-extrabold text-sm shadow-inner"
                       >
                         {n}
                       </div>
@@ -171,10 +166,10 @@ Gerado em: ${formatDate(t.createdAt)}`;
                   </div>
 
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                    <span className="text-sm font-semibold text-yellow-300">
                       {t.sorteio}
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="text-xs text-gray-400">
                       Gerado em: {formatDate(t.createdAt)}
                     </span>
                   </div>
@@ -182,21 +177,21 @@ Gerado em: ${formatDate(t.createdAt)}`;
 
                 <div className="flex flex-col gap-2 items-end">
                   {statusBadge(t.status)}
-                  <span className="text-sm font-medium text-slate-800 dark:text-white">
+                  <span className="text-sm font-bold text-green-400">
                     {formatCurrency(t.value)}
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs text-gray-400">
                   ID: #{t.id.slice(-6)}
                 </span>
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyTicketText(t)}
-                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-2 text-xs"
+                    className="flex items-center gap-2 bg-blue-700 rounded-full px-3 py-2 text-xs text-white font-semibold"
                   >
                     <span className="material-symbols-outlined text-sm">
                       content_copy
@@ -206,7 +201,7 @@ Gerado em: ${formatDate(t.createdAt)}`;
 
                   <button
                     onClick={() => shareTicket(t)}
-                    className="flex items-center gap-2 bg-primary text-white rounded-full px-3 py-2 text-xs"
+                    className="flex items-center gap-2 bg-green-600 rounded-full px-3 py-2 text-xs text-white font-semibold"
                   >
                     <span className="material-symbols-outlined text-sm">
                       share
@@ -221,11 +216,11 @@ Gerado em: ${formatDate(t.createdAt)}`;
 
         {/* Sem bilhetes */}
         {tickets.length === 0 && (
-          <div className="mt-8 rounded-lg border border-dashed border-zinc-300 p-8 text-center">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+          <div className="mt-8 rounded-lg border border-dashed border-gray-600 p-8 text-center">
+            <p className="text-lg font-semibold text-yellow-300">
               Você ainda não possui bilhetes
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+            <p className="text-sm text-gray-400 mt-2">
               Gere seu primeiro bilhete na tela de Apostas.
             </p>
           </div>
