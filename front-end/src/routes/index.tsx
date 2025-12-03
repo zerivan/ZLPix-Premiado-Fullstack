@@ -30,19 +30,19 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 }
 
 /**
- * 🚪 Rota pública — impede acessar login/cadastro se já logado
+ * 🚪 Rota pública — impede login/cadastro se já estiver logado
  */
 function PublicRoute({ children }: { children: JSX.Element }) {
   return isLoggedIn() ? <Navigate to="/" replace /> : children;
 }
 
 /**
- * 🌐 Estrutura principal de rotas
+ * 🌐 Estrutura de rotas principais
  */
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Página inicial protegida */}
+      {/* 🔐 Página inicial protegida */}
       <Route
         path="/"
         element={
@@ -52,7 +52,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Autenticação */}
+      {/* 🧭 Autenticação */}
       <Route
         path="/login"
         element={
@@ -78,7 +78,17 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Apostas */}
+      {/* 🎯 Se tentar acessar a Home sem login, vai pro Login */}
+      <Route
+        path="/home"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+
+      {/* 💰 Apostas */}
       <Route
         path="/aposta"
         element={
@@ -96,7 +106,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Pagamentos */}
+      {/* 💳 Pagamentos */}
       <Route
         path="/pagamento"
         element={
@@ -114,7 +124,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Resultados */}
+      {/* 🏆 Resultados */}
       <Route
         path="/resultado"
         element={
@@ -124,7 +134,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Perfil */}
+      {/* 👤 Perfil */}
       <Route
         path="/perfil"
         element={
@@ -134,14 +144,18 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Admin — público */}
+      {/* ⚙️ Admin */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      {/* 🚧 Fallback inteligente */}
+      {/* 🚧 Fallback — redireciona corretamente */}
       <Route
         path="*"
         element={
-          isLoggedIn() ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+          isLoggedIn() ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
         }
       />
     </Routes>
