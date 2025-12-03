@@ -2,18 +2,18 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// 🧭 Páginas — tudo minúsculo!
-import home from "../pages/home";
-import login from "../pages/login";
-import cadastro from "../pages/cadastro";
-import apostapainel from "../pages/apostapainel";
-import meusbilhetes from "../pages/meusbilhetes";
-import pagamento from "../pages/pagamento";
-import paymentsuccess from "../pages/payment-success";
-import resultado from "../pages/resultado";
-import perfil from "../pages/perfil";
-import adminlogin from "../pages/adminlogin";
-import recuperarsenha from "../pages/recuperar-senha";
+// 🧭 Páginas — tudo minúsculo nos imports (compatível com Linux)
+import Home from "../pages/home";
+import Login from "../pages/login";
+import Cadastro from "../pages/cadastro";
+import ApostaPainel from "../pages/apostapainel";
+import MeusBilhetes from "../pages/meusbilhetes";
+import Pagamento from "../pages/pagamento";
+import PaymentSuccess from "../pages/payment-success";
+import Resultado from "../pages/resultado";
+import Perfil from "../pages/perfil";
+import AdminLogin from "../pages/adminlogin";
+import RecuperarSenha from "../pages/recuperar-senha";
 
 /**
  * ✅ Verifica se o usuário está logado
@@ -40,7 +40,7 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 /**
  * 🌍 Estrutura principal das rotas
  */
-export default function approutes() {
+export default function AppRoutes() {
   return (
     <Routes>
       {/* Página inicial */}
@@ -48,7 +48,7 @@ export default function approutes() {
         path="/"
         element={
           <PrivateRoute>
-            <home />
+            <Home />
           </PrivateRoute>
         }
       />
@@ -58,7 +58,7 @@ export default function approutes() {
         path="/login"
         element={
           <PublicRoute>
-            <login />
+            <Login />
           </PublicRoute>
         }
       />
@@ -66,7 +66,7 @@ export default function approutes() {
         path="/cadastro"
         element={
           <PublicRoute>
-            <cadastro />
+            <Cadastro />
           </PublicRoute>
         }
       />
@@ -74,7 +74,7 @@ export default function approutes() {
         path="/recuperar-senha"
         element={
           <PublicRoute>
-            <recuperarsenha />
+            <RecuperarSenha />
           </PublicRoute>
         }
       />
@@ -84,7 +84,7 @@ export default function approutes() {
         path="/aposta"
         element={
           <PrivateRoute>
-            <apostapainel />
+            <ApostaPainel />
           </PrivateRoute>
         }
       />
@@ -92,7 +92,7 @@ export default function approutes() {
         path="/meus-bilhetes"
         element={
           <PrivateRoute>
-            <meusbilhetes />
+            <MeusBilhetes />
           </PrivateRoute>
         }
       />
@@ -102,7 +102,7 @@ export default function approutes() {
         path="/pagamento"
         element={
           <PrivateRoute>
-            <pagamento />
+            <Pagamento />
           </PrivateRoute>
         }
       />
@@ -110,7 +110,7 @@ export default function approutes() {
         path="/pagamento/sucesso"
         element={
           <PrivateRoute>
-            <paymentsuccess />
+            <PaymentSuccess />
           </PrivateRoute>
         }
       />
@@ -120,7 +120,7 @@ export default function approutes() {
         path="/resultado"
         element={
           <PrivateRoute>
-            <resultado />
+            <Resultado />
           </PrivateRoute>
         }
       />
@@ -130,13 +130,13 @@ export default function approutes() {
         path="/perfil"
         element={
           <PrivateRoute>
-            <perfil />
+            <Perfil />
           </PrivateRoute>
         }
       />
 
       {/* Admin */}
-      <Route path="/admin" element={<adminlogin />} />
+      <Route path="/admin" element={<AdminLogin />} />
 
       {/* Fallback */}
       <Route
