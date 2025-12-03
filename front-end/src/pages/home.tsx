@@ -1,4 +1,3 @@
-// src/pages/home.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
@@ -27,45 +26,46 @@ export default function Home() {
       {/* Conteúdo */}
       <main className="z-10 flex flex-col items-center text-center w-full px-5">
         {/* 🏆 Cabeçalho */}
-        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-1 tracking-wide">
+        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg mb-2 tracking-wide">
           ZLPix Premiado 💰
         </h1>
-        <p className="text-blue-100 text-sm mb-6">
+        <p className="text-blue-100 text-sm mb-8">
           Concorra toda <span className="text-yellow-300 font-semibold">quarta-feira</span> com a Loteria Federal 🎯
         </p>
 
         {/* 💵 Painel do prêmio */}
-        <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-5 w-11/12 text-center mb-6 shadow-lg border border-green-500/30">
+        <div className="bg-gradient-to-r from-blue-900 to-green-700 rounded-2xl p-6 w-11/12 text-center mb-6 shadow-lg border border-green-500/30">
           <p className="text-blue-100 text-sm mb-1">🏆 Prêmio acumulado</p>
-          <p className="text-4xl font-bold text-yellow-300 mb-2 drop-shadow-md">
+          <p className="text-4xl font-bold text-yellow-300 mb-3 drop-shadow-md">
             R$ {premio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
-          <p className="text-sm text-blue-200">
+          <p className="text-sm text-blue-200 mb-4">
             Próximo sorteio: <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
           </p>
+
+          {/* 🎯 Botão principal — logo abaixo do prêmio */}
+          <button
+            onClick={() => navigate("/aposta")}
+            className="w-full bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg py-4 rounded-full shadow-lg transition-all"
+          >
+            🎯 FAZER APOSTA AGORA
+          </button>
         </div>
 
         {/* 📘 Informativo */}
-        <div className="bg-blue-900/40 rounded-xl border border-blue-400/30 px-4 py-3 mb-5 max-w-md text-sm text-blue-100">
+        <div className="bg-blue-900/40 rounded-xl border border-blue-400/30 px-4 py-5 mb-5 max-w-md text-sm text-blue-100 leading-relaxed">
           Você concorre do <span className="text-yellow-300 font-bold">1º ao 5º prêmio</span> da Loteria Federal.
-          Se suas dezenas aparecerem em <span className="text-green-300 font-bold">qualquer uma das centenas sorteadas</span>, 
+          Se suas dezenas aparecerem em{" "}
+          <span className="text-green-300 font-bold">qualquer uma das centenas sorteadas</span>,
           seu bilhete é premiado! 💫
         </div>
 
         {/* 🔍 Botão informativo */}
         <button
           onClick={() => navigate("/resultado")}
-          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-full mb-4 transition-all shadow-lg"
+          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-3 px-8 rounded-full mb-6 transition-all shadow-lg"
         >
           Como funciona o jogo 💡
-        </button>
-
-        {/* 🎯 Botão principal */}
-        <button
-          onClick={() => navigate("/aposta")}
-          className="bg-gradient-to-r from-yellow-400 to-green-400 hover:from-yellow-500 hover:to-green-500 text-blue-900 font-extrabold text-lg px-10 py-4 rounded-full shadow-lg transition-all animate-bounce"
-        >
-          🎯 FAZER APOSTA AGORA
         </button>
       </main>
 
@@ -74,7 +74,7 @@ export default function Home() {
         <NavBottom />
       </div>
 
-      {/* Animações */}
+      {/* 🎨 Animações */}
       <style>{`
         @keyframes pulse-slow {
           0%, 100% { opacity: 0.9; transform: scale(1); }
