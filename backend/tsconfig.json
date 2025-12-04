@@ -9,8 +9,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
+
     "outDir": "./dist",
     "rootDir": ".",
+
     "resolveJsonModule": true
   },
   "include": ["**/*.ts"],
