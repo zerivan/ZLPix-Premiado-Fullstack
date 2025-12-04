@@ -6,7 +6,7 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-// Função que converte BigInt para string (recursivamente)
+// 🔧 Serialização para evitar erro com BigInt
 const serialize = (data: any): any => {
   if (data === null || data === undefined) return data;
   if (typeof data === "bigint") return data.toString();
@@ -19,9 +19,9 @@ const serialize = (data: any): any => {
   return data;
 };
 
-// ------------------------
-//  REGISTER (cadastro)
-// ------------------------
+// --------------------------------------------------
+//  🔹 REGISTER
+// --------------------------------------------------
 router.post("/register", async (req, res) => {
   try {
     const { name, email, phone, pixKey, password } = req.body;
@@ -48,15 +48,16 @@ router.post("/register", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro em /auth/register:", err);
-    return res
-      .status(500)
-      .json({ message: "Erro ao cadastrar usuário.", error: String(err) });
+    return res.status(500).json({
+      message: "Erro ao cadastrar usuário.",
+      error: String(err),
+    });
   }
 });
 
-// ------------------------
-//  LOGIN DO USUÁRIO NORMAL
-// ------------------------
+// --------------------------------------------------
+//  🔹 LOGIN do usuário comum
+// --------------------------------------------------
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -90,16 +91,18 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro em /auth/login:", err);
-    return res
-      .status(500)
-      .json({ message: "Erro ao fazer login.", error: String(err) });
+    return res.status(500).json({
+      message: "Erro ao fazer login.",
+      error: String(err),
+    });
   }
 });
 
-// ------------------------
-//  LOGIN ADMIN (NOVA ROTA)
-// ------------------------
-router.post("/admin-login", async (req, res) => {
+// --------------------------------------------------
+//  🔥 LOGIN ADMIN (CORRIGIDO!)
+//  ROTA: POST /auth/admin/login
+// --------------------------------------------------
+router.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -109,7 +112,6 @@ router.post("/admin-login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    // Busca admin na tabela "Admins"
     const admin = await prisma.admins.findUnique({
       where: { email },
     });
@@ -135,7 +137,7 @@ router.post("/admin-login", async (req, res) => {
       admin: serialize(admin),
     });
   } catch (err) {
-    console.error("Erro em /auth/admin-login:", err);
+    console.error("Erro em /auth/admin/login:", err);
     return res.status(500).json({
       message: "Erro ao fazer login admin.",
       error: String(err),
