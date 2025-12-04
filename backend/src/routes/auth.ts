@@ -6,7 +6,7 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-// 🔧 Serialização para evitar erro com BigInt
+// Serializador para BigInt
 const serialize = (data: any): any => {
   if (data === null || data === undefined) return data;
   if (typeof data === "bigint") return data.toString();
@@ -19,9 +19,7 @@ const serialize = (data: any): any => {
   return data;
 };
 
-// --------------------------------------------------
-//  🔹 REGISTER (usuário comum)
-// --------------------------------------------------
+// REGISTER
 router.post("/register", async (req, res) => {
   try {
     const { name, email, phone, pixKey, password } = req.body;
@@ -32,14 +30,14 @@ router.post("/register", async (req, res) => {
         .json({ message: "Nome, e-mail e senha são obrigatórios." });
     }
 
-    const existing = await prisma.Users.findUnique({ where: { email } });
+    const existing = await prisma.users.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ message: "E-mail já está cadastrado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.Users.create({
+    const user = await prisma.users.create({
       data: { name, email, phone, pixKey, passwordHash },
     });
 
@@ -56,9 +54,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-//  🔹 LOGIN (usuário comum)
-// --------------------------------------------------
+// LOGIN USER
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -69,7 +65,7 @@ router.post("/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    const user = await prisma.Users.findUnique({ where: { email } });
+    const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
@@ -99,9 +95,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// --------------------------------------------------
-//  🔥 LOGIN ADMIN (CORRIGIDO)
-// --------------------------------------------------
+// LOGIN ADMIN
 router.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -112,8 +106,8 @@ router.post("/admin/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    // 🔥 CORREÇÃO CRÍTICA: usar prisma.Admins (A MAIÚSCULO)
-    const admin = await prisma.Admins.findUnique({
+    // 🔥 Usa tabela `admins` minúscula
+    const admin = await prisma.admins.findUnique({
       where: { email },
     });
 
@@ -121,7 +115,6 @@ router.post("/admin/login", async (req, res) => {
       return res.status(401).json({ message: "Admin não encontrado." });
     }
 
-    // Valida senha
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) {
       return res.status(401).json({ message: "Senha incorreta." });
