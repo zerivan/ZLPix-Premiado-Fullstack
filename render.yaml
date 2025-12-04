@@ -4,22 +4,26 @@ services:
     env: node
     rootDir: backend
     plan: free
+
     buildCommand: |
-      npm install --include=dev && npm run build
+      npm install
+      npm run build
+
     startCommand: |
       npm start
+
     envVars:
       - key: DATABASE_URL
         sync: false
+
+      - key: JWT_SECRET
+        sync: false
+
       - key: NODE_VERSION
         value: 22.16.0
-      - key: NODE_ENV
-        value: production
+
+      - key: PORT
+        value: 10000
+
     autoDeploy: true
     branch: main
-    envSpecific:
-      build:
-        DATABASE_URL:
-          sync: true
-          required: true
-          description: "URL de conexão do banco PostgreSQL (NeonDB ou outro)"
