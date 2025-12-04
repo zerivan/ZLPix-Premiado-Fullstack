@@ -3,16 +3,23 @@ services:
     name: zlpix-backend
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run build
-    startCommand: npm start
     plan: free
-    autoDeploy: true
+    buildCommand: |
+      npm install --include=dev && npm run build
+    startCommand: |
+      npm start
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: NODE_VERSION
         value: 22.16.0
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: JWT_SECRET
-        value: zlpix_fallback_secret
+    autoDeploy: true
+    branch: main
+    envSpecific:
+      build:
+        DATABASE_URL:
+          sync: true
+          required: true
+          description: "URL de conexão do banco PostgreSQL (NeonDB ou outro)"
