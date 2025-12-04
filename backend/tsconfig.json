@@ -11,10 +11,10 @@
     "strict": false,
 
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".", 
 
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "server.ts"],
   "exclude": ["node_modules", "dist"]
 }
