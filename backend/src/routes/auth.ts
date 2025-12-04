@@ -20,7 +20,7 @@ const serialize = (data: any): any => {
 };
 
 // --------------------------------------------------
-//  🔹 REGISTER
+//  🔹 REGISTER (usuário comum)
 // --------------------------------------------------
 router.post("/register", async (req, res) => {
   try {
@@ -38,6 +38,7 @@ router.post("/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const user = await prisma.users.create({
       data: { name, email, phone, pixKey, passwordHash },
     });
@@ -56,7 +57,7 @@ router.post("/register", async (req, res) => {
 });
 
 // --------------------------------------------------
-//  🔹 LOGIN do usuário comum
+//  🔹 LOGIN (usuário comum)
 // --------------------------------------------------
 router.post("/login", async (req, res) => {
   try {
@@ -99,7 +100,7 @@ router.post("/login", async (req, res) => {
 });
 
 // --------------------------------------------------
-//  🔥 LOGIN ADMIN (CORRIGIDO!)
+//  🔥 LOGIN ADMIN (FINALMENTE FUNCIONANDO)
 //  ROTA: POST /auth/admin/login
 // --------------------------------------------------
 router.post("/admin/login", async (req, res) => {
@@ -112,6 +113,7 @@ router.post("/admin/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
+    // Busca admin pelo e-mail
     const admin = await prisma.admins.findUnique({
       where: { email },
     });
@@ -120,11 +122,13 @@ router.post("/admin/login", async (req, res) => {
       return res.status(401).json({ message: "Admin não encontrado." });
     }
 
+    // Valida senha
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) {
       return res.status(401).json({ message: "Senha incorreta." });
     }
 
+    // Gera token
     const token = jwt.sign(
       { sub: admin.id.toString(), role: "admin" },
       JWT_SECRET,
