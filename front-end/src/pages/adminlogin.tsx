@@ -1,97 +1,61 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("admin@zlpix.com");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState("");
-
-  async function fazerLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setErro("");
-
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/auth/admin-login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErro(data.message || "Falha no login.");
-        setLoading(false);
-        return;
-      }
-
-      // Salva token admin
-      localStorage.setItem("adminToken", data.token);
-
-      // Redireciona para o painel administrativo
-      navigate("/admin/dashboard");
-    } catch (err) {
-      console.error("Erro de login admin:", err);
-      setErro("Erro ao conectar ao servidor.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center text-white px-6">
-      <div className="w-full max-w-sm bg-blue-950/40 p-6 rounded-2xl border border-blue-500/30 shadow-xl backdrop-blur-md">
-        <h1 className="text-xl font-bold text-yellow-300 text-center mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 px-5 font-display">
+      {/* CARD */}
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 animate-[fadeIn_0.4s_ease-out]">
+        
+        {/* TÍTULO */}
+        <h1 className="text-center text-2xl font-extrabold text-yellow-300 mb-6 drop-shadow">
           🔐 Login Administrativo
         </h1>
 
-        <form onSubmit={fazerLogin} className="flex flex-col gap-3">
-          <div>
-            <label className="text-sm text-blue-200">E-mail</label>
-            <input
-              type="email"
-              className="w-full p-2 rounded-lg bg-blue-900/40 border border-blue-700 text-white outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="username"
-            />
-          </div>
+        {/* CAMPO EMAIL */}
+        <div className="mb-4">
+          <label className="text-sm text-blue-100 font-semibold">E-mail</label>
+          <input
+            type="email"
+            className="w-full mt-1 px-4 py-3 rounded-xl bg-white/20 text-white placeholder-blue-200 border border-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@zlpix.com"
+          />
+        </div>
 
-          <div>
-            <label className="text-sm text-blue-200">Senha</label>
-            <input
-              type="password"
-              className="w-full p-2 rounded-lg bg-blue-900/40 border border-blue-700 text-white outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
+        {/* CAMPO SENHA */}
+        <div className="mb-6">
+          <label className="text-sm text-blue-100 font-semibold">Senha</label>
+          <input
+            type="password"
+            className="w-full mt-1 px-4 py-3 rounded-xl bg-white/20 text-white placeholder-blue-200 border border-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Digite sua senha"
+          />
+        </div>
 
-          {erro && (
-            <p className="text-red-400 text-center text-sm mt-1">{erro}</p>
-          )}
+        {/* BOTÃO ENTRAR */}
+        <button className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold py-3 rounded-xl shadow-lg transition-all active:scale-95">
+          Entrar
+        </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`mt-2 py-2 rounded-full font-bold shadow-lg ${
-              loading
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-yellow-400 text-blue-900 hover:bg-yellow-500"
-            }`}
-          >
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
-        </form>
+        {/* TEXTO RODAPÉ */}
+        <p className="text-center text-xs text-blue-200 mt-4 opacity-70">
+          Acesso restrito à administração do ZLPix
+        </p>
       </div>
+
+      {/* ANIMAÇÃO KEYFRAME */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
