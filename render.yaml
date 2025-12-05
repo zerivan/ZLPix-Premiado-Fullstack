@@ -6,7 +6,8 @@ services:
     plan: free
 
     buildCommand: |
-      npm install
+      npm ci
+      npx prisma generate
       npm run build
 
     startCommand: |
@@ -20,7 +21,7 @@ services:
         sync: false
 
       - key: NODE_VERSION
-        value: 22.16.0
+        value: 18.20.2
 
       - key: PORT
         value: 10000
