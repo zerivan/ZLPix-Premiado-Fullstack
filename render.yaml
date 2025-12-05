@@ -8,10 +8,10 @@ services:
     buildCommand: |
       npm ci
       npx prisma generate
-      npm run build
+      tsc -p tsconfig.json
 
     startCommand: |
-      npm start
+      node dist/server.js
 
     envVars:
       - key: DATABASE_URL
