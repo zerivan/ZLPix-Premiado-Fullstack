@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 export default function AdminLogin() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("admin@zlpix.com");
-  const [password, setPassword] = useState("123456"); // 🔥 SENHA PRÉ-PREENCHIDA
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); // 🔥 SENHA PRÉ-PREENCHIDA
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
