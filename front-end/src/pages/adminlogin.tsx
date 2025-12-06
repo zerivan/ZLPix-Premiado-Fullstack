@@ -27,15 +27,13 @@ export default function AdminLogin() {
       const json = await resposta.json();
 
       if (!resposta.ok) {
-        setErro(json.message || "Falha ao fazer login admin.");
+        setErro(json.message || "Erro ao fazer login admin.");
         setLoading(false);
         return;
       }
 
-      // Salvar token admin
       localStorage.setItem("TOKEN_ZLPIX_ADMIN", json.token);
 
-      // Ir para o painel admin
       navigate("/admin-dashboard");
     } catch (e) {
       setErro("Erro ao conectar com o servidor.");
@@ -45,9 +43,9 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-[100vh] flex items-center justify-center bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 px-6 pt-10 pb-10 font-display">
+    <div className="min-h-[100vh] flex items-center justify-center px-6 pt-6 bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 font-display">
 
-      <div className="w-full max-w-lg bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 py-12 animate-[fadeIn_0.4s_ease-out]">
+      <div className="w-full max-w-xl bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 py-12 animate-[fadeIn_0.4s_ease-out]">
 
         <h1 className="text-center text-3xl font-extrabold text-yellow-300 mb-8 drop-shadow">
           🔐 Login Administrativo
@@ -104,6 +102,7 @@ export default function AdminLogin() {
         <p className="text-center text-xs text-blue-200 mt-6 opacity-70">
           Acesso restrito à administração do ZLPix
         </p>
+
       </div>
 
       <style>{`
@@ -112,6 +111,7 @@ export default function AdminLogin() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
     </div>
   );
 }
