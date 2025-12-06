@@ -95,7 +95,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// LOGIN ADMIN
+// LOGIN ADMIN (CORRIGIDO)
 router.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -106,8 +106,8 @@ router.post("/admin/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    // 🔥 Usa tabela `admins` minúscula
-    const admin = await prisma.admins.findUnique({
+    // 🔥 CORREÇÃO: model certo é Admins (A maiúsculo)
+    const admin = await prisma.Admins.findUnique({
       where: { email },
     });
 
