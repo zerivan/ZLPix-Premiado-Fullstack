@@ -43,9 +43,9 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-[100vh] flex items-center justify-center px-6 pt-6 bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 font-display">
+    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 font-display">
 
-      <div className="w-full max-w-xl bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 py-12 animate-[fadeIn_0.4s_ease-out]">
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 animate-[fadeIn_0.4s_ease-out]">
 
         <h1 className="text-center text-3xl font-extrabold text-yellow-300 mb-8 drop-shadow">
           🔐 Login Administrativo
@@ -111,7 +111,6 @@ export default function AdminLogin() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-
     </div>
   );
 }
