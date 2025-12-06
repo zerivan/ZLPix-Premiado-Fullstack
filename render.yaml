@@ -34,8 +34,8 @@ services:
   # ====================================
   - type: static
     name: zlpix-site
-    env: static
     rootDir: front-end
+    env: static
 
     buildCommand: |
       npm install
@@ -46,6 +46,13 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.19.0
+
+      # ⭐ AQUI ESTÁ O QUE FALTAVA:
+      - key: VITE_API_URL
+        fromService:
+          name: zlpix-backend
+          type: web
+          property: url
 
     routes:
       - type: rewrite
