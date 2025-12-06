@@ -1,9 +1,12 @@
 services:
-  - type: web
-    name: zlpix-backend
+  # ============================
+  # 🚀 BACKEND (API EXPRESS)
+  # ============================
+  - name: zlpix-backend
+    type: web
     env: node
-    plan: free
     rootDir: backend
+    plan: free
 
     buildCommand: |
       npm install
@@ -16,15 +19,33 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-
       - key: JWT_SECRET
         sync: false
-
       - key: NODE_VERSION
-        value: 18.20.2
+        value: 20
 
-      - key: PORT
-        value: 10000
+    autoDeploy: true
+    branch: main
+
+  # ============================
+  # 🌐 FRONT-END (REACT + VITE)
+  # ============================
+  - name: zlpix-site
+    type: web
+    env: static
+    rootDir: front-end
+    plan: free
+
+    buildCommand: |
+      npm install
+      npm run build
+
+    staticPublishPath: dist
+
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
 
     autoDeploy: true
     branch: main
