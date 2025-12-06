@@ -2,13 +2,13 @@ services:
   - type: web
     name: zlpix-backend
     env: node
-    rootDir: backend
     plan: free
+    rootDir: backend
 
     buildCommand: |
       npm ci
       npx prisma generate
-      tsc -p tsconfig.json
+      npm run build
 
     startCommand: |
       node dist/server.js
