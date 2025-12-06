@@ -1,5 +1,7 @@
 services:
+  # ====================================
   # BACKEND
+  # ====================================
   - type: web
     name: zlpix-backend
     env: node
@@ -27,12 +29,13 @@ services:
     autoDeploy: true
     branch: main
 
+  # ====================================
   # FRONTEND
+  # ====================================
   - type: static
     name: zlpix-site
     env: static
     rootDir: front-end
-    plan: free
 
     buildCommand: |
       npm install
