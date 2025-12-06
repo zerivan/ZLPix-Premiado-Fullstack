@@ -1,9 +1,11 @@
 // src/pages/home.tsx
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
   const premioAtual = "R$ 25.000,00";
@@ -37,13 +39,13 @@ export default function Home() {
           </p>
         </div>
 
-        {/* 🎯 BOTÃO PRINCIPAL PULSANTE */}
+        {/* 🎯 BOTÃO PRINCIPAL PULSANTE (AGORA FUNCIONANDO) */}
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 1.8, repeat: Infinity }}
           whileTap={{ scale: 0.92 }}
           className="bg-gradient-to-r from-yellow-400 to-green-400 text-blue-900 font-extrabold text-lg px-10 py-3 rounded-full shadow-xl w-full max-w-md"
-          onClick={() => (window.location.href = "/aposta")}
+          onClick={() => navigate("/aposta")}
         >
           🎯 FAZER APOSTA AGORA
         </motion.button>
