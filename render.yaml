@@ -1,4 +1,5 @@
 services:
+  # BACKEND
   - type: web
     name: zlpix-backend
     env: node
@@ -11,20 +12,42 @@ services:
       npm run build
 
     startCommand: |
-      npm start
+      node dist/server.js
 
     envVars:
       - key: DATABASE_URL
         sync: false
-
       - key: JWT_SECRET
         sync: false
-
       - key: NODE_VERSION
         value: 18.20.2
-
       - key: PORT
         value: 10000
+
+    autoDeploy: true
+    branch: main
+
+  # FRONTEND
+  - type: static
+    name: zlpix-site
+    env: static
+    rootDir: front-end
+    plan: free
+
+    buildCommand: |
+      npm install
+      npm run build
+
+    staticPublishPath: dist
+
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
 
     autoDeploy: true
     branch: main
