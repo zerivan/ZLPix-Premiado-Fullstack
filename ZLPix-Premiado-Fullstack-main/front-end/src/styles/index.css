@@ -1,0 +1,131 @@
+/* ================================
+   ZLPIX – LAYOUT PADRÃO RESPONSIVO
+   ALTURA CORRIGIDA E SIMÉTRICA
+   ================================ */
+
+/* Importação do Tailwind (necessário para funcionar) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #1e90ff;
+  --primary-dark: #0b5dd8;
+  --gold: #ffd760;
+  --gold-strong: #ffbe00;
+
+  --text-dark: #111827;
+  --text-light: #ffffff;
+
+  --card-bg: rgba(255,255,255,0.10);
+}
+
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ALTURA GLOBAL */
+html, body {
+  min-height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  font-family: Inter, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ===================================
+   WRAPPER PADRÃO — ESPAÇOS IGUAIS
+   =================================== */
+.page-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 25px 16px;
+}
+
+/* ===================================
+   CARD AJUSTADO — ALTURA PERFEITA
+   =================================== */
+.page-card {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  min-height: auto;
+  background: var(--card-bg);
+  backdrop-filter: blur(14px);
+  border-radius: 22px;
+  padding: 18px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: visible;
+}
+
+/* TÍTULOS */
+.page-title {
+  font-size: 25px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--gold);
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  text-align: center;
+  opacity: 0.9;
+  margin-bottom: 14px;
+}
+
+/* CAMPOS */
+.page-input {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  margin-bottom: 12px;
+  color: white;
+  font-size: 1rem;
+}
+
+.page-input::placeholder {
+  color: rgba(255,255,255,0.65);
+}
+
+/* BOTÃO */
+.page-btn {
+  width: 100%;
+  background: var(--gold);
+  color: #222;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: 8px;
+  border: none;
+}
+
+.page-btn:active {
+  transform: scale(0.96);
+}
+
+/* LINKS */
+.page-link {
+  color: var(--gold);
+  font-weight: 700;
+  margin-left: 4px;
+}.promo-section { margin-top: 24px; text-align: center; color: rgba(255,255,255,0.9); font-size: 0.95rem; background: rgba(255,255,255,0.08); padding: 12px; border-radius: 14px; width: 100%; max-width: 420px; backdrop-filter: blur(8px); }
