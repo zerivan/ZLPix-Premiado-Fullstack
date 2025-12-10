@@ -15,10 +15,18 @@ if (!MP_ACCESS_TOKEN) {
 
 const MP_API_URL = "https://api.mercadopago.com/v1/payments";
 
-/* ========================================================
-   🔥 ROTA 1 — PIX PARA 1 BILHETE (MODO ANTIGO)
-   Continua funcionando para compatibilidade
-   ======================================================== */
+/* ============================================================
+   🔥 FUNÇÃO AUXILIAR: pega dados reais do usuário no banco
+   ============================================================ */
+async function getUserData(userId: string | number) {
+  return prisma.users.findUnique({
+    where: { id: BigInt(String(userId)) },
+  });
+}
+
+/* ============================================================
+   🔥 ROTA 1 — PIX INDIVIDUAL (1 bilhete)
+   ============================================================ */
 router.post("/create", async (req, res) => {
   try {
     const { amount, description, bilheteId, userId } = req.body;
@@ -29,7 +37,10 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    console.log("📤 Criando PIX (1 bilhete):", { amount, description, bilheteId, userId });
+    const user = await getUserData(userId);
+    if (!user) return res.status(400).json({ error: "Usuário não encontrado." });
+
+    console.log("📤 Criando PIX (1 bilhete):", { amount, description, bilheteId });
 
     const idempotencyKey = crypto.randomUUID();
 
@@ -37,7 +48,16 @@ router.post("/create", async (req, res) => {
       transaction_amount: Number(amount),
       description,
       payment_method_id: "pix",
-      payer: { email: "test_user@test.com" },
+
+      // 👇 AGORA COM DADOS REAIS DO USUÁRIO
+      payer: {
+        email: user.email,
+        first_name: user.name,
+        phone: {
+          area_code: user.phone?.slice(0, 2) || "00",
+          number: user.phone?.slice(2) || "000000000",
+        },
+      },
     };
 
     const resposta = await axios.post(MP_API_URL, pagamento, {
@@ -84,10 +104,9 @@ router.post("/create", async (req, res) => {
   }
 });
 
-/* ========================================================
-   🔥 ROTA 2 — PIX EM LOTE (VÁRIOS BILHETES)
-   COMPATÍVEL COM A NOVA TELA /pagamento
-   ======================================================== */
+/* ============================================================
+   🔥 ROTA 2 — PIX EM LOTE (multi-bilhetes)
+   ============================================================ */
 router.post("/create-lote", async (req, res) => {
   try {
     const { bilhetes, userId, amount, description } = req.body;
@@ -95,18 +114,17 @@ router.post("/create-lote", async (req, res) => {
     if (!bilhetes || !Array.isArray(bilhetes) || bilhetes.length === 0) {
       return res.status(400).json({ error: "Lista de bilhetes inválida." });
     }
+
     if (!userId || !amount || !description) {
       return res.status(400).json({
         error: "userId, amount e description são obrigatórios.",
       });
     }
 
-    console.log("📤 Criando PIX EM LOTE:", {
-      bilhetes,
-      userId,
-      amount,
-      description,
-    });
+    const user = await getUserData(userId);
+    if (!user) return res.status(400).json({ error: "Usuário não encontrado." });
+
+    console.log("📤 Criando PIX EM LOTE:", { bilhetes, amount, description });
 
     const idempotencyKey = crypto.randomUUID();
 
@@ -114,7 +132,16 @@ router.post("/create-lote", async (req, res) => {
       transaction_amount: Number(amount),
       description,
       payment_method_id: "pix",
-      payer: { email: "test_user@test.com" },
+
+      // 🔥 PAGADOR REAL
+      payer: {
+        email: user.email,
+        first_name: user.name,
+        phone: {
+          area_code: user.phone?.slice(0, 2) || "00",
+          number: user.phone?.slice(2) || "000000000",
+        },
+      },
     };
 
     const resposta = await axios.post(MP_API_URL, pagamento, {
@@ -129,27 +156,24 @@ router.post("/create-lote", async (req, res) => {
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
-      console.error("❌ Mercado Pago não retornou transaction_data:", data);
       return res.status(500).json({
         error: "Mercado Pago não retornou QR Code.",
         details: data,
       });
     }
 
-    // 💾 Cria uma transação por bilhete
+    // 🔥 Cria uma transação para cada bilhete
     for (const id of bilhetes) {
       await prisma.transacao.create({
         data: {
           userId: BigInt(userId),
           bilheteId: BigInt(id),
-          valor: Number(amount) / bilhetes.length, // divide valor
+          valor: Number(amount) / bilhetes.length,
           status: "pending",
-          mpPaymentId: String(data.id),
+          mpPaymentId: String(data.id), // mesmo pagamento → lote
         },
       });
     }
-
-    console.log("💾 Transações criadas para todos os bilhetes.");
 
     return res.json({
       status: data.status,
