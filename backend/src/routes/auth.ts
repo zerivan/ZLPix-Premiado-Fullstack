@@ -1,3 +1,4 @@
+// src/routes/auth.ts
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -19,6 +20,18 @@ function serialize(obj: any): any {
     );
   }
   return obj;
+}
+
+// ======================================
+// 🔒 SANITIZAÇÃO (REMOVE passwordHash)
+// ======================================
+function sanitize(obj: any) {
+  if (!obj) return obj;
+  const s = serialize(obj);
+  if (s && typeof s === "object" && "passwordHash" in s) {
+    delete s.passwordHash;
+  }
+  return s;
 }
 
 // ======================================
@@ -55,7 +68,7 @@ router.post("/register", async (req, res) => {
 
     return res.status(201).json({
       message: "Usuário cadastrado com sucesso.",
-      user: serialize(user),
+      user: sanitize(user),
     });
   } catch (err) {
     console.error("Erro em /auth/register:", err);
@@ -89,7 +102,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    // 🔥 JWT corrigido para BigInt
+    // 🔥 JWT corrigido para BigInt (id como string)
     const token = jwt.sign(
       {
         id: user.id.toString(),
@@ -102,7 +115,7 @@ router.post("/login", async (req, res) => {
     return res.json({
       message: "Login realizado com sucesso.",
       token,
-      user: serialize(user),
+      user: sanitize(user),
     });
   } catch (err) {
     console.error("Erro em /auth/login:", err);
@@ -149,7 +162,7 @@ router.post("/admin/login", async (req, res) => {
     return res.json({
       message: "Login admin realizado com sucesso.",
       token,
-      admin: serialize(admin),
+      admin: sanitize(admin),
     });
   } catch (err) {
     console.error("Erro em /auth/admin/login:", err);
