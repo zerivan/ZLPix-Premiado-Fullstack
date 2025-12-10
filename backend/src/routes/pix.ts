@@ -1,3 +1,4 @@
+// src/routes/pix.ts
 import { Router } from "express";
 import axios from "axios";
 import crypto from "crypto";
@@ -33,7 +34,7 @@ router.post("/create", async (req, res) => {
       description,
       payment_method_id: "pix",
       payer: {
-        email: "test_user@test.com",
+        email: "test_user@test.com", // sandbox
       },
     };
 
@@ -49,24 +50,25 @@ router.post("/create", async (req, res) => {
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
+      console.error("❌ Mercado Pago não retornou transaction_data:", data);
       return res.status(500).json({
         error: "Mercado Pago não retornou QR Code.",
         details: data,
       });
     }
 
-    // 🔥 CRIA A TRANSACAO COMPLETA SEM FALTAR NADA
+    // salva transacao (usa BigInt strings conforme seu prisma)
     await prisma.transacao.create({
       data: {
-        userId: BigInt(userId),
-        bilheteId: BigInt(bilheteId),
+        userId: BigInt(String(userId)),
+        bilheteId: BigInt(String(bilheteId)),
         valor: Number(amount),
         status: "pending",
         mpPaymentId: String(data.id),
-      },
+      } as any,
     });
 
-    console.log("💾 Transação salva no banco.", data.id);
+    console.log("💾 Transação salva no banco:", data.id);
 
     return res.json({
       status: data.status,
