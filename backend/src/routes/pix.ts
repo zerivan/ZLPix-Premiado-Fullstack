@@ -60,10 +60,10 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // 🔥 AGORA SIM: salvar transação no banco!
+    // 🔥 SALVAR TRANSAÇÃO NO BANCO (CORRIGIDO)
     await prisma.transacao.create({
       data: {
-        bilheteId: BigInt(bilheteId),
+        bilheteId: Number(bilheteId), // 🔥 CORREÇÃO AQUI!
         mpPaymentId: String(data.id),
         status: "pendente",
       },
