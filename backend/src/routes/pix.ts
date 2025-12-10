@@ -1,10 +1,10 @@
 import { Router } from "express";
 import axios from "axios";
-import crypto from "crypto"; // Necessário p/ gerar Idempotency-Key
+import crypto from "crypto";
+import { prisma } from "../lib/prisma";
 
 const router = Router();
 
-// Tentamos usar qualquer uma das variáveis válidas
 const MP_ACCESS_TOKEN =
   process.env.MP_ACCESS_TOKEN_TEST || process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
@@ -19,17 +19,17 @@ const MP_API_URL = "https://api.mercadopago.com/v1/payments";
 // ======================
 router.post("/create", async (req, res) => {
   try {
-    const { amount, description } = req.body;
+    const { amount, description, bilheteId } = req.body;
 
-    if (!amount || !description) {
+    if (!amount || !description || !bilheteId) {
       return res.status(400).json({
-        error: "amount e description são obrigatórios.",
+        error: "amount, description e bilheteId são obrigatórios.",
       });
     }
 
-    console.log("📤 Criando PIX:", { amount, description });
+    console.log("📤 Criando PIX:", { amount, description, bilheteId });
 
-    // 🔥 Mercado Pago exige isso em TODAS as requisições PIX
+    // 🔥 Mercado Pago exige isso
     const idempotencyKey = crypto.randomUUID();
 
     const pagamento = {
@@ -37,7 +37,7 @@ router.post("/create", async (req, res) => {
       description,
       payment_method_id: "pix",
       payer: {
-        email: "test_user@test.com", // Requisito do Sandbox
+        email: "test_user@test.com",
       },
     };
 
@@ -45,12 +45,11 @@ router.post("/create", async (req, res) => {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
-        "X-Idempotency-Key": idempotencyKey, // 🔥 LINHA QUE REMOVE O ERRO 400
+        "X-Idempotency-Key": idempotencyKey,
       },
     });
 
     const data = resposta.data;
-
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
@@ -61,12 +60,22 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // 🔥 Envia exatamente o que o front precisa
+    // 🔥 AGORA SIM: salvar transação no banco!
+    await prisma.transacao.create({
+      data: {
+        bilheteId: BigInt(bilheteId),
+        mpPaymentId: String(data.id),
+        status: "pendente",
+      },
+    });
+
+    console.log("💾 Transação salva no banco:", data.id);
+
     return res.json({
       status: data.status,
       id: data.id,
       qr_code: trx.qr_code,
-      qr_code_base64: trx.qr_code_base64, // ← ESSENCIAL
+      qr_code_base64: trx.qr_code_base64,
       copy_paste: trx.qr_code,
     });
   } catch (err: any) {
