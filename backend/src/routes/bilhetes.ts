@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma";
 
 const router = Router();
 
-// Função que converte BigInt -> string
+// Converte BigInt → string
 function serializeBigInt(obj: any) {
   return JSON.parse(
     JSON.stringify(
@@ -39,7 +39,7 @@ router.post("/criar", async (req, res) => {
 
     return res.json({
       ok: true,
-      bilhete: serializeBigInt(bilhete), // ← aqui está a correção
+      bilhete: serializeBigInt(bilhete),
     });
   } catch (err) {
     console.error("Erro ao criar bilhete:", err);
@@ -67,11 +67,42 @@ router.get("/listar/:userId", async (req, res) => {
     });
 
     return res.json({
-      bilhetes: serializeBigInt(bilhetes), // ← correção aqui também
+      bilhetes: serializeBigInt(bilhetes),
     });
   } catch (err) {
     console.error("Erro ao listar bilhetes:", err);
     return res.status(500).json({ error: "Erro ao carregar bilhetes." });
+  }
+});
+
+/**
+ * 🔍 ROTA NOVA — Verificar status do bilhete (USADA NO PIX)
+ */
+router.get("/status/:id", async (req, res) => {
+  try {
+    const idParam = req.params.id;
+
+    if (!idParam || isNaN(Number(idParam))) {
+      return res.status(400).json({ error: "ID inválido." });
+    }
+
+    const id = BigInt(Number(idParam));
+
+    const bilhete = await prisma.bilhete.findUnique({
+      where: { id },
+    });
+
+    if (!bilhete) {
+      return res.status(404).json({ error: "Bilhete não encontrado." });
+    }
+
+    return res.json({
+      id: bilhete.id.toString(),
+      pago: bilhete.pago,
+    });
+  } catch (err) {
+    console.error("Erro ao verificar status:", err);
+    return res.status(500).json({ error: "Erro interno ao verificar status." });
   }
 });
 
