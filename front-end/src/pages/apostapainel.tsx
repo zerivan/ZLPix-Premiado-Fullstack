@@ -27,15 +27,16 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
-  // resolveUserId tolerante (usa USER_ID ou USER_ZLPIX salvo)
+  // resolveUserId tolerante
   function resolveUserId(): string | null {
     try {
       const direct = localStorage.getItem("USER_ID");
       if (direct) return String(direct);
+
       const stored = localStorage.getItem("USER_ZLPIX");
       if (!stored) return null;
+
       const parsed = JSON.parse(stored);
-      // tenta os campos comuns
       if (parsed && (parsed.id || parsed.userId || parsed._id)) {
         return String(parsed.id ?? parsed.userId ?? parsed._id);
       }
@@ -81,6 +82,7 @@ export default function ApostaPainel() {
     try {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
@@ -98,6 +100,7 @@ export default function ApostaPainel() {
     try {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "square";
@@ -106,6 +109,7 @@ export default function ApostaPainel() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
+
       oscRef.current = osc;
       gainRef.current = gain;
     } catch {}
@@ -124,11 +128,13 @@ export default function ApostaPainel() {
   function stopRollingSound() {
     const ctx = audioCtxRef.current;
     if (!ctx || !oscRef.current || !gainRef.current) return;
+
     const now = ctx.currentTime;
     try {
       gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.15);
       oscRef.current.stop(now + 0.25);
     } catch {}
+
     oscRef.current = null;
     gainRef.current = null;
   }
@@ -137,6 +143,7 @@ export default function ApostaPainel() {
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
+
     setSelected((s) => {
       if (s.includes(num)) return s.filter((x) => x !== num);
       if (s.length >= 3) return s;
@@ -144,19 +151,20 @@ export default function ApostaPainel() {
     });
   }
 
-  // Gerar aleatório (00..99) com animação
+  // Gerar aleatório (00..99)
   async function gerarAleatorio() {
     if (rolling) return;
+
     setRolling(true);
     setSelected([]);
     startRollingSound();
 
-    // pool 00..99 (CORRETO)
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
       const spins = 25 + Math.floor(Math.random() * 20);
+
       for (let j = 0; j < spins; j++) {
         const randomNum = pool[Math.floor(Math.random() * pool.length)];
         setActiveNumber(randomNum);
@@ -171,28 +179,28 @@ export default function ApostaPainel() {
 
       final.push(chosen);
       setSelected((prev) => [...prev, chosen]);
+
       await new Promise((r) => setTimeout(r, 120));
     }
 
     stopRollingSound();
     setActiveNumber(null);
+
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 900);
+
     setRolling(false);
   }
 
-  // Confirmar bilhete -> chama backend e adiciona à lista local
+  // Confirmar bilhete
   async function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
+
     const resolved = resolveUserId();
-    if (!resolved) {
-      alert("Erro: usuário não identificado. Faça login e tente novamente.");
-      return;
-    }
+    if (!resolved) return alert("Erro: usuário não identificado.");
 
     if (!API) {
-      alert("Erro: API não configurada (VITE_API_URL). Verifique .env.");
-      console.error("VITE_API_URL vazio — não será possível criar bilhete.");
+      alert("Erro: API não configurada.");
       return;
     }
 
@@ -204,12 +212,10 @@ export default function ApostaPainel() {
         sorteioData: new Date().toISOString(),
       };
 
-      // envio com headers explícitos
       const res = await axios.post(`${API}/bilhete/criar`, body, {
         headers: { "Content-Type": "application/json" },
       });
 
-      // aceitar ambos formatos: { ok: true, bilhete } ou bilhete direto
       const bilhete = res.data?.bilhete ?? res.data;
 
       const idStr = bilhete?.id ? String(bilhete.id) : Date.now().toString(36);
@@ -227,44 +233,49 @@ export default function ApostaPainel() {
       setCoinBurst(true);
       setTimeout(() => setCoinBurst(false), 900);
     } catch (err: any) {
-      console.error("Erro ao criar bilhete (detalhe):", err);
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Erro ao criar bilhete no servidor.";
-      alert(msg);
+      console.error("Erro:", err);
+      alert("Erro ao criar bilhete.");
     }
   }
 
-  // Desfazer último (remove último criado localmente)
+  // Desfazer último bilhete
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // ================================
-  // ✅ FUNÇÃO CORRIGIDA (PIX)
-  // envia também valor e descricao na query string
-  // ================================
+  // ======================================================
+  // ✅ NOVO pagarAgora() — MULTI BILHETES + VALOR TOTAL
+  // ======================================================
   function pagarAgora() {
-    if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
-    const ultimo = tickets[0];
+    if (tickets.length === 0)
+      return alert("Nenhum bilhete para pagar.");
 
-    const valor = ultimo.valor ?? 2.0;
-    const descricao = `Pagamento do bilhete ${ultimo.id}`;
+    const userId = resolveUserId();
+    if (!userId) return alert("Erro: usuário não identificado.");
+
+    // IDs dos bilhetes
+    const ids = tickets.map((t) => t.id);
+
+    // soma total
+    const total = tickets.reduce(
+      (sum, t) => sum + (t.valor ?? 2.0),
+      0
+    );
+
+    const descricao = `Pagamento de ${tickets.length} bilhete(s)`;
 
     const qs = new URLSearchParams({
-      bilheteId: String(ultimo.id),
-      userId: resolveUserId() ?? "",
-      valor: String(valor),
+      bilhetes: JSON.stringify(ids),
+      userId: String(userId),
+      valor: String(total),
       descricao,
     }).toString();
 
     navigate(`/pagamento?${qs}`);
   }
 
-  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i)); // 00..99
+  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
@@ -276,11 +287,13 @@ export default function ApostaPainel() {
       </div>
 
       <main className="flex-1 flex flex-col items-center px-2 pt-2 pb-24 w-full">
+        {/* painel principal */}
         <div className="bg-gradient-to-b from-blue-950 via-blue-900 to-green-900 border border-blue-800/40 rounded-xl p-2 shadow-inner w-full max-w-md">
           <div className="grid grid-cols-5 gap-[2px]">
             {grid.map((n) => {
               const sel = selected.includes(n);
               const isActive = activeNumber === n && rolling;
+
               return (
                 <button
                   key={n}
@@ -301,7 +314,7 @@ export default function ApostaPainel() {
           </div>
         </div>
 
-        {/* Buttons */}
+        {/* botoes */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -342,7 +355,7 @@ export default function ApostaPainel() {
           </button>
         </div>
 
-        {/* Tickets list */}
+        {/* lista de bilhetes */}
         <div className="mt-5 w-full max-w-md">
           <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
             Bilhetes Gerados
@@ -369,8 +382,14 @@ export default function ApostaPainel() {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-400">#{String(t.id).slice(-6)}</span>
-                  <span className={`text-xs font-semibold ${t.pago ? "text-green-400" : "text-yellow-300"}`}>
+                  <span className="text-[10px] text-gray-400">
+                    #{String(t.id).slice(-6)}
+                  </span>
+                  <span
+                    className={`text-xs font-semibold ${
+                      t.pago ? "text-green-400" : "text-yellow-300"
+                    }`}
+                  >
                     {t.pago ? "Pago" : "Pendente"}
                   </span>
                 </div>
@@ -382,6 +401,7 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
+      {/* moedas */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-28 z-40">
           <div className="relative w-64 h-64">
@@ -392,8 +412,13 @@ export default function ApostaPainel() {
                 style={{
                   width: 8 + Math.random() * 12,
                   height: 8 + Math.random() * 12,
-                  background: "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 + Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
+                  background:
+                    "linear-gradient(180deg,#ffd700,#ffb400)",
+                  transform: `translateX(${
+                    (Math.random() - 0.5) * 160
+                  }px) translateY(-${
+                    100 + Math.random() * 180
+                  }px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
@@ -404,10 +429,16 @@ export default function ApostaPainel() {
 
       <style>{`
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 6px 2px rgba(255,215,0,0.35); }
-          50% { box-shadow: 0 0 14px 4px rgba(255,215,0,0.65); }
+          0%, 100% { 
+            box-shadow: 0 0 6px 2px rgba(255,215,0,0.35); 
+          }
+          50% { 
+            box-shadow: 0 0 14px 4px rgba(255,215,0,0.65); 
+          }
         }
-        .animate-pulse-glow { animation: pulse-glow 0.6s ease-in-out infinite; }
+        .animate-pulse-glow { 
+          animation: pulse-glow 0.6s ease-in-out infinite; 
+        }
       `}</style>
     </div>
   );
