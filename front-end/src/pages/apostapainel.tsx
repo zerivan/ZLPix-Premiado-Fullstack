@@ -199,6 +199,7 @@ export default function ApostaPainel() {
       });
 
       const bilhete = res.data?.bilhete ?? res.data;
+
       const idStr = bilhete?.id ? String(bilhete.id) : Date.now().toString(36);
 
       const newTicket: LocalTicket = {
@@ -214,7 +215,7 @@ export default function ApostaPainel() {
       setCoinBurst(true);
       setTimeout(() => setCoinBurst(false), 900);
     } catch (err: any) {
-      console.error("Erro ao criar bilhete:", err);
+      console.error("Erro ao criar bilhete (detalhe):", err);
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -224,24 +225,19 @@ export default function ApostaPainel() {
     }
   }
 
-  // ================================
-  // ✅ FUNÇÃO CORRIGIDA (PIX)
-  // ================================
+  function desfazerUltimo() {
+    if (rolling) return;
+    setTickets((t) => t.slice(1));
+  }
+
   function pagarAgora() {
     if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
     const ultimo = tickets[0];
 
-    const valor = ultimo.valor ?? 2.0;
-    const descricao = `Pagamento do bilhete ${ultimo.id}`;
-
     navigate(
       `/pagamento?bilheteId=${encodeURIComponent(
         ultimo.id
-      )}&userId=${encodeURIComponent(
-        resolveUserId() || ""
-      )}&valor=${encodeURIComponent(
-        valor
-      )}&descricao=${encodeURIComponent(descricao)}`
+      )}&userId=${encodeURIComponent(resolveUserId() || "")}`
     );
   }
 
@@ -372,7 +368,8 @@ export default function ApostaPainel() {
                   width: 8 + Math.random() * 12,
                   height: 8 + Math.random() * 12,
                   background: "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 + Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
+                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 +
+                    Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
