@@ -88,7 +88,7 @@ export default function PixPagamento() {
       ) : (
         <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center backdrop-blur-lg shadow-xl">
 
-          {/* ⭐ NOVO BLOCO: RESUMO DO PAGAMENTO */}
+          {/* ⭐ Resumo do Pagamento */}
           <div className="w-full mb-4 bg-white/10 border border-white/20 rounded-xl p-4 text-sm text-center text-blue-100">
             <p><strong>Bilhete:</strong> {bilheteId}</p>
             <p><strong>Valor a pagar:</strong> R$ {Number(valor).toFixed(2)}</p>
