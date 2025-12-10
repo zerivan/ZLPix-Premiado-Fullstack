@@ -1,6 +1,6 @@
 import { Router } from "express";
 import axios from "axios";
-import crypto from "crypto"; // 🔥 NECESSÁRIO PARA UUID
+import crypto from "crypto"; // Necessário p/ gerar Idempotency-Key
 
 const router = Router();
 
@@ -29,7 +29,7 @@ router.post("/create", async (req, res) => {
 
     console.log("📤 Criando PIX:", { amount, description });
 
-    // 🔥 OBRIGATÓRIO PARA O MERCADO PAGO — evita erro 400
+    // 🔥 Mercado Pago exige isso em TODAS as requisições PIX
     const idempotencyKey = crypto.randomUUID();
 
     const pagamento = {
@@ -37,7 +37,7 @@ router.post("/create", async (req, res) => {
       description,
       payment_method_id: "pix",
       payer: {
-        email: "test_user@test.com", // Sandbox exige isso
+        email: "test_user@test.com", // Requisito do Sandbox
       },
     };
 
@@ -45,27 +45,28 @@ router.post("/create", async (req, res) => {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
-        "X-Idempotency-Key": idempotencyKey, // 🔥 LINHA QUE RESOLVE O ERRO
+        "X-Idempotency-Key": idempotencyKey, // 🔥 LINHA QUE REMOVE O ERRO 400
       },
     });
 
     const data = resposta.data;
+
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
       console.error("❌ Mercado Pago não retornou transaction_data:", data);
-
       return res.status(500).json({
         error: "Mercado Pago não retornou QR Code.",
         details: data,
       });
     }
 
+    // 🔥 Envia exatamente o que o front precisa
     return res.json({
       status: data.status,
       id: data.id,
       qr_code: trx.qr_code,
-      qr_code_base64: trx.qr_code_base64, // 👈 AQUI O FRONT PRECISA
+      qr_code_base64: trx.qr_code_base64, // ← ESSENCIAL
       copy_paste: trx.qr_code,
     });
   } catch (err: any) {
