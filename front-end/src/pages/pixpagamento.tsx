@@ -32,7 +32,6 @@ export default function PixPagamento() {
       const json = await resposta.json();
       console.log("PIX criado:", json);
 
-      // 🔥 CORREÇÃO AQUI — agora monta corretamente o data:image/png;base64
       if (json.qr_code_base64) {
         const base64Img = `data:image/png;base64,${json.qr_code_base64}`;
         setQrBase64(base64Img);
@@ -88,10 +87,18 @@ export default function PixPagamento() {
         <p className="text-lg animate-pulse">Gerando QR Code...</p>
       ) : (
         <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center backdrop-blur-lg shadow-xl">
-          
+
+          {/* ⭐ NOVO BLOCO: RESUMO DO PAGAMENTO */}
+          <div className="w-full mb-4 bg-white/10 border border-white/20 rounded-xl p-4 text-sm text-center text-blue-100">
+            <p><strong>Bilhete:</strong> {bilheteId}</p>
+            <p><strong>Valor a pagar:</strong> R$ {Number(valor).toFixed(2)}</p>
+            {descricao && (
+              <p><strong>Descrição:</strong> {descricao}</p>
+            )}
+          </div>
+
           <p className="text-sm text-blue-100 mb-3">{status}</p>
 
-          {/* 🔥 CORREÇÃO AQUI - agora sempre tenta renderizar a imagem */}
           {qrBase64 ? (
             <img
               src={qrBase64}
