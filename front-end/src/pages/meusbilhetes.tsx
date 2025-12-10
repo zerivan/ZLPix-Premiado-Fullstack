@@ -8,12 +8,36 @@ export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
   const [filtro, setFiltro] = useState("todos");
 
-  const userId = localStorage.getItem("USER_ID");
+  // 🔥 Função segura para obter userId (igual ao ApostaPainel)
+  function resolveUserId(): string | null {
+    try {
+      const direct = localStorage.getItem("USER_ID");
+      if (direct) return String(direct);
+
+      const stored = localStorage.getItem("USER_ZLPIX");
+      if (!stored) return null;
+
+      const parsed = JSON.parse(stored);
+
+      if (parsed && (parsed.id || parsed.userId || parsed._id)) {
+        return String(parsed.id ?? parsed.userId ?? parsed._id);
+      }
+      if (parsed.user && (parsed.user.id || parsed.user.userId)) {
+        return String(parsed.user.id ?? parsed.user.userId);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  const userId = resolveUserId();
 
   useEffect(() => {
     async function load() {
       try {
         if (!userId) return;
+
         const res = await axios.get(`${API}/bilhete/listar/${userId}`);
         setBilhetes(res.data.bilhetes || []);
       } catch (e) {
@@ -97,15 +121,18 @@ export default function MeusBilhetes() {
                 </span>
               </div>
 
+              {/* 🔥 Proteção caso b.dezenas seja null */}
               <div className="flex gap-2 mb-3">
-                {b.dezenas.split(",").map((n: string, i: number) => (
-                  <span
-                    key={i}
-                    className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
-                  >
-                    {n}
-                  </span>
-                ))}
+                {(b.dezenas ? b.dezenas.split(",") : []).map(
+                  (n: string, i: number) => (
+                    <span
+                      key={i}
+                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
+                    >
+                      {n}
+                    </span>
+                  )
+                )}
               </div>
 
               <div className="flex justify-between items-center">
