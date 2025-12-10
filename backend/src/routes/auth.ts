@@ -1,151 +1,163 @@
-import React, { useEffect, useState } from "react";
-import NavBottom from "../components/navbottom";
-import axios from "axios";
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { prisma } from "../lib/prisma";
 
-const API = import.meta.env.VITE_API_URL;
+const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-export default function MeusBilhetes() {
-  const [bilhetes, setBilhetes] = useState<any[]>([]);
-  const [filtro, setFiltro] = useState("todos");
-
-  // 🔥 Função segura para obter userId (igual ao ApostaPainel)
-  function resolveUserId(): string | null {
-    try {
-      const direct = localStorage.getItem("USER_ID");
-      if (direct) return String(direct);
-
-      const stored = localStorage.getItem("USER_ZLPIX");
-      if (!stored) return null;
-
-      const parsed = JSON.parse(stored);
-
-      if (parsed && (parsed.id || parsed.userId || parsed._id)) {
-        return String(parsed.id ?? parsed.userId ?? parsed._id);
-      }
-      if (parsed.user && (parsed.user.id || parsed.user.userId)) {
-        return String(parsed.user.id ?? parsed.user.userId);
-      }
-      return null;
-    } catch {
-      return null;
-    }
+// ======================================
+// 🔧 SERIALIZADOR PARA BIGINT DO PRISMA
+// ======================================
+function serialize(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "bigint") return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serialize);
+  if (typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, serialize(v)])
+    );
   }
+  return obj;
+}
 
-  const userId = resolveUserId();
+// ======================================
+// 👤 REGISTER USER
+// ======================================
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, phone, pixKey, password } = req.body;
 
-  useEffect(() => {
-    async function load() {
-      try {
-        if (!userId) return;
-
-        const res = await axios.get(`${API}/bilhete/listar/${userId}`);
-        setBilhetes(res.data.bilhetes || []);
-      } catch (e) {
-        console.log("Erro ao carregar bilhetes:", e);
-      }
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Nome, e-mail e senha são obrigatórios.",
+      });
     }
 
-    load();
-  }, [userId]);
+    const existing = await prisma.users.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({
+        message: "E-mail já está cadastrado.",
+      });
+    }
 
-  const bilhetesFiltrados = bilhetes.filter((b) => {
-    if (filtro === "premiados") return b.status === "premiado";
-    if (filtro === "pendentes") return !b.pago;
-    return true;
-  });
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
-      <header className="text-center pt-6 pb-2">
-        <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
-        <p className="text-sm text-blue-100">Histórico dos seus bilhetes.</p>
-      </header>
+    const user = await prisma.users.create({
+      data: {
+        name,
+        email,
+        phone,
+        pixKey,
+        passwordHash,
+      },
+    });
 
-      <div className="flex justify-center gap-3 mt-4 mb-5">
-        {["todos", "premiados", "pendentes"].map((tipo) => (
-          <button
-            key={tipo}
-            onClick={() => setFiltro(tipo)}
-            className={`px-4 py-2 rounded-full font-semibold text-sm transition ${
-              filtro === tipo
-                ? tipo === "premiados"
-                  ? "bg-blue-500 text-white"
-                  : tipo === "pendentes"
-                  ? "bg-green-500 text-white"
-                  : "bg-yellow-400 text-blue-900"
-                : "bg-white/10 text-white hover:bg-white/20"
-            }`}
-          >
-            {tipo === "todos"
-              ? "Todos"
-              : tipo === "premiados"
-              ? "Premiados"
-              : "Pendentes"}
-          </button>
-        ))}
-      </div>
+    return res.status(201).json({
+      message: "Usuário cadastrado com sucesso.",
+      user: serialize(user),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/register:", err);
+    return res.status(500).json({
+      message: "Erro ao cadastrar usuário.",
+      error: String(err),
+    });
+  }
+});
 
-      <main className="px-4 max-w-lg mx-auto space-y-4 pb-10">
-        {bilhetesFiltrados.length === 0 ? (
-          <p className="text-center text-white/70 mt-10">
-            Nenhum bilhete encontrado.
-          </p>
-        ) : (
-          bilhetesFiltrados.map((b: any) => (
-            <div
-              key={b.id}
-              className="bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h2 className="font-bold text-lg text-yellow-300">
-                    Bilhete #{b.id}
-                  </h2>
-                  <p className="text-xs text-blue-100">
-                    Criado em:{" "}
-                    {new Date(b.createdAt).toLocaleString("pt-BR", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                  </p>
-                </div>
+// ======================================
+// 🔑 LOGIN USER
+// ======================================
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    b.pago
-                      ? "bg-green-500 text-white"
-                      : "bg-yellow-400 text-blue-900"
-                  }`}
-                >
-                  {b.pago ? "Pago" : "Pendente"}
-                </span>
-              </div>
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
+    }
 
-              {/* 🔥 Proteção caso b.dezenas seja null */}
-              <div className="flex gap-2 mb-3">
-                {(b.dezenas ? b.dezenas.split(",") : []).map(
-                  (n: string, i: number) => (
-                    <span
-                      key={i}
-                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
-                    >
-                      {n}
-                    </span>
-                  )
-                )}
-              </div>
+    const user = await prisma.users.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
 
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-green-400 font-semibold">
-                  R$ {b.valor.toFixed(2)}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </main>
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
 
-      <NavBottom />
-    </div>
-  );
-}
+    // 🔥 JWT corrigido para BigInt
+    const token = jwt.sign(
+      {
+        id: user.id.toString(),
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login realizado com sucesso.",
+      token,
+      user: serialize(user),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login.",
+      error: String(err),
+    });
+  }
+});
+
+// ======================================
+// 🛡 LOGIN ADMIN
+// OBS: tabela admins só tem email + passwordHash
+// ======================================
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
+    }
+
+    const admin = await prisma.admins.findUnique({
+      where: { email },
+    });
+
+    if (!admin) {
+      return res.status(401).json({ message: "Admin não encontrado." });
+    }
+
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Senha incorreta." });
+    }
+
+    const token = jwt.sign(
+      { email: admin.email, role: "admin" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+      admin: serialize(admin),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/admin/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
+      error: String(err),
+    });
+  }
+});
+
+export default router;
