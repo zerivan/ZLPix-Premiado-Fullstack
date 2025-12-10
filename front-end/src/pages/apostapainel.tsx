@@ -27,6 +27,7 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
+  // resolveUserId tolerante (usa USER_ID ou USER_ZLPIX salvo)
   function resolveUserId(): string | null {
     try {
       const direct = localStorage.getItem("USER_ID");
@@ -34,6 +35,7 @@ export default function ApostaPainel() {
       const stored = localStorage.getItem("USER_ZLPIX");
       if (!stored) return null;
       const parsed = JSON.parse(stored);
+      // tenta os campos comuns
       if (parsed && (parsed.id || parsed.userId || parsed._id)) {
         return String(parsed.id ?? parsed.userId ?? parsed._id);
       }
@@ -46,10 +48,12 @@ export default function ApostaPainel() {
     }
   }
 
+  // audio refs
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
+  // load persisted tickets
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ZLPX_TICKETS_LOCAL");
@@ -72,6 +76,7 @@ export default function ApostaPainel() {
     }
   }, []);
 
+  // click sound
   function playClickSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -88,6 +93,7 @@ export default function ApostaPainel() {
     } catch {}
   }
 
+  // rolling sound helpers
   function startRollingSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -127,6 +133,7 @@ export default function ApostaPainel() {
     gainRef.current = null;
   }
 
+  // Toggle seleção manual
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
@@ -137,12 +144,14 @@ export default function ApostaPainel() {
     });
   }
 
+  // Gerar aleatório (00..99) com animação
   async function gerarAleatorio() {
     if (rolling) return;
     setRolling(true);
     setSelected([]);
     startRollingSound();
 
+    // pool 00..99 (CORRETO)
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
@@ -172,6 +181,7 @@ export default function ApostaPainel() {
     setRolling(false);
   }
 
+  // Confirmar bilhete -> chama backend e adiciona à lista local
   async function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
     const resolved = resolveUserId();
@@ -194,10 +204,12 @@ export default function ApostaPainel() {
         sorteioData: new Date().toISOString(),
       };
 
+      // envio com headers explícitos
       const res = await axios.post(`${API}/bilhete/criar`, body, {
         headers: { "Content-Type": "application/json" },
       });
 
+      // aceitar ambos formatos: { ok: true, bilhete } ou bilhete direto
       const bilhete = res.data?.bilhete ?? res.data;
 
       const idStr = bilhete?.id ? String(bilhete.id) : Date.now().toString(36);
@@ -225,12 +237,16 @@ export default function ApostaPainel() {
     }
   }
 
+  // Desfazer último (remove último criado localmente)
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // aqui modifiquei: passo valor e descricao na query string
+  // ================================
+  // ✅ FUNÇÃO CORRIGIDA (PIX)
+  // envia também valor e descricao na query string
+  // ================================
   function pagarAgora() {
     if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
     const ultimo = tickets[0];
@@ -238,14 +254,17 @@ export default function ApostaPainel() {
     const valor = ultimo.valor ?? 2.0;
     const descricao = `Pagamento do bilhete ${ultimo.id}`;
 
-    navigate(
-      `/pagamento?bilheteId=${encodeURIComponent(ultimo.id)}&userId=${encodeURIComponent(
-        resolveUserId() || ""
-      )}&valor=${encodeURIComponent(String(valor))}&descricao=${encodeURIComponent(descricao)}`
-    );
+    const qs = new URLSearchParams({
+      bilheteId: String(ultimo.id),
+      userId: resolveUserId() ?? "",
+      valor: String(valor),
+      descricao,
+    }).toString();
+
+    navigate(`/pagamento?${qs}`);
   }
 
-  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
+  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i)); // 00..99
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
@@ -282,6 +301,7 @@ export default function ApostaPainel() {
           </div>
         </div>
 
+        {/* Buttons */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -322,8 +342,11 @@ export default function ApostaPainel() {
           </button>
         </div>
 
+        {/* Tickets list */}
         <div className="mt-5 w-full max-w-md">
-          <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">Bilhetes Gerados</h3>
+          <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
+            Bilhetes Gerados
+          </h3>
 
           {tickets.length === 0 ? (
             <div className="bg-blue-950/50 border border-blue-800/30 rounded-lg py-2 text-center text-gray-300 text-xs">
