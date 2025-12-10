@@ -27,16 +27,15 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
-  // resolveUserId tolerante
+  // resolveUserId tolerante (usa USER_ID ou USER_ZLPIX salvo)
   function resolveUserId(): string | null {
     try {
       const direct = localStorage.getItem("USER_ID");
       if (direct) return String(direct);
-
       const stored = localStorage.getItem("USER_ZLPIX");
       if (!stored) return null;
-
       const parsed = JSON.parse(stored);
+      // tenta os campos comuns
       if (parsed && (parsed.id || parsed.userId || parsed._id)) {
         return String(parsed.id ?? parsed.userId ?? parsed._id);
       }
@@ -82,7 +81,6 @@ export default function ApostaPainel() {
     try {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
@@ -100,7 +98,6 @@ export default function ApostaPainel() {
     try {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "square";
@@ -109,7 +106,6 @@ export default function ApostaPainel() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-
       oscRef.current = osc;
       gainRef.current = gain;
     } catch {}
@@ -128,13 +124,11 @@ export default function ApostaPainel() {
   function stopRollingSound() {
     const ctx = audioCtxRef.current;
     if (!ctx || !oscRef.current || !gainRef.current) return;
-
     const now = ctx.currentTime;
     try {
       gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.15);
       oscRef.current.stop(now + 0.25);
     } catch {}
-
     oscRef.current = null;
     gainRef.current = null;
   }
@@ -143,7 +137,6 @@ export default function ApostaPainel() {
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
-
     setSelected((s) => {
       if (s.includes(num)) return s.filter((x) => x !== num);
       if (s.length >= 3) return s;
@@ -151,20 +144,19 @@ export default function ApostaPainel() {
     });
   }
 
-  // Gerar aleatório (00..99)
+  // Gerar aleatório (00..99) com animação
   async function gerarAleatorio() {
     if (rolling) return;
-
     setRolling(true);
     setSelected([]);
     startRollingSound();
 
+    // pool 00..99 (CORRETO)
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
       const spins = 25 + Math.floor(Math.random() * 20);
-
       for (let j = 0; j < spins; j++) {
         const randomNum = pool[Math.floor(Math.random() * pool.length)];
         setActiveNumber(randomNum);
@@ -179,28 +171,28 @@ export default function ApostaPainel() {
 
       final.push(chosen);
       setSelected((prev) => [...prev, chosen]);
-
       await new Promise((r) => setTimeout(r, 120));
     }
 
     stopRollingSound();
     setActiveNumber(null);
-
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 900);
-
     setRolling(false);
   }
 
-  // Confirmar bilhete
+  // Confirmar bilhete -> chama backend e adiciona à lista local
   async function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
-
     const resolved = resolveUserId();
-    if (!resolved) return alert("Erro: usuário não identificado.");
+    if (!resolved) {
+      alert("Erro: usuário não identificado. Faça login e tente novamente.");
+      return;
+    }
 
     if (!API) {
-      alert("Erro: API não configurada.");
+      alert("Erro: API não configurada (VITE_API_URL). Verifique .env.");
+      console.error("VITE_API_URL vazio — não será possível criar bilhete.");
       return;
     }
 
@@ -212,10 +204,12 @@ export default function ApostaPainel() {
         sorteioData: new Date().toISOString(),
       };
 
+      // envio com headers explícitos
       const res = await axios.post(`${API}/bilhete/criar`, body, {
         headers: { "Content-Type": "application/json" },
       });
 
+      // aceitar ambos formatos: { ok: true, bilhete } ou bilhete direto
       const bilhete = res.data?.bilhete ?? res.data;
 
       const idStr = bilhete?.id ? String(bilhete.id) : Date.now().toString(36);
@@ -233,49 +227,91 @@ export default function ApostaPainel() {
       setCoinBurst(true);
       setTimeout(() => setCoinBurst(false), 900);
     } catch (err: any) {
-      console.error("Erro:", err);
-      alert("Erro ao criar bilhete.");
+      console.error("Erro ao criar bilhete (detalhe):", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Erro ao criar bilhete no servidor.";
+      alert(msg);
     }
   }
 
-  // Desfazer último bilhete
+  // Desfazer último (remove último criado localmente)
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // ======================================================
-  // ✅ NOVO pagarAgora() — MULTI BILHETES + VALOR TOTAL
-  // ======================================================
-  function pagarAgora() {
-    if (tickets.length === 0)
-      return alert("Nenhum bilhete para pagar.");
+  // ================================
+  // 🚀 PAGAMENTO EM LOTE (NOVO)
+  // envia ao backend todos os tickets pendentes e cria um unico PIX
+  // ================================
+  async function pagarAgora() {
+    if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
+    const resolved = resolveUserId();
+    if (!resolved) return alert("Erro: usuário não identificado.");
 
-    const userId = resolveUserId();
-    if (!userId) return alert("Erro: usuário não identificado.");
+    // prepara payload: envia os bilhetes como estão (id pode ser local string ou já numérico)
+    const bilhetesPayload = tickets.map((t) => ({
+      id: isNaN(Number(t.id)) ? undefined : Number(t.id), // se for id numérico usa, senao envia undefined para criar
+      dezenas: t.nums.join(","),
+      valor: t.valor ?? 2.0,
+      createdAt: t.createdAt,
+    }));
 
-    // IDs dos bilhetes
-    const ids = tickets.map((t) => t.id);
+    const amountTotal = bilhetesPayload.reduce((s, b) => s + (b.valor ?? 2.0), 0);
+    const description = `Pagamento de ${bilhetesPayload.length} bilhete(s)`;
 
-    // soma total
-    const total = tickets.reduce(
-      (sum, t) => sum + (t.valor ?? 2.0),
-      0
-    );
+    try {
+      // chama backend para criar PIX de lote
+      const resp = await axios.post(
+        `${API}/pix/create`,
+        {
+          userId: resolved,
+          bilhetes: bilhetesPayload,
+          amount: amountTotal,
+          description,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-    const descricao = `Pagamento de ${tickets.length} bilhete(s)`;
+      const data = resp.data;
 
-    const qs = new URLSearchParams({
-      bilhetes: JSON.stringify(ids),
-      userId: String(userId),
-      valor: String(total),
-      descricao,
-    }).toString();
+      if (!data || !data.qr_code_base64) {
+        throw new Error("Resposta inválida ao criar PIX.");
+      }
 
-    navigate(`/pagamento?${qs}`);
+      // salva resposta temporariamente no localStorage para a tela de pagamento ler (fallback)
+      localStorage.setItem(
+        "ZLPX_LAST_PIX",
+        JSON.stringify({
+          qr_code_base64: data.qr_code_base64,
+          copy_paste: data.copy_paste,
+          amount: amountTotal,
+          description,
+          mpPaymentId: data.id,
+          bilhetesCount: bilhetesPayload.length,
+        })
+      );
+
+      // navega para a tela de pagamento (passa resumo via query para exibir)
+      const qs = new URLSearchParams({
+        valor: String(amountTotal),
+        descricao: description,
+        bilhetesCount: String(bilhetesPayload.length),
+      }).toString();
+
+      navigate(`/pagamento?${qs}`);
+    } catch (err: any) {
+      console.error("Erro ao criar pagamento em lote:", err);
+      alert(err?.response?.data?.error || err?.message || "Erro ao criar pagamento.");
+    }
   }
 
-  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
+  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i)); // 00..99
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
@@ -287,13 +323,11 @@ export default function ApostaPainel() {
       </div>
 
       <main className="flex-1 flex flex-col items-center px-2 pt-2 pb-24 w-full">
-        {/* painel principal */}
         <div className="bg-gradient-to-b from-blue-950 via-blue-900 to-green-900 border border-blue-800/40 rounded-xl p-2 shadow-inner w-full max-w-md">
           <div className="grid grid-cols-5 gap-[2px]">
             {grid.map((n) => {
               const sel = selected.includes(n);
               const isActive = activeNumber === n && rolling;
-
               return (
                 <button
                   key={n}
@@ -314,7 +348,7 @@ export default function ApostaPainel() {
           </div>
         </div>
 
-        {/* botoes */}
+        {/* Buttons */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -355,7 +389,7 @@ export default function ApostaPainel() {
           </button>
         </div>
 
-        {/* lista de bilhetes */}
+        {/* Tickets list */}
         <div className="mt-5 w-full max-w-md">
           <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
             Bilhetes Gerados
@@ -382,14 +416,8 @@ export default function ApostaPainel() {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-400">
-                    #{String(t.id).slice(-6)}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold ${
-                      t.pago ? "text-green-400" : "text-yellow-300"
-                    }`}
-                  >
+                  <span className="text-[10px] text-gray-400">#{String(t.id).slice(-6)}</span>
+                  <span className={`text-xs font-semibold ${t.pago ? "text-green-400" : "text-yellow-300"}`}>
                     {t.pago ? "Pago" : "Pendente"}
                   </span>
                 </div>
@@ -401,7 +429,6 @@ export default function ApostaPainel() {
 
       <NavBottom />
 
-      {/* moedas */}
       {coinBurst && (
         <div className="pointer-events-none fixed inset-0 flex items-end justify-center pb-28 z-40">
           <div className="relative w-64 h-64">
@@ -412,13 +439,8 @@ export default function ApostaPainel() {
                 style={{
                   width: 8 + Math.random() * 12,
                   height: 8 + Math.random() * 12,
-                  background:
-                    "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${
-                    (Math.random() - 0.5) * 160
-                  }px) translateY(-${
-                    100 + Math.random() * 180
-                  }px) rotate(${Math.random() * 360}deg)`,
+                  background: "linear-gradient(180deg,#ffd700,#ffb400)",
+                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 + Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
@@ -429,16 +451,10 @@ export default function ApostaPainel() {
 
       <style>{`
         @keyframes pulse-glow {
-          0%, 100% { 
-            box-shadow: 0 0 6px 2px rgba(255,215,0,0.35); 
-          }
-          50% { 
-            box-shadow: 0 0 14px 4px rgba(255,215,0,0.65); 
-          }
+          0%, 100% { box-shadow: 0 0 6px 2px rgba(255,215,0,0.35); }
+          50% { box-shadow: 0 0 14px 4px rgba(255,215,0,0.65); }
         }
-        .animate-pulse-glow { 
-          animation: pulse-glow 0.6s ease-in-out infinite; 
-        }
+        .animate-pulse-glow { animation: pulse-glow 0.6s ease-in-out infinite; }
       `}</style>
     </div>
   );
