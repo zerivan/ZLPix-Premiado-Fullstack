@@ -14,22 +14,18 @@ if (!MP_ACCESS_TOKEN) {
 
 const MP_API_URL = "https://api.mercadopago.com/v1/payments";
 
-// ======================
-// 🔥 ROTA PARA CRIAR PIX
-// ======================
 router.post("/create", async (req, res) => {
   try {
-    const { amount, description, bilheteId } = req.body;
+    const { amount, description, bilheteId, userId } = req.body;
 
-    if (!amount || !description || !bilheteId) {
+    if (!amount || !description || !bilheteId || !userId) {
       return res.status(400).json({
-        error: "amount, description e bilheteId são obrigatórios.",
+        error: "amount, description, bilheteId e userId são obrigatórios.",
       });
     }
 
-    console.log("📤 Criando PIX:", { amount, description, bilheteId });
+    console.log("📤 Criando PIX:", { amount, description, bilheteId, userId });
 
-    // 🔥 Mercado Pago exige isso
     const idempotencyKey = crypto.randomUUID();
 
     const pagamento = {
@@ -53,23 +49,22 @@ router.post("/create", async (req, res) => {
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
-      console.error("❌ Mercado Pago não retornou transaction_data:", data);
       return res.status(500).json({
         error: "Mercado Pago não retornou QR Code.",
         details: data,
       });
     }
 
-    // 🔥 SALVAR TRANSAÇÃO NO BANCO (CORRIGIDO)
+    // 🔥 SALVAR TRANSACAO COMPLETA
     await prisma.transacao.create({
       data: {
-        bilheteId: Number(bilheteId), // 🔥 CORREÇÃO AQUI!
+        userId: BigInt(userId),
+        bilheteId: BigInt(bilheteId),
+        valor: Number(amount),
+        status: "pending",
         mpPaymentId: String(data.id),
-        status: "pendente",
       },
     });
-
-    console.log("💾 Transação salva no banco:", data.id);
 
     return res.json({
       status: data.status,
