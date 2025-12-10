@@ -1,6 +1,8 @@
+// src/server.ts
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+
 import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
@@ -19,7 +21,7 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (
-        !origin || // permite ferramentas internas
+        !origin || // permite ferramentas internas e server-to-server
         origin === FRONT_URL ||
         origin === "http://localhost:5173"
       ) {
