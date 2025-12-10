@@ -1,5 +1,6 @@
 import { Router } from "express";
 import axios from "axios";
+import crypto from "crypto"; // 🔥 NECESSÁRIO PARA UUID
 
 const router = Router();
 
@@ -26,15 +27,17 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // Log mínimo para evitar quebrar qualquer coisa no fluxo geral
     console.log("📤 Criando PIX:", { amount, description });
+
+    // 🔥 OBRIGATÓRIO PARA O MERCADO PAGO!
+    const idempotencyKey = crypto.randomUUID();
 
     const pagamento = {
       transaction_amount: Number(amount),
       description,
       payment_method_id: "pix",
       payer: {
-        email: "test_user@test.com", // Requisito do Mercado Pago Sandbox
+        email: "test_user@test.com", // Sandbox exige isso
       },
     };
 
@@ -42,12 +45,11 @@ router.post("/create", async (req, res) => {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey, // 🔥 ESSA LINHA RESOLVE O ERRO!
       },
     });
 
     const data = resposta.data;
-
-    // Verificar se o Mercado Pago realmente enviou os dados do QR Code
     const trx = data?.point_of_interaction?.transaction_data;
 
     if (!trx) {
@@ -59,7 +61,6 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // Resposta correta esperada pelo front-end
     return res.json({
       status: data.status,
       id: data.id,
