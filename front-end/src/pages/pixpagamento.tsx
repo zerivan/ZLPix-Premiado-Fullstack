@@ -1,3 +1,4 @@
+// src/pages/pixpagamento.tsx
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
@@ -15,7 +16,7 @@ export default function PixPagamento() {
   const [status, setStatus] = useState("Aguardando pagamento...");
   const [loading, setLoading] = useState(true);
 
-  const API = "https://zlpix-premiado-fullstack.onrender.com"; // 👈 URL CORRETA
+  const API = "https://zlpix-premiado-fullstack.onrender.com";
 
   async function gerarPix() {
     try {
@@ -31,16 +32,19 @@ export default function PixPagamento() {
       const json = await resposta.json();
       console.log("PIX criado:", json);
 
+      // 🔥 CORREÇÃO AQUI — agora monta corretamente o data:image/png;base64
       if (json.qr_code_base64) {
-        setQrBase64(json.qr_code_base64);
+        const base64Img = `data:image/png;base64,${json.qr_code_base64}`;
+        setQrBase64(base64Img);
         setCopyPaste(json.copy_paste);
         setLoading(false);
       } else {
-        setStatus("Erro ao gerar PIX.");
+        console.error("⚠️ Base64 vazio:", json);
+        setStatus("Erro ao gerar QR Code.");
         setLoading(false);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao gerar Pix:", err);
       setStatus("Erro ao gerar PIX.");
       setLoading(false);
     }
@@ -87,11 +91,18 @@ export default function PixPagamento() {
           
           <p className="text-sm text-blue-100 mb-3">{status}</p>
 
-          <img
-            src={qrBase64}
-            alt="QR Code PIX"
-            className="w-60 h-60 mx-auto rounded-lg shadow-lg border border-yellow-300"
-          />
+          {/* 🔥 CORREÇÃO AQUI - agora sempre tenta renderizar a imagem */}
+          {qrBase64 ? (
+            <img
+              src={qrBase64}
+              alt="QR Code PIX"
+              className="w-60 h-60 mx-auto rounded-lg shadow-lg border border-yellow-300 object-contain"
+            />
+          ) : (
+            <div className="w-60 h-60 mx-auto bg-black/20 border border-yellow-300 rounded-lg flex items-center justify-center text-xs text-yellow-200">
+              QR Code não disponível
+            </div>
+          )}
 
           <p className="mt-4 text-xs break-all bg-black/30 p-3 rounded-xl border border-white/10">
             {copyPaste}
