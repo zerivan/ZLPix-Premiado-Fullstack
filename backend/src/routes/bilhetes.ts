@@ -76,7 +76,7 @@ router.get("/listar/:userId", async (req, res) => {
 });
 
 /**
- * 🔍 ROTA NOVA — Verificar status do bilhete (USADA NO PIX)
+ * 🔍 ROTA DE STATUS DO PIX (corrigida)
  */
 router.get("/status/:id", async (req, res) => {
   try {
@@ -90,15 +90,17 @@ router.get("/status/:id", async (req, res) => {
 
     const bilhete = await prisma.bilhete.findUnique({
       where: { id },
-      include: { transacao: true },  // 👈 PEGAR A TRANSAÇÃO
+      include: { transacao: true },
     });
 
     if (!bilhete) {
       return res.status(404).json({ error: "Bilhete não encontrado." });
     }
 
-    // ⚠️ Se não existe transação ainda, o pagamento é pendente
-    const pago = bilhete.transacao?.status === "aprovado";
+    // ⚠️ Novo status correto
+    const pago =
+      bilhete.transacao?.status === "paid" ||
+      bilhete.transacao?.status === "approved";
 
     return res.json({
       id: bilhete.id.toString(),
