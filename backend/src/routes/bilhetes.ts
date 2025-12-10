@@ -90,15 +90,19 @@ router.get("/status/:id", async (req, res) => {
 
     const bilhete = await prisma.bilhete.findUnique({
       where: { id },
+      include: { transacao: true },  // 👈 PEGAR A TRANSAÇÃO
     });
 
     if (!bilhete) {
       return res.status(404).json({ error: "Bilhete não encontrado." });
     }
 
+    // ⚠️ Se não existe transação ainda, o pagamento é pendente
+    const pago = bilhete.transacao?.status === "aprovado";
+
     return res.json({
       id: bilhete.id.toString(),
-      pago: bilhete.pago,
+      pago,
     });
   } catch (err) {
     console.error("Erro ao verificar status:", err);
