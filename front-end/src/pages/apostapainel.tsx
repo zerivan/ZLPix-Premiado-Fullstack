@@ -230,14 +230,18 @@ export default function ApostaPainel() {
     setTickets((t) => t.slice(1));
   }
 
+  // aqui modifiquei: passo valor e descricao na query string
   function pagarAgora() {
     if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
     const ultimo = tickets[0];
 
+    const valor = ultimo.valor ?? 2.0;
+    const descricao = `Pagamento do bilhete ${ultimo.id}`;
+
     navigate(
-      `/pagamento?bilheteId=${encodeURIComponent(
-        ultimo.id
-      )}&userId=${encodeURIComponent(resolveUserId() || "")}`
+      `/pagamento?bilheteId=${encodeURIComponent(ultimo.id)}&userId=${encodeURIComponent(
+        resolveUserId() || ""
+      )}&valor=${encodeURIComponent(String(valor))}&descricao=${encodeURIComponent(descricao)}`
     );
   }
 
@@ -319,9 +323,7 @@ export default function ApostaPainel() {
         </div>
 
         <div className="mt-5 w-full max-w-md">
-          <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
-            Bilhetes Gerados
-          </h3>
+          <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">Bilhetes Gerados</h3>
 
           {tickets.length === 0 ? (
             <div className="bg-blue-950/50 border border-blue-800/30 rounded-lg py-2 text-center text-gray-300 text-xs">
@@ -368,8 +370,7 @@ export default function ApostaPainel() {
                   width: 8 + Math.random() * 12,
                   height: 8 + Math.random() * 12,
                   background: "linear-gradient(180deg,#ffd700,#ffb400)",
-                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 +
-                    Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
+                  transform: `translateX(${(Math.random() - 0.5) * 160}px) translateY(-${100 + Math.random() * 180}px) rotate(${Math.random() * 360}deg)`,
                   opacity: 0.95,
                 }}
               />
