@@ -26,6 +26,10 @@ export default function PixPagamento() {
         body: JSON.stringify({
           amount: Number(valor),
           description: descricao || `Pagamento do bilhete ${bilheteId}`,
+          
+          // 🔥 ENVIAR PARA O BACKEND (CORREÇÃO QUE FALTAVA!)
+          bilheteId: bilheteId,
+          userId: userId
         }),
       });
 
