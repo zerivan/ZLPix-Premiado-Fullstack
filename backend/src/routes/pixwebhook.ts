@@ -11,25 +11,31 @@ router.post("/", async (req, res) => {
     const paymentId = req.body?.data?.id;
     if (!paymentId) return res.status(200).end();
 
-    // Consultar pagamento no Mercado Pago
+    // Buscar pagamento no Mercado Pago
     const { data: pagamento } = await axios.get(`${MP_API_URL}/${paymentId}`, {
-      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` }
+      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
     });
 
     console.log("Pagamento recebido:", pagamento.status);
 
+    // 🔥 PROCURAR A TRANSAÇÃO CORRETA
+    const transacao = await prisma.transacao.findUnique({
+      where: { mpPaymentId: paymentId.toString() },
+    });
+
+    if (!transacao) {
+      console.log("⚠️ Transação não encontrada no banco. Ignorando.");
+      return res.status(200).end();
+    }
+
+    // 🔥 ATUALIZAR STATUS CORRETO
     if (pagamento.status === "approved") {
-      const trans = await prisma.transacao.update({
+      await prisma.transacao.update({
         where: { mpPaymentId: paymentId.toString() },
-        data: { status: "paid" }
+        data: { status: "aprovado" },
       });
 
-      await prisma.bilhete.update({
-        where: { id: trans.bilheteId },
-        data: { pago: true }
-      });
-
-      console.log("🎉 Bilhete liberado automaticamente:", trans.bilheteId);
+      console.log("🎉 Pagamento aprovado!", transacao.bilheteId);
     }
 
     return res.status(200).end();
