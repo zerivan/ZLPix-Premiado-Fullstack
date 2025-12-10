@@ -28,4 +28,7 @@ coverage/
 # Render e outras plataformas
 .render/
 .netlify/
-.vercel/
+.vercel/node_modules/
+dist/
+backend/node_modules/
+front-end/node_modules/
