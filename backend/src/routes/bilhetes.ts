@@ -4,20 +4,17 @@ import { prisma } from "../lib/prisma";
 
 const router = Router();
 
-// ============================================================
-// 🔄 Função para converter BigInt → string
-// ============================================================
+// 🔧 Converte BigInt → string para evitar erro no JSON
 function serializeBigInt(obj: any) {
   return JSON.parse(
-    JSON.stringify(
-      obj,
-      (_key, value) => (typeof value === "bigint" ? value.toString() : value)
+    JSON.stringify(obj, (_k, v) =>
+      typeof v === "bigint" ? v.toString() : v
     )
   );
 }
 
 /* ============================================================
-   🟦 CRIAR BILHETE
+   🟡 CRIAR BILHETE
    ============================================================ */
 router.post("/criar", async (req, res) => {
   try {
@@ -50,7 +47,7 @@ router.post("/criar", async (req, res) => {
 });
 
 /* ============================================================
-   🟦 LISTAR BILHETES DE UM USUÁRIO
+   🔵 LISTAR BILHETES DO USUÁRIO
    ============================================================ */
 router.get("/listar/:userId", async (req, res) => {
   try {
@@ -60,10 +57,8 @@ router.get("/listar/:userId", async (req, res) => {
       return res.status(400).json({ error: "userId inválido." });
     }
 
-    const userId = BigInt(userIdParam);
-
     const bilhetes = await prisma.bilhete.findMany({
-      where: { userId },
+      where: { userId: BigInt(userIdParam) },
       orderBy: { createdAt: "desc" },
       include: { transacao: true },
     });
@@ -78,7 +73,7 @@ router.get("/listar/:userId", async (req, res) => {
 });
 
 /* ============================================================
-   🟦 STATUS DO BILHETE (para tela do PIX)
+   🔍 STATUS DO BILHETE (USADO NA TELA DE PAGAMENTO)
    ============================================================ */
 router.get("/status/:id", async (req, res) => {
   try {
@@ -88,10 +83,8 @@ router.get("/status/:id", async (req, res) => {
       return res.status(400).json({ error: "ID inválido." });
     }
 
-    const id = BigInt(idParam);
-
     const bilhete = await prisma.bilhete.findUnique({
-      where: { id },
+      where: { id: BigInt(idParam) },
       include: { transacao: true },
     });
 
@@ -99,7 +92,6 @@ router.get("/status/:id", async (req, res) => {
       return res.status(404).json({ error: "Bilhete não encontrado." });
     }
 
-    // ✔️ Status correto vinda do webhook
     const pago =
       bilhete.transacao?.status === "paid" ||
       bilhete.transacao?.status === "approved";
