@@ -29,7 +29,7 @@ router.post("/create", async (req, res) => {
 
     console.log("📤 Criando PIX:", { amount, description });
 
-    // 🔥 OBRIGATÓRIO PARA O MERCADO PAGO!
+    // 🔥 OBRIGATÓRIO PARA O MERCADO PAGO — evita erro 400
     const idempotencyKey = crypto.randomUUID();
 
     const pagamento = {
@@ -45,7 +45,7 @@ router.post("/create", async (req, res) => {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
-        "X-Idempotency-Key": idempotencyKey, // 🔥 ESSA LINHA RESOLVE O ERRO!
+        "X-Idempotency-Key": idempotencyKey, // 🔥 LINHA QUE RESOLVE O ERRO
       },
     });
 
@@ -65,10 +65,10 @@ router.post("/create", async (req, res) => {
       status: data.status,
       id: data.id,
       qr_code: trx.qr_code,
-      qr_code_base64: trx.qr_code_base64,
+      qr_code_base64: trx.qr_code_base64, // 👈 AQUI O FRONT PRECISA
       copy_paste: trx.qr_code,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.log("❌ ERRO COMPLETO AO CRIAR PIX:");
     console.log("Mensagem:", err.message);
     console.log("Detalhes:", err.response?.data);
