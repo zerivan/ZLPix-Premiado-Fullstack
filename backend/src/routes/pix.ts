@@ -1,21 +1,22 @@
 // backend/routes/pix.ts
 import express from "express";
-import fetch from "node-fetch";
-import { prisma } from "../prismaClient";
-
+import { prisma } from "../prisma/prismaclient";  // ✔ caminho corrigido (novo arquivo)
 const router = express.Router();
 
 /*
 IMPORTANTE:
-Este módulo está ajustado para o fluxo NOVO:
+Fluxo NOVO:
 
-✔ Recebe vários bilhetes em uma única compra
-✔ Cria UMA transação PIX no Mercado Pago
-✔ Envia metadata com todos os bilhetes
-✔ Retorna qr_code_base64 e copy_paste
-✔ Não altera schema Prisma
-✔ Funciona com o webhook atual
+✔ Vários bilhetes em uma única compra
+✔ Uma única transação PIX
+✔ Metadata com lista de bilhetes
+✔ Retorno: qr_code_base64 + copy_paste
+✔ Compatível com webhook atual
 */
+
+// fetch nativo do Node 18+ / 20+
+const fetchFn: typeof fetch = (...args: any) =>
+  (globalThis as any).fetch(...args);
 
 router.post("/create", async (req, res) => {
   try {
@@ -26,25 +27,26 @@ router.post("/create", async (req, res) => {
     }
 
     //----------------------------------------------------------
-    // 1️⃣ Criar transação PENDENTE no banco (sem alterar schema)
+    // 1️⃣ Criar transação PENDENTE no banco
     //----------------------------------------------------------
     let txRecord = null;
 
     try {
-      txRecord = await prisma.transaction.create({
+      txRecord = await prisma.transacao.create({
         data: {
           userId: userId ?? null,
-          amount: Number(amount),
+          valor: Number(amount),
           status: "pending",
-          metadata: { bilhetes },
+          mpPaymentId: null,
+          bilheteId: null,
         },
       });
     } catch (err) {
-      console.warn("⚠️ Tabela transaction pode não existir. Continuando sem ela.");
+      console.warn("⚠️ Tabela transacao pode não existir. Continuando sem ela.");
     }
 
     //----------------------------------------------------------
-    // 2️⃣ Preparar chamada ao Mercado Pago
+    // 2️⃣ Chamada ao Mercado Pago
     //----------------------------------------------------------
     const mpToken = process.env.MP_ACCESS_TOKEN;
     const mpBase = process.env.MP_BASE_URL || "https://api.mercadopago.com";
@@ -65,9 +67,9 @@ router.post("/create", async (req, res) => {
     };
 
     //----------------------------------------------------------
-    // 3️⃣ Criar pagamento PIX no Mercado Pago
+    // 3️⃣ Criar pagamento PIX no MP
     //----------------------------------------------------------
-    const resp = await fetch(`${mpBase}/v1/payments`, {
+    const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mpToken}`,
@@ -101,19 +103,19 @@ router.post("/create", async (req, res) => {
       null;
 
     //----------------------------------------------------------
-    // 5️⃣ Atualizar transaction no banco (se existir)
+    // 5️⃣ Atualizar transacao (se existir)
     //----------------------------------------------------------
     if (txRecord && paymentId) {
       try {
-        await prisma.transaction.update({
+        await prisma.transacao.update({
           where: { id: txRecord.id },
-          data: { paymentId },
+          data: { mpPaymentId: paymentId },
         });
       } catch {}
     }
 
     //----------------------------------------------------------
-    // 6️⃣ Retornar para o front
+    // 6️⃣ Retornar pro Front
     //----------------------------------------------------------
     return res.json({
       payment_id: paymentId,
