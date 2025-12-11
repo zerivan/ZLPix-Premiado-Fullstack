@@ -1,57 +1,138 @@
-// src/pages/pixpagamento.tsx
+// front-end/src/pages/pixpagamento.tsx
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 
 export default function PixPagamento() {
   const { state } = useLocation() as any;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [qrBase64, setQrBase64] = useState(state?.qr_code_base64 ?? "");
-  const [copyPaste, setCopyPaste] = useState(state?.copy_paste ?? "");
-  const [status, setStatus] = useState("Aguardando pagamento...");
-  const [loading, setLoading] = useState(!Boolean(state?.qr_code_base64));
+  // API base (consistente com apostapainel)
+  const API = (import.meta.env.VITE_API_URL as string) || "";
 
-  const API = import.meta.env.VITE_API_URL;
+  // state fallback: first try location.state (if someone navigou com state),
+  // caso contrário parsear query params enviados por apostapainel.tsx
+  const paramBilhetes = searchParams.get("bilhetes");
+  const paramUserId = searchParams.get("userId");
+  const paramValor = searchParams.get("valor");
+  const paramDescricao = searchParams.get("descricao");
 
-  const userId = state?.userId;
-  const bilhetesList: string[] = state?.bilhetes ?? [];
-  const paymentId: string | undefined = state?.paymentId;
-  const amount: number | undefined = state?.amount;
+  // normalize bilhetes: pode vir como JSON string de ids ou array em state
+  let initialBilhetes: string[] = [];
+  if (state?.bilhetes && Array.isArray(state.bilhetes)) {
+    initialBilhetes = state.bilhetes;
+  } else if (paramBilhetes) {
+    try {
+      const parsed = JSON.parse(paramBilhetes);
+      if (Array.isArray(parsed)) initialBilhetes = parsed;
+      else if (typeof parsed === "string") initialBilhetes = [parsed];
+    } catch {
+      // talvez seja uma string simples separada por vírgula de dezenas/ids
+      if (paramBilhetes.includes(",")) {
+        initialBilhetes = paramBilhetes.split(",").map((s) => s.trim());
+      } else {
+        initialBilhetes = [paramBilhetes];
+      }
+    }
+  }
+
+  const userId = state?.userId ?? paramUserId ?? null;
+  const amount = state?.amount ?? (paramValor ? Number(paramValor) : undefined);
+  const descricao = state?.descricao ?? paramDescricao ?? "";
+
+  const [qrBase64, setQrBase64] = useState<string | null>(state?.qr_code_base64 ?? null);
+  const [copyPaste, setCopyPaste] = useState<string>(state?.copy_paste ?? "");
+  const [status, setStatus] = useState<string>("Aguardando pagamento...");
+  const [loading, setLoading] = useState<boolean>(!Boolean(state?.qr_code_base64));
+  const [paymentId, setPaymentId] = useState<string | undefined>(state?.paymentId);
+
+  // função para criar cobrança (se ainda não veio via state)
+  async function criarCobrancaSingle() {
+    setLoading(true);
+    setStatus("Gerando cobrança PIX...");
+    try {
+      const payload = {
+        userId: userId ?? null,
+        amount: amount ?? undefined,
+        description: descricao || undefined,
+        bilhetes: initialBilhetes,
+      };
+
+      const resp = await axios.post(`${API}/pix/create`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const json = resp.data;
+      if (!json) throw new Error("Resposta inválida do servidor");
+
+      if (json.payment_id) setPaymentId(json.payment_id);
+      if (json.qr_code_base64) setQrBase64(json.qr_code_base64);
+      if (json.copy_paste) setCopyPaste(json.copy_paste);
+
+      setStatus("QR Code gerado. Aguardando pagamento...");
+    } catch (err: any) {
+      console.error("Erro ao criar cobrança:", err);
+      setStatus("Erro ao gerar PIX.");
+      alert("Erro ao gerar PIX: " + (err?.response?.data?.error || err.message || err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // função para checar status do pagamento via paymentId (opcional)
+  async function fetchPaymentStatus(pId: string) {
+    try {
+      const resp = await axios.get(`${API}/pix/payment-status/${pId}`);
+      return resp.data;
+    } catch (e) {
+      return null;
+    }
+  }
 
   useEffect(() => {
-    // se não veio qr do backend já, tentamos buscar info via paymentId (opcional)
-    if (!qrBase64 && paymentId) {
-      (async () => {
-        try {
-          setLoading(true);
-          const resp = await fetch(`${API}/pix/payment-status/${paymentId}`);
-          const json = await resp.json();
-          if (resp.ok) {
-            if (json.qr_code_base64) setQrBase64(json.qr_code_base64);
-            if (json.copy_paste) setCopyPaste(json.copy_paste);
-          }
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setLoading(false);
-        }
-      })();
+    let mounted = true;
+
+    // Se não veio QR ou paymentId via state, temos que criar a cobrança
+    if (!qrBase64 && !paymentId) {
+      criarCobrancaSingle();
     }
-    // start polling bilhetes
+
+    // polling para verificar se algum bilhete do usuário foi marcado como pago
     const interval = setInterval(async () => {
       try {
-        const resp = await fetch(`${API}/bilhete/listar/${userId}`);
-        const j = await resp.json();
+        if (!userId) return;
+        const resp = await axios.get(`${API}/bilhete/listar/${userId}`);
+        const j = resp.data;
         if (j?.bilhetes?.some((b: any) => b.pago === true)) {
+          if (!mounted) return;
           setStatus("Pagamento confirmado! 🎉");
-          setTimeout(() => navigate("/meus-bilhetes"), 1500);
+          setTimeout(() => navigate("/meus-bilhetes"), 1200);
         }
       } catch (e) {
-        // ignore
+        // ignorar erros de polling
       }
     }, 5000);
 
-    return () => clearInterval(interval);
+    // se veio paymentId e não veio qr, tentar buscar info do paymentId (uma vez)
+    (async () => {
+      try {
+        if (paymentId && !qrBase64) {
+          setLoading(true);
+          const info = await fetchPaymentStatus(paymentId);
+          if (info?.qr_code_base64) setQrBase64(info.qr_code_base64);
+          if (info?.copy_paste) setCopyPaste(info.copy_paste);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function copiar() {
@@ -75,18 +156,28 @@ export default function PixPagamento() {
           <div className="w-full mb-4 bg-white/10 rounded-xl p-3 text-sm text-left text-blue-100">
             <p className="font-semibold mb-2">Resumo (nota)</p>
             <div className="space-y-2 max-h-36 overflow-auto">
-              {bilhetesList.map((b: string, idx: number) => (
+              {initialBilhetes.map((b: string, idx: number) => (
                 <div key={idx} className="flex justify-between items-center">
                   <div>
-                    {b.split(",").map((n) => (
-                      <span key={n} className="inline-block bg-yellow-400 text-blue-900 px-2 py-1 rounded mr-2 font-bold">
-                        {n}
-                      </span>
-                    ))}
+                    {/* se forem ids, provavelmente você vai querer mostrá-los como estão */}
+                    {String(b)
+                      .split(",")
+                      .map((n) => (
+                        <span
+                          key={n + idx}
+                          className="inline-block bg-yellow-400 text-blue-900 px-2 py-1 rounded mr-2 font-bold"
+                        >
+                          {n}
+                        </span>
+                      ))}
                   </div>
                   <div className="text-xs">R$ 2,00</div>
                 </div>
               ))}
+            </div>
+            <div className="flex justify-between font-bold mt-3">
+              <span>Total</span>
+              <span>R$ {Number(amount ?? 0).toFixed(2)}</span>
             </div>
           </div>
 
