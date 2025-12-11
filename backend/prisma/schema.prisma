@@ -7,48 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model users {
-  id           BigInt    @id @default(autoincrement())
+model User {
+  id           BigInt      @id @default(autoincrement())
   name         String
-  email        String    @unique
+  email        String      @unique
   phone        String?
   pixKey       String?
   passwordHash String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime    @default(now())
 
-  bilhetes     bilhete[]
-  transacoes   transacao[]
+  bilhetes     Bilhete[]
+  transactions Transaction[]
 }
 
-model admins {
-  id           BigInt   @id @default(autoincrement())
-  email        String   @unique
+model Admin {
+  id           BigInt     @id @default(autoincrement())
+  email        String     @unique
   passwordHash String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
 }
 
-model bilhete {
-  id          BigInt      @id @default(autoincrement())
-  userId      BigInt
-  dezenas     String
-  valor       Float
-  pago        Boolean     @default(false)
-  sorteioData DateTime
-  createdAt   DateTime    @default(now())
+model Bilhete {
+  id            BigInt       @id @default(autoincrement())
+  userId        BigInt
+  dezenas       String
+  valor         Float
+  pago          Boolean      @default(false)
+  sorteioData   DateTime
+  createdAt     DateTime     @default(now())
 
-  user        users       @relation(fields: [userId], references: [id])
-  transacao   transacao?  // ← APENAS UMA TRANSAÇÃO POR BILHETE (original)
+  transactionId BigInt?
+  user          User         @relation(fields: [userId], references: [id])
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
 }
 
-model transacao {
+model Transaction {
   id           BigInt     @id @default(autoincrement())
   userId       BigInt
-  bilheteId    BigInt     @unique     // ← ORIGINAL: só uma transação por bilhete
-  valor        Float
+  amount       Float
   status       String     @default("pending")
-  mpPaymentId  String     @unique     // ← ORIGINAL
+  mpPaymentId  String?    @unique
+  metadata     Json?
   createdAt    DateTime   @default(now())
 
-  user         users       @relation(fields: [userId], references: [id])
-  bilhete      bilhete     @relation(fields: [bilheteId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+  bilhetes     Bilhete[]
 }
