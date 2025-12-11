@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
+// rotas
 import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
@@ -13,7 +14,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // =======================
-// 🔥 CORS CORRIGIDO (Render + Localhost)
+// 🔥 CORS (Render + Localhost)
 // =======================
 const FRONT_URL = "https://zlpix-premiado-site.onrender.com";
 
@@ -21,13 +22,13 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (
-        !origin || // permite ferramentas internas e server-to-server
+        !origin ||
         origin === FRONT_URL ||
         origin === "http://localhost:5173"
       ) {
         callback(null, true);
       } else {
-        console.warn("❌ CORS bloqueado para origem:", origin);
+        console.warn("❌ CORS bloqueado:", origin);
         callback(new Error("CORS bloqueado"));
       }
     },
@@ -45,17 +46,13 @@ app.use(express.json());
 app.get("/", (_req, res) => {
   res.json({
     status: "ok",
-    message: "ZLPix backend rodando no Render + Neon.",
-    environment: process.env.NODE_ENV,
-    database:
-      process.env.DATABASE_URL?.includes("neon.tech")
-        ? "Neon ✅"
-        : "Local ou fallback ⚠️",
+    message: "ZLPix backend rodando no Render + Neon",
+    env: process.env.NODE_ENV,
   });
 });
 
 // =======================
-// 🔗 Rotas principais
+// Rotas principais
 // =======================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
@@ -64,7 +61,7 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
 // =======================
-// 🚀 Start
+// Start server
 // =======================
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
