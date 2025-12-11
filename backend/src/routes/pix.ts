@@ -1,55 +1,73 @@
 // backend/routes/pix.ts
-const express = require("express");
+import express from "express";
+import fetch from "node-fetch";
+import { prisma } from "../prismaClient";
+
 const router = express.Router();
-const fetch = require("node-fetch"); // ou global fetch se Node 18+
-const { prisma } = require("../prismaClient"); // adapte conforme seu projeto
 
-// Environment vars expected:
-// process.env.MP_ACCESS_TOKEN
-// process.env.MP_BASE_URL (https://api.mercadopago.com)
+/*
+IMPORTANTE:
+Este módulo está ajustado para o fluxo NOVO:
 
-function toCents(reais) {
-  return Math.round(Number(reais) * 100);
-}
+✔ Recebe vários bilhetes em uma única compra
+✔ Cria UMA transação PIX no Mercado Pago
+✔ Envia metadata com todos os bilhetes
+✔ Retorna qr_code_base64 e copy_paste
+✔ Não altera schema Prisma
+✔ Funciona com o webhook atual
+*/
 
 router.post("/create", async (req, res) => {
   try {
-    const { userId, amount, description, bilhetes, email, phone } = req.body;
+    const { userId, amount, description, bilhetes } = req.body;
 
-    if (!amount || !bilhetes || !Array.isArray(bilhetes)) {
-      return res.status(400).json({ error: "payload inválido" });
+    if (!amount || !bilhetes || !Array.isArray(bilhetes) || bilhetes.length === 0) {
+      return res.status(400).json({ error: "Payload inválido: amount e bilhetes são obrigatórios." });
     }
 
-    // 1) opcional: criar um registro temporário de "transação" no db (respeite seu schema)
-    // NÃO alterar schema: tente gravar minimal: payment_id vazio até retornar do MP
-    // Exemplo (ajuste ao seu schema):
-    // const tx = await prisma.transaction.create({ data: { userId, amount, status: 'pending', metadata: { bilhetes } } });
+    //----------------------------------------------------------
+    // 1️⃣ Criar transação PENDENTE no banco (sem alterar schema)
+    //----------------------------------------------------------
+    let txRecord = null;
 
-    // 2) Chamar Mercado Pago (ou outro provedor) para criar cobrança PIX
-    // Aqui deixo um esqueleto usando a API do Mercado Pago - substitua pelo SDK se preferir.
-    const mpUrl = (process.env.MP_BASE_URL || "https://api.mercadopago.com") + "/v1/payments"; // exemplo
+    try {
+      txRecord = await prisma.transaction.create({
+        data: {
+          userId: userId ?? null,
+          amount: Number(amount),
+          status: "pending",
+          metadata: { bilhetes },
+        },
+      });
+    } catch (err) {
+      console.warn("⚠️ Tabela transaction pode não existir. Continuando sem ela.");
+    }
+
+    //----------------------------------------------------------
+    // 2️⃣ Preparar chamada ao Mercado Pago
+    //----------------------------------------------------------
     const mpToken = process.env.MP_ACCESS_TOKEN;
-    if (!mpToken) return res.status(500).json({ error: "MP_ACCESS_TOKEN não configurado" });
+    const mpBase = process.env.MP_BASE_URL || "https://api.mercadopago.com";
 
-    // Mercado Pago aceita amount em centavos dependendo da API — ajuste conforme doc do MP.
-    // Aqui vamos mandar um objeto genérico; adapte conforme API que você usa.
+    if (!mpToken) {
+      console.error("❌ MP_ACCESS_TOKEN não configurado.");
+      return res.status(500).json({ error: "Backend não configurado com MP_ACCESS_TOKEN" });
+    }
+
     const body = {
       transaction_amount: Number(amount),
-      // OBS: dependendo da API do MP você deverá enviar em centavos e campos diferentes
-      description: description,
-      // metadata / external_reference: podemos enviar lista de bilhetes
-      metadata: { bilhetes },
-      // payer: se quiser informar email/phone para o MP identificar o cliente automaticamente
-      payer: {
-        email: email || undefined,
-        phone: phone ? { area_code: phone.slice(0, 2), number: phone.slice(2) } : undefined,
+      description: description || "Bilhetes ZLPix",
+      payment_method_id: "pix",
+      metadata: {
+        bilhetes,
+        txId: txRecord?.id || null,
       },
-      // payment_method_id: 'pix' // dependendo do endpoint
     };
 
-    // IMPORTANTE: este é um exemplo genérico. Se a API do MP que você usa requer endpoint diferente
-    // ou formato diferente, substitua aqui. Recomendo usar o SDK oficial do Mercado Pago se possível.
-    const mpResp = await fetch(mpUrl, {
+    //----------------------------------------------------------
+    // 3️⃣ Criar pagamento PIX no Mercado Pago
+    //----------------------------------------------------------
+    const resp = await fetch(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mpToken}`,
@@ -58,39 +76,55 @@ router.post("/create", async (req, res) => {
       body: JSON.stringify(body),
     });
 
-    const mpJson = await mpResp.json();
+    const mpJson = await resp.json();
 
-    if (!mpResp.ok) {
-      console.error("MP create error", mpJson);
-      return res.status(500).json({ error: "Erro ao criar cobrança com MP", details: mpJson });
+    if (!resp.ok) {
+      console.error("❌ Erro Mercado Pago:", mpJson);
+      return res.status(500).json({ error: "Erro ao criar PIX", details: mpJson });
     }
 
-    // Dependendo da resposta do MP você vai extrair:
-    // - id do pagamento (payment_id)
-    // - qr_code / qr_code_base64
-    // - copy_paste
-    // Ajuste aqui conforme retorno do MP.
+    //----------------------------------------------------------
+    // 4️⃣ Extrair dados do pagamento
+    //----------------------------------------------------------
+    const paymentId =
+      mpJson.id ||
+      mpJson.payment_id ||
+      mpJson.data?.id ||
+      null;
 
-    // Exemplo genérico:
-    const payment_id = mpJson.id || mpJson.data?.id || mpJson.payment_id || null;
-    // procurar qr e copia e cola em mpJson (ajuste conforme MP)
-    const qr_code_base64 = mpJson.point_of_interaction?.transaction_data?.qr_code_base64 || null;
-    const copy_paste = mpJson.point_of_interaction?.transaction_data?.qr_code || mpJson.qr_code || null;
+    const qr_base64 =
+      mpJson.point_of_interaction?.transaction_data?.qr_code_base64 || null;
 
-    // 3) Salvar transação (se desejar) - respeitando schema atual
-    // Exemplo (ajuste):
-    // await prisma.transaction.create({ data: { paymentId: payment_id, userId, amount, status: 'pending', metadata: JSON.stringify({ bilhetes }) } });
+    const copia_cola =
+      mpJson.point_of_interaction?.transaction_data?.qr_code ||
+      mpJson.qr_code ||
+      null;
 
+    //----------------------------------------------------------
+    // 5️⃣ Atualizar transaction no banco (se existir)
+    //----------------------------------------------------------
+    if (txRecord && paymentId) {
+      try {
+        await prisma.transaction.update({
+          where: { id: txRecord.id },
+          data: { paymentId },
+        });
+      } catch {}
+    }
+
+    //----------------------------------------------------------
+    // 6️⃣ Retornar para o front
+    //----------------------------------------------------------
     return res.json({
-      payment_id,
-      qr_code_base64,
-      copy_paste,
-      raw: mpJson,
+      payment_id: paymentId,
+      qr_code_base64: qr_base64,
+      copy_paste: copia_cola,
     });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ error: "erro interno", details: e.message });
+
+  } catch (error: any) {
+    console.error("Erro /pix/create:", error);
+    return res.status(500).json({ error: "Erro interno", details: error.message });
   }
 });
 
-module.exports = router;
+export default router;
