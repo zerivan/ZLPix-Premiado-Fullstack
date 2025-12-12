@@ -37,7 +37,7 @@ model transacao {
   createdAt    DateTime   @default(now()) @map("createdat")
 
   user         users      @relation(fields: [userId], references: [id])
-  bilhetes     bilhete[]
+  bilhetes     bilhete[]  @relation("tb_rel")
 }
 
 model bilhete {
@@ -51,5 +51,5 @@ model bilhete {
   createdAt   DateTime   @default(now()) @map("createdat")
 
   user        users       @relation(fields: [userId], references: [id])
-  transacao   transacao?  @relation(fields: [transacaoId], references: [id])
+  transacao   transacao?  @relation("tb_rel", fields: [transacaoId], references: [id])
 }

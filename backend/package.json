@@ -1,18 +1,14 @@
 {
   "name": "zlpix-backend",
   "version": "1.0.0",
-  "description": "ZLPix Premiado - Backend API (Express + Prisma + Neon + Render)",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node src/server.ts",
-    "migrate:deploy": "npx prisma migrate deploy",
-    "db:sync": "npx prisma db push",
-    "reset-db": "node reset-db.js",
-    "build": "npx prisma generate && tsc -p tsconfig.json",
+    "dev": "PRISMA_CLIENT_ENGINE_TYPE=wasm ts-node src/server.ts",
+    "build": "PRISMA_CLIENT_ENGINE_TYPE=wasm npx prisma generate && tsc -p tsconfig.json",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.15.0",
+    "@prisma/client": "5.15.0",
     "axios": "1.7.3",
     "bcryptjs": "2.4.3",
     "cors": "2.8.5",
@@ -31,7 +27,7 @@
     "typescript": "5.6.3"
   },
   "engines": {
-    "node": "20.x"
-  },
-  "license": "MIT"
+    "node": "20.x",
+    "npm": "10.x"
+  }
 }

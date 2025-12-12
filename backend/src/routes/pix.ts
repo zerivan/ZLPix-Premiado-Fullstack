@@ -1,19 +1,11 @@
-// backend/src/routes/pix.ts
 import express from "express";
-import { prisma } from "../lib/prisma";  // ✔ caminho FINAL correto
+import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
-// fetch nativo (Node 18+)
+// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
-
-/*
-Fluxo NOVO:
-✔ Uma transação PIX por compra
-✔ Metadata contém vários bilhetes
-✔ Compatível com o webhook atual
-*/
 
 router.post("/create", async (req, res) => {
   try {
@@ -23,9 +15,7 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "Payload inválido: amount e bilhetes são obrigatórios." });
     }
 
-    //----------------------------------------------------------
     // 1️⃣ Criar transação pendente
-    //----------------------------------------------------------
     let txRecord = null;
 
     try {
@@ -34,17 +24,14 @@ router.post("/create", async (req, res) => {
           userId: userId ?? null,
           valor: Number(amount),
           status: "pending",
-          mpPaymentId: null,
-          bilheteId: null,
+          mpPaymentId: null
         },
       });
     } catch (_err) {
       console.warn("⚠️ Tabela transacao não existe. Continuando sem salvar transação.");
     }
 
-    //----------------------------------------------------------
-    // 2️⃣ Chamada ao Mercado Pago
-    //----------------------------------------------------------
+    // 2️⃣ Chamada Mercado Pago
     const mpToken = process.env.MP_ACCESS_TOKEN;
     const mpBase = process.env.MP_BASE_URL || "https://api.mercadopago.com";
 
@@ -62,9 +49,7 @@ router.post("/create", async (req, res) => {
       },
     };
 
-    //----------------------------------------------------------
     // 3️⃣ Criar pagamento PIX
-    //----------------------------------------------------------
     const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
@@ -74,16 +59,14 @@ router.post("/create", async (req, res) => {
       body: JSON.stringify(body),
     });
 
-    const mpJson = await resp.json();
+    const mpJson: any = await resp.json(); // <-- corrigido
 
     if (!resp.ok) {
       console.error("❌ Erro Mercado Pago:", mpJson);
       return res.status(500).json({ error: "Erro ao criar PIX", details: mpJson });
     }
 
-    //----------------------------------------------------------
     // 4️⃣ Dados do pagamento
-    //----------------------------------------------------------
     const paymentId =
       mpJson.id ||
       mpJson.payment_id ||
@@ -98,9 +81,7 @@ router.post("/create", async (req, res) => {
       mpJson.qr_code ||
       null;
 
-    //----------------------------------------------------------
-    // 5️⃣ Atualiza transação (se existir)
-    //----------------------------------------------------------
+    // 5️⃣ Atualizar transação
     if (txRecord && paymentId) {
       try {
         await prisma.transacao.update({
@@ -110,9 +91,7 @@ router.post("/create", async (req, res) => {
       } catch {}
     }
 
-    //----------------------------------------------------------
-    // 6️⃣ Retorno pro front
-    //----------------------------------------------------------
+    // 6️⃣ Retorno
     return res.json({
       payment_id: paymentId,
       qr_code_base64: qr_base64,
