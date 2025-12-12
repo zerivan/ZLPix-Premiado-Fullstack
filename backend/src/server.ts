@@ -1,46 +1,45 @@
-// backend/src/routes/bilhetes.ts
 import express from "express";
 import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
 /**
- * Criar bilhetes vinculados a uma transação PIX
- * - Recebe: userId, dezenas[], valorTotal, transacaoId
- * - Cada bilhete entra com `pago = false`
+ * Criar 1 bilhete (fluxo correto)
+ * O frontend envia:
+ * {
+ *   userId: number,
+ *   dezenas: string[],   // exemplo: ["12","34","56"]
+ *   valorTotal: number
+ * }
+ *
+ * 👉 NÃO EXIGE transacaoId
+ * 👉 Transacao será criada depois no PIX
  */
 router.post("/criar", async (req, res) => {
   try {
-    const { userId, dezenas, valorTotal, transacaoId } = req.body;
+    const { userId, dezenas, valorTotal } = req.body;
 
-    if (!userId || !dezenas || !Array.isArray(dezenas) || dezenas.length === 0) {
-      return res.status(400).json({ error: "Dados inválidos para criação de bilhetes." });
+    if (!userId || !Array.isArray(dezenas) || dezenas.length === 0) {
+      return res.status(400).json({ error: "Dados inválidos para criação do bilhete." });
     }
 
-    if (!transacaoId) {
-      return res.status(400).json({ error: "transacaoId é obrigatório." });
-    }
+    // dezenas: ["12","34","56"] → concatenar em string "12,34,56"
+    const dezenasStr = dezenas.join(",");
 
-    // Cria todos os bilhetes associados à mesma transação
-    const bilhetesCriados = await prisma.bilhete.createMany({
-      data: dezenas.map((dezena: string) => ({
+    const bilhete = await prisma.bilhete.create({
+      data: {
         userId,
-        transacaoId,
-        dezenas: dezena,   // Ex: "12,34,56"
-        valor: valorTotal / dezenas.length,
+        dezenas: dezenasStr,
+        valor: Number(valorTotal) || 2.0,
         pago: false,
         sorteioData: new Date(),
-      })),
+      },
     });
 
-    return res.json({
-      status: "ok",
-      quantidade: bilhetesCriados.count,
-      message: "Bilhetes criados com sucesso!",
-    });
+    return res.json({ status: "ok", bilhete });
   } catch (e) {
-    console.error("Erro ao criar bilhetes:", e);
-    return res.status(500).json({ error: "Erro interno ao criar bilhetes." });
+    console.error("Erro ao criar bilhete:", e);
+    return res.status(500).json({ error: "Erro interno ao criar bilhete." });
   }
 });
 
