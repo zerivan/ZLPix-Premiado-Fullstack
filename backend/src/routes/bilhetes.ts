@@ -1,6 +1,6 @@
 // backend/src/routes/bilhetes.ts
 import express from "express";
-import { prisma } from "../prisma/prismaclient";
+import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
