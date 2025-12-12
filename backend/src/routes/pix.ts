@@ -1,33 +1,30 @@
-// backend/routes/pix.ts
+// backend/src/routes/pix.ts
 import express from "express";
-import { prisma } from "../prisma/prismaclient";  // ✔ caminho corrigido (novo arquivo)
+import { prisma } from "../lib/prisma";  // ✔ caminho FINAL correto
+
 const router = express.Router();
 
-/*
-IMPORTANTE:
-Fluxo NOVO:
-
-✔ Vários bilhetes em uma única compra
-✔ Uma única transação PIX
-✔ Metadata com lista de bilhetes
-✔ Retorno: qr_code_base64 + copy_paste
-✔ Compatível com webhook atual
-*/
-
-// fetch nativo do Node 18+ / 20+
+// fetch nativo (Node 18+)
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
+
+/*
+Fluxo NOVO:
+✔ Uma transação PIX por compra
+✔ Metadata contém vários bilhetes
+✔ Compatível com o webhook atual
+*/
 
 router.post("/create", async (req, res) => {
   try {
     const { userId, amount, description, bilhetes } = req.body;
 
-    if (!amount || !bilhetes || !Array.isArray(bilhetes) || bilhetes.length === 0) {
+    if (!amount || !Array.isArray(bilhetes) || bilhetes.length === 0) {
       return res.status(400).json({ error: "Payload inválido: amount e bilhetes são obrigatórios." });
     }
 
     //----------------------------------------------------------
-    // 1️⃣ Criar transação PENDENTE no banco
+    // 1️⃣ Criar transação pendente
     //----------------------------------------------------------
     let txRecord = null;
 
@@ -41,8 +38,8 @@ router.post("/create", async (req, res) => {
           bilheteId: null,
         },
       });
-    } catch (err) {
-      console.warn("⚠️ Tabela transacao pode não existir. Continuando sem ela.");
+    } catch (_err) {
+      console.warn("⚠️ Tabela transacao não existe. Continuando sem salvar transação.");
     }
 
     //----------------------------------------------------------
@@ -52,8 +49,7 @@ router.post("/create", async (req, res) => {
     const mpBase = process.env.MP_BASE_URL || "https://api.mercadopago.com";
 
     if (!mpToken) {
-      console.error("❌ MP_ACCESS_TOKEN não configurado.");
-      return res.status(500).json({ error: "Backend não configurado com MP_ACCESS_TOKEN" });
+      return res.status(500).json({ error: "MP_ACCESS_TOKEN não configurado no backend" });
     }
 
     const body = {
@@ -67,7 +63,7 @@ router.post("/create", async (req, res) => {
     };
 
     //----------------------------------------------------------
-    // 3️⃣ Criar pagamento PIX no MP
+    // 3️⃣ Criar pagamento PIX
     //----------------------------------------------------------
     const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
@@ -86,7 +82,7 @@ router.post("/create", async (req, res) => {
     }
 
     //----------------------------------------------------------
-    // 4️⃣ Extrair dados do pagamento
+    // 4️⃣ Dados do pagamento
     //----------------------------------------------------------
     const paymentId =
       mpJson.id ||
@@ -103,7 +99,7 @@ router.post("/create", async (req, res) => {
       null;
 
     //----------------------------------------------------------
-    // 5️⃣ Atualizar transacao (se existir)
+    // 5️⃣ Atualiza transação (se existir)
     //----------------------------------------------------------
     if (txRecord && paymentId) {
       try {
@@ -115,7 +111,7 @@ router.post("/create", async (req, res) => {
     }
 
     //----------------------------------------------------------
-    // 6️⃣ Retornar pro Front
+    // 6️⃣ Retorno pro front
     //----------------------------------------------------------
     return res.json({
       payment_id: paymentId,
