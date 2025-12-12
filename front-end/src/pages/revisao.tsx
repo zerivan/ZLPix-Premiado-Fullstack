@@ -1,4 +1,3 @@
-// src/pages/revisao.tsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -17,43 +16,31 @@ export default function Revisao() {
     return null;
   }
 
-  const bilhetes = state.bilhetes || [];
+  const bilhetes = state.bilhetes;
   const valorUnitario = state.valorUnitario ?? 2.0;
   const quantidade = bilhetes.length;
   const total = quantidade * valorUnitario;
-
-  function montarDescricao() {
-    const agora = new Date();
-    const data = agora.toLocaleDateString("pt-BR");
-    const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-
-    const linhas = bilhetes.map((b, idx) => {
-      const dezenas = b.split(",").map((n) => `(${n})`).join("");
-      return `Bilhete #${idx + 1} ${dezenas}`;
-    });
-
-    return `Bilhetes:\n${linhas.join("\n")}\n\nQuantidade: ${quantidade}\nValor unitário: R$ ${valorUnitario.toFixed(
-      2
-    )}\nTotal: R$ ${total.toFixed(2)}\nData: ${data} • ${hora}`;
-  }
 
   async function prosseguir() {
     try {
       const payload = {
         userId: state.userId || null,
         amount: Number(total.toFixed(2)),
-        description: montarDescricao(),
+        description: "Pagamento de bilhetes ZLPix",
         bilhetes,
       };
 
-      const resp = await fetch(import.meta.env.VITE_API_URL + "/pix/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const resp = await fetch(
+        import.meta.env.VITE_API_URL + "/pix/create",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const json = await resp.json();
-      if (!resp.ok) throw new Error(json.error || JSON.stringify(json));
+      if (!resp.ok) throw new Error(json.error || "Erro ao iniciar pagamento");
 
       navigate("/pagamento", {
         state: {
@@ -66,32 +53,45 @@ export default function Revisao() {
         },
       });
     } catch (err: any) {
-      alert("Erro ao iniciar pagamento: " + (err?.message || err));
-      console.error(err);
+      alert("Erro ao iniciar pagamento: " + err.message);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-xl font-bold mb-4">Revisão do pedido</h2>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white">
+      <div className="w-full max-w-md bg-blue-950/80 border border-blue-800/40 rounded-2xl p-5 shadow-xl">
 
-        <div className="mb-4 border rounded-lg p-3 bg-gray-50 max-h-64 overflow-auto">
+        <h2 className="text-lg font-extrabold text-yellow-300 text-center mb-4">
+          🧾 Revisão do Pedido
+        </h2>
+
+        {/* LISTA DE BILHETES */}
+        <div className="space-y-3 mb-4 max-h-56 overflow-auto">
           {bilhetes.map((b, i) => (
-            <div key={i} className="flex justify-between items-center py-2 border-b last:border-b-0">
-              <div className="flex items-center">
+            <div
+              key={i}
+              className="flex justify-between items-center bg-blue-900/60 border border-blue-800/40 rounded-lg px-3 py-2"
+            >
+              <div className="flex gap-1">
                 {b.split(",").map((n) => (
-                  <span key={n} className="inline-block bg-yellow-300 text-blue-900 px-2 py-1 rounded mr-2 font-bold">
+                  <span
+                    key={n}
+                    className="h-7 w-9 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-extrabold text-xs"
+                  >
                     {n}
                   </span>
                 ))}
               </div>
-              <div className="text-sm">R$ {valorUnitario.toFixed(2)}</div>
+
+              <span className="text-sm text-yellow-300 font-bold">
+                R$ {valorUnitario.toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
 
-        <div className="mb-6 text-sm">
+        {/* RESUMO */}
+        <div className="bg-blue-900/60 border border-blue-800/40 rounded-lg p-3 text-sm mb-5">
           <div className="flex justify-between">
             <span>Quantidade</span>
             <span>{quantidade}</span>
@@ -100,25 +100,26 @@ export default function Revisao() {
             <span>Valor unitário</span>
             <span>R$ {valorUnitario.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-bold mt-2">
+          <div className="flex justify-between font-extrabold text-yellow-300 mt-2">
             <span>Total</span>
             <span>R$ {total.toFixed(2)}</span>
           </div>
         </div>
 
+        {/* BOTÕES */}
         <div className="flex gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex-1 py-3 rounded-xl border border-gray-300 bg-white font-medium"
+            className="flex-1 py-3 rounded-xl bg-gray-600 hover:bg-gray-500 text-white font-bold"
           >
-            ← Voltar e editar
+            ← Voltar
           </button>
 
           <button
             onClick={prosseguir}
-            className="flex-1 py-3 rounded-xl bg-yellow-400 text-blue-900 font-bold"
+            className="flex-1 py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-extrabold shadow-lg"
           >
-            Prosseguir para pagamento
+            Prosseguir
           </button>
         </div>
       </div>
