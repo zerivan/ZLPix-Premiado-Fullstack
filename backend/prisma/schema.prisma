@@ -43,9 +43,11 @@ model bilhete {
 model transacao {
   id           Int        @id @default(autoincrement())
   userId       Int
-  bilheteId    Int?       @unique
+  bilheteId    Int?       
   valor        Float
   status       String     @default("pending")
+  mpPaymentId  String?    @map("mppaymentid")
+  metadata     Json?
   createdAt    DateTime   @default(now()) @map("createdat")
 
   user         users      @relation(fields: [userId], references: [id])
