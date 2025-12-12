@@ -46,7 +46,7 @@ model transacao {
   bilheteId    Int?       @unique
   valor        Float
   status       String     @default("pending")
-  mpPaymentId  String?    @unique
+  mppaymentid  String?    @unique
   createdAt    DateTime   @default(now())
 
   user         users      @relation(fields: [userId], references: [id])
