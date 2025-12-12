@@ -14,7 +14,7 @@ model users {
   phone        String?
   pixKey       String?
   passwordHash String
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime   @default(now()) @map("createdat")
 
   bilhetes     bilhete[]
   transacoes   transacao[]
@@ -24,7 +24,7 @@ model admins {
   id           Int        @id @default(autoincrement())
   email        String     @unique
   passwordHash String
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime   @default(now()) @map("createdat")
 }
 
 model bilhete {
@@ -33,8 +33,8 @@ model bilhete {
   dezenas     String
   valor       Float
   pago        Boolean     @default(false)
-  sorteioData DateTime
-  createdAt   DateTime    @default(now())
+  sorteioData DateTime    @map("sorteiodata")
+  createdAt   DateTime    @default(now()) @map("createdat")
 
   user        users       @relation(fields: [userId], references: [id])
   transacao   transacao?
@@ -47,7 +47,7 @@ model transacao {
   valor        Float
   status       String     @default("pending")
   mpPaymentId  String?    @unique @map("mppaymentid")
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime   @default(now()) @map("createdat")
 
   user         users      @relation(fields: [userId], references: [id])
   bilhete      bilhete?   @relation(fields: [bilheteId], references: [id])
