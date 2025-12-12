@@ -13,6 +13,9 @@ import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 import PixPagamento from "../pages/pixpagamento";
 
+// NOVA PÁGINA → Confirmação antes do PIX
+import ConfirmarPagamento from "../pages/confirmar-pagamento";
+
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -70,7 +73,7 @@ export default function AppRoutes() {
   return (
     <Routes>
 
-      {/* 🔑 Rota de Login explícita */}
+      {/* 🔑 Login explícito */}
       <Route
         path="/login"
         element={
@@ -80,7 +83,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 🔑 Página inicial também é login */}
+      {/* 🔑 Página inicial = login */}
       <Route
         path="/"
         element={
@@ -154,7 +157,17 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 💸 Pagamento PIX */}
+      {/* 💸 NOVA PÁGINA — Confirmação antes do PIX */}
+      <Route
+        path="/confirmar-pagamento"
+        element={
+          <PrivateRoute>
+            <ConfirmarPagamento />
+          </PrivateRoute>
+        }
+      />
+
+      {/* 💸 Tela que mostra QR Code PIX */}
       <Route
         path="/pagamento"
         element={
@@ -167,7 +180,7 @@ export default function AppRoutes() {
       {/* ADMIN */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      {/* fallback */}
+      {/* Fallback */}
       <Route
         path="*"
         element={
