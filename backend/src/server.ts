@@ -1,68 +1,66 @@
-// src/server.ts
-import "dotenv/config";
+// backend/src/routes/bilhetes.ts
 import express from "express";
-import cors from "cors";
+import { prisma } from "../lib/prisma";
 
-// rotas
-import authRoutes from "./routes/auth";
-import federalRoutes from "./routes/federal";
-import pixRoutes from "./routes/pix";
-import pixWebhookRoutes from "./routes/pixwebhook";
-import bilheteRoutes from "./routes/bilhetes";
+const router = express.Router();
 
-const app = express();
-const PORT = Number(process.env.PORT) || 4000;
+/**
+ * Criar bilhetes vinculados a uma transação PIX
+ * - Recebe: userId, dezenas[], valorTotal, transacaoId
+ * - Cada bilhete entra com `pago = false`
+ */
+router.post("/criar", async (req, res) => {
+  try {
+    const { userId, dezenas, valorTotal, transacaoId } = req.body;
 
-// =======================
-// 🔥 CORS (Render + Localhost)
-// =======================
-const FRONT_URL = "https://zlpix-premiado-site.onrender.com";
+    if (!userId || !dezenas || !Array.isArray(dezenas) || dezenas.length === 0) {
+      return res.status(400).json({ error: "Dados inválidos para criação de bilhetes." });
+    }
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (
-        !origin ||
-        origin === FRONT_URL ||
-        origin === "http://localhost:5173"
-      ) {
-        callback(null, true);
-      } else {
-        console.warn("❌ CORS bloqueado:", origin);
-        callback(new Error("CORS bloqueado"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+    if (!transacaoId) {
+      return res.status(400).json({ error: "transacaoId é obrigatório." });
+    }
 
-app.use(express.json());
+    // Cria todos os bilhetes associados à mesma transação
+    const bilhetesCriados = await prisma.bilhete.createMany({
+      data: dezenas.map((dezena: string) => ({
+        userId,
+        transacaoId,
+        dezenas: dezena,   // Ex: "12,34,56"
+        valor: valorTotal / dezenas.length,
+        pago: false,
+        sorteioData: new Date(),
+      })),
+    });
 
-// =======================
-// Health-check
-// =======================
-app.get("/", (_req, res) => {
-  res.json({
-    status: "ok",
-    message: "ZLPix backend rodando no Render + Neon",
-    env: process.env.NODE_ENV,
-  });
+    return res.json({
+      status: "ok",
+      quantidade: bilhetesCriados.count,
+      message: "Bilhetes criados com sucesso!",
+    });
+  } catch (e) {
+    console.error("Erro ao criar bilhetes:", e);
+    return res.status(500).json({ error: "Erro interno ao criar bilhetes." });
+  }
 });
 
-// =======================
-// Rotas principais
-// =======================
-app.use("/auth", authRoutes);
-app.use("/api/federal", federalRoutes);
-app.use("/pix", pixRoutes);
-app.use("/pix/webhook", pixWebhookRoutes);
-app.use("/bilhete", bilheteRoutes);
+/**
+ * Listar bilhetes de um usuário
+ */
+router.get("/listar/:userId", async (req, res) => {
+  const userId = Number(req.params.userId);
 
-// =======================
-// Start server
-// =======================
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Servidor rodando na porta ${PORT}`);
+  try {
+    const bilhetes = await prisma.bilhete.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ bilhetes });
+  } catch (e) {
+    console.error("Erro ao listar bilhetes:", e);
+    return res.status(500).json({ error: "erro interno" });
+  }
 });
+
+export default router;
