@@ -11,10 +11,12 @@ import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
-import PixPagamento from "../pages/pixpagamento";
 
-// NOVA PÁGINA → Confirmação antes do PIX
-import ConfirmarPagamento from "../pages/confirmar-pagamento";
+// PÁGINA REAL DE REVISÃO DOS BILHETES
+import Revisao from "../pages/revisao";
+
+// PÁGINA QUE MOSTRA QR CODE / CHAVE PIX
+import PixPagamento from "../pages/pixpagamento";
 
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
@@ -31,6 +33,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
       setAuthorized(!!token);
       setChecked(true);
     }, 200);
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -55,6 +58,7 @@ function PublicRoute({ children }: { children: JSX.Element }) {
       setAuthorized(!!token);
       setChecked(true);
     }, 200);
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -157,17 +161,17 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 💸 NOVA PÁGINA — Confirmação antes do PIX */}
+      {/* 🧾 REVISÃO FINAL ANTES DO PIX */}
       <Route
-        path="/confirmar-pagamento"
+        path="/revisao"
         element={
           <PrivateRoute>
-            <ConfirmarPagamento />
+            <Revisao />
           </PrivateRoute>
         }
       />
 
-      {/* 💸 Tela que mostra QR Code PIX */}
+      {/* 💸 TELA QUE MOSTRA O QR CODE PIX */}
       <Route
         path="/pagamento"
         element={
