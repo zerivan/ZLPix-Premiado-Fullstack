@@ -1,24 +1,23 @@
-// backend/routes/pixwebhook.ts
+// backend/src/routes/pixwebhook.ts
 import express, { Request, Response } from "express";
-import { prisma } from "../prisma/prismaclient"; // ✔ caminho correto
+import { prisma } from "../lib/prisma"; // ✔ caminho FINAL correto
 
 const router = express.Router();
 
-// fetch nativo do Node 18+/20+
+// fetch nativo (Node 18+ / 20+)
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 /**
- * Webhook PIX (fluxo novo)
- * - Apenas atualiza bilhetes existentes como pagos
+ * Webhook PIX — Fluxo Novo
+ * - Atualiza bilhetes pagos
  * - Nunca cria bilhetes
- * - Sempre devolve 200 (ack)
+ * - Sempre responde 200 (ACK)
  */
 
 async function fetchMpPayment(paymentId: string) {
   const token = process.env.MP_ACCESS_TOKEN;
   const base = process.env.MP_BASE_URL || "https://api.mercadopago.com";
-
   if (!token) return null;
 
   try {
@@ -29,13 +28,14 @@ async function fetchMpPayment(paymentId: string) {
     if (!resp.ok) return null;
     return await resp.json();
   } catch (e) {
-    console.warn("Erro ao consultar MP:", e);
+    console.warn("Erro ao consultar Mercado Pago:", e);
     return null;
   }
 }
 
 function normalizeBilhetesField(value: any): string[] {
   if (!value) return [];
+
   try {
     if (Array.isArray(value)) return value.map(String);
 
@@ -53,10 +53,7 @@ function normalizeBilhetesField(value: any): string[] {
       }
 
       if (trimmed.includes(",")) {
-        return trimmed
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
+        return trimmed.split(",").map((s) => s.trim()).filter(Boolean);
       }
 
       return [trimmed];
@@ -67,9 +64,8 @@ function normalizeBilhetesField(value: any): string[] {
         return (value as any).bilhetes.map(String);
       return [];
     }
-  } catch {
-    return [];
-  }
+  } catch {}
+
   return [];
 }
 
@@ -77,7 +73,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
     const payload = req.body || {};
 
-    // extrair paymentId de vários formatos comuns
+    // tentar extrair paymentId
     const paymentId =
       payload?.data?.id ||
       payload?.resource?.id ||
@@ -92,8 +88,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // consultar MP (opcional)
+    // consulta Mercado Pago
     const mpInfo = await fetchMpPayment(String(paymentId));
+
     const mpStatus =
       mpInfo?.status ||
       mpInfo?.status_detail ||
@@ -109,7 +106,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.action === "payment.created" ||
       payload?.topic === "payment";
 
-    // buscar transação salva (se existir)
+    // buscar transação
     let txRecord: any = null;
     try {
       txRecord = await prisma.transacao.findFirst({
@@ -119,7 +116,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       txRecord = null;
     }
 
-    // coletar lista de bilhetes
+    // coletar bilhetes
     let bilhetes: string[] = [];
 
     try {
@@ -151,13 +148,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     if (bilhetes.length === 0) {
-      console.warn("pixWebhook: pagamento aprovado, mas sem bilhetes encontrados", {
+      console.warn("pixWebhook: pagamento aprovado mas sem bilhetes", {
         paymentId,
       });
       return res.status(200).send("ok");
     }
 
-    // marcar bilhetes como pagos
+    // atualizar bilhetes
     try {
       const updateResult = await prisma.bilhete.updateMany({
         where: { id: { in: bilhetes.map(Number) } },
@@ -167,10 +164,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       });
 
       console.log(
-        `pixWebhook: paymentId=${paymentId}, bilhetes=${bilhetes.length}, atualizados=${updateResult.count}`
+        `pixWebhook: paymentId=${paymentId}, bilhetes recebidos=${bilhetes.length}, atualizados=${updateResult.count}`
       );
     } catch (e) {
-      console.error("pixWebhook: erro ao atualizar bilhetes", e);
+      console.error("pixWebhook: erro ao atualizar bilhetes:", e);
       return res.status(200).send("ok");
     }
 
@@ -187,6 +184,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     return res.status(200).send("ok");
+
   } catch (err) {
     console.error("pixWebhook erro inesperado:", err);
     return res.status(200).send("ok");
