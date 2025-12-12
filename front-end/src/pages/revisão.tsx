@@ -3,10 +3,9 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type LocationState = {
-  bilhetes: string[]; // ["34,56,78", ...]
-  valorUnitario?: number; // default 2.0
+  bilhetes: string[];
+  valorUnitario?: number;
   userId?: string;
-  // opcional: pode vir email/phone se quiser passar
 };
 
 export default function Revisao() {
@@ -14,7 +13,6 @@ export default function Revisao() {
   const navigate = useNavigate();
 
   if (!state || !state.bilhetes) {
-    // se não houver dados, volta para aposta
     navigate("/aposta");
     return null;
   }
@@ -40,8 +38,6 @@ export default function Revisao() {
   }
 
   async function prosseguir() {
-    // Ao clicar prosseguir: chamar /pix/create
-    // Passaremos para a próxima página o response do backend (qr, copy_paste, payment_id)
     try {
       const payload = {
         userId: state.userId || null,
@@ -50,7 +46,6 @@ export default function Revisao() {
         bilhetes,
       };
 
-      // opcional: mostrar loading / desabilitar botões
       const resp = await fetch(import.meta.env.VITE_API_URL + "/pix/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,8 +55,7 @@ export default function Revisao() {
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || JSON.stringify(json));
 
-      // navegar para a página de pagamento, passando dados (usar state)
-      navigate("/pixpagamento", {
+      navigate("/pagamento", {
         state: {
           userId: state.userId,
           paymentId: json.payment_id,
@@ -120,7 +114,10 @@ export default function Revisao() {
             ← Voltar e editar
           </button>
 
-          <button onClick={prosseguir} className="flex-1 py-3 rounded-xl bg-yellow-400 text-blue-900 font-bold">
+          <button
+            onClick={prosseguir}
+            className="flex-1 py-3 rounded-xl bg-yellow-400 text-blue-900 font-bold"
+          >
             Prosseguir para pagamento
           </button>
         </div>
