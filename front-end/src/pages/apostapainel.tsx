@@ -23,7 +23,9 @@ export default function ApostaPainel() {
   const [rolling, setRolling] = useState(false);
   const [activeNumber, setActiveNumber] = useState<string | null>(null);
   const [coinBurst, setCoinBurst] = useState(false);
-  const [confirming, setConfirming] = useState(false); // 🔒 trava contra duplicação
+
+  // 🔒 FLAG PARA EVITAR DUPLICIDADE
+  const [confirmando, setConfirmando] = useState(false);
 
   const navigate = useNavigate();
 
@@ -94,48 +96,6 @@ export default function ApostaPainel() {
     } catch {}
   }
 
-  function startRollingSound() {
-    try {
-      const ctx = audioCtxRef.current;
-      if (!ctx) return;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(180, ctx.currentTime);
-      gain.gain.setValueAtTime(0.04, ctx.currentTime);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-
-      oscRef.current = osc;
-      gainRef.current = gain;
-    } catch {}
-  }
-
-  function modulateRollingSound(speed = 1) {
-    try {
-      if (!audioCtxRef.current || !oscRef.current) return;
-      const now = audioCtxRef.current.currentTime;
-      oscRef.current.frequency.cancelScheduledValues(now);
-      oscRef.current.frequency.linearRampToValueAtTime(180 * speed, now + 0.05);
-    } catch {}
-  }
-
-  function stopRollingSound() {
-    const ctx = audioCtxRef.current;
-    if (!ctx || !oscRef.current || !gainRef.current) return;
-
-    const now = ctx.currentTime;
-    try {
-      gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.15);
-      oscRef.current.stop(now + 0.25);
-    } catch {}
-
-    oscRef.current = null;
-    gainRef.current = null;
-  }
-
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
@@ -152,52 +112,36 @@ export default function ApostaPainel() {
 
     setRolling(true);
     setSelected([]);
-    startRollingSound();
 
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 30; j++) {
-        const r = pool[Math.floor(Math.random() * pool.length)];
-        setActiveNumber(r);
-        modulateRollingSound(1 + Math.random() * 3);
-        await new Promise((r) => setTimeout(r, 25));
-      }
-
       let chosen = pool[Math.floor(Math.random() * pool.length)];
       while (final.includes(chosen)) {
         chosen = pool[Math.floor(Math.random() * pool.length)];
       }
-
       final.push(chosen);
-      setSelected((p) => [...p, chosen]);
+      setSelected((prev) => [...prev, chosen]);
       await new Promise((r) => setTimeout(r, 120));
     }
 
-    stopRollingSound();
-    setActiveNumber(null);
+    setRolling(false);
     setCoinBurst(true);
     setTimeout(() => setCoinBurst(false), 900);
-    setRolling(false);
   }
 
-  // ✅ CONFIRMAR BILHETE (ANTI DUPLICAÇÃO)
+  // ================================
+  // ✅ CONFIRMAR BILHETE (SEM DUPLICAR)
+  // ================================
   async function confirmarBilhete() {
-    if (selected.length !== 3 || rolling || confirming) return;
-
-    setConfirming(true);
+    if (selected.length !== 3 || rolling || confirmando) return;
 
     const resolved = resolveUserId();
-    if (!resolved) {
-      setConfirming(false);
-      return alert("Erro: usuário não identificado.");
-    }
+    if (!resolved) return alert("Erro: usuário não identificado.");
+    if (!API) return alert("Erro: API não configurada.");
 
-    if (!API) {
-      setConfirming(false);
-      return alert("Erro: API não configurada.");
-    }
+    setConfirmando(true); // 🔒 trava clique
 
     try {
       const body = {
@@ -223,14 +167,13 @@ export default function ApostaPainel() {
 
       setTickets((t) => [newTicket, ...t]);
       setSelected([]);
-
       setCoinBurst(true);
       setTimeout(() => setCoinBurst(false), 900);
     } catch (err: any) {
-      console.error("Erro:", err.response?.data || err);
+      console.error(err);
       alert("Erro ao criar bilhete.");
     } finally {
-      setConfirming(false);
+      setConfirmando(false); // 🔓 libera clique
     }
   }
 
@@ -257,8 +200,32 @@ export default function ApostaPainel() {
   const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white">
-      {/* TODO: JSX ORIGINAL INTACTO */}
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
+      <main className="flex-1 flex flex-col items-center px-2 pt-2 pb-24 w-full">
+        <div className="grid grid-cols-5 gap-[2px] max-w-md w-full">
+          {grid.map((n) => (
+            <button
+              key={n}
+              onClick={() => toggle(n)}
+              className={`h-7 rounded-md text-xs font-bold ${
+                selected.includes(n)
+                  ? "bg-yellow-400 text-blue-900"
+                  : "bg-blue-900"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full max-w-md mt-4 flex flex-col gap-3">
+          <button onClick={gerarAleatorio}>🎲 Gerar</button>
+          <button onClick={confirmarBilhete}>Confirmar</button>
+          <button onClick={desfazerUltimo}>↩️ Desfazer</button>
+          <button onClick={pagarAgora}>💸 Pagar Agora</button>
+        </div>
+      </main>
+
       <NavBottom />
     </div>
   );
