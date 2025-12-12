@@ -3,32 +3,26 @@ name: ZLPix Backend Build
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build:
+  backend-build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.16.0
-          cache: npm
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Install backend deps
-        working-directory: backend
-        run: npm install --include=dev
-
-      - name: Generate Prisma Client
-        working-directory: backend
-        run: npx prisma generate
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
 
       - name: Build backend
-        working-directory: backend
+        working-directory: ./backend
         run: npm run build
-
