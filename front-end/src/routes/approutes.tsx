@@ -1,4 +1,3 @@
-// src/routes/approutes.tsx
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -12,8 +11,6 @@ import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
-
-// ✅ CORRETO — o arquivo verdadeiro
 import PixPagamento from "../pages/pixpagamento";
 
 function isLoggedIn() {
@@ -72,6 +69,18 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
+
+      {/* 🔑 Rota de Login explícita */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      {/* 🔑 Página inicial também é login */}
       <Route
         path="/"
         element={
@@ -99,6 +108,7 @@ export default function AppRoutes() {
         }
       />
 
+      {/* ÁREA LOGADA */}
       <Route
         path="/home"
         element={
@@ -154,8 +164,10 @@ export default function AppRoutes() {
         }
       />
 
+      {/* ADMIN */}
       <Route path="/admin" element={<AdminLogin />} />
 
+      {/* fallback */}
       <Route
         path="*"
         element={
