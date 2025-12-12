@@ -8,47 +8,47 @@ datasource db {
 }
 
 model users {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   name         String
-  email        String   @unique
+  email        String     @unique
   phone        String?
-  pixKey       String?  @map("pixkey")
-  passwordHash String   @map("passwordhash")
-  createdAt    DateTime @default(now()) @map("createdat")
+  pixKey       String?
+  passwordHash String
+  createdAt    DateTime   @default(now())
 
   bilhetes     bilhete[]
   transacoes   transacao[]
 }
 
 model admins {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  passwordHash String   @map("passwordhash")
-  createdAt    DateTime @default(now()) @map("createdat")
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
 }
 
 model bilhete {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   userId      Int
   dezenas     String
   valor       Float
-  pago        Boolean  @default(false)
-  sorteioData DateTime @map("sorteiodata")
-  createdAt   DateTime @default(now()) @map("createdat")
+  pago        Boolean     @default(false)
+  sorteioData DateTime
+  createdAt   DateTime    @default(now())
 
-  user        users     @relation(fields: [userId], references: [id])
+  user        users       @relation(fields: [userId], references: [id])
   transacao   transacao?
 }
 
 model transacao {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   userId       Int
-  bilheteId    Int?     
+  bilheteId    Int?       @unique
   valor        Float
-  status       String   @default("pending")
-  mpPaymentId  String?  @map("mppaymentid")
-  createdAt    DateTime @default(now()) @map("createdat")
+  status       String     @default("pending")
+  mpPaymentId  String?    @unique
+  createdAt    DateTime   @default(now())
 
-  user         users    @relation(fields: [userId], references: [id])
-  bilhete      bilhete? @relation(fields: [bilheteId], references: [id])
+  user         users      @relation(fields: [userId], references: [id])
+  bilhete      bilhete?   @relation(fields: [bilheteId], references: [id])
 }
