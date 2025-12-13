@@ -1,9 +1,16 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+type Ticket = {
+  id: string;
+  nums: string[];
+  valor: number;
+  createdAt: string;
+  pago?: boolean;
+};
+
 type LocationState = {
-  bilhetes: string[];
-  valorUnitario?: number;
+  tickets: Ticket[];
   userId?: string;
 };
 
@@ -11,15 +18,14 @@ export default function Revisao() {
   const { state } = useLocation() as { state: LocationState | null };
   const navigate = useNavigate();
 
-  if (!state || !state.bilhetes) {
+  if (!state || !state.tickets || state.tickets.length === 0) {
     navigate("/aposta");
     return null;
   }
 
-  const bilhetes = state.bilhetes;
-  const valorUnitario = state.valorUnitario ?? 2.0;
-  const quantidade = bilhetes.length;
-  const total = quantidade * valorUnitario;
+  const tickets = state.tickets;
+  const quantidade = tickets.length;
+  const total = tickets.reduce((acc, t) => acc + t.valor, 0);
 
   async function prosseguir() {
     try {
@@ -27,7 +33,10 @@ export default function Revisao() {
         userId: state.userId || null,
         amount: Number(total.toFixed(2)),
         description: "Pagamento de bilhetes ZLPix",
-        bilhetes,
+        bilhetes: tickets.map((t) => ({
+          dezenas: t.nums.join(","),
+          valor: t.valor,
+        })),
       };
 
       const resp = await fetch(
@@ -48,7 +57,7 @@ export default function Revisao() {
           paymentId: json.payment_id,
           qr_code_base64: json.qr_code_base64,
           copy_paste: json.copy_paste,
-          bilhetes,
+          bilhetes: payload.bilhetes,
           amount: payload.amount,
         },
       });
@@ -60,20 +69,19 @@ export default function Revisao() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white">
       <div className="w-full max-w-md bg-blue-950/80 border border-blue-800/40 rounded-2xl p-5 shadow-xl">
-
         <h2 className="text-lg font-extrabold text-yellow-300 text-center mb-4">
           🧾 Revisão do Pedido
         </h2>
 
         {/* LISTA DE BILHETES */}
         <div className="space-y-3 mb-4 max-h-56 overflow-auto">
-          {bilhetes.map((b, i) => (
+          {tickets.map((t, i) => (
             <div
-              key={i}
+              key={t.id || i}
               className="flex justify-between items-center bg-blue-900/60 border border-blue-800/40 rounded-lg px-3 py-2"
             >
               <div className="flex gap-1">
-                {b.split(",").map((n) => (
+                {t.nums.map((n) => (
                   <span
                     key={n}
                     className="h-7 w-9 flex items-center justify-center rounded-md bg-yellow-400 text-blue-900 font-extrabold text-xs"
@@ -84,7 +92,7 @@ export default function Revisao() {
               </div>
 
               <span className="text-sm text-yellow-300 font-bold">
-                R$ {valorUnitario.toFixed(2)}
+                R$ {t.valor.toFixed(2)}
               </span>
             </div>
           ))}
@@ -95,10 +103,6 @@ export default function Revisao() {
           <div className="flex justify-between">
             <span>Quantidade</span>
             <span>{quantidade}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Valor unitário</span>
-            <span>R$ {valorUnitario.toFixed(2)}</span>
           </div>
           <div className="flex justify-between font-extrabold text-yellow-300 mt-2">
             <span>Total</span>
