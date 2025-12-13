@@ -1,6 +1,7 @@
 // backend/src/routes/pixwebhook.ts
 import express, { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const router = express.Router();
 
@@ -45,14 +46,12 @@ async function fetchMpPayment(paymentId: string) {
 /**
  * Webhook PIX
  * - ACK sempre 200
- * - Fonte da verdade: transacao
- * - CRIA bilhetes somente após pagamento aprovado
+ * - Bilhetes são CRIADOS somente após pagamento aprovado
  */
 router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
     const payload: any = req.body || {};
 
-    // Extrair paymentId de forma tolerante
     const paymentId =
       payload?.data?.id ||
       payload?.resource?.id ||
@@ -64,16 +63,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       null;
 
     if (!paymentId) {
-      console.log(
-        "pixWebhook: payload sem paymentId (ignorado)",
-        JSON.stringify(payload).slice(0, 600)
-      );
       return res.status(200).send("ok");
     }
 
-    // Consultar Mercado Pago
     const mpInfo: any = await fetchMpPayment(String(paymentId));
-
     const mpStatus: string | null =
       mpInfo?.status ||
       payload?.data?.status ||
@@ -81,14 +74,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       null;
 
     if (mpStatus !== "approved") {
-      console.log("pixWebhook: pagamento não aprovado", {
-        paymentId,
-        status: mpStatus,
-      });
       return res.status(200).send("ok");
     }
 
-    // Buscar transação pelo mpPaymentId
     const transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
@@ -98,54 +86,50 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // Evitar reprocessamento
     if (transacao.status === "paid") {
-      console.log("pixWebhook: transacao já processada", {
-        paymentId,
-        transacaoId: transacao.id,
-      });
       return res.status(200).send("ok");
     }
 
-    const bilhetesMeta = Array.isArray(transacao.metadata?.bilhetes)
-      ? transacao.metadata.bilhetes
+    // ✅ CAST SEGURO DO METADATA
+    const metadata =
+      transacao.metadata && typeof transacao.metadata === "object"
+        ? (transacao.metadata as Prisma.JsonObject)
+        : null;
+
+    const bilhetesMeta = Array.isArray(metadata?.bilhetes)
+      ? metadata.bilhetes
       : [];
 
-    if (bilhetesMeta.length === 0) {
-      console.warn("pixWebhook: transacao sem bilhetes no metadata", {
-        transacaoId: transacao.id,
-      });
-    }
-
-    // 🔥 CRIAR BILHETES AGORA (pós-pagamento)
+    // 🔥 CRIAR BILHETES APÓS PAGAMENTO
     for (const b of bilhetesMeta) {
       await prisma.bilhete.create({
         data: {
-          userId: transacao.userId,
           dezenas: String(b.dezenas),
           valor: Number(b.valor),
           pago: true,
-          transacaoId: transacao.id,
+          transacao: {
+            connect: { id: transacao.id },
+          },
+          user: {
+            connect: { id: transacao.userId },
+          },
         },
       });
     }
 
-    // Marcar transação como paga
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
     });
 
-    console.log("pixWebhook: pagamento confirmado e bilhetes criados", {
+    console.log("pixWebhook: pagamento confirmado", {
       paymentId,
-      userId: transacao.userId,
       bilhetesCriados: bilhetesMeta.length,
     });
 
     return res.status(200).send("ok");
   } catch (err) {
     console.error("pixWebhook: erro inesperado", err);
-    // ACK sempre 200 para evitar retry infinito
     return res.status(200).send("ok");
   }
 });
