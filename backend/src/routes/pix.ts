@@ -28,7 +28,7 @@ router.post("/create", async (req, res) => {
         .json({ error: "Payload inválido: userId obrigatório e numérico." });
     }
 
-    // 🔎 Buscar usuário no banco (SEM FORMULÁRIO)
+    // 🔎 Buscar usuário no banco
     const user = await prisma.users.findUnique({
       where: { id: uid },
       select: {
@@ -44,7 +44,7 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // 1) Criar transação pendente
+    // 1️⃣ Criar transação pendente
     let txRecord: any = null;
     try {
       txRecord = await prisma.transacao.create({
@@ -63,7 +63,7 @@ router.post("/create", async (req, res) => {
         .json({ error: "Erro ao criar transação no servidor." });
     }
 
-    // 2) Config Mercado Pago
+    // 2️⃣ Config Mercado Pago
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
@@ -78,17 +78,15 @@ router.post("/create", async (req, res) => {
         .json({ error: "MP_ACCESS_TOKEN não configurado no backend" });
     }
 
-    // 📦 Payload Mercado Pago (com payer automático)
+    // 3️⃣ Payload Mercado Pago
     const body = {
       transaction_amount: Number(amount),
       description: description || "Bilhetes ZLPix",
       payment_method_id: "pix",
-
       payer: {
         email: user.email,
         first_name: user.name || "Cliente",
       },
-
       metadata: {
         bilhetes,
         txId: txRecord?.id ?? null,
@@ -96,10 +94,9 @@ router.post("/create", async (req, res) => {
       },
     };
 
-    // 🔐 Idempotency Key obrigatória
     const idempotencyKey = crypto.randomUUID();
 
-    // 3) Criar pagamento PIX no Mercado Pago
+    // 4️⃣ Criar pagamento PIX
     const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
@@ -128,7 +125,7 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // 4) Extrair dados do MP
+    // 5️⃣ Extrair dados
     const paymentId =
       mpJson.id ||
       mpJson.payment_id ||
@@ -144,7 +141,7 @@ router.post("/create", async (req, res) => {
       mpJson.qr_code ||
       null;
 
-    // 5) Atualizar transação com mpPaymentId
+    // 6️⃣ Atualizar transação com mpPaymentId
     if (txRecord && paymentId) {
       try {
         await prisma.transacao.update({
@@ -165,7 +162,7 @@ router.post("/create", async (req, res) => {
       }
     }
 
-    // 6) Resposta para o frontend
+    // 7️⃣ Resposta ao frontend
     return res.json({
       payment_id: paymentId,
       qr_code_base64: qr_base64,
@@ -173,11 +170,47 @@ router.post("/create", async (req, res) => {
       txId: txRecord?.id ?? null,
     });
   } catch (error: any) {
-    console.error("Erro /pix/create (catch):", error);
+    console.error("Erro /pix/create:", error);
     return res.status(500).json({
       error: "Erro interno",
       details: error?.message || String(error),
     });
+  }
+});
+
+// =====================================================
+// 📌 STATUS DO PAGAMENTO (FONTE ÚNICA DA VERDADE)
+// =====================================================
+router.get("/payment-status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    if (!paymentId) {
+      return res.status(400).json({ status: "INVALID" });
+    }
+
+    const tx = await prisma.transacao.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (!tx) {
+      // Transação ainda não conciliada
+      return res.json({ status: "PENDING" });
+    }
+
+    if (tx.status === "paid") {
+      return res.json({ status: "PAID" });
+    }
+
+    return res.json({ status: "PENDING" });
+  } catch (err) {
+    console.error("Erro payment-status:", err);
+    return res.status(500).json({ status: "ERROR" });
   }
 });
 
