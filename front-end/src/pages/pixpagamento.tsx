@@ -1,5 +1,5 @@
 // src/pages/pixpagamento.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -15,11 +15,10 @@ export default function PixPagamento() {
   const API = (import.meta.env.VITE_API_URL as string) || "";
 
   // ======================
-  // 📌 Dados vindos da Revisão
+  // 📌 Dados vindos da Revisão (apenas informativos)
   // ======================
   const bilhetes: Bilhete[] = state?.bilhetes ?? [];
   const amount: number = state?.amount ?? 0;
-  const userId: string = state?.userId ?? "";
   const paymentId: string = state?.paymentId ?? "";
   const qr_code_base64: string = state?.qr_code_base64 ?? "";
   const copy_paste: string = state?.copy_paste ?? "";
@@ -28,6 +27,8 @@ export default function PixPagamento() {
   const [copyPaste, setCopyPaste] = useState<string>(copy_paste);
   const [status, setStatus] = useState<string>("Aguardando pagamento...");
   const [loading, setLoading] = useState<boolean>(!qr_code_base64);
+
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // ======================
   // 📌 Copiar chave PIX
@@ -38,35 +39,40 @@ export default function PixPagamento() {
   }
 
   // ======================
-  // 📌 Polling do pagamento
+  // 📌 Polling do pagamento (POR paymentId)
   // ======================
   useEffect(() => {
-    let ativo = true;
+    if (!paymentId) return;
 
-    const interval = setInterval(async () => {
+    pollingRef.current = setInterval(async () => {
       try {
-        if (!userId) return;
+        const resp = await axios.get(
+          `${API}/pix/payment-status/${paymentId}`
+        );
 
-        const resp = await axios.get(`${API}/bilhete/listar/${userId}`);
-        const dados = resp.data;
-
-        if (dados?.bilhetes?.some((b: any) => b.pago)) {
-          if (!ativo) return;
-
+        if (resp.data?.status === "PAID") {
           setStatus("Pagamento confirmado! 🎉");
 
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+          }
+
+          // limpa o state e segue o fluxo normal
           setTimeout(() => {
-            navigate("/meus-bilhetes");
+            navigate("/meus-bilhetes", { replace: true });
           }, 1200);
         }
-      } catch {}
+      } catch {
+        // erro silencioso de polling
+      }
     }, 5000);
 
     return () => {
-      ativo = false;
-      clearInterval(interval);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
     };
-  }, [userId]);
+  }, [paymentId, API, navigate]);
 
   // ======================
   // 📌 Se não veio QR pelo state, tentar recuperar
@@ -92,7 +98,7 @@ export default function PixPagamento() {
     }
 
     carregar();
-  }, [paymentId]);
+  }, [paymentId, qrBase64, API]);
 
   // ======================
   // 📌 UI PRINCIPAL
@@ -170,7 +176,7 @@ export default function PixPagamento() {
       </div>
 
       <p className="mt-4 text-xs text-white/70">
-        Após o pagamento, seus bilhetes serão liberados automaticamente.
+        Após o pagamento, aguarde a confirmação nesta tela.
       </p>
     </div>
   );
