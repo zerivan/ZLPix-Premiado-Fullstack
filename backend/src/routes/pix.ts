@@ -28,6 +28,22 @@ router.post("/create", async (req, res) => {
         .json({ error: "Payload inválido: userId obrigatório e numérico." });
     }
 
+    // 🔎 Buscar usuário no banco (SEM FORMULÁRIO)
+    const user = await prisma.users.findUnique({
+      where: { id: uid },
+      select: {
+        email: true,
+        name: true,
+        phone: true,
+      },
+    });
+
+    if (!user || !user.email) {
+      return res.status(400).json({
+        error: "Usuário não encontrado ou sem email cadastrado.",
+      });
+    }
+
     // 1) Criar transação pendente
     let txRecord: any = null;
     try {
@@ -62,17 +78,25 @@ router.post("/create", async (req, res) => {
         .json({ error: "MP_ACCESS_TOKEN não configurado no backend" });
     }
 
+    // 📦 Payload Mercado Pago (com payer automático)
     const body = {
       transaction_amount: Number(amount),
       description: description || "Bilhetes ZLPix",
       payment_method_id: "pix",
+
+      payer: {
+        email: user.email,
+        first_name: user.name || "Cliente",
+      },
+
       metadata: {
         bilhetes,
         txId: txRecord?.id ?? null,
+        userId: uid,
       },
     };
 
-    // 🔐 Idempotency Key obrigatória (Mercado Pago)
+    // 🔐 Idempotency Key obrigatória
     const idempotencyKey = crypto.randomUUID();
 
     // 3) Criar pagamento PIX no Mercado Pago
