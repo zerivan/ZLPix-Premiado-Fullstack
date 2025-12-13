@@ -3,6 +3,11 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+type Bilhete = {
+  dezenas: string;
+  valor: number;
+};
+
 export default function PixPagamento() {
   const { state } = useLocation() as any;
   const navigate = useNavigate();
@@ -12,7 +17,7 @@ export default function PixPagamento() {
   // ======================
   // 📌 Dados vindos da Revisão
   // ======================
-  const bilhetes: string[] = state?.bilhetes ?? [];
+  const bilhetes: Bilhete[] = state?.bilhetes ?? [];
   const amount: number = state?.amount ?? 0;
   const userId: string = state?.userId ?? "";
   const paymentId: string = state?.paymentId ?? "";
@@ -94,13 +99,13 @@ export default function PixPagamento() {
   // ======================
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center p-6">
-      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">Pagamento PIX</h1>
+      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">
+        Pagamento PIX
+      </h1>
 
       <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center">
 
-        {/* =========================
-            🧾 Nota Fiscal / Resumo
-        ========================== */}
+        {/* 🧾 Resumo */}
         <div className="bg-white/10 rounded-xl p-4 text-sm text-left text-blue-100 mb-4">
           <p className="font-semibold mb-2">Resumo da transação</p>
 
@@ -108,7 +113,7 @@ export default function PixPagamento() {
             {bilhetes.map((b, idx) => (
               <div key={idx} className="flex justify-between items-center">
                 <div>
-                  {b.split(",").map((n) => (
+                  {b.dezenas.split(",").map((n) => (
                     <span
                       key={n}
                       className="inline-block bg-yellow-400 text-blue-900 px-2 py-1 rounded mr-2 font-bold"
@@ -118,7 +123,9 @@ export default function PixPagamento() {
                   ))}
                 </div>
 
-                <span className="text-xs">R$ 2,00</span>
+                <span className="text-xs">
+                  R$ {b.valor.toFixed(2)}
+                </span>
               </div>
             ))}
           </div>
@@ -129,14 +136,10 @@ export default function PixPagamento() {
           </div>
         </div>
 
-        {/* =========================
-            💬 Status
-        ========================== */}
+        {/* 💬 Status */}
         <p className="text-sm text-blue-100 mb-3">{status}</p>
 
-        {/* =========================
-            🟦 QR Code
-        ========================== */}
+        {/* 🟦 QR Code */}
         {loading ? (
           <div className="w-60 h-60 mx-auto bg-black/20 rounded-lg animate-pulse flex items-center justify-center">
             Carregando QR...
@@ -153,9 +156,7 @@ export default function PixPagamento() {
           </div>
         )}
 
-        {/* =========================
-            🔗 Código copia e cola
-        ========================== */}
+        {/* 🔗 Copia e cola */}
         <p className="mt-4 text-xs break-all bg-black/30 p-3 rounded-xl">
           {copyPaste}
         </p>
