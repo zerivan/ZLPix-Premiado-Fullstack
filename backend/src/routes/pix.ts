@@ -1,5 +1,6 @@
 // backend/src/routes/pix.ts
 import express from "express";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 
 const router = express.Router();
@@ -71,12 +72,16 @@ router.post("/create", async (req, res) => {
       },
     };
 
+    // 🔐 Idempotency Key obrigatória (Mercado Pago)
+    const idempotencyKey = crypto.randomUUID();
+
     // 3) Criar pagamento PIX no Mercado Pago
     const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mpToken}`,
         "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(body),
     });
