@@ -3,6 +3,7 @@ import NavBottom from "../components/navbottom";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
+const DIAS_VISIVEIS = 15;
 
 export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
@@ -48,8 +49,22 @@ export default function MeusBilhetes() {
     load();
   }, [userId]);
 
-  const bilhetesFiltrados = bilhetes.filter((b) => {
-    if (filtro === "premiados") return b.status === "premiado";
+  // 🔥 Verifica se o bilhete ainda pode aparecer (15 dias após sorteio)
+  function dentroDoPrazo(b: any) {
+    if (!b.sorteioData) return true; // fallback de segurança
+
+    const sorteio = new Date(b.sorteioData).getTime();
+    const limite = sorteio + DIAS_VISIVEIS * 24 * 60 * 60 * 1000;
+    return Date.now() <= limite;
+  }
+
+  // 🔥 Filtra bilhetes válidos para exibição
+  const bilhetesVisiveis = bilhetes.filter(dentroDoPrazo);
+
+  const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
+    const isPremiado = b.status === "premiado" || b.premiado === true;
+
+    if (filtro === "premiados") return isPremiado;
     if (filtro === "pendentes") return !b.pago;
     return true;
   });
@@ -102,11 +117,10 @@ export default function MeusBilhetes() {
                     Bilhete #{b.id}
                   </h2>
                   <p className="text-xs text-blue-100">
-                    Criado em:{" "}
-                    {new Date(b.createdAt).toLocaleString("pt-BR", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
+                    Sorteio:{" "}
+                    {b.sorteioData
+                      ? new Date(b.sorteioData).toLocaleDateString("pt-BR")
+                      : "-"}
                   </p>
                 </div>
 
@@ -121,7 +135,6 @@ export default function MeusBilhetes() {
                 </span>
               </div>
 
-              {/* 🔥 Proteção caso b.dezenas seja null */}
               <div className="flex gap-2 mb-3">
                 {(b.dezenas ? b.dezenas.split(",") : []).map(
                   (n: string, i: number) => (
@@ -137,7 +150,7 @@ export default function MeusBilhetes() {
 
               <div className="flex justify-between items-center">
                 <p className="text-sm text-green-400 font-semibold">
-                  R$ {b.valor.toFixed(2)}
+                  R$ {Number(b.valor).toFixed(2)}
                 </p>
               </div>
             </div>
