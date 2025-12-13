@@ -5,9 +5,22 @@ import { Prisma } from "@prisma/client";
 
 const router = express.Router();
 
-// fetch nativo (Node 18+ / 20+)
+// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
+
+/**
+ * Próxima quarta-feira (data do sorteio)
+ */
+function getNextWednesday(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 0 = domingo
+  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0); // horário padrão do sorteio
+  return next;
+}
 
 /**
  * Busca info do Mercado Pago
@@ -31,23 +44,13 @@ async function fetchMpPayment(paymentId: string) {
       }
     );
 
-    if (!resp.ok) {
-      console.warn("pixWebhook: MP response not ok", resp.status);
-      return null;
-    }
-
+    if (!resp.ok) return null;
     return await resp.json();
-  } catch (e) {
-    console.warn("pixWebhook: erro ao consultar MP:", e);
+  } catch {
     return null;
   }
 }
 
-/**
- * Webhook PIX
- * - ACK sempre 200
- * - Bilhetes são CRIADOS somente após pagamento aprovado
- */
 router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
     const payload: any = req.body || {};
@@ -62,16 +65,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.data?.payment?.id ||
       null;
 
-    if (!paymentId) {
-      return res.status(200).send("ok");
-    }
+    if (!paymentId) return res.status(200).send("ok");
 
     const mpInfo: any = await fetchMpPayment(String(paymentId));
-    const mpStatus: string | null =
-      mpInfo?.status ||
-      payload?.data?.status ||
-      payload?.status ||
-      null;
+    const mpStatus = mpInfo?.status || payload?.data?.status;
 
     if (mpStatus !== "approved") {
       return res.status(200).send("ok");
@@ -81,37 +78,35 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
-    if (!transacao) {
-      console.warn("pixWebhook: transacao não encontrada", paymentId);
-      return res.status(200).send("ok");
-    }
-
-    if (transacao.status === "paid") {
+    if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
 
     // ✅ CAST SEGURO DO METADATA
     const metadata =
-      transacao.metadata && typeof transacao.metadata === "object"
+      typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
-        : null;
+        : {};
 
-    const bilhetesMeta = Array.isArray(metadata?.bilhetes)
-      ? metadata.bilhetes
+    const bilhetesMeta = Array.isArray(metadata.bilhetes)
+      ? (metadata.bilhetes as Array<{ dezenas: string; valor: number }>)
       : [];
 
-    // 🔥 CRIAR BILHETES APÓS PAGAMENTO
+    const sorteioData = getNextWednesday();
+
+    // 🔥 CRIAR BILHETES
     for (const b of bilhetesMeta) {
       await prisma.bilhete.create({
         data: {
-          dezenas: String(b.dezenas),
+          dezenas: b.dezenas,
           valor: Number(b.valor),
           pago: true,
-          transacao: {
-            connect: { id: transacao.id },
-          },
+          sorteioData,
           user: {
             connect: { id: transacao.userId },
+          },
+          transacao: {
+            connect: { id: transacao.id },
           },
         },
       });
@@ -129,7 +124,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     return res.status(200).send("ok");
   } catch (err) {
-    console.error("pixWebhook: erro inesperado", err);
+    console.error("pixWebhook erro:", err);
     return res.status(200).send("ok");
   }
 });
