@@ -2,9 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const API = (import.meta.env.VITE_API_URL as string) || "";
 
 function formatNum(n: number) {
   return String(n).padStart(2, "0");
@@ -26,27 +23,6 @@ export default function ApostaPainel() {
   const [coinBurst, setCoinBurst] = useState(false);
 
   const navigate = useNavigate();
-
-  // resolveUserId tolerante (usa USER_ID ou USER_ZLPIX salvo)
-  function resolveUserId(): string | null {
-    try {
-      const direct = localStorage.getItem("USER_ID");
-      if (direct) return String(direct);
-      const stored = localStorage.getItem("USER_ZLPIX");
-      if (!stored) return null;
-      const parsed = JSON.parse(stored);
-      // tenta os campos comuns
-      if (parsed && (parsed.id || parsed.userId || parsed._id)) {
-        return String(parsed.id ?? parsed.userId ?? parsed._id);
-      }
-      if (parsed.user && (parsed.user.id || parsed.user.userId)) {
-        return String(parsed.user.id ?? parsed.user.userId);
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
 
   // audio refs
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -151,7 +127,6 @@ export default function ApostaPainel() {
     setSelected([]);
     startRollingSound();
 
-    // pool 00..99 (CORRETO)
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
@@ -181,80 +156,45 @@ export default function ApostaPainel() {
     setRolling(false);
   }
 
-  // Confirmar bilhete -> chama backend e adiciona à lista local
-  async function confirmarBilhete() {
+  // CONFIRMAR -> gera bilhete LOCAL (não chama backend)
+  function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
-    const resolved = resolveUserId();
-    if (!resolved) {
-      alert("Erro: usuário não identificado. Faça login e tente novamente.");
-      return;
-    }
 
-    if (!API) {
-      alert("Erro: API não configurada (VITE_API_URL). Verifique .env.");
-      console.error("VITE_API_URL vazio — não será possível criar bilhete.");
-      return;
-    }
+    const newTicket: LocalTicket = {
+      id: Date.now().toString(36),
+      nums: [...selected],
+      valor: 2.0,
+      createdAt: new Date().toISOString(),
+      pago: false,
+    };
 
-    try {
-      const body = {
-        userId: resolved,
-        dezenas: selected.join(","),
-        valor: 2.0,
-        sorteioData: new Date().toISOString(),
-      };
-
-      // envio com headers explícitos
-      const res = await axios.post(`${API}/bilhete/criar`, body, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      // aceitar ambos formatos: { ok: true, bilhete } ou bilhete direto
-      const bilhete = res.data?.bilhete ?? res.data;
-
-      const idStr = bilhete?.id ? String(bilhete.id) : Date.now().toString(36);
-
-      const newTicket: LocalTicket = {
-        id: idStr,
-        nums: [...selected],
-        valor: 2.0,
-        createdAt: new Date().toISOString(),
-        pago: false,
-      };
-
-      setTickets((t) => [newTicket, ...t]);
-      setSelected([]);
-      setCoinBurst(true);
-      setTimeout(() => setCoinBurst(false), 900);
-    } catch (err: any) {
-      console.error("Erro ao criar bilhete (detalhe):", err);
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Erro ao criar bilhete no servidor.";
-      alert(msg);
-    }
+    setTickets((t) => [newTicket, ...t]);
+    setSelected([]);
+    setCoinBurst(true);
+    setTimeout(() => setCoinBurst(false), 900);
   }
 
-  // Desfazer último (remove último criado localmente)
+  // Desfazer último
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // Pagar agora -> leva para /pagamento com bilhete mais recente
+  // PAGAR AGORA -> envia TODOS os bilhetes para a página de revisão
   function pagarAgora() {
-    if (tickets.length === 0) return alert("Nenhum bilhete para pagar.");
-    const ultimo = tickets[0];
-    navigate(
-      `/pagamento?bilheteId=${encodeURIComponent(ultimo.id)}&userId=${encodeURIComponent(
-        resolveUserId() || ""
-      )}`
-    );
+    if (tickets.length === 0) {
+      alert("Nenhum bilhete para pagar.");
+      return;
+    }
+
+    navigate("/revisao", {
+      state: {
+        tickets,
+      },
+    });
   }
 
-  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i)); // 00..99
+  const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
@@ -291,7 +231,6 @@ export default function ApostaPainel() {
           </div>
         </div>
 
-        {/* Buttons */}
         <div className="w-full max-w-md mt-4 flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-3">
             <button
@@ -332,7 +271,6 @@ export default function ApostaPainel() {
           </button>
         </div>
 
-        {/* Tickets list */}
         <div className="mt-5 w-full max-w-md">
           <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
             Bilhetes Gerados
@@ -360,8 +298,8 @@ export default function ApostaPainel() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-gray-400">#{String(t.id).slice(-6)}</span>
-                  <span className={`text-xs font-semibold ${t.pago ? "text-green-400" : "text-yellow-300"}`}>
-                    {t.pago ? "Pago" : "Pendente"}
+                  <span className="text-xs font-semibold text-yellow-300">
+                    Pendente
                   </span>
                 </div>
               </div>
