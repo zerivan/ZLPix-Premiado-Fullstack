@@ -45,8 +45,8 @@ async function fetchMpPayment(paymentId: string) {
 /**
  * Webhook PIX
  * - ACK sempre 200
- * - Fonte da verdade: transacao -> userId
- * - Marca TODOS os bilhetes pendentes do usuário como pagos
+ * - Fonte da verdade: transacao
+ * - CRIA bilhetes somente após pagamento aprovado
  */
 router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
@@ -107,33 +107,45 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
+    const bilhetesMeta = Array.isArray(transacao.metadata?.bilhetes)
+      ? transacao.metadata.bilhetes
+      : [];
+
+    if (bilhetesMeta.length === 0) {
+      console.warn("pixWebhook: transacao sem bilhetes no metadata", {
+        transacaoId: transacao.id,
+      });
+    }
+
+    // 🔥 CRIAR BILHETES AGORA (pós-pagamento)
+    for (const b of bilhetesMeta) {
+      await prisma.bilhete.create({
+        data: {
+          userId: transacao.userId,
+          dezenas: String(b.dezenas),
+          valor: Number(b.valor),
+          pago: true,
+          transacaoId: transacao.id,
+        },
+      });
+    }
+
     // Marcar transação como paga
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
     });
 
-    // 🔥 MARCA TODOS OS BILHETES PENDENTES DO USUÁRIO
-    const updateResult = await prisma.bilhete.updateMany({
-      where: {
-        userId: transacao.userId,
-        pago: false,
-      },
-      data: {
-        pago: true,
-      },
-    });
-
-    console.log("pixWebhook: pagamento confirmado", {
+    console.log("pixWebhook: pagamento confirmado e bilhetes criados", {
       paymentId,
       userId: transacao.userId,
-      bilhetesAtualizados: updateResult.count,
+      bilhetesCriados: bilhetesMeta.length,
     });
 
     return res.status(200).send("ok");
   } catch (err) {
     console.error("pixWebhook: erro inesperado", err);
-    // ACK sempre 200 para não gerar retry infinito
+    // ACK sempre 200 para evitar retry infinito
     return res.status(200).send("ok");
   }
 });
