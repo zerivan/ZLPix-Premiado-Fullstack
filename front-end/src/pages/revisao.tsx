@@ -11,7 +11,7 @@ type Ticket = {
 
 type LocationState = {
   tickets: Ticket[];
-  userId?: string;
+  userId?: string | number;
 };
 
 export default function Revisao() {
@@ -23,6 +23,47 @@ export default function Revisao() {
     return null;
   }
 
+  // 🔐 RESOLUÇÃO SEGURA DO USER ID (NUMÉRICO)
+  function resolveUserId(): number | null {
+    try {
+      if (state.userId !== undefined && state.userId !== null) {
+        const n = Number(state.userId);
+        if (!Number.isNaN(n)) return n;
+      }
+
+      const direct = localStorage.getItem("USER_ID");
+      if (direct) {
+        const n = Number(direct);
+        if (!Number.isNaN(n)) return n;
+      }
+
+      const stored = localStorage.getItem("USER_ZLPIX");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const raw =
+          parsed?.id ??
+          parsed?.userId ??
+          parsed?._id ??
+          parsed?.user?.id ??
+          parsed?.user?.userId;
+
+        const n = Number(raw);
+        if (!Number.isNaN(n)) return n;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  const userId = resolveUserId();
+  if (!userId) {
+    alert("Erro: usuário não identificado. Faça login novamente.");
+    navigate("/login");
+    return null;
+  }
+
   const tickets = state.tickets;
   const quantidade = tickets.length;
   const total = tickets.reduce((acc, t) => acc + t.valor, 0);
@@ -30,7 +71,7 @@ export default function Revisao() {
   async function prosseguir() {
     try {
       const payload = {
-        userId: state.userId || null,
+        userId, // ✅ agora SEMPRE numérico
         amount: Number(total.toFixed(2)),
         description: "Pagamento de bilhetes ZLPix",
         bilhetes: tickets.map((t) => ({
@@ -49,11 +90,13 @@ export default function Revisao() {
       );
 
       const json = await resp.json();
-      if (!resp.ok) throw new Error(json.error || "Erro ao iniciar pagamento");
+      if (!resp.ok) {
+        throw new Error(json?.error || "Erro ao iniciar pagamento");
+      }
 
       navigate("/pagamento", {
         state: {
-          userId: state.userId,
+          userId,
           paymentId: json.payment_id,
           qr_code_base64: json.qr_code_base64,
           copy_paste: json.copy_paste,
@@ -75,9 +118,9 @@ export default function Revisao() {
 
         {/* LISTA DE BILHETES */}
         <div className="space-y-3 mb-4 max-h-56 overflow-auto">
-          {tickets.map((t, i) => (
+          {tickets.map((t) => (
             <div
-              key={t.id || i}
+              key={t.id}
               className="flex justify-between items-center bg-blue-900/60 border border-blue-800/40 rounded-lg px-3 py-2"
             >
               <div className="flex gap-1">
