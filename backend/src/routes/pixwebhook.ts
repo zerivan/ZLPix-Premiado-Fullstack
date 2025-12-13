@@ -2,6 +2,7 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
+import { enviarWhatsApp } from "../services/whatsapp";
 
 const router = express.Router();
 
@@ -116,6 +117,28 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { id: transacao.id },
       data: { status: "paid" },
     });
+
+    // 🔥 ENVIAR WHATSAPP (BILHETE GERADO)
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: transacao.userId },
+      });
+
+      if (user?.phone && bilhetesMeta.length > 0) {
+        await enviarWhatsApp("BILHETE_GERADO", {
+          telefone: user.phone,
+          bilheteId: transacao.id,
+          dezenas: bilhetesMeta.map(b => b.dezenas).join(" | "),
+          valor: bilhetesMeta.reduce(
+            (s, b) => s + Number(b.valor),
+            0
+          ),
+          sorteioData,
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao enviar WhatsApp (bilhete gerado):", err);
+    }
 
     console.log("pixWebhook: pagamento confirmado", {
       paymentId,
