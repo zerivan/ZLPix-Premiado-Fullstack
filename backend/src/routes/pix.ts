@@ -19,13 +19,15 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // Validar userId (recomendo exigir)
+    // Validar userId (obrigatório e numérico)
     const uid = typeof userId === "number" ? userId : Number(userId);
     if (!uid || Number.isNaN(uid)) {
-      return res.status(400).json({ error: "Payload inválido: userId obrigatório e numérico." });
+      return res
+        .status(400)
+        .json({ error: "Payload inválido: userId obrigatório e numérico." });
     }
 
-    // 1) Criar transação pendente (com metadata)
+    // 1) Criar transação pendente
     let txRecord: any = null;
     try {
       txRecord = await prisma.transacao.create({
@@ -38,18 +40,25 @@ router.post("/create", async (req, res) => {
         },
       });
     } catch (err) {
-      // se a tabela realmente não existir, logue e prossiga (cuidado)
       console.error("Erro ao criar transacao (prisma):", err);
-      return res.status(500).json({ error: "Erro ao criar transação no servidor." });
+      return res
+        .status(500)
+        .json({ error: "Erro ao criar transação no servidor." });
     }
 
     // 2) Config Mercado Pago
-    const mpToken = process.env.MP_ACCESS_TOKEN;
-    const mpBase = process.env.MP_BASE_URL || "https://api.mercadopago.com";
+    const mpToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+
+    const mpBase =
+      process.env.MP_BASE_URL || "https://api.mercadopago.com";
 
     if (!mpToken) {
       console.error("MP_ACCESS_TOKEN não configurado");
-      return res.status(500).json({ error: "MP_ACCESS_TOKEN não configurado no backend" });
+      return res
+        .status(500)
+        .json({ error: "MP_ACCESS_TOKEN não configurado no backend" });
     }
 
     const body = {
@@ -62,7 +71,7 @@ router.post("/create", async (req, res) => {
       },
     };
 
-    // 3) Criar pagamento PIX no MP
+    // 3) Criar pagamento PIX no Mercado Pago
     const resp = await fetchFn(`${mpBase}/v1/payments`, {
       method: "POST",
       headers: {
@@ -77,15 +86,20 @@ router.post("/create", async (req, res) => {
       mpJson = await resp.json();
     } catch (err) {
       console.error("Erro ao parsear resposta MP:", err);
-      return res.status(502).json({ error: "Resposta inválida do Mercado Pago" });
+      return res
+        .status(502)
+        .json({ error: "Resposta inválida do Mercado Pago" });
     }
 
     if (!resp.ok) {
       console.error("Erro Mercado Pago:", mpJson);
-      return res.status(502).json({ error: "Erro ao criar PIX no Mercado Pago", details: mpJson });
+      return res.status(502).json({
+        error: "Erro ao criar PIX no Mercado Pago",
+        details: mpJson,
+      });
     }
 
-    // 4) Extrair dados do MP (tolerante)
+    // 4) Extrair dados do MP
     const paymentId =
       mpJson.id ||
       mpJson.payment_id ||
@@ -93,31 +107,36 @@ router.post("/create", async (req, res) => {
       null;
 
     const qr_base64 =
-      mpJson.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+      mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ||
+      null;
 
     const copia_cola =
       mpJson.point_of_interaction?.transaction_data?.qr_code ||
       mpJson.qr_code ||
       null;
 
-    // 5) Atualizar transação com mpPaymentId e (se quiser) armazenar response na metadata
+    // 5) Atualizar transação com mpPaymentId
     if (txRecord && paymentId) {
       try {
         await prisma.transacao.update({
           where: { id: txRecord.id },
           data: {
             mpPaymentId: String(paymentId),
-            // opcional: anexar resposta MP nos metadata (atenção ao tamanho)
-            metadata: { ...txRecord.metadata, mpResponse: mpJson },
+            metadata: {
+              ...txRecord.metadata,
+              mpResponse: mpJson,
+            },
           },
         });
       } catch (err) {
-        console.warn("Falha ao atualizar transacao com mpPaymentId:", err);
-        // não falhar o fluxo — retornar os dados do MP mesmo assim
+        console.warn(
+          "Falha ao atualizar transacao com mpPaymentId:",
+          err
+        );
       }
     }
 
-    // 6) Resposta para frontend
+    // 6) Resposta para o frontend
     return res.json({
       payment_id: paymentId,
       qr_code_base64: qr_base64,
@@ -126,7 +145,10 @@ router.post("/create", async (req, res) => {
     });
   } catch (error: any) {
     console.error("Erro /pix/create (catch):", error);
-    return res.status(500).json({ error: "Erro interno", details: error?.message || String(error) });
+    return res.status(500).json({
+      error: "Erro interno",
+      details: error?.message || String(error),
+    });
   }
 });
 
