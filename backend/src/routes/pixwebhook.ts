@@ -75,8 +75,15 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
+    // 🔧 AJUSTE CRÍTICO: buscar transação com IDs possíveis
     const transacao = await prisma.transacao.findFirst({
-      where: { mpPaymentId: String(paymentId) },
+      where: {
+        OR: [
+          { mpPaymentId: String(paymentId) },
+          { mpPaymentId: String(payload?.resource) },
+          { mpPaymentId: String(payload?.id) },
+        ],
+      },
     });
 
     if (!transacao || transacao.status === "paid") {
@@ -118,19 +125,15 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       data: { status: "paid" },
     });
 
-    // 🔥 Enviar WhatsApp (AJUSTE CIRÚRGICO)
+    // 🔥 Enviar WhatsApp
     try {
       const user = await prisma.users.findUnique({
         where: { id: transacao.userId },
       });
 
       if (user?.phone && bilhetesMeta.length > 0) {
-        // 🔒 NORMALIZA TELEFONE (PONTO CRÍTICO)
         let telefone = String(user.phone).replace(/\D/g, "");
-
-        if (!telefone.startsWith("55")) {
-          telefone = "55" + telefone;
-        }
+        if (!telefone.startsWith("55")) telefone = "55" + telefone;
 
         await enviarWhatsApp("BILHETE_GERADO", {
           telefone,
