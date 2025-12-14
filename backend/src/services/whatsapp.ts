@@ -1,31 +1,32 @@
 import axios from "axios";
 
 /**
- * Tipos de mensagens suportadas
+ * Tipos de mensagens suportados
  */
 type WhatsAppTipo =
   | "BILHETE_GERADO"
   | "BILHETE_PREMIADO";
 
 interface WhatsAppBilheteData {
-  telefone: string;        // 5599999999999
+  telefone: string; // ex: 5599999999999
   bilheteId: number;
   dezenas: string;
   valor: number;
-  sorteioData: Date;
+  sorteioData: Date | string;
   premio?: number;
 }
 
 /**
  * Serviço central de envio de WhatsApp
- * Não cria rota, não cria endpoint público
+ * NÃO cria rota
+ * NÃO cria endpoint público
  */
 export async function enviarWhatsApp(
   tipo: WhatsAppTipo,
   dados: WhatsAppBilheteData
 ) {
   try {
-    const {
+    let {
       telefone,
       bilheteId,
       dezenas,
@@ -39,18 +40,29 @@ export async function enviarWhatsApp(
       return;
     }
 
+    // 🔒 Normaliza telefone (remove tudo que não for número)
+    telefone = telefone.replace(/\D/g, "");
+
+    // 🔒 Garante DDI Brasil
+    if (!telefone.startsWith("55")) {
+      telefone = "55" + telefone;
+    }
+
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_WHATSAPP_FROM;
 
-    if (!accountSid || !authToken || !from) {
-      console.warn("WhatsApp: variáveis Twilio não configuradas");
+    // ⚠️ Sandbox FIXO
+    const from = "whatsapp:+14155238886";
+
+    if (!accountSid || !authToken) {
+      console.warn("WhatsApp: credenciais Twilio não configuradas");
       return;
     }
 
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-    // Mensagem final (Twilio Sandbox aceita texto livre)
+    const dataSorteio = new Date(sorteioData).toLocaleDateString("pt-BR");
+
     let mensagem = "";
 
     if (tipo === "BILHETE_GERADO") {
@@ -58,7 +70,7 @@ export async function enviarWhatsApp(
         `🎟️ Bilhete gerado com sucesso!\n\n` +
         `Bilhete: ${bilheteId}\n` +
         `Dezenas: ${dezenas}\n` +
-        `Sorteio: ${sorteioData.toLocaleDateString("pt-BR")}\n` +
+        `Sorteio: ${dataSorteio}\n` +
         `Valor: R$ ${valor.toFixed(2)}\n\n` +
         `Boa sorte! 🍀`;
     }
@@ -68,7 +80,7 @@ export async function enviarWhatsApp(
         `🎉 PARABÉNS! SEU BILHETE FOI PREMIADO!\n\n` +
         `Bilhete: ${bilheteId}\n` +
         `Dezenas: ${dezenas}\n` +
-        `Sorteio: ${sorteioData.toLocaleDateString("pt-BR")}\n` +
+        `Sorteio: ${dataSorteio}\n` +
         `Prêmio: R$ ${premio?.toFixed(2)}\n\n` +
         `Obrigado por participar! 🏆`;
     }
@@ -77,7 +89,7 @@ export async function enviarWhatsApp(
       url,
       new URLSearchParams({
         From: from,
-        To: `whatsapp:${telefone}`,
+        To: `whatsapp:+${telefone}`,
         Body: mensagem,
       }),
       {
@@ -91,7 +103,7 @@ export async function enviarWhatsApp(
       }
     );
 
-    console.log(`WhatsApp enviado (${tipo}) para ${telefone}`);
+    console.log(`WhatsApp enviado (${tipo}) para +${telefone}`);
   } catch (error: any) {
     console.error(
       "Erro ao enviar WhatsApp:",
