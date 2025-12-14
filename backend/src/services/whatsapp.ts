@@ -1,96 +1,56 @@
 import axios from "axios";
 
-/**
- * Tipos de mensagens suportados
- */
 type WhatsAppTipo =
   | "BILHETE_GERADO"
   | "BILHETE_PREMIADO";
 
 interface WhatsAppBilheteData {
-  telefone: string; // ex: 5599999999999
+  telefone: string;
   bilheteId: number;
   dezenas: string;
   valor: number;
-  sorteioData: Date | string;
+  sorteioData: Date;
   premio?: number;
 }
 
-/**
- * Serviço central de envio de WhatsApp
- * NÃO cria rota
- * NÃO cria endpoint público
- */
 export async function enviarWhatsApp(
   tipo: WhatsAppTipo,
   dados: WhatsAppBilheteData
 ) {
   try {
-    let {
-      telefone,
-      bilheteId,
-      dezenas,
-      valor,
-      sorteioData,
-      premio,
-    } = dados;
-
-    if (!telefone) {
-      console.warn("WhatsApp: telefone não informado");
-      return;
-    }
-
-    // 🔒 Normaliza telefone (remove tudo que não for número)
-    telefone = telefone.replace(/\D/g, "");
-
-    // 🔒 Garante DDI Brasil
-    if (!telefone.startsWith("55")) {
-      telefone = "55" + telefone;
-    }
-
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const contentSid = process.env.TWILIO_CONTENT_SID;
 
-    // ⚠️ Sandbox FIXO
-    const from = "whatsapp:+14155238886";
-
-    if (!accountSid || !authToken) {
-      console.warn("WhatsApp: credenciais Twilio não configuradas");
+    if (!accountSid || !authToken || !contentSid) {
+      console.warn("WhatsApp: credenciais ou template não configurados");
       return;
     }
+
+    let telefone = dados.telefone.replace(/\D/g, "");
+    if (!telefone.startsWith("55")) telefone = "55" + telefone;
 
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-    const dataSorteio = new Date(sorteioData).toLocaleDateString("pt-BR");
+    // Variáveis do template (ajuste conforme seu template)
+    const variables: any = {
+      "1": dados.bilheteId,
+      "2": dados.dezenas,
+      "3": `R$ ${dados.valor.toFixed(2)}`,
+      "4": new Date(dados.sorteioData).toLocaleDateString("pt-BR"),
+    };
 
-    let mensagem = "";
-
-    if (tipo === "BILHETE_GERADO") {
-      mensagem =
-        `🎟️ Bilhete gerado com sucesso!\n\n` +
-        `Bilhete: ${bilheteId}\n` +
-        `Dezenas: ${dezenas}\n` +
-        `Sorteio: ${dataSorteio}\n` +
-        `Valor: R$ ${valor.toFixed(2)}\n\n` +
-        `Boa sorte! 🍀`;
-    }
-
-    if (tipo === "BILHETE_PREMIADO") {
-      mensagem =
-        `🎉 PARABÉNS! SEU BILHETE FOI PREMIADO!\n\n` +
-        `Bilhete: ${bilheteId}\n` +
-        `Dezenas: ${dezenas}\n` +
-        `Sorteio: ${dataSorteio}\n` +
-        `Prêmio: R$ ${premio?.toFixed(2)}\n\n` +
-        `Obrigado por participar! 🏆`;
+    if (tipo === "BILHETE_PREMIADO" && dados.premio) {
+      variables["5"] = `R$ ${dados.premio.toFixed(2)}`;
     }
 
     await axios.post(
       url,
       new URLSearchParams({
-        From: from,
+        From: "whatsapp:+14155238886",
         To: `whatsapp:+${telefone}`,
-        Body: mensagem,
+        ContentSid: contentSid,
+        ContentVariables: JSON.stringify(variables),
       }),
       {
         auth: {
@@ -103,11 +63,11 @@ export async function enviarWhatsApp(
       }
     );
 
-    console.log(`WhatsApp enviado (${tipo}) para +${telefone}`);
-  } catch (error: any) {
+    console.log("WhatsApp enviado com template para", telefone);
+  } catch (err: any) {
     console.error(
       "Erro ao enviar WhatsApp:",
-      error?.response?.data || error.message
+      err?.response?.data || err.message
     );
   }
 }
