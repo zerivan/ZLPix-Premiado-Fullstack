@@ -19,7 +19,7 @@ function getNextWednesday(): Date {
   const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0); // horário padrão do sorteio
+  next.setHours(20, 0, 0, 0);
   return next;
 }
 
@@ -83,7 +83,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // ✅ CAST SEGURO DO METADATA
+    // ✅ metadata seguro
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
@@ -95,7 +95,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     const sorteioData = getNextWednesday();
 
-    // 🔥 CRIAR BILHETES
+    // 🔥 Criar bilhetes
     for (const b of bilhetesMeta) {
       await prisma.bilhete.create({
         data: {
@@ -118,7 +118,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       data: { status: "paid" },
     });
 
-    // 🔥 ENVIAR WHATSAPP (BILHETE GERADO)
+    // 🔥 Enviar WhatsApp (novo serviço)
     try {
       const user = await prisma.users.findUnique({
         where: { id: transacao.userId },
