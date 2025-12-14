@@ -39,63 +39,54 @@ export async function enviarWhatsApp(
       return;
     }
 
-    const token = process.env.WHATSAPP_TOKEN;
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const from = process.env.TWILIO_WHATSAPP_FROM;
 
-    if (!token || !phoneNumberId) {
-      console.warn("WhatsApp: variáveis de ambiente não configuradas");
+    if (!accountSid || !authToken || !from) {
+      console.warn("WhatsApp: variáveis Twilio não configuradas");
       return;
     }
 
-    const url = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
-    // Templates (nomes fictícios – ajustar no Meta)
-    let templateName = "";
-    let parameters: any[] = [];
+    // Mensagem final (Twilio Sandbox aceita texto livre)
+    let mensagem = "";
 
     if (tipo === "BILHETE_GERADO") {
-      templateName = "bilhete_gerado";
-
-      parameters = [
-        { type: "text", text: String(bilheteId) },
-        { type: "text", text: dezenas },
-        { type: "text", text: sorteioData.toLocaleDateString("pt-BR") },
-        { type: "text", text: `R$ ${valor.toFixed(2)}` },
-      ];
+      mensagem =
+        `🎟️ Bilhete gerado com sucesso!\n\n` +
+        `Bilhete: ${bilheteId}\n` +
+        `Dezenas: ${dezenas}\n` +
+        `Sorteio: ${sorteioData.toLocaleDateString("pt-BR")}\n` +
+        `Valor: R$ ${valor.toFixed(2)}\n\n` +
+        `Boa sorte! 🍀`;
     }
 
     if (tipo === "BILHETE_PREMIADO") {
-      templateName = "bilhete_premiado";
-
-      parameters = [
-        { type: "text", text: String(bilheteId) },
-        { type: "text", text: dezenas },
-        { type: "text", text: sorteioData.toLocaleDateString("pt-BR") },
-        { type: "text", text: `R$ ${premio?.toFixed(2)}` },
-      ];
+      mensagem =
+        `🎉 PARABÉNS! SEU BILHETE FOI PREMIADO!\n\n` +
+        `Bilhete: ${bilheteId}\n` +
+        `Dezenas: ${dezenas}\n` +
+        `Sorteio: ${sorteioData.toLocaleDateString("pt-BR")}\n` +
+        `Prêmio: R$ ${premio?.toFixed(2)}\n\n` +
+        `Obrigado por participar! 🏆`;
     }
 
     await axios.post(
       url,
+      new URLSearchParams({
+        From: from,
+        To: `whatsapp:${telefone}`,
+        Body: mensagem,
+      }),
       {
-        messaging_product: "whatsapp",
-        to: telefone,
-        type: "template",
-        template: {
-          name: templateName,
-          language: { code: "pt_BR" },
-          components: [
-            {
-              type: "body",
-              parameters,
-            },
-          ],
+        auth: {
+          username: accountSid,
+          password: authToken,
         },
-      },
-      {
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
