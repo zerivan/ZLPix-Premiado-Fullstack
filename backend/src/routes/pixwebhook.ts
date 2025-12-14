@@ -118,15 +118,22 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       data: { status: "paid" },
     });
 
-    // 🔥 Enviar WhatsApp (novo serviço)
+    // 🔥 Enviar WhatsApp (AJUSTE CIRÚRGICO)
     try {
       const user = await prisma.users.findUnique({
         where: { id: transacao.userId },
       });
 
       if (user?.phone && bilhetesMeta.length > 0) {
+        // 🔒 NORMALIZA TELEFONE (PONTO CRÍTICO)
+        let telefone = String(user.phone).replace(/\D/g, "");
+
+        if (!telefone.startsWith("55")) {
+          telefone = "55" + telefone;
+        }
+
         await enviarWhatsApp("BILHETE_GERADO", {
-          telefone: user.phone,
+          telefone,
           bilheteId: transacao.id,
           dezenas: bilhetesMeta.map(b => b.dezenas).join(" | "),
           valor: bilhetesMeta.reduce(
