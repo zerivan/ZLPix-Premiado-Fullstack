@@ -2,9 +2,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
+import { api } from "../api/client";
 
 export default function AddCreditos() {
   const [valor, setValor] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const valoresRapidos = [10, 20, 50, 100];
 
@@ -12,14 +14,33 @@ export default function AddCreditos() {
     setValor(String(v));
   }
 
-  function gerarPix() {
+  async function gerarPix() {
     if (!valor || Number(valor) <= 0) {
       alert("Digite um valor válido.");
       return;
     }
 
-    // Depois vamos chamar o backend com VITE_API_URL
-    window.location.href = `/pix?valor=${valor}`;
+    try {
+      setLoading(true);
+
+      const res = await api.post("/wallet/depositar", {
+        valor: Number(valor),
+      });
+
+      const redirectUrl = res.data?.redirectUrl;
+
+      if (!redirectUrl) {
+        throw new Error("Resposta inválida do servidor");
+      }
+
+      window.location.href = redirectUrl;
+
+    } catch (e) {
+      console.error("Erro ao gerar PIX:", e);
+      alert("Não foi possível gerar o PIX. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -70,9 +91,10 @@ export default function AddCreditos() {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={gerarPix}
-          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl"
+          disabled={loading}
+          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
         >
-          ⚡ GERAR PIX
+          {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
         </motion.button>
 
       </main>
