@@ -75,7 +75,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔧 AJUSTE CRÍTICO: buscar transação com IDs possíveis
+    // 🔧 Buscar transação
     const transacao = await prisma.transacao.findFirst({
       where: {
         OR: [
@@ -88,6 +88,17 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
+    }
+
+    // 🔐 NOVO: garantir que o usuário tenha carteira
+    const walletExistente = await prisma.wallet.findUnique({
+      where: { userId: transacao.userId },
+    });
+
+    if (!walletExistente) {
+      await prisma.wallet.create({
+        data: { userId: transacao.userId },
+      });
     }
 
     // ✅ metadata seguro
