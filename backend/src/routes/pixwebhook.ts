@@ -90,14 +90,20 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔐 garantir wallet (CORRIGIDO)
+    // 🔐 garantir wallet (CORRETO AGORA)
     const walletExistente = await prisma.wallet.findFirst({
       where: { userId: transacao.userId },
     });
 
     if (!walletExistente) {
       await prisma.wallet.create({
-        data: { userId: transacao.userId },
+        data: {
+          user: {
+            connect: { id: transacao.userId },
+          },
+          saldo: 0,
+          createdAt: new Date(),
+        },
       });
     }
 
