@@ -90,8 +90,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔐 garantir wallet (NÃO MUDA)
-    const walletExistente = await prisma.wallet.findUnique({
+    // 🔐 garantir wallet (CORRIGIDO)
+    const walletExistente = await prisma.wallet.findFirst({
       where: { userId: transacao.userId },
     });
 
@@ -101,17 +101,17 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ metadata seguro (NÃO MUDA)
+    // ✅ metadata seguro
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
     // =========================================
-    // 💰 DEPÓSITO EM CARTEIRA (NOVO – CIRÚRGICO)
+    // 💰 DEPÓSITO EM CARTEIRA
     // =========================================
     if (metadata.tipo === "deposito") {
-      await prisma.wallet.update({
+      await prisma.wallet.updateMany({
         where: { userId: transacao.userId },
         data: {
           saldo: {
@@ -123,11 +123,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       await prisma.transacao.update({
         where: { id: transacao.id },
         data: { status: "paid" },
-      });
-
-      console.log("💰 Depósito confirmado", {
-        userId: transacao.userId,
-        valor: transacao.valor,
       });
 
       return res.status(200).send("ok");
@@ -162,36 +157,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
-    });
-
-    // 🔥 WhatsApp (NÃO MUDA)
-    try {
-      const user = await prisma.users.findUnique({
-        where: { id: transacao.userId },
-      });
-
-      if (user?.phone && bilhetesMeta.length > 0) {
-        let telefone = String(user.phone).replace(/\D/g, "");
-        if (!telefone.startsWith("55")) telefone = "55" + telefone;
-
-        await enviarWhatsApp("BILHETE_GERADO", {
-          telefone,
-          bilheteId: transacao.id,
-          dezenas: bilhetesMeta.map(b => b.dezenas).join(" | "),
-          valor: bilhetesMeta.reduce(
-            (s, b) => s + Number(b.valor),
-            0
-          ),
-          sorteioData,
-        });
-      }
-    } catch (err) {
-      console.error("Erro ao enviar WhatsApp (bilhete gerado):", err);
-    }
-
-    console.log("pixWebhook: pagamento confirmado", {
-      paymentId,
-      bilhetesCriados: bilhetesMeta.length,
     });
 
     return res.status(200).send("ok");
