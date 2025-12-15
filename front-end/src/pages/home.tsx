@@ -4,12 +4,37 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 
+function getNextWednesday(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 0 = domingo
+  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
+function daysUntil(date: Date): number {
+  const now = new Date();
+  const diff = date.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
+  // 🔗 futuramente isso vem do backend
   const premioAtual = "R$ 25.000,00";
-  const dataSorteio = "04/12/2025";
+
+  const proximoSorteio = getNextWednesday();
+  const diasFaltando = daysUntil(proximoSorteio);
+
+  const dataSorteio = proximoSorteio.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
@@ -24,22 +49,35 @@ export default function Home() {
         </p>
       </header>
 
-      {/* 🔥 ÁREA DE CONTEÚDOS (CENTRALIZADA E AGRUPADA) */}
+      {/* 🔥 ÁREA DE CONTEÚDOS */}
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
 
         {/* 💎 CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
           <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
+
           <h2 className="text-4xl font-extrabold drop-shadow-sm">
             {premioAtual}
           </h2>
+
           <p className="text-sm text-blue-100 mt-2">
             Próximo sorteio:{" "}
-            <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
+            <span className="text-yellow-300 font-semibold">
+              {dataSorteio}
+            </span>
           </p>
+
+          {/* ⏱️ TIMELINE PEQUENA */}
+          <div className="mt-3 text-xs text-blue-100/80">
+            ⏳ Faltam{" "}
+            <span className="text-yellow-300 font-semibold">
+              {diasFaltando} dias
+            </span>{" "}
+            • Sorteio sempre às quartas
+          </div>
         </div>
 
-        {/* 🎯 BOTÃO PRINCIPAL PULSANTE (AGORA FUNCIONANDO) */}
+        {/* 🎯 BOTÃO PRINCIPAL */}
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 1.8, repeat: Infinity }}
@@ -77,7 +115,6 @@ export default function Home() {
                 transition={{ duration: 0.4 }}
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
               >
-                {/* 🧩 Esquema visual */}
                 <pre className="text-xs text-white/90 font-mono bg-black/20 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap w-full">
 {`┌──────────────────────────────┬──────────────────────────────┐
 │   🏆 RESULTADO OFICIAL       │        🎟️ SEU BILHETE        │
@@ -94,11 +131,10 @@ export default function Home() {
 └──────────────────────────────┴──────────────────────────────┘`}
                 </pre>
 
-                {/* Explicação */}
                 <div className="text-sm space-y-2 text-white/90 leading-relaxed">
                   <p>
-                    🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.  
-                    Se alguma delas aparecer nas <strong>centenas sorteadas</strong>,  
+                    🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.
+                    Se alguma delas aparecer nas <strong>centenas sorteadas</strong>,
                     seu bilhete é premiado!
                   </p>
 
@@ -118,7 +154,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* 📱 MENU INFERIOR */}
       <NavBottom />
     </div>
   );
