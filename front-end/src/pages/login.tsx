@@ -36,12 +36,21 @@ export default function Login() {
         throw new Error("Resposta inválida do servidor.");
       }
 
-      // 💾 SALVA TUDO que o app precisa
+      // 💾 SALVA DADOS ESSENCIAIS
       localStorage.setItem("TOKEN_ZLPIX", token);
       localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
-
-      // 🔥 ESSENCIAL — sem isso o ApostaPainel não funciona
       localStorage.setItem("USER_ID", String(user.id));
+
+      // 🔐 aplica token nas próximas chamadas
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // 🧠 NOVO — garante que a carteira exista
+      try {
+        await api.post("/wallet/ensure");
+      } catch (e) {
+        // não bloqueia login se falhar
+        console.warn("Não foi possível garantir wallet:", e);
+      }
 
       // 👉 vai pra Home
       navigate("/home");
@@ -109,10 +118,10 @@ export default function Login() {
             </div>
           </div>
 
-          {/* ERRO */}
-          {erro && <p className="text-yellow-300 text-sm text-center">{erro}</p>}
+          {erro && (
+            <p className="text-yellow-300 text-sm text-center">{erro}</p>
+          )}
 
-          {/* BOTÃO LOGIN */}
           <button
             type="submit"
             disabled={loading}
@@ -121,7 +130,6 @@ export default function Login() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          {/* RECUPERAR SENHA */}
           <p
             className="text-sm text-yellow-300 cursor-pointer text-right mt-2 hover:underline"
             onClick={() => navigate("/recuperar-senha")}
@@ -129,7 +137,6 @@ export default function Login() {
             Esqueci minha senha
           </p>
 
-          {/* CADASTRO */}
           <p className="text-sm text-center mt-3">
             Não tem conta?{" "}
             <span
