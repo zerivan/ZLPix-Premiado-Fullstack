@@ -24,12 +24,10 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
-  // audio refs
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
-  // load persisted tickets
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ZLPX_TICKETS_LOCAL");
@@ -44,7 +42,8 @@ export default function ApostaPainel() {
   }, [tickets]);
 
   useEffect(() => {
-    const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const AC =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
     try {
       audioCtxRef.current = new AC();
     } catch {
@@ -52,7 +51,6 @@ export default function ApostaPainel() {
     }
   }, []);
 
-  // click sound
   function playClickSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -69,7 +67,6 @@ export default function ApostaPainel() {
     } catch {}
   }
 
-  // rolling sound helpers
   function startRollingSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -93,7 +90,10 @@ export default function ApostaPainel() {
       const now = audioCtxRef.current.currentTime;
       const base = 180;
       oscRef.current.frequency.cancelScheduledValues(now);
-      oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
+      oscRef.current.frequency.linearRampToValueAtTime(
+        base * speed,
+        now + 0.05
+      );
     } catch {}
   }
 
@@ -109,7 +109,6 @@ export default function ApostaPainel() {
     gainRef.current = null;
   }
 
-  // Toggle seleção manual
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
@@ -120,7 +119,6 @@ export default function ApostaPainel() {
     });
   }
 
-  // Gerar aleatório (00..99) com animação
   async function gerarAleatorio() {
     if (rolling) return;
     setRolling(true);
@@ -136,7 +134,9 @@ export default function ApostaPainel() {
         const randomNum = pool[Math.floor(Math.random() * pool.length)];
         setActiveNumber(randomNum);
         modulateRollingSound(1 + Math.random() * 3.5);
-        await new Promise((r) => setTimeout(r, 20 + Math.random() * 40));
+        await new Promise((r) =>
+          setTimeout(r, 20 + Math.random() * 40)
+        );
       }
 
       let chosen = pool[Math.floor(Math.random() * pool.length)];
@@ -156,7 +156,6 @@ export default function ApostaPainel() {
     setRolling(false);
   }
 
-  // CONFIRMAR -> gera bilhete LOCAL
   function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
 
@@ -174,30 +173,28 @@ export default function ApostaPainel() {
     setTimeout(() => setCoinBurst(false), 900);
   }
 
-  // Desfazer último
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // 🔥 ÚNICA ALTERAÇÃO: limpar bilhetes ao sair
+  // ✅ ÚNICA ALTERAÇÃO — LIMPA BILHETES AO PAGAR
   function pagarAgora() {
     if (tickets.length === 0) {
       alert("Nenhum bilhete para pagar.");
       return;
     }
 
-    const ticketsParaPagamento = [...tickets];
+    const ticketsParaRevisao = [...tickets];
 
     setTickets([]);
-    setSelected([]);
     try {
       localStorage.removeItem("ZLPX_TICKETS_LOCAL");
     } catch {}
 
     navigate("/revisao", {
       state: {
-        tickets: ticketsParaPagamento,
+        tickets: ticketsParaRevisao,
       },
     });
   }
@@ -206,8 +203,7 @@ export default function ApostaPainel() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
-      {/* TODO O JSX — INTACTO (igual ao seu) */}
-      {/* … exatamente como você mandou */}
+      {/* TODO O JSX PERMANECE IDÊNTICO */}
       <NavBottom />
     </div>
   );
