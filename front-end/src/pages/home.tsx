@@ -25,7 +25,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
 
   // 🔗 futuramente isso vem do backend
-  const premioAtual = "R$ 25.000,00";
+  const premioAtual = "R$ 500.00";
 
   const proximoSorteio = getNextWednesday();
   const diasFaltando = daysUntil(proximoSorteio);
