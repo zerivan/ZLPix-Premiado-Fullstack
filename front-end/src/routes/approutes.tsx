@@ -9,6 +9,7 @@ import ApostaPainel from "../pages/apostapainel";
 import MeusBilhetes from "../pages/meusbilhetes";
 import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
+import Carteira from "../pages/carteira"; // ✅ NOVO
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
@@ -77,109 +78,25 @@ export default function AppRoutes() {
   return (
     <Routes>
 
-      {/* 🔑 Login explícito */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
+      {/* 🔑 Login */}
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
+      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
-      {/* 🔑 Página inicial = login */}
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
+      {/* 🔒 ÁREA LOGADA */}
+      <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
+      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
+      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
+      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
+      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} /> {/* ✅ NOVO */}
 
-      <Route
-        path="/cadastro"
-        element={
-          <PublicRoute>
-            <Cadastro />
-          </PublicRoute>
-        }
-      />
+      {/* 🧾 REVISÃO */}
+      <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
 
-      <Route
-        path="/recuperar-senha"
-        element={
-          <PublicRoute>
-            <RecuperarSenha />
-          </PublicRoute>
-        }
-      />
-
-      {/* ÁREA LOGADA */}
-      <Route
-        path="/home"
-        element={
-          <PrivateRoute>
-            <Home />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/aposta"
-        element={
-          <PrivateRoute>
-            <ApostaPainel />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/meus-bilhetes"
-        element={
-          <PrivateRoute>
-            <MeusBilhetes />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/resultado"
-        element={
-          <PrivateRoute>
-            <Resultado />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/perfil"
-        element={
-          <PrivateRoute>
-            <Perfil />
-          </PrivateRoute>
-        }
-      />
-
-      {/* 🧾 REVISÃO FINAL ANTES DO PIX */}
-      <Route
-        path="/revisao"
-        element={
-          <PrivateRoute>
-            <Revisao />
-          </PrivateRoute>
-        }
-      />
-
-      {/* 💸 TELA QUE MOSTRA O QR CODE PIX */}
-      <Route
-        path="/pagamento"
-        element={
-          <PrivateRoute>
-            <PixPagamento />
-          </PrivateRoute>
-        }
-      />
+      {/* 💸 PAGAMENTO PIX */}
+      <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
       {/* ADMIN */}
       <Route path="/admin" element={<AdminLogin />} />
@@ -188,11 +105,9 @@ export default function AppRoutes() {
       <Route
         path="*"
         element={
-          isLoggedIn() ? (
-            <Navigate to="/home" replace />
-          ) : (
-            <Navigate to="/" replace />
-          )
+          isLoggedIn()
+            ? <Navigate to="/home" replace />
+            : <Navigate to="/" replace />
         }
       />
     </Routes>
