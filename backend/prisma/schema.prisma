@@ -18,7 +18,7 @@ model users {
 
   bilhetes       bilhete[]
   transacoes     transacao[]
-  wallet         wallet?
+  wallets        wallet[]          // 🔧 1–N (resolve o erro)
   passwordResets password_reset[]
 }
 
@@ -31,7 +31,6 @@ model wallet {
   user users @relation(fields: [userId], references: [id])
 
   @@map("wallet")
-  @@schema("public")
 }
 
 model admins {
