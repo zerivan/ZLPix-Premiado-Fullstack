@@ -8,6 +8,7 @@ import {
   Trophy,
   User,
   Shield,
+  Wallet,
 } from "lucide-react";
 
 export default function NavBottom() {
@@ -43,6 +44,10 @@ export default function NavBottom() {
     { icon: Home, label: "Início", path: "/home" },
     { icon: Ticket, label: "Apostar", path: "/aposta" },
     { icon: ListOrdered, label: "Bilhetes", path: "/meus-bilhetes" },
+
+    // 💰 NOVO — CARTEIRA
+    { icon: Wallet, label: "Carteira", path: "/carteira" },
+
     { icon: Trophy, label: "Resultados", path: "/resultado" },
     { icon: User, label: "Perfil", path: "/perfil" },
     { icon: Shield, label: "Admin", path: "/admin" },
