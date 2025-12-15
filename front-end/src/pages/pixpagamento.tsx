@@ -54,7 +54,8 @@ export default function PixPagamento() {
           `${API}/pix/payment-status/${paymentId}`
         );
 
-        if (resp.data?.status === "PAID") {
+        // 🔧 CORREÇÃO AQUI
+        if (resp.data?.status === "paid") {
           setStatus("Pagamento confirmado! 🎉");
 
           if (pollingRef.current) {
@@ -110,12 +111,10 @@ export default function PixPagamento() {
         Pagamento PIX
       </h1>
 
-      {/* STATUS */}
       <p className="mb-4 text-sm text-white/80">{status}</p>
 
       <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-4">
 
-        {/* RESUMO DOS BILHETES */}
         {bilhetes.length > 0 && (
           <div className="bg-black/30 rounded-xl p-4 text-left text-sm">
             <p className="font-bold text-yellow-300 mb-2">
@@ -132,7 +131,6 @@ export default function PixPagamento() {
           </div>
         )}
 
-        {/* QR CODE */}
         {loading && <p>Carregando QR Code...</p>}
 
         {!loading && qrBase64 && (
@@ -143,7 +141,6 @@ export default function PixPagamento() {
           />
         )}
 
-        {/* PIX COPIA E COLA */}
         {copyPaste && (
           <>
             <p className="text-xs break-all bg-black/30 p-3 rounded-xl">
