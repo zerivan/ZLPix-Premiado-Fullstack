@@ -90,7 +90,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔐 NOVO: garantir que o usuário tenha carteira
+    // 🔐 garantir wallet (NÃO MUDA)
     const walletExistente = await prisma.wallet.findUnique({
       where: { userId: transacao.userId },
     });
@@ -101,19 +101,47 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ metadata seguro
+    // ✅ metadata seguro (NÃO MUDA)
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
+    // =========================================
+    // 💰 DEPÓSITO EM CARTEIRA (NOVO – CIRÚRGICO)
+    // =========================================
+    if (metadata.tipo === "deposito") {
+      await prisma.wallet.update({
+        where: { userId: transacao.userId },
+        data: {
+          saldo: {
+            increment: Number(transacao.valor),
+          },
+        },
+      });
+
+      await prisma.transacao.update({
+        where: { id: transacao.id },
+        data: { status: "paid" },
+      });
+
+      console.log("💰 Depósito confirmado", {
+        userId: transacao.userId,
+        valor: transacao.valor,
+      });
+
+      return res.status(200).send("ok");
+    }
+
+    // =========================
+    // FLUXO ORIGINAL DE BILHETE
+    // =========================
     const bilhetesMeta = Array.isArray(metadata.bilhetes)
       ? (metadata.bilhetes as Array<{ dezenas: string; valor: number }>)
       : [];
 
     const sorteioData = getNextWednesday();
 
-    // 🔥 Criar bilhetes
     for (const b of bilhetesMeta) {
       await prisma.bilhete.create({
         data: {
@@ -136,7 +164,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       data: { status: "paid" },
     });
 
-    // 🔥 Enviar WhatsApp
+    // 🔥 WhatsApp (NÃO MUDA)
     try {
       const user = await prisma.users.findUnique({
         where: { id: transacao.userId },
