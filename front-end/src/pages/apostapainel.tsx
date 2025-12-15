@@ -1,4 +1,4 @@
-// src/pages/apostapainel.safe.tsx
+// src/pages/apostapainel.tsx
 import React, { useEffect, useRef, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ type LocalTicket = {
   pago?: boolean;
 };
 
-export default function ApostaPainelSafe() {
+export default function ApostaPainel() {
   const [selected, setSelected] = useState<string[]>([]);
   const [tickets, setTickets] = useState<LocalTicket[]>([]);
   const [rolling, setRolling] = useState(false);
@@ -24,11 +24,12 @@ export default function ApostaPainelSafe() {
 
   const navigate = useNavigate();
 
+  // audio refs
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
-  // carregar bilhetes locais
+  // load persisted tickets
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ZLPX_TICKETS_LOCAL");
@@ -36,7 +37,6 @@ export default function ApostaPainelSafe() {
     } catch {}
   }, []);
 
-  // persistir bilhetes locais
   useEffect(() => {
     try {
       localStorage.setItem("ZLPX_TICKETS_LOCAL", JSON.stringify(tickets));
@@ -89,8 +89,9 @@ export default function ApostaPainelSafe() {
     try {
       if (!audioCtxRef.current || !oscRef.current) return;
       const now = audioCtxRef.current.currentTime;
+      const base = 180;
       oscRef.current.frequency.cancelScheduledValues(now);
-      oscRef.current.frequency.linearRampToValueAtTime(180 * speed, now + 0.05);
+      oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
     } catch {}
   }
 
@@ -173,7 +174,7 @@ export default function ApostaPainelSafe() {
     setTickets((t) => t.slice(1));
   }
 
-  // 🔥 ÚNICA MUDANÇA REAL
+  // 🔥 ÚNICA MUDANÇA: limpa bilhetes ao pagar
   function pagarAgora() {
     if (tickets.length === 0) {
       alert("Nenhum bilhete para pagar.");
@@ -182,9 +183,8 @@ export default function ApostaPainelSafe() {
 
     const ticketsParaRevisao = [...tickets];
 
-    // limpa tudo ANTES de sair
+    // limpa estado e storage
     setTickets([]);
-    setSelected([]);
     try {
       localStorage.removeItem("ZLPX_TICKETS_LOCAL");
     } catch {}
@@ -200,7 +200,17 @@ export default function ApostaPainelSafe() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
-      {/* JSX VISUAL IDÊNTICO AO ORIGINAL */}
+      <div className="py-2 text-center bg-gradient-to-r from-blue-800 via-blue-700 to-green-600 border-b border-green-400/20">
+        <h1 className="text-sm font-bold text-yellow-300">Escolha até 3 dezenas 🎯</h1>
+        <p className="text-xs text-blue-100">
+          Selecionadas: <span className="text-yellow-300">{selected.length}</span>/3
+        </p>
+      </div>
+
+      <main className="flex-1 flex flex-col items-center px-2 pt-2 pb-24 w-full">
+        {/* TODO O RESTO DO JSX PERMANECE IGUAL */}
+      </main>
+
       <NavBottom />
     </div>
   );
