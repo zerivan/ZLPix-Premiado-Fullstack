@@ -18,7 +18,8 @@ model users {
 
   bilhetes     bilhete[]
   transacoes   transacao[]
-  wallet       wallet?      // 👈 relação 1–1 com carteira
+  wallet       wallet?          // relação 1–1 com carteira
+  passwordResets password_reset[] // 👈 relação com recuperação de senha
 }
 
 model wallet {
@@ -63,4 +64,17 @@ model bilhete {
 
   user        users       @relation(fields: [userId], references: [id])
   transacao   transacao?  @relation("tb_rel", fields: [transacaoId], references: [id])
+}
+
+model password_reset {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("userid")
+  token     String   @unique
+  expiresAt DateTime @map("expiresat")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("createdat")
+
+  user users @relation(fields: [userId], references: [id])
+
+  @@map("password_resets")
 }
