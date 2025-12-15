@@ -20,7 +20,9 @@ router.post("/criar", async (req, res) => {
     const { userId, dezenas, valorTotal } = req.body;
 
     if (!userId || !Array.isArray(dezenas) || dezenas.length === 0) {
-      return res.status(400).json({ error: "Dados inválidos para criação do bilhete." });
+      return res
+        .status(400)
+        .json({ error: "Dados inválidos para criação do bilhete." });
     }
 
     const dezenasStr = dezenas.join(",");
@@ -38,7 +40,9 @@ router.post("/criar", async (req, res) => {
     return res.json({ status: "ok", bilhete });
   } catch (e) {
     console.error("Erro ao criar bilhete:", e);
-    return res.status(500).json({ error: "Erro interno ao criar bilhete." });
+    return res
+      .status(500)
+      .json({ error: "Erro interno ao criar bilhete." });
   }
 });
 
@@ -60,8 +64,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
     const valor = Number(valorTotal) || 2.0;
     const dezenasStr = dezenas.join(",");
 
-    // busca wallet
-    const wallet = await prisma.wallet.findUnique({
+    // busca wallet (NÃO é unique)
+    const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
@@ -69,7 +73,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
       return res.status(400).json({ error: "Carteira não encontrada." });
     }
 
-    if (wallet.saldo < valor) {
+    // Decimal -> number
+    if (Number(wallet.saldo) < valor) {
       return res.status(400).json({ error: "Saldo insuficiente." });
     }
 
