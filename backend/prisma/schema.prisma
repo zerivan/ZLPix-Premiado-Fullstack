@@ -18,6 +18,17 @@ model users {
 
   bilhetes     bilhete[]
   transacoes   transacao[]
+  wallet       wallet?      // 👈 relação 1–1 com carteira
+}
+
+model wallet {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("userid")
+  saldo     Float    @default(0)
+  createdAt DateTime @default(now()) @map("createdat")
+  updatedAt DateTime @default(now()) @map("updatedat")
+
+  user      users    @relation(fields: [userId], references: [id])
 }
 
 model admins {
