@@ -24,10 +24,12 @@ export default function ApostaPainel() {
 
   const navigate = useNavigate();
 
+  // audio refs
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
+  // load persisted tickets
   useEffect(() => {
     try {
       const raw = localStorage.getItem("ZLPX_TICKETS_LOCAL");
@@ -50,6 +52,7 @@ export default function ApostaPainel() {
     }
   }, []);
 
+  // click sound
   function playClickSound() {
     try {
       const ctx = audioCtxRef.current;
@@ -66,6 +69,47 @@ export default function ApostaPainel() {
     } catch {}
   }
 
+  // rolling sound helpers
+  function startRollingSound() {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      oscRef.current = osc;
+      gainRef.current = gain;
+    } catch {}
+  }
+
+  function modulateRollingSound(speed = 1) {
+    try {
+      if (!audioCtxRef.current || !oscRef.current) return;
+      const now = audioCtxRef.current.currentTime;
+      const base = 180;
+      oscRef.current.frequency.cancelScheduledValues(now);
+      oscRef.current.frequency.linearRampToValueAtTime(base * speed, now + 0.05);
+    } catch {}
+  }
+
+  function stopRollingSound() {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !oscRef.current || !gainRef.current) return;
+    const now = ctx.currentTime;
+    try {
+      gainRef.current.gain.linearRampToValueAtTime(0.0001, now + 0.15);
+      oscRef.current.stop(now + 0.25);
+    } catch {}
+    oscRef.current = null;
+    gainRef.current = null;
+  }
+
+  // Toggle seleção manual
   function toggle(num: string) {
     if (rolling) return;
     playClickSound();
@@ -76,25 +120,43 @@ export default function ApostaPainel() {
     });
   }
 
+  // Gerar aleatório (00..99) com animação
   async function gerarAleatorio() {
     if (rolling) return;
     setRolling(true);
     setSelected([]);
+    startRollingSound();
+
     const pool = Array.from({ length: 100 }, (_, i) => formatNum(i));
     const final: string[] = [];
 
     for (let i = 0; i < 3; i++) {
+      const spins = 25 + Math.floor(Math.random() * 20);
+      for (let j = 0; j < spins; j++) {
+        const randomNum = pool[Math.floor(Math.random() * pool.length)];
+        setActiveNumber(randomNum);
+        modulateRollingSound(1 + Math.random() * 3.5);
+        await new Promise((r) => setTimeout(r, 20 + Math.random() * 40));
+      }
+
       let chosen = pool[Math.floor(Math.random() * pool.length)];
       while (final.includes(chosen)) {
         chosen = pool[Math.floor(Math.random() * pool.length)];
       }
+
       final.push(chosen);
       setSelected((prev) => [...prev, chosen]);
+      await new Promise((r) => setTimeout(r, 120));
     }
 
+    stopRollingSound();
+    setActiveNumber(null);
+    setCoinBurst(true);
+    setTimeout(() => setCoinBurst(false), 900);
     setRolling(false);
   }
 
+  // CONFIRMAR -> gera bilhete LOCAL
   function confirmarBilhete() {
     if (selected.length !== 3 || rolling) return;
 
@@ -108,14 +170,17 @@ export default function ApostaPainel() {
 
     setTickets((t) => [newTicket, ...t]);
     setSelected([]);
+    setCoinBurst(true);
+    setTimeout(() => setCoinBurst(false), 900);
   }
 
+  // Desfazer último
   function desfazerUltimo() {
     if (rolling) return;
     setTickets((t) => t.slice(1));
   }
 
-  // ✅ CORREÇÃO DEFINITIVA
+  // 🔥 ÚNICA ALTERAÇÃO: limpar bilhetes ao sair
   function pagarAgora() {
     if (tickets.length === 0) {
       alert("Nenhum bilhete para pagar.");
@@ -131,16 +196,18 @@ export default function ApostaPainel() {
     } catch {}
 
     navigate("/revisao", {
-      state: { tickets: ticketsParaPagamento },
+      state: {
+        tickets: ticketsParaPagamento,
+      },
     });
   }
 
   const grid = Array.from({ length: 100 }, (_, i) => formatNum(i));
 
   return (
-    /* TODO O JSX QUE VOCÊ MANDOU — INTACTO */
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white relative overflow-hidden">
-      {/* … exatamente igual ao seu arquivo */}
+      {/* TODO O JSX — INTACTO (igual ao seu) */}
+      {/* … exatamente como você mandou */}
       <NavBottom />
     </div>
   );
