@@ -9,7 +9,6 @@ export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
   const [filtro, setFiltro] = useState("todos");
 
-  // 🔥 Função segura para obter userId (igual ao ApostaPainel)
   function resolveUserId(): string | null {
     try {
       const direct = localStorage.getItem("USER_ID");
@@ -38,7 +37,6 @@ export default function MeusBilhetes() {
     async function load() {
       try {
         if (!userId) return;
-
         const res = await axios.get(`${API}/bilhete/listar/${userId}`);
         setBilhetes(res.data.bilhetes || []);
       } catch (e) {
@@ -49,22 +47,29 @@ export default function MeusBilhetes() {
     load();
   }, [userId]);
 
-  // 🔥 Verifica se o bilhete ainda pode aparecer (15 dias após sorteio)
+  // 🔥 identifica premiado (case-safe)
+  function isPremiado(b: any) {
+    return (
+      b.status === "PREMIADO" ||
+      b.status === "premiado" ||
+      b.premiado === true
+    );
+  }
+
+  // 🔥 regra de visibilidade
   function dentroDoPrazo(b: any) {
-    if (!b.sorteioData) return true; // fallback de segurança
+    if (isPremiado(b)) return true; // premiado nunca some
+    if (!b.sorteioData) return true;
 
     const sorteio = new Date(b.sorteioData).getTime();
     const limite = sorteio + DIAS_VISIVEIS * 24 * 60 * 60 * 1000;
     return Date.now() <= limite;
   }
 
-  // 🔥 Filtra bilhetes válidos para exibição
   const bilhetesVisiveis = bilhetes.filter(dentroDoPrazo);
 
   const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
-    const isPremiado = b.status === "premiado" || b.premiado === true;
-
-    if (filtro === "premiados") return isPremiado;
+    if (filtro === "premiados") return isPremiado(b);
     if (filtro === "pendentes") return !b.pago;
     return true;
   });
@@ -126,12 +131,18 @@ export default function MeusBilhetes() {
 
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    b.pago
+                    isPremiado(b)
+                      ? "bg-blue-500 text-white"
+                      : b.pago
                       ? "bg-green-500 text-white"
                       : "bg-yellow-400 text-blue-900"
                   }`}
                 >
-                  {b.pago ? "Pago" : "Pendente"}
+                  {isPremiado(b)
+                    ? "Premiado"
+                    : b.pago
+                    ? "Pago"
+                    : "Pendente"}
                 </span>
               </div>
 
