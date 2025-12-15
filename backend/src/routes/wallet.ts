@@ -73,6 +73,7 @@ router.post("/depositar", async (req, res) => {
             connect: { id: userId },
           },
           saldo: 0,
+          createdAt: new Date(), // 👈 O CAMPO QUE FALTAVA
         },
       });
     }
