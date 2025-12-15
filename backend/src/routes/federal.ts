@@ -2,6 +2,19 @@ import express from "express";
 
 const router = express.Router();
 
+/**
+ * Calcula a próxima quarta-feira (20h)
+ */
+function getNextWednesday(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 0 = domingo
+  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
 router.get("/", async (_req, res) => {
   try {
     const response = await fetch(
@@ -57,12 +70,21 @@ router.get("/", async (_req, res) => {
       throw new Error("Não foi possível extrair os números premiados.");
     }
 
+    // ================================
+    // PRÓXIMO SORTEIO (QUARTA)
+    // ================================
+    const proximoSorteio = getNextWednesday();
+
     return res.json({
       ok: true,
       data: {
         concurso,
         dataApuracao,
-        premios
+        premios,
+
+        // 🔗 novos campos (não quebram nada)
+        proximoSorteio: proximoSorteio.toISOString(),
+        timestampProximoSorteio: proximoSorteio.getTime()
       }
     });
 
