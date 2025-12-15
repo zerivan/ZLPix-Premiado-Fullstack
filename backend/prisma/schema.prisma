@@ -8,28 +8,30 @@ datasource db {
 }
 
 model users {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  phone        String?
-  pixKey       String?  @map("pixkey")
-  passwordHash String   @map("passwordhash")
-  createdAt    DateTime @default(now()) @map("createdat")
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String   @unique
+  phone          String?
+  pixKey         String?  @map("pixkey")
+  passwordHash   String   @map("passwordhash")
+  createdAt      DateTime @default(now()) @map("createdat")
 
-  bilhetes     bilhete[]
-  transacoes   transacao[]
-  wallet       wallet?          // relação 1–1 com carteira
-  passwordResets password_reset[] // 👈 relação com recuperação de senha
+  bilhetes       bilhete[]
+  transacoes     transacao[]
+  wallet         wallet?
+  passwordResets password_reset[]
 }
 
 model wallet {
   id        Int      @id @default(autoincrement())
-  userId    Int      @unique @map("userid")
-  saldo     Float    @default(0)
-  createdAt DateTime @default(now()) @map("createdat")
-  updatedAt DateTime @default(now()) @map("updatedat")
+  userId    Int      @map("user_id")
+  saldo     Decimal  @default(0)
+  createdAt DateTime @map("created_at")
 
-  user      users    @relation(fields: [userId], references: [id])
+  user users @relation(fields: [userId], references: [id])
+
+  @@map("wallet")
+  @@schema("public")
 }
 
 model admins {
