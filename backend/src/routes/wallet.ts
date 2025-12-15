@@ -32,12 +32,12 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findUnique({
+    const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
     return res.json({
-      saldo: wallet?.saldo ?? 0,
+      saldo: wallet ? Number(wallet.saldo) : 0,
     });
   } catch (err) {
     console.error("Erro ao buscar saldo:", err);
@@ -62,14 +62,20 @@ router.post("/depositar", async (req, res) => {
     }
 
     // garante que a wallet existe
-    await prisma.wallet.upsert({
+    const walletExistente = await prisma.wallet.findFirst({
       where: { userId },
-      update: {},
-      create: {
-        userId,
-        saldo: 0,
-      },
     });
+
+    if (!walletExistente) {
+      await prisma.wallet.create({
+        data: {
+          user: {
+            connect: { id: userId },
+          },
+          saldo: 0,
+        },
+      });
+    }
 
     // cria transação PIX (tipo DEPÓSITO)
     const transacao = await prisma.transacao.create({
