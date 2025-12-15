@@ -1,10 +1,29 @@
 // src/pages/carteira.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
+import { api } from "../api/client";
 
 export default function Carteira() {
-  const saldo = 0; // depois vamos conectar com backend
+  const [saldo, setSaldo] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function carregarSaldo() {
+      try {
+        const res = await api.get("/wallet/saldo");
+        const valor = Number(res.data?.saldo ?? 0);
+        setSaldo(valor);
+      } catch (e) {
+        console.error("Erro ao carregar saldo:", e);
+        setSaldo(0);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarSaldo();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
@@ -25,8 +44,9 @@ export default function Carteira() {
         {/* SALDO */}
         <div className="bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-yellow-300/20 shadow-xl w-full max-w-md">
           <p className="text-blue-100 text-sm">Seu saldo disponível</p>
+
           <h2 className="text-5xl font-extrabold text-yellow-300 mt-2 drop-shadow">
-            R$ {saldo.toFixed(2)}
+            {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
           </h2>
         </div>
 
@@ -57,7 +77,6 @@ export default function Carteira() {
 
       {/* MENU INFERIOR */}
       <NavBottom />
-
     </div>
   );
 }
