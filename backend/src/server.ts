@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
-import bilheteRoutes from "./routes/bilhetes";
+import bilheteRoutes from "./routes/bilhete"; // ✅ CORRIGIDO (singular)
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -57,7 +57,7 @@ app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
-app.use("/bilhete", bilheteRoutes);
+app.use("/bilhete", bilheteRoutes); // ✅ agora a rota EXISTE de fato
 
 // =============================
 // Start
