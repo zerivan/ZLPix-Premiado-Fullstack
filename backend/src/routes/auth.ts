@@ -1,5 +1,5 @@
 import { Router } from "express";
-import bcrypt from "bcrypt"; // ✅ bcrypt NATIVO
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -23,7 +23,7 @@ function serialize(obj: any): any {
 }
 
 // ======================================
-// 🔒 SANITIZAÇÃO (REMOVE passwordHash)
+// 🔒 SANITIZAÇÃO
 // ======================================
 function sanitize(obj: any) {
   if (!obj) return obj;
@@ -57,13 +57,7 @@ router.post("/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.users.create({
-      data: {
-        name,
-        email,
-        phone,
-        pixKey,
-        passwordHash,
-      },
+      data: { name, email, phone, pixKey, passwordHash },
     });
 
     return res.status(201).json({
@@ -71,10 +65,8 @@ router.post("/register", async (req, res) => {
       user: sanitize(user),
     });
   } catch (err) {
-    console.error("Erro em /auth/register:", err);
-    return res.status(500).json({
-      message: "Erro ao cadastrar usuário.",
-    });
+    console.error("Erro /auth/register:", err);
+    return res.status(500).json({ message: "Erro ao cadastrar usuário." });
   }
 });
 
@@ -86,9 +78,9 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "E-mail e senha são obrigatórios." });
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
     }
 
     const user = await prisma.users.findUnique({ where: { email } });
@@ -113,15 +105,51 @@ router.post("/login", async (req, res) => {
       user: sanitize(user),
     });
   } catch (err) {
-    console.error("Erro em /auth/login:", err);
+    console.error("Erro /auth/login:", err);
+    return res.status(500).json({ message: "Erro ao fazer login." });
+  }
+});
+
+// ======================================
+// 🛡 REGISTER ADMIN  ✅ NOVO
+// ======================================
+router.post("/admin/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password || password.length < 6) {
+      return res.status(400).json({
+        message: "E-mail válido e senha mínima de 6 caracteres.",
+      });
+    }
+
+    const existing = await prisma.admins.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({
+        message: "Admin já existe.",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const admin = await prisma.admins.create({
+      data: { email, passwordHash },
+    });
+
+    return res.status(201).json({
+      message: "Admin criado com sucesso.",
+      admin: sanitize(admin),
+    });
+  } catch (err) {
+    console.error("Erro /auth/admin/register:", err);
     return res.status(500).json({
-      message: "Erro ao fazer login.",
+      message: "Erro ao criar admin.",
     });
   }
 });
 
 // ======================================
-// 🛡 LOGIN ADMIN (AGORA FUNCIONA)
+// 🛡 LOGIN ADMIN
 // ======================================
 router.post("/admin/login", async (req, res) => {
   try {
@@ -149,7 +177,7 @@ router.post("/admin/login", async (req, res) => {
       admin: sanitize(admin),
     });
   } catch (err) {
-    console.error("Erro em /auth/admin/login:", err);
+    console.error("Erro /auth/admin/login:", err);
     return res.status(500).json({
       message: "Erro ao fazer login admin.",
     });
