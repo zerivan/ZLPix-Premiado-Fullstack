@@ -43,7 +43,7 @@ export default function PixPagamento() {
   }
 
   // ======================
-  // 📌 Polling do pagamento (CORRIGIDO)
+  // 📌 Polling do pagamento (CORRIGIDO DE VERDADE)
   // ======================
   useEffect(() => {
     if (!paymentId) return;
@@ -54,10 +54,14 @@ export default function PixPagamento() {
           `${API}/pix/payment-status/${paymentId}`
         );
 
-        const paymentStatus = resp.data?.status;
+        const rawStatus = resp.data?.status;
+        const paymentStatus =
+          typeof rawStatus === "string"
+            ? rawStatus.toUpperCase()
+            : "";
 
-        // ✅ ACEITA paid OU approved
-        if (paymentStatus === "paid" || paymentStatus === "approved") {
+        // ✅ AGORA BATE COM O BACKEND
+        if (paymentStatus === "PAID" || paymentStatus === "APPROVED") {
           setStatus("Pagamento confirmado! 🎉");
 
           if (pollingRef.current) {
