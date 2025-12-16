@@ -4,46 +4,19 @@ import { prisma } from "../lib/prisma";
 const router = express.Router();
 
 /**
- * Criar 1 bilhete (fluxo correto - PIX)
- * O frontend envia:
- * {
- *   userId: number,
- *   dezenas: string[],   // exemplo: ["12","34","56"]
- *   valorTotal: number
- * }
+ * ❌ CRIAÇÃO DIRETA DE BILHETE BLOQUEADA
  *
- * 👉 NÃO EXIGE transacaoId
- * 👉 Transacao será criada depois no PIX
+ * Essa rota NÃO pode mais ser usada para fluxo PIX,
+ * pois ela ignora a página de pagamento.
+ *
+ * O fluxo correto é:
+ * Revisão → Pagamento → Webhook → Finalização → Criação do bilhete
  */
 router.post("/criar", async (req, res) => {
-  try {
-    const { userId, dezenas, valorTotal } = req.body;
-
-    if (!userId || !Array.isArray(dezenas) || dezenas.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Dados inválidos para criação do bilhete." });
-    }
-
-    const dezenasStr = dezenas.join(",");
-
-    const bilhete = await prisma.bilhete.create({
-      data: {
-        userId,
-        dezenas: dezenasStr,
-        valor: Number(valorTotal) || 2.0,
-        pago: false,
-        sorteioData: new Date(),
-      },
-    });
-
-    return res.json({ status: "ok", bilhete });
-  } catch (e) {
-    console.error("Erro ao criar bilhete:", e);
-    return res
-      .status(500)
-      .json({ error: "Erro interno ao criar bilhete." });
-  }
+  return res.status(400).json({
+    error:
+      "Criação direta de bilhete desativada. Utilize o fluxo de pagamento PIX ou carteira.",
+  });
 });
 
 /**
@@ -64,7 +37,7 @@ router.post("/pagar-com-saldo", async (req, res) => {
     const valor = Number(valorTotal) || 2.0;
     const dezenasStr = dezenas.join(",");
 
-    // busca wallet (NÃO é unique)
+    // busca wallet
     const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
@@ -73,13 +46,11 @@ router.post("/pagar-com-saldo", async (req, res) => {
       return res.status(400).json({ error: "Carteira não encontrada." });
     }
 
-    // Decimal -> number
     if (Number(wallet.saldo) < valor) {
       return res.status(400).json({ error: "Saldo insuficiente." });
     }
 
     await prisma.$transaction(async (tx) => {
-      // cria transacao de saída (aposta)
       const transacao = await tx.transacao.create({
         data: {
           userId,
@@ -92,7 +63,6 @@ router.post("/pagar-com-saldo", async (req, res) => {
         },
       });
 
-      // debita saldo
       await tx.wallet.update({
         where: { id: wallet.id },
         data: {
@@ -100,7 +70,6 @@ router.post("/pagar-com-saldo", async (req, res) => {
         },
       });
 
-      // cria bilhete já pago
       await tx.bilhete.create({
         data: {
           userId,
