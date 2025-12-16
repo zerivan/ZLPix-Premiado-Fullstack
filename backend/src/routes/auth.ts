@@ -1,5 +1,5 @@
 import { Router } from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt"; // ✅ bcrypt NATIVO
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -121,7 +121,7 @@ router.post("/login", async (req, res) => {
 });
 
 // ======================================
-// 🛡 LOGIN ADMIN
+// 🛡 LOGIN ADMIN (AGORA FUNCIONA)
 // ======================================
 router.post("/admin/login", async (req, res) => {
   try {
@@ -138,7 +138,7 @@ router.post("/admin/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { email: admin.email, role: "admin" },
+      { id: admin.id, email: admin.email, role: "admin" },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -152,106 +152,6 @@ router.post("/admin/login", async (req, res) => {
     console.error("Erro em /auth/admin/login:", err);
     return res.status(500).json({
       message: "Erro ao fazer login admin.",
-    });
-  }
-});
-
-// ======================================
-// 🔐 RECUPERAR SENHA — SOLICITA TOKEN
-// ======================================
-router.post("/recover", async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "E-mail é obrigatório." });
-    }
-
-    const user = await prisma.users.findUnique({ where: { email } });
-
-    // Sempre responde ok (segurança)
-    if (!user) {
-      return res.json({
-        message:
-          "Se este e-mail estiver cadastrado, enviaremos instruções.",
-      });
-    }
-
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutos
-
-    await prisma.password_reset.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt,
-      },
-    });
-
-    // 🚧 Por enquanto apenas log
-    console.log("🔐 LINK RECUPERAÇÃO:", {
-      email,
-      link: `${process.env.FRONT_URL}/nova-senha?token=${token}`,
-    });
-
-    return res.json({
-      message:
-        "Se este e-mail estiver cadastrado, enviaremos instruções.",
-    });
-  } catch (err) {
-    console.error("Erro em /auth/recover:", err);
-    return res.status(500).json({
-      message: "Erro ao solicitar recuperação.",
-    });
-  }
-});
-
-// ======================================
-// 🔁 RESETAR SENHA — CONFIRMA TOKEN
-// ======================================
-router.post("/reset", async (req, res) => {
-  try {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      return res
-        .status(400)
-        .json({ message: "Token e nova senha são obrigatórios." });
-    }
-
-    const reset = await prisma.password_reset.findUnique({
-      where: { token },
-    });
-
-    if (
-      !reset ||
-      reset.used ||
-      reset.expiresAt.getTime() < Date.now()
-    ) {
-      return res.status(400).json({
-        message: "Token inválido ou expirado.",
-      });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    await prisma.users.update({
-      where: { id: reset.userId },
-      data: { passwordHash },
-    });
-
-    await prisma.password_reset.update({
-      where: { id: reset.id },
-      data: { used: true },
-    });
-
-    return res.json({
-      message: "Senha redefinida com sucesso.",
-    });
-  } catch (err) {
-    console.error("Erro em /auth/reset:", err);
-    return res.status(500).json({
-      message: "Erro ao redefinir senha.",
     });
   }
 });
