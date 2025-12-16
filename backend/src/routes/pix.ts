@@ -75,7 +75,7 @@ router.post("/create", async (req, res) => {
       body: JSON.stringify(body),
     });
 
-    const mpJson: any = await resp.json(); // 👈 TIPAGEM CORRIGIDA
+    const mpJson: any = await resp.json();
 
     if (!resp.ok) {
       return res.status(502).json(mpJson);
@@ -108,7 +108,7 @@ router.post("/create", async (req, res) => {
 });
 
 // =====================================================
-// STATUS DO PAGAMENTO (ANTI-TRAVAMENTO)
+// STATUS DO PAGAMENTO (CORRIGIDO)
 // =====================================================
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
@@ -124,7 +124,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       return res.json({ status: "PAID" });
     }
 
-    // 2️⃣ fallback Mercado Pago
+    // 2️⃣ consulta Mercado Pago
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
@@ -143,9 +143,15 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       }
     );
 
-    const mpJson: any = await resp.json(); // 👈 TIPAGEM CORRIGIDA
+    const mpJson: any = await resp.json();
 
-    if (mpJson?.status === "approved") {
+    if (mpJson?.status === "approved" && tx) {
+      // 🔥 PONTO CRÍTICO: ATUALIZA O BACKEND
+      await prisma.transacao.update({
+        where: { id: tx.id },
+        data: { status: "paid" },
+      });
+
       return res.json({ status: "PAID" });
     }
 
