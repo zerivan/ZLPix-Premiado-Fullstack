@@ -43,7 +43,7 @@ export default function PixPagamento() {
   }
 
   // ======================
-  // 📌 Polling do pagamento
+  // 📌 Polling do pagamento (CORRIGIDO)
   // ======================
   useEffect(() => {
     if (!paymentId) return;
@@ -54,8 +54,10 @@ export default function PixPagamento() {
           `${API}/pix/payment-status/${paymentId}`
         );
 
-        // 🔧 CORREÇÃO AQUI
-        if (resp.data?.status === "paid") {
+        const paymentStatus = resp.data?.status;
+
+        // ✅ ACEITA paid OU approved
+        if (paymentStatus === "paid" || paymentStatus === "approved") {
           setStatus("Pagamento confirmado! 🎉");
 
           if (pollingRef.current) {
@@ -103,7 +105,7 @@ export default function PixPagamento() {
   }, [paymentId, qrBase64, API]);
 
   // ======================
-  // 📌 UI
+  // 📌 UI (INALTERADA)
   // ======================
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center p-6">
@@ -114,7 +116,6 @@ export default function PixPagamento() {
       <p className="mb-4 text-sm text-white/80">{status}</p>
 
       <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-4">
-
         {bilhetes.length > 0 && (
           <div className="bg-black/30 rounded-xl p-4 text-left text-sm">
             <p className="font-bold text-yellow-300 mb-2">
