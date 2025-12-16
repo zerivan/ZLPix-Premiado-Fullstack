@@ -75,7 +75,8 @@ router.post("/create", async (req, res) => {
       body: JSON.stringify(body),
     });
 
-    const mpJson = await resp.json();
+    const mpJson: any = await resp.json(); // 👈 TIPAGEM CORRIGIDA
+
     if (!resp.ok) {
       return res.status(502).json(mpJson);
     }
@@ -87,7 +88,7 @@ router.post("/create", async (req, res) => {
       data: {
         mpPaymentId: paymentId,
         metadata: {
-          ...tx.metadata,
+          ...(tx.metadata as object),
           mpResponse: mpJson,
         },
       },
@@ -96,9 +97,9 @@ router.post("/create", async (req, res) => {
     return res.json({
       payment_id: paymentId,
       qr_code_base64:
-        mpJson.point_of_interaction?.transaction_data?.qr_code_base64,
+        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
       copy_paste:
-        mpJson.point_of_interaction?.transaction_data?.qr_code,
+        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
     });
   } catch (err) {
     console.error("pix/create erro:", err);
@@ -142,7 +143,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       }
     );
 
-    const mpJson = await resp.json();
+    const mpJson: any = await resp.json(); // 👈 TIPAGEM CORRIGIDA
 
     if (mpJson?.status === "approved") {
       return res.json({ status: "PAID" });
