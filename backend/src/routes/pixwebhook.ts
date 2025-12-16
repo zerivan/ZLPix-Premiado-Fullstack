@@ -90,7 +90,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔐 garantir wallet (CORRETO AGORA)
+    // 🔐 garantir wallet
     const walletExistente = await prisma.wallet.findFirst({
       where: { userId: transacao.userId },
     });
@@ -134,31 +134,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // =========================
-    // FLUXO ORIGINAL DE BILHETE
-    // =========================
-    const bilhetesMeta = Array.isArray(metadata.bilhetes)
-      ? (metadata.bilhetes as Array<{ dezenas: string; valor: number }>)
-      : [];
-
-    const sorteioData = getNextWednesday();
-
-    for (const b of bilhetesMeta) {
-      await prisma.bilhete.create({
-        data: {
-          dezenas: b.dezenas,
-          valor: Number(b.valor),
-          pago: true,
-          sorteioData,
-          user: {
-            connect: { id: transacao.userId },
-          },
-          transacao: {
-            connect: { id: transacao.id },
-          },
-        },
-      });
-    }
+    // =========================================
+    // 🚫 BILHETES NÃO SÃO CRIADOS NO WEBHOOK
+    // =========================================
+    // Aqui o webhook APENAS confirma o pagamento.
+    // A criação de bilhetes deve ocorrer SOMENTE
+    // após o fechamento da página de pagamento (front).
 
     await prisma.transacao.update({
       where: { id: transacao.id },
