@@ -54,7 +54,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // CMS
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const CURRENT_PAGE = "home"; // 🔑 contexto (como era implícito antes)
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -109,9 +112,47 @@ export default function AdminDashboard() {
     }
   }
 
+  // =========================
+  // CMS — CONTEÚDO
+  // =========================
+  async function loadContent() {
+    try {
+      const res = await fetch(
+        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CURRENT_PAGE}`
+      );
+      const json = await res.json();
+      if (json.ok && Array.isArray(json.data)) {
+        setBlocks(json.data);
+      }
+    } catch {}
+  }
+
+  async function saveContent() {
+    setLoading(true);
+    try {
+      await fetch(
+        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CURRENT_PAGE}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(blocks)
+        }
+      );
+      alert("Conteúdo salvo com sucesso");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadAppearance();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "content") {
+      loadContent();
+    }
+  }, [activeTab]);
 
   function updateAppearance<K extends keyof AppAppearance>(
     key: K,
@@ -123,7 +164,7 @@ export default function AdminDashboard() {
     applyPreview(updated);
   }
 
-  // CMS
+  // CMS helpers
   function addBlock(type: BlockType) {
     setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
   }
@@ -153,7 +194,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">Painel Administrativo</h1>
         <button
@@ -164,7 +204,6 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      {/* NAV */}
       <nav className="bg-white border-b overflow-x-auto">
         <div className="flex gap-2 px-3 py-2 min">
           {tabs.map(t => {
@@ -187,7 +226,6 @@ export default function AdminDashboard() {
         </div>
       </nav>
 
-      {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-5xl mx-auto p-4">
         <div className="bg-white rounded-xl shadow p-4">
           {activeTab === "config" && (
@@ -257,6 +295,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
+
+              <button
+                onClick={saveContent}
+                disabled={loading}
+                className="bg-indigo-600 text-white px-6 py-3 rounded"
+              >
+                {loading ? "Salvando..." : "Salvar Conteúdo"}
+              </button>
             </div>
           )}
 
