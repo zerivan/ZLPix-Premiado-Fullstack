@@ -15,6 +15,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
+import AdminDashboard from "../pages/admin/dashboard"; // ✅ AQUI
 
 // Auxiliares
 import Revisao from "../pages/revisao";
@@ -73,12 +74,10 @@ function PublicRoute({ children }: { children: JSX.Element }) {
     );
   }
 
-  // 🔐 PRIORIDADE ADMIN
   if (isAdminLoggedIn()) {
     return <Navigate to="/admin" replace />;
   }
 
-  // 👤 Usuário comum
   if (isUserLoggedIn()) {
     return <Navigate to="/home" replace />;
   }
@@ -89,13 +88,13 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* 🔑 Login / Público */}
+      {/* 🔑 Público */}
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
       <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
-      {/* 🔒 Usuário */}
+      {/* 👤 Usuário */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
@@ -108,16 +107,15 @@ export default function AppRoutes() {
       {/* 🔐 Admin */}
       <Route path="/admin" element={<AdminLogin />} />
       <Route element={<AdminRoute />}>
-        {/* futuras rotas admin aqui */}
-        {/* ex: <Route path="/admin/dashboard" element={<AdminDashboard />} /> */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* ✅ Fallback FINAL CORRETO */}
+      {/* 🔁 Fallback */}
       <Route
         path="*"
         element={
           isAdminLoggedIn()
-            ? <Navigate to="/admin" replace />
+            ? <Navigate to="/admin/dashboard" replace />
             : isUserLoggedIn()
               ? <Navigate to="/home" replace />
               : <Navigate to="/" replace />
