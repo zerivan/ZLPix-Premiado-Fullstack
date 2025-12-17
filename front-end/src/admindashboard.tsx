@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Settings, Trophy, Users, BarChart3, LogOut, Palette } from "lucide-react";
+import {
+  Settings,
+  Trophy,
+  Users,
+  BarChart3,
+  LogOut,
+  Palette,
+  FileText
+} from "lucide-react";
 
 type AppAppearance = {
   primaryColor: string;
@@ -14,10 +22,21 @@ type AppAppearance = {
   homeSubtitle: string;
 };
 
+type AppContent = {
+  key: string;
+  title: string;
+  contentHtml: string;
+};
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Conteúdo / HTML
+  const [contentKey, setContentKey] = useState("how_to_play");
+  const [contentTitle, setContentTitle] = useState("");
+  const [contentHtml, setContentHtml] = useState("");
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -25,7 +44,7 @@ export default function AdminDashboard() {
   }
 
   // ============================
-  // PREVIEW AO VIVO
+  // PREVIEW AO VIVO (APARÊNCIA)
   // ============================
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
@@ -58,7 +77,7 @@ export default function AdminDashboard() {
       const json = await res.json();
       if (json.ok && json.data) {
         setAppearance(json.data);
-        applyPreview(json.data); // preview inicial
+        applyPreview(json.data);
       }
     } catch (err) {
       console.error("Erro ao carregar aparência", err);
@@ -78,8 +97,52 @@ export default function AdminDashboard() {
         }
       );
       alert("Aparência salva com sucesso");
-    } catch (err) {
+    } catch {
       alert("Erro ao salvar aparência");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ============================
+  // CONTEÚDO / HTML
+  // ============================
+  async function loadContent(key: string) {
+    try {
+      const res = await fetch(
+        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${key}`
+      );
+      const json = await res.json();
+      if (json.ok && json.data) {
+        setContentTitle(json.data.title);
+        setContentHtml(json.data.contentHtml);
+      } else {
+        setContentTitle("");
+        setContentHtml("");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar conteúdo", err);
+    }
+  }
+
+  async function saveContent() {
+    setLoading(true);
+    try {
+      await fetch(
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key: contentKey,
+            title: contentTitle,
+            contentHtml,
+          }),
+        }
+      );
+      alert("Conteúdo salvo com sucesso");
+    } catch {
+      alert("Erro ao salvar conteúdo");
     } finally {
       setLoading(false);
     }
@@ -89,9 +152,16 @@ export default function AdminDashboard() {
     loadAppearance();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "content") {
+      loadContent(contentKey);
+    }
+  }, [activeTab, contentKey]);
+
   const tabs = [
     { id: "config", label: "Configurações", icon: Settings },
     { id: "appearance", label: "Aparência", icon: Palette },
+    { id: "content", label: "Conteúdo", icon: FileText },
     { id: "winners", label: "Ganhadores", icon: Trophy },
     { id: "users", label: "Usuários", icon: Users },
     { id: "reports", label: "Relatórios", icon: BarChart3 },
@@ -104,7 +174,7 @@ export default function AdminDashboard() {
     if (!appearance) return;
     const updated = { ...appearance, [key]: value };
     setAppearance(updated);
-    applyPreview(updated); // 🔴 preview em tempo real
+    applyPreview(updated);
   }
 
   return (
@@ -140,10 +210,11 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="flex-grow max-w-5xl w-full mx-auto bg-white mt-6 p-6 rounded-xl shadow">
+        {/* APARÊNCIA */}
         {activeTab === "appearance" && appearance && (
           <section className="space-y-6">
             <h2 className="text-xl font-semibold text-indigo-600">
-              🎨 Aparência do Aplicativo (Preview ao vivo)
+              🎨 Aparência (Preview ao vivo)
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,6 +271,49 @@ export default function AdminDashboard() {
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold"
             >
               {loading ? "Salvando..." : "Salvar Aparência"}
+            </button>
+          </section>
+        )}
+
+        {/* CONTEÚDO */}
+        {activeTab === "content" && (
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold text-indigo-600">
+              📝 Editor de Conteúdo / HTML
+            </h2>
+
+            <select
+              value={contentKey}
+              onChange={(e) => setContentKey(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="how_to_play">Como Jogar</option>
+              <option value="rules">Regras</option>
+              <option value="home_text">Texto da Home</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Título"
+              value={contentTitle}
+              onChange={(e) => setContentTitle(e.target.value)}
+              className="p-2 border rounded w-full"
+            />
+
+            <textarea
+              value={contentHtml}
+              onChange={(e) => setContentHtml(e.target.value)}
+              rows={10}
+              className="p-3 border rounded w-full font-mono"
+              placeholder="<p>Conteúdo HTML aqui...</p>"
+            />
+
+            <button
+              onClick={saveContent}
+              disabled={loading}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              {loading ? "Salvando..." : "Salvar Conteúdo"}
             </button>
           </section>
         )}
