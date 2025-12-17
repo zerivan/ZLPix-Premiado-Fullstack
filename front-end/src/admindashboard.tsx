@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Settings,
   Trophy,
@@ -52,21 +51,19 @@ type ContentBlock = {
 };
 
 export default function AdminDashboard() {
-  const navigate = useNavigate(); // ✅ AQUI
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
-  // ✅ LOGOUT CORRETO
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
-    navigate("/admin", { replace: true });
+    window.location.href = "/admin";
   }
 
+  // ================= PREVIEW =================
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
-
     root.style.setProperty("--color-primary", data.primaryColor);
     root.style.setProperty("--color-secondary", data.secondaryColor);
     root.style.setProperty("--color-accent", data.accentColor);
@@ -126,6 +123,7 @@ export default function AdminDashboard() {
     applyPreview(updated);
   }
 
+  // ================= CMS BLOCO =================
   function addBlock(type: BlockType) {
     setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
   }
@@ -154,7 +152,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">Painel Administrativo</h1>
@@ -191,7 +189,17 @@ export default function AdminDashboard() {
 
       {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-5xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4 space-y-4">
+
+          {activeTab === "config" && (
+            <div>
+              <h2 className="text-xl font-bold mb-2">Configurações Gerais</h2>
+              <p className="text-gray-600">
+                Área reservada para configurações globais do sistema.
+              </p>
+            </div>
+          )}
+
           {activeTab === "appearance" && appearance && (
             <div className="space-y-4">
               <select
@@ -227,6 +235,40 @@ export default function AdminDashboard() {
               </button>
             </div>
           )}
+
+          {activeTab === "content" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => addBlock("title")}><Plus size={14}/> Título</button>
+                <button onClick={() => addBlock("text")}><Plus size={14}/> Texto</button>
+                <button onClick={() => addBlock("button")}><Plus size={14}/> Botão</button>
+                <button onClick={() => addBlock("html")}><Plus size={14}/> HTML</button>
+              </div>
+
+              {blocks.map((b, i) => (
+                <div key={b.id} className="border p-3 rounded space-y-2">
+                  <textarea
+                    value={b.value}
+                    onChange={e => updateBlock(b.id, e.target.value)}
+                    className="w-full border p-2 rounded"
+                    placeholder={`Bloco ${b.type}`}
+                  />
+                  <div className="flex gap-3">
+                    {i > 0 && <ArrowUp onClick={() => moveBlock(i, -1)} />}
+                    {i < blocks.length - 1 && (
+                      <ArrowDown onClick={() => moveBlock(i, 1)} />
+                    )}
+                    <Trash2 onClick={() => removeBlock(b.id)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "winners" && <p>Área de ganhadores.</p>}
+          {activeTab === "users" && <p>Gestão de usuários.</p>}
+          {activeTab === "reports" && <p>Relatórios do sistema.</p>}
+
         </div>
       </main>
 
