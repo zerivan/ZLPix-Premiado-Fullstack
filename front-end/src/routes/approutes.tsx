@@ -15,7 +15,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
-import AdminDashboard from "../pages/admin/dashboard"; // ✅ AQUI
+import AdminDashboard from "../dashboard"; // ✅ CORRIGIDO (arquivo real do projeto)
 
 // Auxiliares
 import Revisao from "../pages/revisao";
@@ -75,7 +75,7 @@ function PublicRoute({ children }: { children: JSX.Element }) {
   }
 
   if (isAdminLoggedIn()) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (isUserLoggedIn()) {
