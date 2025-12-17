@@ -9,9 +9,12 @@ import ApostaPainel from "../pages/apostapainel";
 import MeusBilhetes from "../pages/meusbilhetes";
 import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
-import Carteira from "../pages/carteira"; // ✅ NOVO
+import Carteira from "../pages/carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
+
+// Admin
+import AdminRoute from "../components/adminroute";
 
 // PÁGINA REAL DE REVISÃO DOS BILHETES
 import Revisao from "../pages/revisao";
@@ -77,7 +80,6 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-
       {/* 🔑 Login */}
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
@@ -90,7 +92,7 @@ export default function AppRoutes() {
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
       <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
-      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} /> {/* ✅ NOVO */}
+      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
 
       {/* 🧾 REVISÃO */}
       <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
@@ -98,8 +100,15 @@ export default function AppRoutes() {
       {/* 💸 PAGAMENTO PIX */}
       <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
-      {/* ADMIN */}
+      {/* 🔐 ADMIN */}
       <Route path="/admin" element={<AdminLogin />} />
+
+      <Route element={<AdminRoute />}>
+        {/* coloque aqui TODAS as páginas do painel admin */}
+        {/* exemplo:
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        */}
+      </Route>
 
       {/* Fallback */}
       <Route
