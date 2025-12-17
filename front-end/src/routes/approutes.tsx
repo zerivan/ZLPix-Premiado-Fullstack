@@ -1,7 +1,7 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 
-// 🧭 Páginas
+// 🧭 Páginas fixas
 import Home from "../pages/home";
 import Login from "../pages/login";
 import Cadastro from "../pages/cadastro";
@@ -15,12 +15,17 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
-import AdminDashboard from "../admindashboard"; // ✅ CAMINHO REAL
+import AdminDashboard from "../admindashboard";
 
 // Auxiliares
 import Revisao from "../pages/revisao";
 import PixPagamento from "../pages/pixpagamento";
 
+/**
+ * ============================
+ * HELPERS DE AUTH (INALTERADOS)
+ * ============================
+ */
 function isUserLoggedIn() {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -85,24 +90,172 @@ function PublicRoute({ children }: { children: JSX.Element }) {
   return children;
 }
 
+/**
+ * ============================
+ * PÁGINA DINÂMICA (CMS)
+ * ============================
+ */
+function DynamicPage() {
+  const { slug } = useParams();
+  const [page, setPage] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPage() {
+      try {
+        const res = await fetch(
+          `https://zlpix-premiado-backend.onrender.com/api/federal/pages/${slug}`
+        );
+        const json = await res.json();
+        if (json.ok) {
+          setPage(json.data);
+        } else {
+          setPage(null);
+        }
+      } catch {
+        setPage(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPage();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Carregando página...</p>
+      </div>
+    );
+  }
+
+  if (!page) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Página não encontrada.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">{page.title}</h1>
+      <div
+        className="prose max-w-none"
+        dangerouslySetInnerHTML={{ __html: page.contentHtml }}
+      />
+    </div>
+  );
+}
+
+/**
+ * ============================
+ * ROTAS
+ * ============================
+ */
 export default function AppRoutes() {
   return (
     <Routes>
       {/* 🔑 Público */}
-      <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
-      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/cadastro"
+        element={
+          <PublicRoute>
+            <Cadastro />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/recuperar-senha"
+        element={
+          <PublicRoute>
+            <RecuperarSenha />
+          </PublicRoute>
+        }
+      />
 
       {/* 👤 Usuário */}
-      <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
-      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
-      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
-      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
-      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
-      <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
-      <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
+      <Route
+        path="/home"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/aposta"
+        element={
+          <PrivateRoute>
+            <ApostaPainel />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/meus-bilhetes"
+        element={
+          <PrivateRoute>
+            <MeusBilhetes />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/resultado"
+        element={
+          <PrivateRoute>
+            <Resultado />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <PrivateRoute>
+            <Perfil />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/carteira"
+        element={
+          <PrivateRoute>
+            <Carteira />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/revisao"
+        element={
+          <PrivateRoute>
+            <Revisao />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/pagamento"
+        element={
+          <PrivateRoute>
+            <PixPagamento />
+          </PrivateRoute>
+        }
+      />
 
       {/* 🔐 Admin */}
       <Route path="/admin" element={<AdminLogin />} />
@@ -110,15 +263,20 @@ export default function AppRoutes() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* 🔁 Fallback */}
+      {/* 📄 PÁGINAS DINÂMICAS (CMS) */}
+      <Route path="/:slug" element={<DynamicPage />} />
+
+      {/* 🔁 Fallback final */}
       <Route
         path="*"
         element={
-          isAdminLoggedIn()
-            ? <Navigate to="/admin/dashboard" replace />
-            : isUserLoggedIn()
-              ? <Navigate to="/home" replace />
-              : <Navigate to="/" replace />
+          isAdminLoggedIn() ? (
+            <Navigate to="/admin/dashboard" replace />
+          ) : isUserLoggedIn() ? (
+            <Navigate to="/home" replace />
+          ) : (
+            <Navigate to="/" replace />
+          )
         }
       />
     </Routes>
