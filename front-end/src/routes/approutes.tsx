@@ -15,7 +15,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
-import AdminDashboard from "../pages/admindashboard";
+import AdminDashboard from "../dashboard"; // ✅ CAMINHO REAL
 
 // Auxiliares
 import Revisao from "../pages/revisao";
