@@ -5,7 +5,7 @@ interface Props {
   onLogout: () => void;
 }
 
-export default function admindashboard({ onLogout }: Props) {
+export default function AdminDashboard({ onLogout }: Props) {
   const [activeTab, setActiveTab] = useState("config");
 
   const tabs = [
