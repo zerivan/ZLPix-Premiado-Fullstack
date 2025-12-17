@@ -1,218 +1,288 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
-
-// 🧭 Páginas fixas
-import Home from "./pages/home";
-import Login from "./pages/login";
-import Cadastro from "./pages/cadastro";
-import ApostaPainel from "./pages/apostapainel";
-import MeusBilhetes from "./pages/meusbilhetes";
-import Resultado from "./pages/resultado";
-import Perfil from "./pages/perfil";
-import Carteira from "./pages/carteira";
-import AdminLogin from "./pages/adminlogin";
-import RecuperarSenha from "./pages/recuperar-senha";
-
-// Admin
-import AdminRoute from "./components/adminroute";
-
-// Auxiliares
-import Revisao from "./pages/revisao";
-import PixPagamento from "./pages/pixpagamento";
+import {
+  Settings,
+  Trophy,
+  Users,
+  BarChart3,
+  LogOut,
+  Palette,
+  FileText,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Plus
+} from "lucide-react";
 
 /**
- * ============================
- * HELPERS DE AUTH (INALTERADOS)
- * ============================
+ * Fontes Google recomendadas
  */
-function isUserLoggedIn() {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem("TOKEN_ZLPIX");
-}
+const GOOGLE_FONTS = [
+  "Inter",
+  "Poppins",
+  "Manrope",
+  "Montserrat",
+  "Roboto",
+  "Open Sans",
+  "Lato",
+  "Nunito",
+  "Playfair Display",
+  "DM Sans"
+];
 
-function isAdminLoggedIn() {
-  if (typeof window === "undefined") return false;
-  return !!localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-}
+type AppAppearance = {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  themeMode: string;
+  fontPrimary: string;
+  fontHeading: string;
+  mainButtonText: string;
+  homeTitle: string;
+  homeSubtitle: string;
+};
 
-function PrivateRoute({ children }: { children: JSX.Element }) {
-  const [checked, setChecked] = React.useState(false);
-  const [authorized, setAuthorized] = React.useState(false);
+type BlockType = "title" | "text" | "button" | "html";
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setAuthorized(!!localStorage.getItem("TOKEN_ZLPIX"));
-      setChecked(true);
-    }, 200);
+type ContentBlock = {
+  id: string;
+  type: BlockType;
+  value: string;
+};
 
-    return () => clearTimeout(timer);
-  }, []);
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState("config");
+  const [appearance, setAppearance] = useState<AppAppearance | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
-  if (!checked) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-yellow-300">
-        <p className="text-lg animate-pulse">Verificando login...</p>
-      </div>
-    );
+  function handleLogout() {
+    localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
+    window.location.href = "/admin";
   }
 
-  return authorized ? children : <Navigate to="/" replace />;
-}
+  function applyPreview(data: AppAppearance) {
+    const root = document.documentElement;
 
-function PublicRoute({ children }: { children: JSX.Element }) {
-  const [checked, setChecked] = React.useState(false);
+    root.style.setProperty("--color-primary", data.primaryColor);
+    root.style.setProperty("--color-secondary", data.secondaryColor);
+    root.style.setProperty("--color-accent", data.accentColor);
+    root.style.setProperty("--color-background", data.backgroundColor);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setChecked(true);
-    }, 200);
+    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
+    if (data.fontHeading)
+      root.style.setProperty("--font-heading", data.fontHeading);
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!checked) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-yellow-300">
-        <p className="text-lg animate-pulse">Carregando...</p>
-      </div>
-    );
+    data.themeMode === "dark"
+      ? root.classList.add("dark")
+      : root.classList.remove("dark");
   }
 
-  if (isAdminLoggedIn()) {
-    return <Navigate to="/admin/dashboard" replace />;
+  async function loadAppearance() {
+    try {
+      const res = await fetch(
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance"
+      );
+      const json = await res.json();
+      if (json.ok && json.data) {
+        setAppearance(json.data);
+        applyPreview(json.data);
+      }
+    } catch {}
   }
 
-  if (isUserLoggedIn()) {
-    return <Navigate to="/home" replace />;
-  }
-
-  return children;
-}
-
-/**
- * ============================
- * RENDERIZADOR DE BLOCOS (CMS)
- * ============================
- */
-function renderBlocks(blocks: any[]) {
-  if (!Array.isArray(blocks)) return null;
-
-  return blocks.map((block, index) => {
-    switch (block.type) {
-      case "heading":
-        return (
-          <h2 key={index} className="text-2xl font-bold mb-4">
-            {block.text}
-          </h2>
-        );
-
-      case "paragraph":
-        return (
-          <p key={index} className="mb-4 leading-relaxed">
-            {block.text}
-          </p>
-        );
-
-      case "list":
-        return (
-          <ul key={index} className="list-disc pl-6 mb-4">
-            {block.items?.map((item: string, i: number) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        );
-
-      case "divider":
-        return <hr key={index} className="my-6 border-gray-300" />;
-
-      default:
-        return null;
+  async function saveAppearance() {
+    if (!appearance) return;
+    setLoading(true);
+    try {
+      await fetch(
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(appearance)
+        }
+      );
+      alert("Aparência salva com sucesso");
+    } finally {
+      setLoading(false);
     }
-  });
-}
-
-/**
- * ============================
- * PÁGINA DINÂMICA (CMS)
- * ============================
- */
-function DynamicPage() {
-  const { slug } = useParams();
-  const [page, setPage] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  }
 
   useEffect(() => {
-    async function loadPage() {
-      try {
-        const res = await fetch(
-          `https://zlpix-premiado-backend.onrender.com/api/federal/pages/${slug}`
-        );
-        const json = await res.json();
-        if (json.ok) {
-          setPage(json.data);
-        } else {
-          setPage(null);
-        }
-      } catch {
-        setPage(null);
-      } finally {
-        setLoading(false);
-      }
-    }
+    loadAppearance();
+  }, []);
 
-    loadPage();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Carregando página...</p>
-      </div>
-    );
+  function updateAppearance<K extends keyof AppAppearance>(
+    key: K,
+    value: AppAppearance[K]
+  ) {
+    if (!appearance) return;
+    const updated = { ...appearance, [key]: value };
+    setAppearance(updated);
+    applyPreview(updated);
   }
 
-  if (!page) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Página não encontrada.</p>
-      </div>
-    );
+  // CMS
+  function addBlock(type: BlockType) {
+    setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
   }
+
+  function updateBlock(id: string, value: string) {
+    setBlocks(blocks.map(b => (b.id === id ? { ...b, value } : b)));
+  }
+
+  function moveBlock(index: number, dir: number) {
+    const copy = [...blocks];
+    [copy[index], copy[index + dir]] = [copy[index + dir], copy[index]];
+    setBlocks(copy);
+  }
+
+  function removeBlock(id: string) {
+    setBlocks(blocks.filter(b => b.id !== id));
+  }
+
+  const tabs = [
+    { id: "config", label: "Configurações", icon: Settings },
+    { id: "appearance", label: "Aparência", icon: Palette },
+    { id: "content", label: "Conteúdo", icon: FileText },
+    { id: "winners", label: "Ganhadores", icon: Trophy },
+    { id: "users", label: "Usuários", icon: Users },
+    { id: "reports", label: "Relatórios", icon: BarChart3 }
+  ];
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">{page.title}</h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* HEADER */}
+      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
+        <h1 className="text-lg font-bold">Painel Administrativo</h1>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 bg-red-500 px-3 py-2 rounded"
+        >
+          <LogOut size={16} /> Sair
+        </button>
+      </header>
 
-      {page.blocksJson && renderBlocks(page.blocksJson)}
+      {/* NAV */}
+      <nav className="bg-white border-b overflow-x-auto">
+        <div className="flex gap-2 px-3 py-2 min">
+          {tabs.map(t => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap ${
+                  activeTab === t.id
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                <Icon size={16} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
-      {!page.blocksJson && page.contentHtml && (
-        <div className="prose max-w-none">{page.contentHtml}</div>
-      )}
+      {/* CONTEÚDO */}
+      <main className="flex-1 w-full max-w-5xl mx-auto p-4">
+        <div className="bg-white rounded-xl shadow p-4">
+          {activeTab === "config" && (
+            <p className="text-gray-600">
+              Área reservada para configurações globais do sistema.
+            </p>
+          )}
+
+          {activeTab === "appearance" && appearance && (
+            <div className="space-y-4">
+              <select
+                value={appearance.fontPrimary}
+                onChange={e =>
+                  updateAppearance("fontPrimary", e.target.value)
+                }
+                className="border p-2 w-full rounded"
+              >
+                {GOOGLE_FONTS.map(f => (
+                  <option key={f}>{f}</option>
+                ))}
+              </select>
+
+              <select
+                value={appearance.fontHeading}
+                onChange={e =>
+                  updateAppearance("fontHeading", e.target.value)
+                }
+                className="border p-2 w-full rounded"
+              >
+                {GOOGLE_FONTS.map(f => (
+                  <option key={f}>{f}</option>
+                ))}
+              </select>
+
+              <button
+                onClick={saveAppearance}
+                disabled={loading}
+                className="bg-indigo-600 text-white px-6 py-3 rounded"
+              >
+                {loading ? "Salvando..." : "Salvar Aparência"}
+              </button>
+            </div>
+          )}
+
+          {activeTab === "content" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => addBlock("title")}><Plus size={14}/> Título</button>
+                <button onClick={() => addBlock("text")}><Plus size={14}/> Texto</button>
+                <button onClick={() => addBlock("button")}><Plus size={14}/> Botão</button>
+                <button onClick={() => addBlock("html")}><Plus size={14}/> HTML</button>
+              </div>
+
+              {blocks.map((b, i) => (
+                <div key={b.id} className="border p-3 rounded space-y-2">
+                  <textarea
+                    value={b.value}
+                    onChange={e => updateBlock(b.id, e.target.value)}
+                    className="w-full border p-2 rounded"
+                  />
+                  <div className="flex gap-3">
+                    {i > 0 && <ArrowUp onClick={() => moveBlock(i, -1)} />}
+                    {i < blocks.length - 1 && (
+                      <ArrowDown onClick={() => moveBlock(i, 1)} />
+                    )}
+                    <Trash2 onClick={() => removeBlock(b.id)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "winners" && (
+            <p className="text-gray-600">
+              Área de gerenciamento de ganhadores (em construção).
+            </p>
+          )}
+
+          {activeTab === "users" && (
+            <p className="text-gray-600">
+              Área de gerenciamento de usuários (em construção).
+            </p>
+          )}
+
+          {activeTab === "reports" && (
+            <p className="text-gray-600">
+              Relatórios do sistema (em construção).
+            </p>
+          )}
+        </div>
+      </main>
+
+      <footer className="text-center py-4 text-sm text-gray-500">
+        © 2025 ZLPix Premiado
+      </footer>
     </div>
-  );
-}
-
-/**
- * ============================
- * ROTAS
- * ============================
- */
-export default function AdminDashboardRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
-      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
-
-      <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
-      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
-      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
-      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
-      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
-      <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
-      <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
-    </Routes>
   );
 }
