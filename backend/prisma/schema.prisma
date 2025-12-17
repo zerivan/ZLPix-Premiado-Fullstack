@@ -81,11 +81,13 @@ model password_reset {
 }
 
 //
-// ================================
-// PASSO 5 — CMS / PÁGINAS DINÂMICAS
-// ================================
-// Base para criação de páginas no painel
-// Sem redeploy
+// ==========================================
+// PASSO 7 — CMS FLEXÍVEL (HTML + BLOCOS JSON)
+// ==========================================
+// Compatível com:
+// - Conteúdo simples (HTML)
+// - CMS por blocos (JSON)
+// - Páginas públicas (slug)
 //
 
 model AppContent {
@@ -93,11 +95,12 @@ model AppContent {
 
   key         String   @unique
   type        String   @default("text") // "text" | "page"
-  slug        String?  @unique           // ex: "/como-jogar"
+  slug        String?  @unique
   enabled     Boolean  @default(true)
 
   title       String
-  contentHtml String
+  contentHtml String?   // 👈 agora opcional
+  blocksJson  Json?     // 👈 CMS por blocos
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
