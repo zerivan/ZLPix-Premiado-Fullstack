@@ -14,11 +14,8 @@ import {
 } from "lucide-react";
 
 /**
- * ⚠️ ADMIN DASHBOARD
- * ISOLADO do tema público
- * NÃO usa preview global
+ * Fontes Google recomendadas
  */
-
 const GOOGLE_FONTS = [
   "Inter",
   "Poppins",
@@ -33,8 +30,16 @@ const GOOGLE_FONTS = [
 ];
 
 type AppAppearance = {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  themeMode: string;
   fontPrimary: string;
   fontHeading: string;
+  mainButtonText: string;
+  homeTitle: string;
+  homeSubtitle: string;
 };
 
 type BlockType = "title" | "text" | "button" | "html";
@@ -51,19 +56,26 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
-  /**
-   * 🔒 ISOLA O ADMIN DO TEMA GLOBAL
-   */
-  useEffect(() => {
-    document.documentElement.classList.remove("dark");
-    document.documentElement.style.background = "#f3f4f6";
-    document.body.style.background = "#f3f4f6";
-    document.body.style.fontFamily = "Inter, system-ui, sans-serif";
-  }, []);
-
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
+  }
+
+  function applyPreview(data: AppAppearance) {
+    const root = document.documentElement;
+
+    root.style.setProperty("--color-primary", data.primaryColor);
+    root.style.setProperty("--color-secondary", data.secondaryColor);
+    root.style.setProperty("--color-accent", data.accentColor);
+    root.style.setProperty("--color-background", data.backgroundColor);
+
+    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
+    if (data.fontHeading)
+      root.style.setProperty("--font-heading", data.fontHeading);
+
+    data.themeMode === "dark"
+      ? root.classList.add("dark")
+      : root.classList.remove("dark");
   }
 
   async function loadAppearance() {
@@ -74,6 +86,7 @@ export default function AdminDashboard() {
       const json = await res.json();
       if (json.ok && json.data) {
         setAppearance(json.data);
+        applyPreview(json.data);
       }
     } catch {}
   }
@@ -105,9 +118,12 @@ export default function AdminDashboard() {
     value: AppAppearance[K]
   ) {
     if (!appearance) return;
-    setAppearance({ ...appearance, [key]: value });
+    const updated = { ...appearance, [key]: value };
+    setAppearance(updated);
+    applyPreview(updated);
   }
 
+  // CMS
   function addBlock(type: BlockType) {
     setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
   }
@@ -136,13 +152,13 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col text-gray-900">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">Painel Administrativo</h1>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md"
+          className="flex items-center gap-2 bg-red-500 px-3 py-2 rounded"
         >
           <LogOut size={16} /> Sair
         </button>
@@ -150,17 +166,17 @@ export default function AdminDashboard() {
 
       {/* NAV */}
       <nav className="bg-white border-b overflow-x-auto">
-        <div className="flex gap-2 px-3 py-2 min-w-max">
+        <div className="flex gap-2 px-3 py-2 min">
           {tabs.map(t => {
             const Icon = t.icon;
             return (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap transition ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap ${
                   activeTab === t.id
                     ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-gray-100 text-gray-700"
                 }`}
               >
                 <Icon size={16} />
@@ -173,7 +189,7 @@ export default function AdminDashboard() {
 
       {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-5xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow p-5 min-h-[200px]">
+        <div className="bg-white rounded-xl shadow p-4">
           {activeTab === "config" && (
             <p className="text-gray-600">
               Área reservada para configurações globais do sistema.
@@ -219,18 +235,10 @@ export default function AdminDashboard() {
           {activeTab === "content" && (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => addBlock("title")} className="px-3 py-2 bg-gray-100 rounded">
-                  <Plus size={14} /> Título
-                </button>
-                <button onClick={() => addBlock("text")} className="px-3 py-2 bg-gray-100 rounded">
-                  <Plus size={14} /> Texto
-                </button>
-                <button onClick={() => addBlock("button")} className="px-3 py-2 bg-gray-100 rounded">
-                  <Plus size={14} /> Botão
-                </button>
-                <button onClick={() => addBlock("html")} className="px-3 py-2 bg-gray-100 rounded">
-                  <Plus size={14} /> HTML
-                </button>
+                <button onClick={() => addBlock("title")}><Plus size={14}/> Título</button>
+                <button onClick={() => addBlock("text")}><Plus size={14}/> Texto</button>
+                <button onClick={() => addBlock("button")}><Plus size={14}/> Botão</button>
+                <button onClick={() => addBlock("html")}><Plus size={14}/> HTML</button>
               </div>
 
               {blocks.map((b, i) => (
@@ -239,21 +247,35 @@ export default function AdminDashboard() {
                     value={b.value}
                     onChange={e => updateBlock(b.id, e.target.value)}
                     className="w-full border p-2 rounded"
-                    placeholder={`Bloco ${b.type}`}
                   />
                   <div className="flex gap-3">
                     {i > 0 && <ArrowUp onClick={() => moveBlock(i, -1)} />}
                     {i < blocks.length - 1 && (
                       <ArrowDown onClick={() => moveBlock(i, 1)} />
                     )}
-                    <Trash2
-                      className="text-red-500 cursor-pointer"
-                      onClick={() => removeBlock(b.id)}
-                    />
+                    <Trash2 onClick={() => removeBlock(b.id)} />
                   </div>
                 </div>
               ))}
             </div>
+          )}
+
+          {activeTab === "winners" && (
+            <p className="text-gray-600">
+              Área de gerenciamento de ganhadores (em construção).
+            </p>
+          )}
+
+          {activeTab === "users" && (
+            <p className="text-gray-600">
+              Área de gerenciamento de usuários (em construção).
+            </p>
+          )}
+
+          {activeTab === "reports" && (
+            <p className="text-gray-600">
+              Relatórios do sistema (em construção).
+            </p>
           )}
         </div>
       </main>
