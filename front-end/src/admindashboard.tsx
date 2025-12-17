@@ -6,16 +6,9 @@ import {
   BarChart3,
   LogOut,
   Palette,
-  FileText,
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-  Plus
+  FileText
 } from "lucide-react";
 
-/**
- * Fontes Google recomendadas
- */
 const GOOGLE_FONTS = [
   "Inter",
   "Poppins",
@@ -37,17 +30,6 @@ type AppAppearance = {
   themeMode: string;
   fontPrimary: string;
   fontHeading: string;
-  mainButtonText: string;
-  homeTitle: string;
-  homeSubtitle: string;
-};
-
-type BlockType = "title" | "text" | "button" | "html";
-
-type ContentBlock = {
-  id: string;
-  type: BlockType;
-  value: string;
 };
 
 export default function AdminDashboard() {
@@ -55,9 +37,10 @@ export default function AdminDashboard() {
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // CMS
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
-  const CURRENT_PAGE = "home"; // 🔑 contexto (como era implícito antes)
+  // CMS simples (igual Home)
+  const [title, setTitle] = useState("");
+  const [contentHtml, setContentHtml] = useState("");
+  const CMS_KEY = "home";
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -66,7 +49,6 @@ export default function AdminDashboard() {
 
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
-
     root.style.setProperty("--color-primary", data.primaryColor);
     root.style.setProperty("--color-secondary", data.secondaryColor);
     root.style.setProperty("--color-accent", data.accentColor);
@@ -81,10 +63,13 @@ export default function AdminDashboard() {
       : root.classList.remove("dark");
   }
 
+  // =========================
+  // APARÊNCIA (CMS)
+  // =========================
   async function loadAppearance() {
     try {
       const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance"
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/app_appearance"
       );
       const json = await res.json();
       if (json.ok && json.data) {
@@ -99,30 +84,35 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(appearance)
+          body: JSON.stringify({
+            key: "app_appearance",
+            title: "appearance",
+            contentHtml: JSON.stringify(appearance)
+          })
         }
       );
-      alert("Aparência salva com sucesso");
+      alert("Aparência salva");
     } finally {
       setLoading(false);
     }
   }
 
   // =========================
-  // CMS — CONTEÚDO
+  // CONTEÚDO (CMS)
   // =========================
   async function loadContent() {
     try {
       const res = await fetch(
-        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CURRENT_PAGE}`
+        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CMS_KEY}`
       );
       const json = await res.json();
-      if (json.ok && Array.isArray(json.data)) {
-        setBlocks(json.data);
+      if (json.ok && json.data) {
+        setTitle(json.data.title || "");
+        setContentHtml(json.data.contentHtml || "");
       }
     } catch {}
   }
@@ -131,14 +121,18 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       await fetch(
-        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CURRENT_PAGE}`,
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(blocks)
+          body: JSON.stringify({
+            key: CMS_KEY,
+            title,
+            contentHtml
+          })
         }
       );
-      alert("Conteúdo salvo com sucesso");
+      alert("Conteúdo salvo");
     } finally {
       setLoading(false);
     }
@@ -154,35 +148,6 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
-  function updateAppearance<K extends keyof AppAppearance>(
-    key: K,
-    value: AppAppearance[K]
-  ) {
-    if (!appearance) return;
-    const updated = { ...appearance, [key]: value };
-    setAppearance(updated);
-    applyPreview(updated);
-  }
-
-  // CMS helpers
-  function addBlock(type: BlockType) {
-    setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
-  }
-
-  function updateBlock(id: string, value: string) {
-    setBlocks(blocks.map(b => (b.id === id ? { ...b, value } : b)));
-  }
-
-  function moveBlock(index: number, dir: number) {
-    const copy = [...blocks];
-    [copy[index], copy[index + dir]] = [copy[index + dir], copy[index]];
-    setBlocks(copy);
-  }
-
-  function removeBlock(id: string) {
-    setBlocks(blocks.filter(b => b.id !== id));
-  }
-
   const tabs = [
     { id: "config", label: "Configurações", icon: Settings },
     { id: "appearance", label: "Aparência", icon: Palette },
@@ -194,66 +159,50 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
-        <h1 className="text-lg font-bold">Painel Administrativo</h1>
+      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
+        <h1 className="font-bold">Painel Administrativo</h1>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 px-3 py-2 rounded"
+          className="bg-red-500 px-3 py-2 rounded"
         >
           <LogOut size={16} /> Sair
         </button>
       </header>
 
-      <nav className="bg-white border-b overflow-x-auto">
-        <div className="flex gap-2 px-3 py-2 min">
-          {tabs.map(t => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap ${
-                  activeTab === t.id
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                <Icon size={16} />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
+        {tabs.map(t => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${
+                activeTab === t.id
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100"
+              }`}
+            >
+              <Icon size={16} />
+              {t.label}
+            </button>
+          );
+        })}
       </nav>
 
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow p-4">
+      <main className="flex-1 max-w-4xl mx-auto p-4">
+        <div className="bg-white p-4 rounded shadow">
           {activeTab === "config" && (
-            <p className="text-gray-600">
-              Área reservada para configurações globais do sistema.
-            </p>
+            <p>Configurações globais do sistema.</p>
           )}
 
           {activeTab === "appearance" && appearance && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <select
                 value={appearance.fontPrimary}
                 onChange={e =>
-                  updateAppearance("fontPrimary", e.target.value)
+                  setAppearance({ ...appearance, fontPrimary: e.target.value })
                 }
-                className="border p-2 w-full rounded"
-              >
-                {GOOGLE_FONTS.map(f => (
-                  <option key={f}>{f}</option>
-                ))}
-              </select>
-
-              <select
-                value={appearance.fontHeading}
-                onChange={e =>
-                  updateAppearance("fontHeading", e.target.value)
-                }
-                className="border p-2 w-full rounded"
+                className="border p-2 w-full"
               >
                 {GOOGLE_FONTS.map(f => (
                   <option key={f}>{f}</option>
@@ -262,73 +211,36 @@ export default function AdminDashboard() {
 
               <button
                 onClick={saveAppearance}
-                disabled={loading}
-                className="bg-indigo-600 text-white px-6 py-3 rounded"
+                className="bg-indigo-600 text-white px-4 py-2 rounded"
               >
-                {loading ? "Salvando..." : "Salvar Aparência"}
+                Salvar Aparência
               </button>
             </div>
           )}
 
           {activeTab === "content" && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => addBlock("title")}><Plus size={14}/> Título</button>
-                <button onClick={() => addBlock("text")}><Plus size={14}/> Texto</button>
-                <button onClick={() => addBlock("button")}><Plus size={14}/> Botão</button>
-                <button onClick={() => addBlock("html")}><Plus size={14}/> HTML</button>
-              </div>
-
-              {blocks.map((b, i) => (
-                <div key={b.id} className="border p-3 rounded space-y-2">
-                  <textarea
-                    value={b.value}
-                    onChange={e => updateBlock(b.id, e.target.value)}
-                    className="w-full border p-2 rounded"
-                  />
-                  <div className="flex gap-3">
-                    {i > 0 && <ArrowUp onClick={() => moveBlock(i, -1)} />}
-                    {i < blocks.length - 1 && (
-                      <ArrowDown onClick={() => moveBlock(i, 1)} />
-                    )}
-                    <Trash2 onClick={() => removeBlock(b.id)} />
-                  </div>
-                </div>
-              ))}
-
+            <div className="space-y-3">
+              <input
+                className="border p-2 w-full"
+                placeholder="Título"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+              />
+              <textarea
+                className="border p-2 w-full h-40"
+                value={contentHtml}
+                onChange={e => setContentHtml(e.target.value)}
+              />
               <button
                 onClick={saveContent}
-                disabled={loading}
-                className="bg-indigo-600 text-white px-6 py-3 rounded"
+                className="bg-indigo-600 text-white px-4 py-2 rounded"
               >
-                {loading ? "Salvando..." : "Salvar Conteúdo"}
+                Salvar Conteúdo
               </button>
             </div>
           )}
-
-          {activeTab === "winners" && (
-            <p className="text-gray-600">
-              Área de gerenciamento de ganhadores (em construção).
-            </p>
-          )}
-
-          {activeTab === "users" && (
-            <p className="text-gray-600">
-              Área de gerenciamento de usuários (em construção).
-            </p>
-          )}
-
-          {activeTab === "reports" && (
-            <p className="text-gray-600">
-              Relatórios do sistema (em construção).
-            </p>
-          )}
         </div>
       </main>
-
-      <footer className="text-center py-4 text-sm text-gray-500">
-        © 2025 ZLPix Premiado
-      </footer>
     </div>
   );
 }
