@@ -32,17 +32,24 @@ export default function Cadastro() {
     try {
       setLoading(true);
 
-      // 🟢 Envia dados de cadastro com createdAt
+      // 🚫 LIMPA QUALQUER SESSÃO EXISTENTE (EVITA HERANÇA DE FLUXO)
+      localStorage.removeItem("TOKEN_ZLPIX");
+      localStorage.removeItem("USER_ZLPIX");
+      localStorage.removeItem("USER_ID");
+      localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
+      localStorage.removeItem("ZLPIX_ADMIN_AUTH");
+
+      // 🟢 Envia dados de cadastro
       const response = await api.post("/auth/register", {
         name: fullName,
         email,
         phone,
         pixKey,
         password,
-        createdAt: new Date().toISOString(), // ✅ salva data no formato ISO
+        createdAt: new Date().toISOString(),
       });
 
-      // 🟢 Salva dados do usuário localmente (para o perfil carregar)
+      // 🟢 Salva dados básicos (SEM logar)
       const user = response.data?.user || {
         name: fullName,
         email,
@@ -66,7 +73,6 @@ export default function Cadastro() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 flex items-center justify-center p-5 font-display">
       <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/10">
-        {/* Cabeçalho */}
         <div className="text-center mb-5">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
@@ -79,7 +85,6 @@ export default function Cadastro() {
           <p className="text-sm text-white/80">É rápido e seguro ✨</p>
         </div>
 
-        {/* Formulário */}
         {!success ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input
@@ -112,7 +117,6 @@ export default function Cadastro() {
               onChange={(e) => setPixKey(e.target.value)}
             />
 
-            {/* Senha */}
             <div className="relative">
               <input
                 type={showPass ? "text" : "password"}
@@ -172,7 +176,7 @@ export default function Cadastro() {
               Agora faça login para acessar sua conta.
             </p>
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/login", { replace: true })}
               className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3 hover:bg-yellow-500 transition shadow-lg"
             >
               Ir para o login
