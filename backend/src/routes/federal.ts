@@ -30,9 +30,9 @@ router.get("/", async (_req, res) => {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "pt-BR,pt;q=0.9"
-        }
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "pt-BR,pt;q=0.9",
+        },
       }
     );
 
@@ -75,14 +75,14 @@ router.get("/", async (_req, res) => {
         dataApuracao,
         premios,
         proximoSorteio: proximoSorteio.toISOString(),
-        timestampProximoSorteio: proximoSorteio.getTime()
-      }
+        timestampProximoSorteio: proximoSorteio.getTime(),
+      },
     });
   } catch (err) {
     console.error("Erro scraping Caixa:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao consultar os resultados da Caixa."
+      erro: "Falha ao consultar os resultados da Caixa.",
     });
   }
 });
@@ -96,7 +96,7 @@ router.get("/", async (_req, res) => {
 router.get("/admin/app-appearance", async (_req, res) => {
   try {
     const config = await prisma.appAppearance.findUnique({
-      where: { id: 1 }
+      where: { id: 1 },
     });
 
     return res.json({ ok: true, data: config });
@@ -104,7 +104,7 @@ router.get("/admin/app-appearance", async (_req, res) => {
     console.error("Erro ao buscar AppAppearance:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao buscar configuração de aparência."
+      erro: "Falha ao buscar configuração de aparência.",
     });
   }
 });
@@ -116,7 +116,7 @@ router.post("/admin/app-appearance", async (req, res) => {
     const config = await prisma.appAppearance.upsert({
       where: { id: 1 },
       update: data,
-      create: { id: 1, ...data }
+      create: { id: 1, ...data },
     });
 
     return res.json({ ok: true, data: config });
@@ -124,37 +124,24 @@ router.post("/admin/app-appearance", async (req, res) => {
     console.error("Erro ao salvar AppAppearance:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao salvar configuração de aparência."
+      erro: "Falha ao salvar configuração de aparência.",
     });
   }
 });
 
 /**
  * =====================================================
- * PASSO 3 — CONTEÚDO / HTML EDITÁVEL (ADMIN)
+ * PASSO 7 — CMS POR BLOCOS (JSON)
  * =====================================================
  */
 
-router.get("/admin/content", async (_req, res) => {
-  try {
-    const contents = await prisma.appContent.findMany({
-      orderBy: { updatedAt: "desc" }
-    });
-
-    return res.json({ ok: true, data: contents });
-  } catch (err) {
-    console.error("Erro ao listar conteúdos:", err);
-    return res.status(500).json({
-      ok: false,
-      erro: "Falha ao listar conteúdos."
-    });
-  }
-});
-
+/**
+ * GET — Conteúdo admin (mantém compatibilidade)
+ */
 router.get("/admin/content/:key", async (req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
-      where: { key: req.params.key }
+      where: { key: req.params.key },
     });
 
     return res.json({ ok: true, data: content });
@@ -162,19 +149,38 @@ router.get("/admin/content/:key", async (req, res) => {
     console.error("Erro ao buscar conteúdo:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao buscar conteúdo."
+      erro: "Falha ao buscar conteúdo.",
     });
   }
 });
 
+/**
+ * POST — Salva conteúdo (HTML ou blocos JSON)
+ */
 router.post("/admin/content", async (req, res) => {
   try {
-    const { key, title, contentHtml } = req.body;
+    const { key, title, contentHtml, blocksJson, type, slug, enabled } =
+      req.body;
 
     const content = await prisma.appContent.upsert({
       where: { key },
-      update: { title, contentHtml },
-      create: { key, title, contentHtml }
+      update: {
+        title,
+        contentHtml: contentHtml ?? null,
+        blocksJson: blocksJson ?? null,
+        type: type ?? "text",
+        slug: slug ?? null,
+        enabled: enabled ?? true,
+      },
+      create: {
+        key,
+        title,
+        contentHtml: contentHtml ?? null,
+        blocksJson: blocksJson ?? null,
+        type: type ?? "text",
+        slug: slug ?? null,
+        enabled: enabled ?? true,
+      },
     });
 
     return res.json({ ok: true, data: content });
@@ -182,47 +188,41 @@ router.post("/admin/content", async (req, res) => {
     console.error("Erro ao salvar conteúdo:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao salvar conteúdo."
+      erro: "Falha ao salvar conteúdo.",
     });
   }
 });
 
 /**
  * =====================================================
- * PASSO 5 — PÁGINAS PÚBLICAS (CMS)
+ * PÁGINAS PÚBLICAS (CMS)
  * =====================================================
  */
 
-/**
- * GET — Lista todas as páginas ativas
- */
 router.get("/pages", async (_req, res) => {
   try {
     const pages = await prisma.appContent.findMany({
       where: {
         type: "page",
-        enabled: true
+        enabled: true,
       },
       select: {
         title: true,
-        slug: true
+        slug: true,
       },
-      orderBy: { updatedAt: "desc" }
+      orderBy: { updatedAt: "desc" },
     });
 
     return res.json({ ok: true, data: pages });
   } catch (err) {
-    console.error("Erro ao listar páginas públicas:", err);
+    console.error("Erro ao listar páginas:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao listar páginas."
+      erro: "Falha ao listar páginas.",
     });
   }
 });
 
-/**
- * GET — Busca página pública pelo slug
- */
 router.get("/pages/:slug", async (req, res) => {
   try {
     const slug = `/${req.params.slug}`;
@@ -231,14 +231,14 @@ router.get("/pages/:slug", async (req, res) => {
       where: {
         slug,
         type: "page",
-        enabled: true
-      }
+        enabled: true,
+      },
     });
 
     if (!page) {
       return res.status(404).json({
         ok: false,
-        erro: "Página não encontrada."
+        erro: "Página não encontrada.",
       });
     }
 
@@ -247,7 +247,7 @@ router.get("/pages/:slug", async (req, res) => {
     console.error("Erro ao buscar página:", err);
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao buscar página."
+      erro: "Falha ao buscar página.",
     });
   }
 });
