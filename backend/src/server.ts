@@ -57,7 +57,7 @@ app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
-app.use("/bilhete", bilheteRoutes); // agora resolve corretamente
+app.use("/bilhete", bilheteRoutes);
 
 // =============================
 // Start
