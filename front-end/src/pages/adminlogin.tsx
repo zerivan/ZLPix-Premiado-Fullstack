@@ -31,11 +31,12 @@ export default function AdminLogin() {
         return;
       }
 
-      // 🔐 SALVA TOKEN + FLAG ADMIN
+      // 🔐 SALVA TOKEN ADMIN
       localStorage.setItem("TOKEN_ZLPIX_ADMIN", json.token);
       localStorage.setItem("ZLPIX_ADMIN_AUTH", "true");
 
-      navigate("/admin-dashboard", { replace: true });
+      // ✅ ROTA ADMIN CORRETA (existente / protegida)
+      navigate("/admin/dashboard", { replace: true });
     } catch {
       setErro("Erro ao conectar com o servidor.");
     }
