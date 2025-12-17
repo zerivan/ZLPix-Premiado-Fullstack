@@ -131,13 +131,10 @@ router.post("/admin/app-appearance", async (req, res) => {
 
 /**
  * =====================================================
- * PASSO 3 — CONTEÚDO / HTML EDITÁVEL (AppContent)
+ * PASSO 3 — CONTEÚDO / HTML EDITÁVEL (ADMIN)
  * =====================================================
  */
 
-/**
- * GET — Lista todos os conteúdos
- */
 router.get("/admin/content", async (_req, res) => {
   try {
     const contents = await prisma.appContent.findMany({
@@ -154,9 +151,6 @@ router.get("/admin/content", async (_req, res) => {
   }
 });
 
-/**
- * GET — Busca conteúdo por key
- */
 router.get("/admin/content/:key", async (req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
@@ -173,9 +167,6 @@ router.get("/admin/content/:key", async (req, res) => {
   }
 });
 
-/**
- * POST — Cria ou atualiza conteúdo (upsert)
- */
 router.post("/admin/content", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
@@ -192,6 +183,71 @@ router.post("/admin/content", async (req, res) => {
     return res.status(500).json({
       ok: false,
       erro: "Falha ao salvar conteúdo."
+    });
+  }
+});
+
+/**
+ * =====================================================
+ * PASSO 5 — PÁGINAS PÚBLICAS (CMS)
+ * =====================================================
+ */
+
+/**
+ * GET — Lista todas as páginas ativas
+ */
+router.get("/pages", async (_req, res) => {
+  try {
+    const pages = await prisma.appContent.findMany({
+      where: {
+        type: "page",
+        enabled: true
+      },
+      select: {
+        title: true,
+        slug: true
+      },
+      orderBy: { updatedAt: "desc" }
+    });
+
+    return res.json({ ok: true, data: pages });
+  } catch (err) {
+    console.error("Erro ao listar páginas públicas:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao listar páginas."
+    });
+  }
+});
+
+/**
+ * GET — Busca página pública pelo slug
+ */
+router.get("/pages/:slug", async (req, res) => {
+  try {
+    const slug = `/${req.params.slug}`;
+
+    const page = await prisma.appContent.findFirst({
+      where: {
+        slug,
+        type: "page",
+        enabled: true
+      }
+    });
+
+    if (!page) {
+      return res.status(404).json({
+        ok: false,
+        erro: "Página não encontrada."
+      });
+    }
+
+    return res.json({ ok: true, data: page });
+  } catch (err) {
+    console.error("Erro ao buscar página:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao buscar página."
     });
   }
 });
