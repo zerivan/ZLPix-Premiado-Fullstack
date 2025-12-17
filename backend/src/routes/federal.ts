@@ -1,6 +1,8 @@
 import express from "express";
+import { PrismaClient } from "@prisma/client";
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 /**
  * Calcula a próxima quarta-feira (20h)
@@ -15,6 +17,11 @@ function getNextWednesday(): Date {
   return next;
 }
 
+/**
+ * =====================================================
+ * ROTA EXISTENTE — FEDERAL (NÃO ALTERADA)
+ * =====================================================
+ */
 router.get("/", async (_req, res) => {
   try {
     const response = await fetch(
@@ -31,27 +38,17 @@ router.get("/", async (_req, res) => {
 
     const html = await response.text();
 
-    // ================================
-    // EXTRAI CONCURSO
-    // ================================
     let concurso = "N/A";
     const regexConcurso = /Concurso[^0-9]*([0-9]{3,6})/i;
     const concursoMatch = html.match(regexConcurso);
     if (concursoMatch) concurso = concursoMatch[1];
 
-    // ================================
-    // EXTRAI DATA (DD/MM/YYYY)
-    // ================================
     let dataApuracao = "N/A";
     const regexData = /(\d{2}\/\d{2}\/\d{4})/;
     const dataMatch = html.match(regexData);
     if (dataMatch) dataApuracao = dataMatch[1];
 
-    // ================================
-    // EXTRAI 5 PRÊMIOS
-    // ================================
     let premios: string[] = [];
-
     const regexPremiosTabela =
       /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
 
@@ -60,7 +57,6 @@ router.get("/", async (_req, res) => {
       premios.push(m[1]);
     }
 
-    // fallback se a estrutura mudar
     if (premios.length < 5) {
       const fallback = [...html.matchAll(/(\d{5})/g)].map((v) => v[1]);
       premios = fallback.slice(0, 5);
@@ -70,9 +66,6 @@ router.get("/", async (_req, res) => {
       throw new Error("Não foi possível extrair os números premiados.");
     }
 
-    // ================================
-    // PRÓXIMO SORTEIO (QUARTA)
-    // ================================
     const proximoSorteio = getNextWednesday();
 
     return res.json({
@@ -81,8 +74,6 @@ router.get("/", async (_req, res) => {
         concurso,
         dataApuracao,
         premios,
-
-        // 🔗 novos campos (não quebram nada)
         proximoSorteio: proximoSorteio.toISOString(),
         timestampProximoSorteio: proximoSorteio.getTime()
       }
@@ -93,6 +84,63 @@ router.get("/", async (_req, res) => {
     return res.status(500).json({
       ok: false,
       erro: "Falha ao consultar os resultados da Caixa."
+    });
+  }
+});
+
+/**
+ * =====================================================
+ * MÓDULO 1 — APARÊNCIA DO APLICATIVO
+ * =====================================================
+ */
+
+/**
+ * GET — Busca configuração de aparência
+ */
+router.get("/admin/app-appearance", async (_req, res) => {
+  try {
+    const config = await prisma.appAppearance.findUnique({
+      where: { id: 1 }
+    });
+
+    return res.json({
+      ok: true,
+      data: config
+    });
+  } catch (err) {
+    console.error("Erro ao buscar AppAppearance:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao buscar configuração de aparência."
+    });
+  }
+});
+
+/**
+ * POST — Cria ou atualiza configuração de aparência
+ */
+router.post("/admin/app-appearance", async (req, res) => {
+  try {
+    const data = req.body;
+
+    const config = await prisma.appAppearance.upsert({
+      where: { id: 1 },
+      update: data,
+      create: {
+        id: 1,
+        ...data
+      }
+    });
+
+    return res.json({
+      ok: true,
+      data: config
+    });
+  } catch (err) {
+    console.error("Erro ao salvar AppAppearance:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao salvar configuração de aparência."
     });
   }
 });
