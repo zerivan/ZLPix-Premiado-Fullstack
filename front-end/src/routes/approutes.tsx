@@ -15,7 +15,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
-import AdminDashboard from "../dashboard"; // ✅ CORRIGIDO (arquivo real do projeto)
+import AdminDashboard from "../pages/admindashboard";
 
 // Auxiliares
 import Revisao from "../pages/revisao";
