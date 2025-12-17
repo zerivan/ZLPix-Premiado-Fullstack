@@ -6,8 +6,28 @@ import AppRoutes from "./routes/approutes";
 import { BrowserRouter } from "react-router-dom";
 
 /**
+ * Injeta Google Font dinamicamente (evita duplicar)
+ */
+function loadGoogleFont(font: string) {
+  if (!font) return;
+
+  const fontId = `gf-${font.replace(/\s+/g, "-").toLowerCase()}`;
+  if (document.getElementById(fontId)) return;
+
+  const link = document.createElement("link");
+  link.id = fontId;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${font.replace(
+    /\s+/g,
+    "+"
+  )}:wght@300;400;500;600;700;800&display=swap`;
+
+  document.head.appendChild(link);
+}
+
+/**
  * Aplica aparência global no app
- * (cores + fonte base + tema)
+ * (cores + fontes + tema)
  */
 async function applyAppearance() {
   try {
@@ -30,13 +50,14 @@ async function applyAppearance() {
     if (appearance.backgroundColor)
       root.style.setProperty("--color-background", appearance.backgroundColor);
 
-    // 🔤 Fonte base
+    // 🔤 Google Fonts (dinâmico)
     if (appearance.fontPrimary) {
+      loadGoogleFont(appearance.fontPrimary);
       document.body.style.fontFamily = appearance.fontPrimary;
     }
 
-    // 🔠 Fonte de títulos (usada no App.tsx)
     if (appearance.fontHeading) {
+      loadGoogleFont(appearance.fontHeading);
       root.style.setProperty("--font-heading", appearance.fontHeading);
     }
 
