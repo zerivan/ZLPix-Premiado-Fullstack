@@ -92,6 +92,44 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 
 /**
  * ============================
+ * RENDERIZADOR DE BLOCOS (CMS)
+ * ============================
+ */
+function renderBlocks(blocks: any[]) {
+  if (!Array.isArray(blocks)) return null;
+
+  return blocks.map((block, index) => {
+    switch (block.type) {
+      case "heading":
+        return (
+          <h2 key={index} className="text-2xl font-bold mb-4">
+            {block.text}
+          </h2>
+        );
+      case "paragraph":
+        return (
+          <p key={index} className="mb-4 leading-relaxed">
+            {block.text}
+          </p>
+        );
+      case "list":
+        return (
+          <ul key={index} className="list-disc pl-6 mb-4">
+            {block.items?.map((item: string, i: number) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        );
+      case "divider":
+        return <hr key={index} className="my-6 border-gray-300" />;
+      default:
+        return null;
+    }
+  });
+}
+
+/**
+ * ============================
  * PÁGINA DINÂMICA (CMS)
  * ============================
  */
@@ -107,11 +145,8 @@ function DynamicPage() {
           `https://zlpix-premiado-backend.onrender.com/api/federal/pages/${slug}`
         );
         const json = await res.json();
-        if (json.ok) {
-          setPage(json.data);
-        } else {
-          setPage(null);
-        }
+        if (json.ok) setPage(json.data);
+        else setPage(null);
       } catch {
         setPage(null);
       } finally {
@@ -133,7 +168,12 @@ function DynamicPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">{page.title}</h1>
-      {page.blocksJson}
+
+      {page.blocksJson && renderBlocks(page.blocksJson)}
+
+      {!page.blocksJson && page.contentHtml && (
+        <div className="prose max-w-none">{page.contentHtml}</div>
+      )}
     </div>
   );
 }
