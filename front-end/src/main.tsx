@@ -1,4 +1,3 @@
-// src/main.tsx
 import ReactDOM from "react-dom/client";
 import "./styles/index.css";
 
@@ -8,6 +7,7 @@ import { BrowserRouter } from "react-router-dom";
 
 /**
  * Aplica aparência global no app
+ * (cores + fonte base + tema)
  */
 async function applyAppearance() {
   try {
@@ -30,29 +30,26 @@ async function applyAppearance() {
     if (appearance.backgroundColor)
       root.style.setProperty("--color-background", appearance.backgroundColor);
 
-    // 🔤 Fonte
+    // 🔤 Fonte base
     if (appearance.fontPrimary) {
       document.body.style.fontFamily = appearance.fontPrimary;
     }
 
-    // 🌗 Tema
-    if (appearance.themeMode === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    // 🔠 Fonte de títulos (usada no App.tsx)
+    if (appearance.fontHeading) {
+      root.style.setProperty("--font-heading", appearance.fontHeading);
     }
 
+    // 🌗 Tema
+    if (appearance.themeMode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
   } catch (err) {
     console.warn("⚠️ Não foi possível aplicar aparência, usando padrão.");
   }
 }
-
-// Teste de conexão backend
-api.get("/")
-  .then(() => console.log("✅ Conectado ao backend com sucesso!"))
-  .catch((err) =>
-    console.error("❌ Erro ao conectar ao backend:", err.message)
-  );
 
 // Aplica aparência ANTES de renderizar
 applyAppearance().finally(() => {
