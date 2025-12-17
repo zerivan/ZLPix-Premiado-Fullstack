@@ -3,32 +3,48 @@
    ALTURA CORRIGIDA E SIMÉTRICA
    ================================ */
 
-/* Importação do Tailwind (necessário para funcionar) */
+/* Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================
+   VARIÁVEIS GLOBAIS (DINÂMICAS)
+   ================================ */
 :root {
-  --primary: #1e90ff;
-  --primary-dark: #0b5dd8;
-  --gold: #ffd760;
-  --gold-strong: #ffbe00;
+  /* 🎨 Cores vindas do painel */
+  --color-primary: #1e90ff;
+  --color-secondary: #0b5dd8;
+  --color-accent: #ffd760;
+  --color-accent-strong: #ffbe00;
+  --color-background: #ffffff;
 
+  /* 🔤 Fontes */
+  --font-primary: Inter, Arial, sans-serif;
+  --font-heading: Inter, Arial, sans-serif;
+
+  /* Textos */
   --text-dark: #111827;
   --text-light: #ffffff;
 
-  --card-bg: rgba(255,255,255,0.10);
+  /* Cards */
+  --card-bg: rgba(255, 255, 255, 0.10);
 }
 
-/* RESET */
+/* ================================
+   RESET
+   ================================ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* ALTURA GLOBAL */
-html, body {
+/* ================================
+   ALTURA GLOBAL
+   ================================ */
+html,
+body {
   min-height: 100%;
 }
 
@@ -39,14 +55,19 @@ html, body {
 }
 
 body {
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  font-family: Inter, Arial, sans-serif;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
+  font-family: var(--font-primary);
   overflow-x: hidden;
+  color: var(--text-light);
 }
 
-/* ===================================
-   WRAPPER PADRÃO — ESPAÇOS IGUAIS
-   =================================== */
+/* ================================
+   WRAPPER PADRÃO
+   ================================ */
 .page-wrapper {
   flex: 1;
   display: flex;
@@ -55,33 +76,32 @@ body {
   padding: 25px 16px;
 }
 
-/* ===================================
-   CARD AJUSTADO — ALTURA PERFEITA
-   =================================== */
+/* ================================
+   CARD
+   ================================ */
 .page-card {
   width: 100%;
   max-width: 420px;
-  height: auto;
-  min-height: auto;
   background: var(--card-bg);
   backdrop-filter: blur(14px);
   border-radius: 22px;
   padding: 18px;
-  color: white;
+  color: var(--text-light);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  overflow-y: visible;
 }
 
-/* TÍTULOS */
+/* ================================
+   TÍTULOS
+   ================================ */
 .page-title {
   font-size: 25px;
   font-weight: 800;
   text-align: center;
-  color: var(--gold);
+  color: var(--color-accent);
   margin-top: 6px;
   margin-bottom: 4px;
+  font-family: var(--font-heading);
 }
 
 .page-subtitle {
@@ -90,26 +110,30 @@ body {
   margin-bottom: 14px;
 }
 
-/* CAMPOS */
+/* ================================
+   CAMPOS
+   ================================ */
 .page-input {
   width: 100%;
   padding: 13px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   border: none;
   margin-bottom: 12px;
-  color: white;
+  color: var(--text-light);
   font-size: 1rem;
 }
 
 .page-input::placeholder {
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.65);
 }
 
-/* BOTÃO */
+/* ================================
+   BOTÃO
+   ================================ */
 .page-btn {
   width: 100%;
-  background: var(--gold);
+  background: var(--color-accent);
   color: #222;
   padding: 12px;
   border-radius: 12px;
@@ -117,15 +141,38 @@ body {
   font-size: 1.05rem;
   margin-top: 8px;
   border: none;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+
+.page-btn:hover {
+  background: var(--color-accent-strong);
 }
 
 .page-btn:active {
   transform: scale(0.96);
 }
 
-/* LINKS */
+/* ================================
+   LINKS
+   ================================ */
 .page-link {
-  color: var(--gold);
+  color: var(--color-accent);
   font-weight: 700;
   margin-left: 4px;
-}.promo-section { margin-top: 24px; text-align: center; color: rgba(255,255,255,0.9); font-size: 0.95rem; background: rgba(255,255,255,0.08); padding: 12px; border-radius: 14px; width: 100%; max-width: 420px; backdrop-filter: blur(8px); }
+}
+
+/* ================================
+   PROMO
+   ================================ */
+.promo-section {
+  margin-top: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(8px);
+}
