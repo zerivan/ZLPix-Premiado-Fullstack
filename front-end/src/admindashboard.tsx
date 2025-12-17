@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Settings,
   Trophy,
@@ -51,18 +52,21 @@ type ContentBlock = {
 };
 
 export default function AdminDashboard() {
+  const navigate = useNavigate(); // ✅ AQUI
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
+  // ✅ LOGOUT CORRETO
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
-    window.location.href = "/admin";
+    navigate("/admin", { replace: true });
   }
 
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
+
     root.style.setProperty("--color-primary", data.primaryColor);
     root.style.setProperty("--color-secondary", data.secondaryColor);
     root.style.setProperty("--color-accent", data.accentColor);
@@ -150,7 +154,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col overflow-x-hidden">
       {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">Painel Administrativo</h1>
@@ -162,7 +166,7 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      {/* NAV MOBILE SAFE */}
+      {/* NAV */}
       <nav className="bg-white border-b overflow-x-auto">
         <div className="flex gap-2 px-3 py-2 min-w-max">
           {tabs.map(t => {
@@ -221,54 +225,6 @@ export default function AdminDashboard() {
               >
                 {loading ? "Salvando..." : "Salvar Aparência"}
               </button>
-            </div>
-          )}
-
-          {activeTab === "content" && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => addBlock("title")} className="btn">
-                  <Plus size={14} /> Título
-                </button>
-                <button onClick={() => addBlock("text")} className="btn">
-                  <Plus size={14} /> Texto
-                </button>
-                <button onClick={() => addBlock("button")} className="btn">
-                  <Plus size={14} /> Botão
-                </button>
-                <button onClick={() => addBlock("html")} className="btn">
-                  <Plus size={14} /> HTML
-                </button>
-              </div>
-
-              {blocks.map((b, i) => (
-                <div key={b.id} className="border p-3 rounded space-y-2">
-                  <textarea
-                    value={b.value}
-                    onChange={e => updateBlock(b.id, e.target.value)}
-                    className="w-full border p-2 rounded"
-                    placeholder={`Bloco ${b.type}`}
-                  />
-                  <div className="flex gap-3">
-                    {i > 0 && (
-                      <ArrowUp
-                        className="cursor-pointer"
-                        onClick={() => moveBlock(i, -1)}
-                      />
-                    )}
-                    {i < blocks.length - 1 && (
-                      <ArrowDown
-                        className="cursor-pointer"
-                        onClick={() => moveBlock(i, 1)}
-                      />
-                    )}
-                    <Trash2
-                      className="cursor-pointer text-red-500"
-                      onClick={() => removeBlock(b.id)}
-                    />
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
