@@ -24,13 +24,42 @@ export default function AdminDashboard() {
     window.location.href = "/admin";
   }
 
+  // ============================
+  // PREVIEW AO VIVO
+  // ============================
+  function applyPreview(data: AppAppearance) {
+    const root = document.documentElement;
+
+    root.style.setProperty("--color-primary", data.primaryColor);
+    root.style.setProperty("--color-secondary", data.secondaryColor);
+    root.style.setProperty("--color-accent", data.accentColor);
+    root.style.setProperty("--color-background", data.backgroundColor);
+
+    if (data.fontPrimary) {
+      document.body.style.fontFamily = data.fontPrimary;
+    }
+
+    if (data.fontHeading) {
+      root.style.setProperty("--font-heading", data.fontHeading);
+    }
+
+    if (data.themeMode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }
+
   async function loadAppearance() {
     try {
       const res = await fetch(
         "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance"
       );
       const json = await res.json();
-      if (json.ok) setAppearance(json.data);
+      if (json.ok && json.data) {
+        setAppearance(json.data);
+        applyPreview(json.data); // preview inicial
+      }
     } catch (err) {
       console.error("Erro ao carregar aparência", err);
     }
@@ -68,6 +97,16 @@ export default function AdminDashboard() {
     { id: "reports", label: "Relatórios", icon: BarChart3 },
   ];
 
+  function updateAppearance<K extends keyof AppAppearance>(
+    key: K,
+    value: AppAppearance[K]
+  ) {
+    if (!appearance) return;
+    const updated = { ...appearance, [key]: value };
+    setAppearance(updated);
+    applyPreview(updated); // 🔴 preview em tempo real
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col text-gray-800">
       <header className="w-full bg-indigo-600 text-white py-4 px-6 flex justify-between items-center shadow-md">
@@ -104,7 +143,7 @@ export default function AdminDashboard() {
         {activeTab === "appearance" && appearance && (
           <section className="space-y-6">
             <h2 className="text-xl font-semibold text-indigo-600">
-              🎨 Aparência do Aplicativo
+              🎨 Aparência do Aplicativo (Preview ao vivo)
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,7 +153,7 @@ export default function AdminDashboard() {
                   type="color"
                   value={appearance.primaryColor}
                   onChange={(e) =>
-                    setAppearance({ ...appearance, primaryColor: e.target.value })
+                    updateAppearance("primaryColor", e.target.value)
                   }
                 />
               </label>
@@ -125,7 +164,7 @@ export default function AdminDashboard() {
                   type="color"
                   value={appearance.secondaryColor}
                   onChange={(e) =>
-                    setAppearance({ ...appearance, secondaryColor: e.target.value })
+                    updateAppearance("secondaryColor", e.target.value)
                   }
                 />
               </label>
@@ -136,19 +175,19 @@ export default function AdminDashboard() {
                   type="text"
                   value={appearance.fontPrimary}
                   onChange={(e) =>
-                    setAppearance({ ...appearance, fontPrimary: e.target.value })
+                    updateAppearance("fontPrimary", e.target.value)
                   }
                   className="p-2 border rounded w-full"
                 />
               </label>
 
               <label>
-                Texto Botão Principal
+                Fonte Títulos
                 <input
                   type="text"
-                  value={appearance.mainButtonText}
+                  value={appearance.fontHeading}
                   onChange={(e) =>
-                    setAppearance({ ...appearance, mainButtonText: e.target.value })
+                    updateAppearance("fontHeading", e.target.value)
                   }
                   className="p-2 border rounded w-full"
                 />
