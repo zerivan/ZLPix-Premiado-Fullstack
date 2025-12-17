@@ -92,6 +92,48 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 
 /**
  * ============================
+ * RENDERIZADOR DE BLOCOS (CMS)
+ * ============================
+ */
+function renderBlocks(blocks: any[]) {
+  if (!Array.isArray(blocks)) return null;
+
+  return blocks.map((block, index) => {
+    switch (block.type) {
+      case "heading":
+        return (
+          <h2 key={index} className="text-2xl font-bold mb-4">
+            {block.text}
+          </h2>
+        );
+
+      case "paragraph":
+        return (
+          <p key={index} className="mb-4 leading-relaxed">
+            {block.text}
+          </p>
+        );
+
+      case "list":
+        return (
+          <ul key={index} className="list-disc pl-6 mb-4">
+            {block.items?.map((item: string, i: number) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        );
+
+      case "divider":
+        return <hr key={index} className="my-6 border-gray-300" />;
+
+      default:
+        return null;
+    }
+  });
+}
+
+/**
+ * ============================
  * PÁGINA DINÂMICA (CMS)
  * ============================
  */
@@ -140,11 +182,17 @@ function DynamicPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">{page.title}</h1>
-      <div
-        className="prose max-w-none"
-        dangerouslySetInnerHTML={{ __html: page.contentHtml }}
-      />
+      <h1 className="text-2xl font-bold mb-6">{page.title}</h1>
+
+      {/* 🧱 PRIORIDADE: blocos JSON */}
+      {page.blocksJson && renderBlocks(page.blocksJson)}
+
+      {/* 🧾 FALLBACK: HTML legado */}
+      {!page.blocksJson && page.contentHtml && (
+        <div className="prose max-w-none">
+          {page.contentHtml}
+        </div>
+      )}
     </div>
   );
 }
@@ -158,104 +206,23 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* 🔑 Público */}
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/cadastro"
-        element={
-          <PublicRoute>
-            <Cadastro />
-          </PublicRoute>
-        }
-      />
+      <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
       <Route
         path="/recuperar-senha"
-        element={
-          <PublicRoute>
-            <RecuperarSenha />
-          </PublicRoute>
-        }
+        element={<PublicRoute><RecuperarSenha /></PublicRoute>}
       />
 
       {/* 👤 Usuário */}
-      <Route
-        path="/home"
-        element={
-          <PrivateRoute>
-            <Home />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/aposta"
-        element={
-          <PrivateRoute>
-            <ApostaPainel />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/meus-bilhetes"
-        element={
-          <PrivateRoute>
-            <MeusBilhetes />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/resultado"
-        element={
-          <PrivateRoute>
-            <Resultado />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/perfil"
-        element={
-          <PrivateRoute>
-            <Perfil />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/carteira"
-        element={
-          <PrivateRoute>
-            <Carteira />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/revisao"
-        element={
-          <PrivateRoute>
-            <Revisao />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/pagamento"
-        element={
-          <PrivateRoute>
-            <PixPagamento />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
+      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
+      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
+      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
+      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
+      <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
+      <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
       {/* 🔐 Admin */}
       <Route path="/admin" element={<AdminLogin />} />
@@ -263,20 +230,18 @@ export default function AppRoutes() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* 📄 PÁGINAS DINÂMICAS (CMS) */}
+      {/* 📄 CMS */}
       <Route path="/:slug" element={<DynamicPage />} />
 
-      {/* 🔁 Fallback final */}
+      {/* 🔁 Fallback */}
       <Route
         path="*"
         element={
-          isAdminLoggedIn() ? (
-            <Navigate to="/admin/dashboard" replace />
-          ) : isUserLoggedIn() ? (
-            <Navigate to="/home" replace />
-          ) : (
-            <Navigate to="/" replace />
-          )
+          isAdminLoggedIn()
+            ? <Navigate to="/admin/dashboard" replace />
+            : isUserLoggedIn()
+              ? <Navigate to="/home" replace />
+              : <Navigate to="/" replace />
         }
       />
     </Routes>
