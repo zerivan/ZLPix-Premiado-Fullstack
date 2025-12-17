@@ -18,7 +18,7 @@ model users {
 
   bilhetes       bilhete[]
   transacoes     transacao[]
-  wallets        wallet[]          // 🔧 1–N (resolve o erro)
+  wallets        wallet[]
   passwordResets password_reset[]
 }
 
@@ -78,4 +78,21 @@ model password_reset {
   user users @relation(fields: [userId], references: [id])
 
   @@map("password_resets")
+}
+
+//
+// ================================
+// PASSO 3 — CONTEÚDO / HTML EDITÁVEL
+// ================================
+// Controle de textos, regras, páginas
+// Conteúdo dinâmico via painel admin
+//
+
+model AppContent {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique        // ex: "home_rules", "how_to_play"
+  title       String
+  contentHtml String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
