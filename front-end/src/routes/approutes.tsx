@@ -15,7 +15,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 
 // Admin
 import AdminRoute from "../components/adminroute";
-import AdminDashboard from "../admindashboard";
+import AdminDashboard from "../dashboard";
 
 // Auxiliares
 import Revisao from "../pages/revisao";
@@ -184,14 +184,10 @@ function DynamicPage() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">{page.title}</h1>
 
-      {/* 🧱 PRIORIDADE: blocos JSON */}
       {page.blocksJson && renderBlocks(page.blocksJson)}
 
-      {/* 🧾 FALLBACK: HTML legado */}
       {!page.blocksJson && page.contentHtml && (
-        <div className="prose max-w-none">
-          {page.contentHtml}
-        </div>
+        <div className="prose max-w-none">{page.contentHtml}</div>
       )}
     </div>
   );
@@ -205,16 +201,11 @@ function DynamicPage() {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* 🔑 Público */}
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
-      <Route
-        path="/recuperar-senha"
-        element={<PublicRoute><RecuperarSenha /></PublicRoute>}
-      />
+      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
-      {/* 👤 Usuário */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
@@ -224,16 +215,13 @@ export default function AppRoutes() {
       <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
       <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
-      {/* 🔐 Admin */}
       <Route path="/admin" element={<AdminLogin />} />
       <Route element={<AdminRoute />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* 📄 CMS */}
       <Route path="/:slug" element={<DynamicPage />} />
 
-      {/* 🔁 Fallback */}
       <Route
         path="*"
         element={
