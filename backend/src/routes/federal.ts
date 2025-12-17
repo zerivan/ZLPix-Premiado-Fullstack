@@ -78,7 +78,6 @@ router.get("/", async (_req, res) => {
         timestampProximoSorteio: proximoSorteio.getTime()
       }
     });
-
   } catch (err) {
     console.error("Erro scraping Caixa:", err);
     return res.status(500).json({
@@ -94,19 +93,13 @@ router.get("/", async (_req, res) => {
  * =====================================================
  */
 
-/**
- * GET — Busca configuração de aparência
- */
 router.get("/admin/app-appearance", async (_req, res) => {
   try {
     const config = await prisma.appAppearance.findUnique({
       where: { id: 1 }
     });
 
-    return res.json({
-      ok: true,
-      data: config
-    });
+    return res.json({ ok: true, data: config });
   } catch (err) {
     console.error("Erro ao buscar AppAppearance:", err);
     return res.status(500).json({
@@ -116,9 +109,6 @@ router.get("/admin/app-appearance", async (_req, res) => {
   }
 });
 
-/**
- * POST — Cria ou atualiza configuração de aparência
- */
 router.post("/admin/app-appearance", async (req, res) => {
   try {
     const data = req.body;
@@ -126,21 +116,82 @@ router.post("/admin/app-appearance", async (req, res) => {
     const config = await prisma.appAppearance.upsert({
       where: { id: 1 },
       update: data,
-      create: {
-        id: 1,
-        ...data
-      }
+      create: { id: 1, ...data }
     });
 
-    return res.json({
-      ok: true,
-      data: config
-    });
+    return res.json({ ok: true, data: config });
   } catch (err) {
     console.error("Erro ao salvar AppAppearance:", err);
     return res.status(500).json({
       ok: false,
       erro: "Falha ao salvar configuração de aparência."
+    });
+  }
+});
+
+/**
+ * =====================================================
+ * PASSO 3 — CONTEÚDO / HTML EDITÁVEL (AppContent)
+ * =====================================================
+ */
+
+/**
+ * GET — Lista todos os conteúdos
+ */
+router.get("/admin/content", async (_req, res) => {
+  try {
+    const contents = await prisma.appContent.findMany({
+      orderBy: { updatedAt: "desc" }
+    });
+
+    return res.json({ ok: true, data: contents });
+  } catch (err) {
+    console.error("Erro ao listar conteúdos:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao listar conteúdos."
+    });
+  }
+});
+
+/**
+ * GET — Busca conteúdo por key
+ */
+router.get("/admin/content/:key", async (req, res) => {
+  try {
+    const content = await prisma.appContent.findUnique({
+      where: { key: req.params.key }
+    });
+
+    return res.json({ ok: true, data: content });
+  } catch (err) {
+    console.error("Erro ao buscar conteúdo:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao buscar conteúdo."
+    });
+  }
+});
+
+/**
+ * POST — Cria ou atualiza conteúdo (upsert)
+ */
+router.post("/admin/content", async (req, res) => {
+  try {
+    const { key, title, contentHtml } = req.body;
+
+    const content = await prisma.appContent.upsert({
+      where: { key },
+      update: { title, contentHtml },
+      create: { key, title, contentHtml }
+    });
+
+    return res.json({ ok: true, data: content });
+  } catch (err) {
+    console.error("Erro ao salvar conteúdo:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao salvar conteúdo."
     });
   }
 });
