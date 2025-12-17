@@ -28,10 +28,8 @@ router.get("/", async (_req, res) => {
       "https://loterias.caixa.gov.br/Paginas/Federal.aspx",
       {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          Accept: "text/html,application/xhtml+xml",
-          "Accept-Language": "pt-BR,pt;q=0.9",
+          "User-Agent": "Mozilla/5.0",
+          Accept: "text/html",
         },
       }
     );
@@ -56,11 +54,9 @@ router.get("/", async (_req, res) => {
     }
 
     if (premios.length < 5) {
-      premios = [...html.matchAll(/(\d{5})/g)].map(v => v[1]).slice(0, 5);
-    }
-
-    if (premios.length < 5) {
-      throw new Error("Falha ao extrair prêmios");
+      premios = [...html.matchAll(/(\d{5})/g)]
+        .map(v => v[1])
+        .slice(0, 5);
     }
 
     const proximoSorteio = getNextWednesday();
@@ -72,27 +68,52 @@ router.get("/", async (_req, res) => {
         dataApuracao,
         premios,
         proximoSorteio: proximoSorteio.toISOString(),
-        timestampProximoSorteio: proximoSorteio.getTime(),
       },
     });
   } catch (err) {
-    console.error("Erro scraping Caixa:", err);
-    return res.status(500).json({
-      ok: false,
-      erro: "Falha ao consultar resultados",
-    });
+    return res.status(500).json({ ok: false });
   }
 });
 
 /**
  * =====================================================
- * CMS SIMPLES — AppContent (ALINHADO AO PRISMA)
+ * APP APPEARANCE (🔥 ESTAVA FALTANDO)
  * =====================================================
  */
 
+// GET aparência
+router.get("/admin/app-appearance", async (_req, res) => {
+  try {
+    const data = await prisma.appAppearance.findFirst();
+    return res.json({ ok: true, data });
+  } catch {
+    return res.status(500).json({ ok: false });
+  }
+});
+
+// POST aparência
+router.post("/admin/app-appearance", async (req, res) => {
+  try {
+    const data = req.body;
+
+    const saved = await prisma.appAppearance.upsert({
+      where: { id: 1 },
+      update: data,
+      create: { id: 1, ...data },
+    });
+
+    return res.json({ ok: true, data: saved });
+  } catch {
+    return res.status(500).json({ ok: false });
+  }
+});
+
 /**
- * GET — conteúdo por key
+ * =====================================================
+ * CMS — AppContent
+ * =====================================================
  */
+
 router.get("/admin/content/:key", async (req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
@@ -100,18 +121,11 @@ router.get("/admin/content/:key", async (req, res) => {
     });
 
     return res.json({ ok: true, data: content });
-  } catch (err) {
-    console.error("Erro ao buscar conteúdo:", err);
-    return res.status(500).json({
-      ok: false,
-      erro: "Falha ao buscar conteúdo",
-    });
+  } catch {
+    return res.status(500).json({ ok: false });
   }
 });
 
-/**
- * POST — cria ou atualiza conteúdo
- */
 router.post("/admin/content", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
@@ -123,35 +137,22 @@ router.post("/admin/content", async (req, res) => {
     });
 
     return res.json({ ok: true, data: content });
-  } catch (err) {
-    console.error("Erro ao salvar conteúdo:", err);
-    return res.status(500).json({
-      ok: false,
-      erro: "Falha ao salvar conteúdo",
-    });
+  } catch {
+    return res.status(500).json({ ok: false });
   }
 });
 
-/**
- * GET — páginas públicas (por key)
- */
 router.get("/pages/:key", async (req, res) => {
   try {
     const page = await prisma.appContent.findUnique({
       where: { key: req.params.key },
     });
 
-    if (!page) {
-      return res.status(404).json({ ok: false });
-    }
+    if (!page) return res.status(404).json({ ok: false });
 
     return res.json({ ok: true, data: page });
-  } catch (err) {
-    console.error("Erro ao buscar página:", err);
-    return res.status(500).json({
-      ok: false,
-      erro: "Falha ao buscar página",
-    });
+  } catch {
+    return res.status(500).json({ ok: false });
   }
 });
 
