@@ -19,7 +19,7 @@ function getNextWednesday(): Date {
 
 /**
  * =====================================================
- * ROTA FEDERAL — SCRAPING CAIXA (INALTERADA)
+ * ROTA FEDERAL — SCRAPING CAIXA
  * =====================================================
  */
 router.get("/", async (_req, res) => {
@@ -70,22 +70,28 @@ router.get("/", async (_req, res) => {
         proximoSorteio: proximoSorteio.toISOString(),
       },
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ ok: false });
   }
 });
 
 /**
  * =====================================================
- * APP APPEARANCE (🔥 ESTAVA FALTANDO)
+ * APP APPEARANCE (USANDO AppContent)
  * =====================================================
  */
 
 // GET aparência
 router.get("/admin/app-appearance", async (_req, res) => {
   try {
-    const data = await prisma.appAppearance.findFirst();
-    return res.json({ ok: true, data });
+    const content = await prisma.appContent.findUnique({
+      where: { key: "app_appearance" },
+    });
+
+    return res.json({
+      ok: true,
+      data: content ? JSON.parse(content.contentHtml || "{}") : null,
+    });
   } catch {
     return res.status(500).json({ ok: false });
   }
@@ -96,13 +102,23 @@ router.post("/admin/app-appearance", async (req, res) => {
   try {
     const data = req.body;
 
-    const saved = await prisma.appAppearance.upsert({
-      where: { id: 1 },
-      update: data,
-      create: { id: 1, ...data },
+    const saved = await prisma.appContent.upsert({
+      where: { key: "app_appearance" },
+      update: {
+        title: "Aparência do App",
+        contentHtml: JSON.stringify(data),
+      },
+      create: {
+        key: "app_appearance",
+        title: "Aparência do App",
+        contentHtml: JSON.stringify(data),
+      },
     });
 
-    return res.json({ ok: true, data: saved });
+    return res.json({
+      ok: true,
+      data: JSON.parse(saved.contentHtml || "{}"),
+    });
   } catch {
     return res.status(500).json({ ok: false });
   }
