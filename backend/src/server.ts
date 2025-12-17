@@ -7,35 +7,43 @@ import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
-import bilheteRoutes from "./routes/bilhetes"; // ✅ NOME REAL DO ARQUIVO
+import bilheteRoutes from "./routes/bilhetes";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // =============================
-// CORS Render + Local
+// CORS — Render + Local (FIX)
 // =============================
 const FRONT_URL = "https://zlpix-premiado-site.onrender.com";
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (
-        !origin ||
-        origin === FRONT_URL ||
-        origin === "http://localhost:5173"
-      ) {
-        callback(null, true);
-      } else {
-        console.warn("CORS bloqueado:", origin);
-        callback(new Error("CORS não permitido"));
+    origin: (origin, callback) => {
+      // permite SSR, mobile, curl etc
+      if (!origin) return callback(null, true);
+
+      const allowed = [
+        FRONT_URL,
+        "http://localhost:5173",
+      ];
+
+      if (allowed.includes(origin)) {
+        return callback(null, true);
       }
+
+      console.warn("CORS bloqueado:", origin);
+      // ⚠️ NÃO lança erro — apenas bloqueia
+      return callback(null, false);
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Preflight global (OBRIGATÓRIO)
+app.options("*", cors());
 
 app.use(express.json());
 
