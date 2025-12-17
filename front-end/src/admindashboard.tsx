@@ -6,12 +6,15 @@ import {
   BarChart3,
   LogOut,
   Palette,
-  FileText
+  FileText,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Plus
 } from "lucide-react";
 
 /**
  * Fontes Google recomendadas
- * (seguras, populares, display ok)
  */
 const GOOGLE_FONTS = [
   "Inter",
@@ -39,10 +42,21 @@ type AppAppearance = {
   homeSubtitle: string;
 };
 
+type BlockType = "title" | "text" | "button" | "html";
+
+type ContentBlock = {
+  id: string;
+  type: BlockType;
+  value: string;
+};
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // ===== BLOCO CMS =====
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -60,19 +74,12 @@ export default function AdminDashboard() {
     root.style.setProperty("--color-accent", data.accentColor);
     root.style.setProperty("--color-background", data.backgroundColor);
 
-    if (data.fontPrimary) {
-      document.body.style.fontFamily = data.fontPrimary;
-    }
+    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
+    if (data.fontHeading) root.style.setProperty("--font-heading", data.fontHeading);
 
-    if (data.fontHeading) {
-      root.style.setProperty("--font-heading", data.fontHeading);
-    }
-
-    if (data.themeMode === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    data.themeMode === "dark"
+      ? root.classList.add("dark")
+      : root.classList.remove("dark");
   }
 
   async function loadAppearance() {
@@ -85,9 +92,7 @@ export default function AdminDashboard() {
         setAppearance(json.data);
         applyPreview(json.data);
       }
-    } catch {
-      console.error("Erro ao carregar aparência");
-    }
+    } catch {}
   }
 
   async function saveAppearance() {
@@ -103,8 +108,6 @@ export default function AdminDashboard() {
         }
       );
       alert("Aparência salva com sucesso");
-    } catch {
-      alert("Erro ao salvar aparência");
     } finally {
       setLoading(false);
     }
@@ -124,6 +127,32 @@ export default function AdminDashboard() {
     applyPreview(updated);
   }
 
+  // ============================
+  // BLOCO CMS
+  // ============================
+  function addBlock(type: BlockType) {
+    setBlocks([
+      ...blocks,
+      { id: crypto.randomUUID(), type, value: "" }
+    ]);
+  }
+
+  function updateBlock(id: string, value: string) {
+    setBlocks(blocks.map(b => (b.id === id ? { ...b, value } : b)));
+  }
+
+  function moveBlock(index: number, dir: number) {
+    const copy = [...blocks];
+    const target = copy[index];
+    copy[index] = copy[index + dir];
+    copy[index + dir] = target;
+    setBlocks(copy);
+  }
+
+  function removeBlock(id: string) {
+    setBlocks(blocks.filter(b => b.id !== id));
+  }
+
   const tabs = [
     { id: "config", label: "Configurações", icon: Settings },
     { id: "appearance", label: "Aparência", icon: Palette },
@@ -135,93 +164,79 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col text-gray-800">
-      <header className="w-full bg-indigo-600 text-white py-4 px-6 flex justify-between items-center shadow-md">
+      <header className="w-full bg-indigo-600 text-white py-4 px-6 flex justify-between">
         <h1 className="text-2xl font-bold">Painel Administrativo</h1>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg"
-        >
+        <button onClick={handleLogout} className="flex gap-2 bg-red-500 px-4 py-2 rounded">
           <LogOut size={18} /> Sair
         </button>
       </header>
 
-      <nav className="flex flex-wrap justify-center gap-3 bg-white py-3 border-b">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md ${
-                activeTab === tab.id
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 hover:bg-indigo-100"
-              }`}
-            >
-              <Icon size={18} />
-              {tab.label}
-            </button>
-          );
-        })}
+      <nav className="flex justify-center gap-3 bg-white py-3 border-b">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`px-4 py-2 rounded ${
+              activeTab === t.id ? "bg-indigo-600 text-white" : "bg-gray-100"
+            }`}
+          >
+            <t.icon size={16} /> {t.label}
+          </button>
+        ))}
       </nav>
 
       <main className="flex-grow max-w-5xl w-full mx-auto bg-white mt-6 p-6 rounded-xl shadow">
+        {/* APARÊNCIA */}
         {activeTab === "appearance" && appearance && (
-          <section className="space-y-6">
-            <h2 className="text-xl font-semibold text-indigo-600">
-              🎨 Aparência (Preview ao vivo)
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label>
-                Fonte Principal
-                <select
-                  value={appearance.fontPrimary}
-                  onChange={(e) =>
-                    updateAppearance("fontPrimary", e.target.value)
-                  }
-                  className="p-2 border rounded w-full"
-                >
-                  {GOOGLE_FONTS.map((font) => (
-                    <option key={font} value={font}>
-                      {font}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Fonte dos Títulos
-                <select
-                  value={appearance.fontHeading}
-                  onChange={(e) =>
-                    updateAppearance("fontHeading", e.target.value)
-                  }
-                  className="p-2 border rounded w-full"
-                >
-                  {GOOGLE_FONTS.map((font) => (
-                    <option key={font} value={font}>
-                      {font}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <button
-              onClick={saveAppearance}
-              disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold"
+          <section className="space-y-4">
+            <select
+              value={appearance.fontPrimary}
+              onChange={e => updateAppearance("fontPrimary", e.target.value)}
+              className="border p-2 w-full"
             >
-              {loading ? "Salvando..." : "Salvar Aparência"}
+              {GOOGLE_FONTS.map(f => <option key={f}>{f}</option>)}
+            </select>
+
+            <select
+              value={appearance.fontHeading}
+              onChange={e => updateAppearance("fontHeading", e.target.value)}
+              className="border p-2 w-full"
+            >
+              {GOOGLE_FONTS.map(f => <option key={f}>{f}</option>)}
+            </select>
+
+            <button onClick={saveAppearance} className="bg-indigo-600 text-white px-6 py-3 rounded">
+              Salvar Aparência
             </button>
           </section>
         )}
 
-        {activeTab === "config" && (
-          <p className="text-gray-600">
-            Configurações do sistema (mantidas, sem alteração).
-          </p>
+        {/* CMS */}
+        {activeTab === "content" && (
+          <section className="space-y-4">
+            <div className="flex gap-2">
+              <button onClick={() => addBlock("title")}><Plus size={16}/> Título</button>
+              <button onClick={() => addBlock("text")}><Plus size={16}/> Texto</button>
+              <button onClick={() => addBlock("button")}><Plus size={16}/> Botão</button>
+              <button onClick={() => addBlock("html")}><Plus size={16}/> HTML</button>
+            </div>
+
+            {blocks.map((b, i) => (
+              <div key={b.id} className="border p-3 rounded space-y-2">
+                <textarea
+                  value={b.value}
+                  onChange={e => updateBlock(b.id, e.target.value)}
+                  className="w-full border p-2"
+                  placeholder={`Bloco ${b.type}`}
+                />
+                <div className="flex gap-2">
+                  {i > 0 && <ArrowUp onClick={() => moveBlock(i, -1)} />}
+                  {i < blocks.length - 1 && <ArrowDown onClick={() => moveBlock(i, 1)} />}
+                  <Trash2 onClick={() => removeBlock(b.id)} />
+                </div>
+              </div>
+            ))}
+          </section>
         )}
       </main>
 
