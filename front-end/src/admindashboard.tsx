@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 
 /**
- * Fontes Google recomendadas
+ * ⚠️ ADMIN DASHBOARD
+ * ISOLADO do tema público
+ * NÃO usa preview global
  */
+
 const GOOGLE_FONTS = [
   "Inter",
   "Poppins",
@@ -30,16 +33,8 @@ const GOOGLE_FONTS = [
 ];
 
 type AppAppearance = {
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  backgroundColor: string;
-  themeMode: string;
   fontPrimary: string;
   fontHeading: string;
-  mainButtonText: string;
-  homeTitle: string;
-  homeSubtitle: string;
 };
 
 type BlockType = "title" | "text" | "button" | "html";
@@ -56,26 +51,19 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
+  /**
+   * 🔒 ISOLA O ADMIN DO TEMA GLOBAL
+   */
+  useEffect(() => {
+    document.documentElement.classList.remove("dark");
+    document.documentElement.style.background = "#f3f4f6";
+    document.body.style.background = "#f3f4f6";
+    document.body.style.fontFamily = "Inter, system-ui, sans-serif";
+  }, []);
+
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
-  }
-
-  // ================= PREVIEW =================
-  function applyPreview(data: AppAppearance) {
-    const root = document.documentElement;
-    root.style.setProperty("--color-primary", data.primaryColor);
-    root.style.setProperty("--color-secondary", data.secondaryColor);
-    root.style.setProperty("--color-accent", data.accentColor);
-    root.style.setProperty("--color-background", data.backgroundColor);
-
-    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
-    if (data.fontHeading)
-      root.style.setProperty("--font-heading", data.fontHeading);
-
-    data.themeMode === "dark"
-      ? root.classList.add("dark")
-      : root.classList.remove("dark");
   }
 
   async function loadAppearance() {
@@ -86,7 +74,6 @@ export default function AdminDashboard() {
       const json = await res.json();
       if (json.ok && json.data) {
         setAppearance(json.data);
-        applyPreview(json.data);
       }
     } catch {}
   }
@@ -118,12 +105,9 @@ export default function AdminDashboard() {
     value: AppAppearance[K]
   ) {
     if (!appearance) return;
-    const updated = { ...appearance, [key]: value };
-    setAppearance(updated);
-    applyPreview(updated);
+    setAppearance({ ...appearance, [key]: value });
   }
 
-  // ================= CMS BLOCO =================
   function addBlock(type: BlockType) {
     setBlocks([...blocks, { id: crypto.randomUUID(), type, value: "" }]);
   }
@@ -152,13 +136,13 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col text-gray-900">
       {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="text-lg font-bold">Painel Administrativo</h1>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 px-3 py-2 rounded"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md"
         >
           <LogOut size={16} /> Sair
         </button>
@@ -173,10 +157,10 @@ export default function AdminDashboard() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-md whitespace-nowrap transition ${
                   activeTab === t.id
                     ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 <Icon size={16} />
@@ -189,15 +173,11 @@ export default function AdminDashboard() {
 
       {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-5xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow p-4 space-y-4">
-
+        <div className="bg-white rounded-xl shadow p-5 min-h-[200px]">
           {activeTab === "config" && (
-            <div>
-              <h2 className="text-xl font-bold mb-2">Configurações Gerais</h2>
-              <p className="text-gray-600">
-                Área reservada para configurações globais do sistema.
-              </p>
-            </div>
+            <p className="text-gray-600">
+              Área reservada para configurações globais do sistema.
+            </p>
           )}
 
           {activeTab === "appearance" && appearance && (
@@ -239,10 +219,18 @@ export default function AdminDashboard() {
           {activeTab === "content" && (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => addBlock("title")}><Plus size={14}/> Título</button>
-                <button onClick={() => addBlock("text")}><Plus size={14}/> Texto</button>
-                <button onClick={() => addBlock("button")}><Plus size={14}/> Botão</button>
-                <button onClick={() => addBlock("html")}><Plus size={14}/> HTML</button>
+                <button onClick={() => addBlock("title")} className="px-3 py-2 bg-gray-100 rounded">
+                  <Plus size={14} /> Título
+                </button>
+                <button onClick={() => addBlock("text")} className="px-3 py-2 bg-gray-100 rounded">
+                  <Plus size={14} /> Texto
+                </button>
+                <button onClick={() => addBlock("button")} className="px-3 py-2 bg-gray-100 rounded">
+                  <Plus size={14} /> Botão
+                </button>
+                <button onClick={() => addBlock("html")} className="px-3 py-2 bg-gray-100 rounded">
+                  <Plus size={14} /> HTML
+                </button>
               </div>
 
               {blocks.map((b, i) => (
@@ -258,17 +246,15 @@ export default function AdminDashboard() {
                     {i < blocks.length - 1 && (
                       <ArrowDown onClick={() => moveBlock(i, 1)} />
                     )}
-                    <Trash2 onClick={() => removeBlock(b.id)} />
+                    <Trash2
+                      className="text-red-500 cursor-pointer"
+                      onClick={() => removeBlock(b.id)}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          {activeTab === "winners" && <p>Área de ganhadores.</p>}
-          {activeTab === "users" && <p>Gestão de usuários.</p>}
-          {activeTab === "reports" && <p>Relatórios do sistema.</p>}
-
         </div>
       </main>
 
