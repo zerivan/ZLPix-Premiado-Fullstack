@@ -16,15 +16,18 @@ import RecuperarSenha from "../pages/recuperar-senha";
 // Admin
 import AdminRoute from "../components/adminroute";
 
-// PÁGINA REAL DE REVISÃO DOS BILHETES
+// Auxiliares
 import Revisao from "../pages/revisao";
-
-// PÁGINA QUE MOSTRA QR CODE / CHAVE PIX
 import PixPagamento from "../pages/pixpagamento";
 
-function isLoggedIn() {
+function isUserLoggedIn() {
   if (typeof window === "undefined") return false;
   return !!localStorage.getItem("TOKEN_ZLPIX");
+}
+
+function isAdminLoggedIn() {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 }
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -33,8 +36,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      const token = localStorage.getItem("TOKEN_ZLPIX");
-      setAuthorized(!!token);
+      setAuthorized(!!localStorage.getItem("TOKEN_ZLPIX"));
       setChecked(true);
     }, 200);
 
@@ -54,12 +56,9 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 
 function PublicRoute({ children }: { children: JSX.Element }) {
   const [checked, setChecked] = React.useState(false);
-  const [authorized, setAuthorized] = React.useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      const token = localStorage.getItem("TOKEN_ZLPIX");
-      setAuthorized(!!token);
       setChecked(true);
     }, 200);
 
@@ -74,49 +73,54 @@ function PublicRoute({ children }: { children: JSX.Element }) {
     );
   }
 
-  return authorized ? <Navigate to="/home" replace /> : children;
+  // 🔐 PRIORIDADE ADMIN
+  if (isAdminLoggedIn()) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  // 👤 Usuário comum
+  if (isUserLoggedIn()) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* 🔑 Login */}
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      {/* 🔑 Login / Público */}
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
       <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
-      {/* 🔒 ÁREA LOGADA */}
+      {/* 🔒 Usuário */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
       <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
       <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
-
-      {/* 🧾 REVISÃO */}
       <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
-
-      {/* 💸 PAGAMENTO PIX */}
       <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
-      {/* 🔐 ADMIN */}
+      {/* 🔐 Admin */}
       <Route path="/admin" element={<AdminLogin />} />
-
       <Route element={<AdminRoute />}>
-        {/* coloque aqui TODAS as páginas do painel admin */}
-        {/* exemplo:
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        */}
+        {/* futuras rotas admin aqui */}
+        {/* ex: <Route path="/admin/dashboard" element={<AdminDashboard />} /> */}
       </Route>
 
-      {/* Fallback */}
+      {/* ✅ Fallback FINAL CORRETO */}
       <Route
         path="*"
         element={
-          isLoggedIn()
-            ? <Navigate to="/home" replace />
-            : <Navigate to="/" replace />
+          isAdminLoggedIn()
+            ? <Navigate to="/admin" replace />
+            : isUserLoggedIn()
+              ? <Navigate to="/home" replace />
+              : <Navigate to="/" replace />
         }
       />
     </Routes>
