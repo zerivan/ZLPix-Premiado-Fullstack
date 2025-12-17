@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Settings, Trophy, Users, BarChart3, LogOut } from "lucide-react";
 
-interface Props {
-  onLogout: () => void;
-}
-
-export default function AdminDashboard({ onLogout }: Props) {
+export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
+
+  function handleLogout() {
+    localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
+    window.location.href = "/admin";
+  }
 
   const tabs = [
     { id: "config", label: "Configurações", icon: Settings },
@@ -21,7 +22,7 @@ export default function AdminDashboard({ onLogout }: Props) {
       <header className="w-full bg-indigo-600 text-white py-4 px-6 flex justify-between items-center shadow-md">
         <h1 className="text-2xl font-bold">Painel Administrativo</h1>
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition"
         >
           <LogOut size={18} />
