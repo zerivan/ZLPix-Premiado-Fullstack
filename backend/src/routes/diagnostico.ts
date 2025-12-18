@@ -1,33 +1,32 @@
-import OpenAI from "openai";
+import { Router } from "express";
+import { analisarErro } from "../services/ai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const router = Router();
+
+router.post("/", async (req, res) => {
+  try {
+    const { pergunta } = req.body;
+
+    if (!pergunta) {
+      return res.status(400).json({
+        ok: false,
+        erro: "Campo 'pergunta' é obrigatório",
+      });
+    }
+
+    const resposta = await analisarErro(pergunta);
+
+    return res.json({
+      ok: true,
+      resposta,
+    });
+  } catch (err) {
+    console.error("Erro IA:", err);
+    return res.status(500).json({
+      ok: false,
+      erro: "Falha ao consultar IA",
+    });
+  }
 });
 
-export async function analisarErro(pergunta: string): Promise<string> {
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Você é um assistente técnico especializado em diagnóstico de erros de projetos Node.js, TypeScript, Prisma e Render.",
-        },
-        {
-          role: "user",
-          content: pergunta,
-        },
-      ],
-      temperature: 0.2,
-    });
-
-    const resposta = response.choices[0]?.message?.content;
-
-    // 🔒 GARANTIA ABSOLUTA DE RETURN
-    return resposta || "IA respondeu, mas sem conteúdo.";
-  } catch (error) {
-    console.error("Erro na OpenAI:", error);
-    return "Erro interno ao consultar a IA.";
-  }
-}
+export default router;
