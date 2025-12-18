@@ -1,5 +1,5 @@
 import express from "express";
-import { perguntarIA } from "../services/ai";
+import { analisarErro } from "../services/ai";
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const resposta = await perguntarIA(pergunta);
+    const resposta = await analisarErro(pergunta);
 
     return res.json({
       ok: true,
