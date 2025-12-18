@@ -8,16 +8,17 @@ import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
+import diagnosticoRoutes from "./routes/diagnostico"; // ✅ IA
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // =============================
-// CORS — FUNCIONAL (ADMIN + CMS)
+// CORS — LIBERADO (DEBUG / IA)
 // =============================
 app.use(
   cors({
-    origin: true, // 🔥 libera qualquer origin TEMPORARIAMENTE
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -47,6 +48,9 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
+
+// 🔥 IA — DIAGNÓSTICO
+app.use("/diagnostico", diagnosticoRoutes);
 
 // =============================
 // Start
