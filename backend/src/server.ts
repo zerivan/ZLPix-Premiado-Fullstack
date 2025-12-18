@@ -8,7 +8,8 @@ import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
-import diagnosticoRoutes from "./routes/diagnostico"; // ✅ IA
+import diagnosticoRoutes from "./routes/diagnostico"; // IA simples
+import devAssistenteRoutes from "./routes/dev-assistente"; // 🧠 Assistente residente
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -49,8 +50,11 @@ app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
-// 🔥 IA — DIAGNÓSTICO
+// 🔥 IA — diagnóstico simples
 app.use("/diagnostico", diagnosticoRoutes);
+
+// 🧠 IA — assistente residente (DEV)
+app.use("/dev/assistente", devAssistenteRoutes);
 
 // =============================
 // Start
