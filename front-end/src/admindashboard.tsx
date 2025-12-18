@@ -32,15 +32,23 @@ type AppAppearance = {
   fontHeading: string;
 };
 
+function adminHeaders() {
+  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  };
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // CMS simples (igual Home)
+  // CMS simples
+  const CMS_KEY = "home";
   const [title, setTitle] = useState("");
   const [contentHtml, setContentHtml] = useState("");
-  const CMS_KEY = "home";
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -64,12 +72,13 @@ export default function AdminDashboard() {
   }
 
   // =========================
-  // APARÊNCIA (CMS)
+  // APARÊNCIA (CORRETO)
   // =========================
   async function loadAppearance() {
     try {
       const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/app_appearance"
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
+        { headers: adminHeaders() }
       );
       const json = await res.json();
       if (json.ok && json.data) {
@@ -84,15 +93,11 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: "app_appearance",
-            title: "appearance",
-            contentHtml: JSON.stringify(appearance)
-          })
+          headers: adminHeaders(),
+          body: JSON.stringify(appearance)
         }
       );
       alert("Aparência salva");
@@ -107,7 +112,8 @@ export default function AdminDashboard() {
   async function loadContent() {
     try {
       const res = await fetch(
-        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CMS_KEY}`
+        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CMS_KEY}`,
+        { headers: adminHeaders() }
       );
       const json = await res.json();
       if (json.ok && json.data) {
@@ -124,7 +130,7 @@ export default function AdminDashboard() {
         "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: adminHeaders(),
           body: JSON.stringify({
             key: CMS_KEY,
             title,
@@ -143,9 +149,7 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "content") {
-      loadContent();
-    }
+    if (activeTab === "content") loadContent();
   }, [activeTab]);
 
   const tabs = [
@@ -191,9 +195,7 @@ export default function AdminDashboard() {
 
       <main className="flex-1 max-w-4xl mx-auto p-4">
         <div className="bg-white p-4 rounded shadow">
-          {activeTab === "config" && (
-            <p>Configurações globais do sistema.</p>
-          )}
+          {activeTab === "config" && <p>Configurações globais.</p>}
 
           {activeTab === "appearance" && appearance && (
             <div className="space-y-3">
