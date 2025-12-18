@@ -13,36 +13,18 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // =============================
-// CORS — Render + Local (FIX)
+// CORS — FUNCIONAL (ADMIN + CMS)
 // =============================
-const FRONT_URL = "https://zlpix-premiado-site.onrender.com";
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // permite SSR, mobile, curl etc
-      if (!origin) return callback(null, true);
-
-      const allowed = [
-        FRONT_URL,
-        "http://localhost:5173",
-      ];
-
-      if (allowed.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.warn("CORS bloqueado:", origin);
-      // ⚠️ NÃO lança erro — apenas bloqueia
-      return callback(null, false);
-    },
+    origin: true, // 🔥 libera qualquer origin TEMPORARIAMENTE
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Preflight global (OBRIGATÓRIO)
+// Preflight
 app.options("*", cors());
 
 app.use(express.json());
@@ -54,7 +36,6 @@ app.get("/", (_req, res) => {
   res.json({
     status: "ok",
     message: "ZLPix backend rodando!",
-    env: process.env.NODE_ENV,
   });
 });
 
