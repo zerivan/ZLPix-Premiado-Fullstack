@@ -32,6 +32,11 @@ type AppAppearance = {
   fontHeading: string;
 };
 
+type ResultadoAtual = {
+  concurso: string;
+  dataApuracao: string;
+};
+
 function adminHeaders() {
   const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
   return {
@@ -44,6 +49,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 🔗 ESTADO REAL DO SISTEMA (vem da página Resultado)
+  const [resultadoAtual, setResultadoAtual] =
+    useState<ResultadoAtual | null>(null);
 
   // CMS simples
   const CMS_KEY = "home";
@@ -72,7 +81,7 @@ export default function AdminDashboard() {
   }
 
   // =========================
-  // APARÊNCIA (CORRETO)
+  // APARÊNCIA
   // =========================
   async function loadAppearance() {
     try {
@@ -107,7 +116,7 @@ export default function AdminDashboard() {
   }
 
   // =========================
-  // CONTEÚDO (CMS)
+  // CMS
   // =========================
   async function loadContent() {
     try {
@@ -144,8 +153,19 @@ export default function AdminDashboard() {
     }
   }
 
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
     loadAppearance();
+
+    // 🔑 LÊ ESTADO GLOBAL DO SORTEIO
+    const raw = localStorage.getItem("ZLPIX_RESULTADO_ATUAL");
+    if (raw) {
+      try {
+        setResultadoAtual(JSON.parse(raw));
+      } catch {}
+    }
   }, []);
 
   useEffect(() => {
@@ -195,7 +215,22 @@ export default function AdminDashboard() {
 
       <main className="flex-1 max-w-4xl mx-auto p-4">
         <div className="bg-white p-4 rounded shadow">
-          {activeTab === "config" && <p>Configurações globais.</p>}
+          {activeTab === "config" && (
+            <div className="space-y-3">
+              <p className="font-semibold">Estado atual do sistema</p>
+
+              {resultadoAtual ? (
+                <div className="text-sm text-gray-700 bg-gray-100 p-3 rounded">
+                  Concurso <strong>{resultadoAtual.concurso}</strong> <br />
+                  Data: {resultadoAtual.dataApuracao}
+                </div>
+              ) : (
+                <p className="text-sm text-red-500">
+                  Nenhum resultado carregado ainda.
+                </p>
+              )}
+            </div>
+          )}
 
           {activeTab === "appearance" && appearance && (
             <div className="space-y-3">
