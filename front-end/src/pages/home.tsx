@@ -24,6 +24,11 @@ function daysUntil(date: Date): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+type ResultadoAtual = {
+  concurso: string;
+  dataApuracao: string;
+};
+
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
@@ -37,6 +42,10 @@ export default function Home() {
   );
   const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
 
+  // 🔗 ESTADO REAL DO SISTEMA (vem da Federal / Resultado)
+  const [resultadoAtual, setResultadoAtual] =
+    useState<ResultadoAtual | null>(null);
+
   // 🔐 BLOQUEIA ACESSO ADMIN À HOME
   useEffect(() => {
     const adminToken = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
@@ -46,44 +55,40 @@ export default function Home() {
   }, [navigate]);
 
   // =========================
+  // LÊ ESTADO GLOBAL DO SORTEIO
+  // =========================
+  useEffect(() => {
+    const raw = localStorage.getItem("ZLPIX_RESULTADO_ATUAL");
+    if (raw) {
+      try {
+        setResultadoAtual(JSON.parse(raw));
+      } catch {}
+    }
+  }, []);
+
+  // =========================
   // CARREGA CONTEÚDO DO CMS
   // =========================
   useEffect(() => {
     async function loadContent() {
       try {
-        /**
-         * 🔑 NOVO CMS (PAINEL)
-         * key = "home"
-         */
-        const home = await api.get(
+        // 🔹 Conteúdo principal da Home
+        const homeText = await api.get(
           "/api/federal/admin/content/home"
         );
-
-        if (home.data?.ok && home.data.data) {
-          setHomeTitle(home.data.data.title || homeTitle);
-          setHomeInfoHtml(home.data.data.contentHtml || null);
+        if (homeText.data?.ok && homeText.data.data) {
+          setHomeTitle(homeText.data.data.title || homeTitle);
+          setHomeSubtitle(
+            homeText.data.data.contentHtml || homeSubtitle
+          );
         }
 
-        /**
-         * 🧯 FALLBACK (ANTIGO) — NÃO QUEBRA NADA
-         */
-        if (!home.data?.data) {
-          const homeText = await api.get(
-            "/api/federal/admin/content/home_text"
-          );
-          if (homeText.data?.ok && homeText.data.data) {
-            setHomeTitle(homeText.data.data.title || homeTitle);
-            setHomeSubtitle(
-              homeText.data.data.contentHtml || homeSubtitle
-            );
-          }
-
-          const howToPlay = await api.get(
-            "/api/federal/admin/content/how_to_play"
-          );
-          if (howToPlay.data?.ok && howToPlay.data.data) {
-            setHomeInfoHtml(howToPlay.data.data.contentHtml);
-          }
+        // 🔹 Texto "Como funciona"
+        const howToPlay = await api.get(
+          "/api/federal/admin/content/how_to_play"
+        );
+        if (howToPlay.data?.ok && howToPlay.data.data) {
+          setHomeInfoHtml(howToPlay.data.data.contentHtml);
         }
       } catch {
         // fallback silencioso
@@ -112,9 +117,17 @@ export default function Home() {
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
           {homeTitle}
         </h1>
+
         <p className="text-sm text-blue-100 mt-1">
           {homeSubtitle}
         </p>
+
+        {/* 🔗 ESTADO REAL VISÍVEL (DISCRETO) */}
+        {resultadoAtual && (
+          <p className="text-xs text-blue-200 mt-2">
+            Concurso {resultadoAtual.concurso} • {resultadoAtual.dataApuracao}
+          </p>
+        )}
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
@@ -186,9 +199,7 @@ export default function Home() {
                     dangerouslySetInnerHTML={{ __html: homeInfoHtml }}
                   />
                 ) : (
-                  <p>
-                    Conteúdo explicativo não configurado ainda.
-                  </p>
+                  <p>Conteúdo explicativo não configurado ainda.</p>
                 )}
               </motion.div>
             )}
