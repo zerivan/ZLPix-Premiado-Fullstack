@@ -24,17 +24,12 @@ function daysUntil(date: Date): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-type ResultadoAtual = {
-  concurso: string;
-  dataApuracao: string;
-};
-
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
   // =========================
-  // CMS — Conteúdos dinâmicos
+  // CMS — Conteúdo dinâmico
   // =========================
   const [homeTitle, setHomeTitle] = useState("ZLPIX PREMIADO 💰");
   const [homeSubtitle, setHomeSubtitle] = useState(
@@ -42,11 +37,7 @@ export default function Home() {
   );
   const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
 
-  // 🔗 ESTADO REAL DO SISTEMA (vem da Federal / Resultado)
-  const [resultadoAtual, setResultadoAtual] =
-    useState<ResultadoAtual | null>(null);
-
-  // 🔐 BLOQUEIA ACESSO ADMIN À HOME
+  // 🔐 BLOQUEIA ADMIN NA HOME
   useEffect(() => {
     const adminToken = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (adminToken) {
@@ -55,40 +46,19 @@ export default function Home() {
   }, [navigate]);
 
   // =========================
-  // LÊ ESTADO GLOBAL DO SORTEIO
-  // =========================
-  useEffect(() => {
-    const raw = localStorage.getItem("ZLPIX_RESULTADO_ATUAL");
-    if (raw) {
-      try {
-        setResultadoAtual(JSON.parse(raw));
-      } catch {}
-    }
-  }, []);
-
-  // =========================
-  // CARREGA CONTEÚDO DO CMS
+  // CARREGA CMS (KEY = home)
   // =========================
   useEffect(() => {
     async function loadContent() {
       try {
-        // 🔹 Conteúdo principal da Home
-        const homeText = await api.get(
-          "/api/federal/admin/content/home"
-        );
-        if (homeText.data?.ok && homeText.data.data) {
-          setHomeTitle(homeText.data.data.title || homeTitle);
-          setHomeSubtitle(
-            homeText.data.data.contentHtml || homeSubtitle
-          );
-        }
+        const res = await api.get("/api/federal/admin/content/home");
 
-        // 🔹 Texto "Como funciona"
-        const howToPlay = await api.get(
-          "/api/federal/admin/content/how_to_play"
-        );
-        if (howToPlay.data?.ok && howToPlay.data.data) {
-          setHomeInfoHtml(howToPlay.data.data.contentHtml);
+        if (res.data?.ok && res.data.data) {
+          setHomeTitle(res.data.data.title || homeTitle);
+          setHomeSubtitle(
+            res.data.data.subtitle || homeSubtitle
+          );
+          setHomeInfoHtml(res.data.data.contentHtml || null);
         }
       } catch {
         // fallback silencioso
@@ -117,17 +87,9 @@ export default function Home() {
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
           {homeTitle}
         </h1>
-
         <p className="text-sm text-blue-100 mt-1">
           {homeSubtitle}
         </p>
-
-        {/* 🔗 ESTADO REAL VISÍVEL (DISCRETO) */}
-        {resultadoAtual && (
-          <p className="text-xs text-blue-200 mt-2">
-            Concurso {resultadoAtual.concurso} • {resultadoAtual.dataApuracao}
-          </p>
-        )}
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
