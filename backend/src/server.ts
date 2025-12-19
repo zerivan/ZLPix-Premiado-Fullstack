@@ -13,6 +13,7 @@ import bilheteRoutes from "./routes/bilhetes";
 import diagnosticoRoutes from "./routes/diagnostico";
 import devAssistenteRoutes from "./routes/dev-assistente";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
+import adminRelatoriosRoutes from "./routes/admin-relatorios"; // ✅ ADICIONADO
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -51,9 +52,12 @@ app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
+// =============================
 // ADMIN
+// =============================
 app.use("/api/admin/diagnostico", diagnosticoRoutes);
 app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
+app.use("/api/admin/relatorios", adminRelatoriosRoutes); // ✅ LIGADO AQUI
 app.use("/api/admin/dev-assistente", devAssistenteRoutes);
 
 // =============================
