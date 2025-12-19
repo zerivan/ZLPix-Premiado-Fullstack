@@ -5,14 +5,8 @@ const router = express.Router();
 
 /**
  * ❌ CRIAÇÃO DIRETA DE BILHETE BLOQUEADA
- *
- * Essa rota NÃO pode mais ser usada para fluxo PIX,
- * pois ela ignora a página de pagamento.
- *
- * O fluxo correto é:
- * Revisão → Pagamento → Webhook → Finalização → Criação do bilhete
  */
-router.post("/criar", async (req, res) => {
+router.post("/criar", async (_req, res) => {
   return res.status(400).json({
     error:
       "Criação direta de bilhete desativada. Utilize o fluxo de pagamento PIX ou carteira.",
@@ -21,10 +15,6 @@ router.post("/criar", async (req, res) => {
 
 /**
  * Criar bilhete PAGANDO COM SALDO (CARTEIRA)
- * 👉 NÃO cria PIX
- * 👉 Debita wallet
- * 👉 Cria transacao (saida/aposta)
- * 👉 Bilhete nasce pago
  */
 router.post("/pagar-com-saldo", async (req, res) => {
   try {
@@ -37,7 +27,6 @@ router.post("/pagar-com-saldo", async (req, res) => {
     const valor = Number(valorTotal) || 2.0;
     const dezenasStr = dezenas.join(",");
 
-    // busca wallet
     const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
@@ -90,7 +79,51 @@ router.post("/pagar-com-saldo", async (req, res) => {
 });
 
 /**
- * Listar bilhetes de um usuário
+ * ============================
+ * ADMIN — BILHETES DO SORTEIO
+ * ============================
+ * Usado EXCLUSIVAMENTE pelo painel administrativo
+ */
+router.get("/admin/sorteio-atual", async (_req, res) => {
+  try {
+    const bilhetes = await prisma.bilhete.findMany({
+      where: {
+        pago: true,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        transacao: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.json({
+      ok: true,
+      total: bilhetes.length,
+      bilhetes,
+    });
+  } catch (e) {
+    console.error("Erro ao listar bilhetes do sorteio:", e);
+    return res.status(500).json({ ok: false });
+  }
+});
+
+/**
+ * Listar bilhetes de um usuário (APP)
  */
 router.get("/listar/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
