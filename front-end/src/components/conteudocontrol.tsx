@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
+import { api } from "../api/client";
 
 type Conteudo = {
   title: string;
   contentHtml: string;
 };
-
-function adminHeaders() {
-  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
 
 export default function ConteudoControl() {
   const CMS_KEY = "home";
@@ -23,37 +16,28 @@ export default function ConteudoControl() {
 
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   // =========================
-  // LOAD CONTEÚDO (CMS)
+  // LOAD
   // =========================
   async function loadContent() {
     try {
       setLoading(true);
       setErro(null);
 
-      const res = await fetch(
-        `https://zlpix-premiado-backend.onrender.com/api/federal/content/${CMS_KEY}`,
-        { headers: adminHeaders() }
-      );
+      const res = await api.get(`/api/federal/content/${CMS_KEY}`);
 
-      if (!res.ok) {
-        throw new Error("Falha ao buscar conteúdo");
-      }
-
-      const json = await res.json();
-
-      if (json?.ok && json.data) {
+      if (res.data?.ok && res.data.data) {
         setData({
-          title: json.data.title || "",
-          contentHtml: json.data.contentHtml || "",
+          title: res.data.data.title || "",
+          contentHtml: res.data.data.contentHtml || "",
         });
       } else {
         setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch (e) {
+    } catch {
       setErro("Erro ao carregar conteúdo do CMS");
     } finally {
       setLoading(false);
@@ -61,30 +45,19 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // SAVE CONTEÚDO (ADMIN)
+  // SAVE
   // =========================
   async function saveContent() {
     setSalvando(true);
-    setErro(null);
     setStatus(null);
+    setErro(null);
 
     try {
-      const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
-        {
-          method: "POST",
-          headers: adminHeaders(),
-          body: JSON.stringify({
-            key: CMS_KEY,
-            title: data.title,
-            contentHtml: data.contentHtml,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Erro ao salvar");
-      }
+      await api.post("/api/federal/admin/content", {
+        key: CMS_KEY,
+        title: data.title,
+        contentHtml: data.contentHtml,
+      });
 
       setStatus("Conteúdo salvo com sucesso.");
     } catch {
@@ -98,9 +71,6 @@ export default function ConteudoControl() {
     loadContent();
   }, []);
 
-  // =========================
-  // RENDER
-  // =========================
   if (loading) {
     return (
       <div className="text-sm text-gray-500 animate-pulse">
@@ -123,7 +93,7 @@ export default function ConteudoControl() {
       </p>
 
       {status && (
-        <div className="text-sm text-green-600">{status}</div>
+        <div className="text-sm text-gray-600">{status}</div>
       )}
 
       <input
