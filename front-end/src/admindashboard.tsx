@@ -10,39 +10,17 @@ import {
   Brain
 } from "lucide-react";
 
-// 🧩 COMPONENTES CONTROLADORES (CAMADA CORRETA)
+// 🧩 COMPONENTES CONTROLADORES
 import ConfiguracoesControl from "./components/configuracoescontrol";
 import AparenciaControl from "./components/aparenciacontrol";
+import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
-
-type ResultadoAtual = {
-  concurso: string;
-  dataApuracao: string;
-};
-
-function adminHeaders() {
-  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  };
-}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
 
-  const [resultadoAtual, setResultadoAtual] =
-    useState<ResultadoAtual | null>(null);
-
-  // CMS simples
-  const CMS_KEY = "home";
-  const [title, setTitle] = useState("");
-  const [contentHtml, setContentHtml] = useState("");
-  const [loading, setLoading] = useState(false);
-
   /**
    * 🔒 ISOLAMENTO DO PAINEL ADMIN
-   * Ativa CSS exclusivo enquanto o admin estiver montado
    */
   useEffect(() => {
     document.body.classList.add("admin-area");
@@ -52,60 +30,12 @@ export default function AdminDashboard() {
   }, []);
 
   /**
-   * 🔐 LOGOUT DO ADMIN
+   * 🔐 LOGOUT
    */
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
   }
-
-  async function loadContent() {
-    try {
-      const res = await fetch(
-        `https://zlpix-premiado-backend.onrender.com/api/federal/admin/content/${CMS_KEY}`,
-        { headers: adminHeaders() }
-      );
-      const json = await res.json();
-      if (json.ok && json.data) {
-        setTitle(json.data.title || "");
-        setContentHtml(json.data.contentHtml || "");
-      }
-    } catch {}
-  }
-
-  async function saveContent() {
-    setLoading(true);
-    try {
-      await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
-        {
-          method: "POST",
-          headers: adminHeaders(),
-          body: JSON.stringify({
-            key: CMS_KEY,
-            title,
-            contentHtml
-          })
-        }
-      );
-      alert("Conteúdo salvo");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    const raw = localStorage.getItem("ZLPIX_RESULTADO_ATUAL");
-    if (raw) {
-      try {
-        setResultadoAtual(JSON.parse(raw));
-      } catch {}
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "content") loadContent();
-  }, [activeTab]);
 
   const tabs = [
     { id: "config", label: "Configurações", icon: Settings },
@@ -119,6 +49,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
         <h1 className="font-bold">Painel Administrativo</h1>
 
@@ -131,61 +62,56 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto relative z-20">
-        {tabs.map(t => {
-          const Icon = t.icon;
+      {/* NAV */}
+      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
           return (
             <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded flex items-center gap-2 ${
-                activeTab === t.id
+                activeTab === tab.id
                   ? "bg-indigo-600 text-white"
                   : "bg-gray-100"
               }`}
             >
               <Icon size={16} />
-              {t.label}
+              {tab.label}
             </button>
           );
         })}
       </nav>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto p-4 relative z-0">
-        <div className="bg-white p-4 rounded shadow relative z-10">
+      {/* CONTEÚDO */}
+      <main className="flex-1 w-full max-w-4xl mx-auto p-4">
+        <div className="bg-white p-4 rounded shadow">
 
-          {/* CONFIGURAÇÕES */}
           {activeTab === "config" && <ConfiguracoesControl />}
 
-          {/* APARÊNCIA */}
           {activeTab === "appearance" && <AparenciaControl />}
 
-          {/* CONTEÚDO / CMS */}
-          {activeTab === "content" && (
-            <div className="space-y-3">
-              <input
-                className="border p-2 w-full"
-                placeholder="Título"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-              />
-              <textarea
-                className="border p-2 w-full h-40"
-                value={contentHtml}
-                onChange={e => setContentHtml(e.target.value)}
-              />
-              <button
-                onClick={saveContent}
-                disabled={loading}
-                className="bg-indigo-600 text-white px-4 py-2 rounded"
-              >
-                Salvar Conteúdo
-              </button>
+          {activeTab === "content" && <ConteudoControl />}
+
+          {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
+
+          {activeTab === "winners" && (
+            <div className="text-sm text-gray-500">
+              Módulo de ganhadores será exibido aqui.
             </div>
           )}
 
-          {/* 🧠 DIAGNÓSTICO IA */}
-          {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
+          {activeTab === "users" && (
+            <div className="text-sm text-gray-500">
+              Módulo de usuários será exibido aqui.
+            </div>
+          )}
+
+          {activeTab === "reports" && (
+            <div className="text-sm text-gray-500">
+              Módulo de relatórios será exibido aqui.
+            </div>
+          )}
 
         </div>
       </main>
