@@ -17,26 +17,40 @@ export default function AdminDiagnosticoIA() {
     setResposta(null);
 
     try {
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      if (!token) {
+        throw new Error("Sessão do administrador expirada. Faça login novamente.");
+      }
+
       const res = await fetch(
         "https://zlpix-premiado-backend.onrender.com/diagnostico",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ pergunta }),
+          body: JSON.stringify({ pergunta })
         }
       );
 
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Erro ${res.status} ao consultar IA: ${text || "sem resposta"}`
+        );
+      }
+
       const data = await res.json();
 
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.erro || "Falha ao consultar a IA");
+      if (!data?.ok) {
+        throw new Error(data?.erro || "Resposta inválida da IA");
       }
 
       setResposta(data.resposta);
     } catch (e: any) {
-      setErro(e.message || "Erro inesperado");
+      setErro(e.message || "Erro inesperado ao consultar a IA");
     } finally {
       setLoading(false);
     }
