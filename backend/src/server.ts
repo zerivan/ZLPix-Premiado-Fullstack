@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
-// Rotas
+// Rotas públicas / core
 import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
@@ -12,6 +12,7 @@ import bilheteRoutes from "./routes/bilhetes";
 // Admin / Dev
 import diagnosticoRoutes from "./routes/diagnostico";
 import devAssistenteRoutes from "./routes/dev-assistente";
+import adminGanhadoresRoutes from "./routes/admin-ganhadores"; // ✅ NOVO
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -55,17 +56,20 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
 // =============================
-// ROTAS ADMIN / DEV
+// ROTAS ADMIN
 // =============================
 
-// 🔥 Diagnóstico com IA (Painel Admin)
+// 🧠 Diagnóstico com IA (Painel Admin)
 app.use("/api/admin/diagnostico", diagnosticoRoutes);
 
-// 🧠 Assistente DEV (uso interno / futuro)
+// 🏆 Ganhadores (Painel Admin)
+app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
+
+// 🧪 Assistente DEV (interno / futuro)
 app.use("/api/admin/dev-assistente", devAssistenteRoutes);
 
 // =============================
-// Start
+// START
 // =============================
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
