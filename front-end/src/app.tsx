@@ -3,11 +3,12 @@ import AppRoutes from "./routes/index";
 import { api } from "./api/client";
 
 /**
- * Aplica aparência global:
- * - fonte principal
- * - fonte de títulos
- * - prepara cores via CSS variables
- * Tudo centralizado aqui (lugar correto)
+ * Aplica aparência global do sistema:
+ * - cores (CSS variables)
+ * - fontes
+ * - modo dark/light
+ *
+ * Este é o ponto CENTRAL e CORRETO para isso.
  */
 export default function App() {
   useEffect(() => {
@@ -20,27 +21,34 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
-    // 🎨 Busca aparência no backend
+    // 🎨 Busca aparência no backend (ROTA CORRETA)
     async function loadAppearance() {
       try {
-        const res = await api.get("/api/federal/admin/app-appearance");
+        const res = await api.get("/api/federal/app-appearance");
         if (!res.data?.ok || !res.data.data) return;
 
         const appearance = res.data.data;
         const root = document.documentElement;
 
         // 🎨 Cores
-        if (appearance.primaryColor)
+        if (appearance.primaryColor) {
           root.style.setProperty("--color-primary", appearance.primaryColor);
+        }
 
-        if (appearance.secondaryColor)
+        if (appearance.secondaryColor) {
           root.style.setProperty("--color-secondary", appearance.secondaryColor);
+        }
 
-        if (appearance.accentColor)
+        if (appearance.accentColor) {
           root.style.setProperty("--color-accent", appearance.accentColor);
+        }
 
-        if (appearance.backgroundColor)
-          root.style.setProperty("--color-background", appearance.backgroundColor);
+        if (appearance.backgroundColor) {
+          root.style.setProperty(
+            "--color-background",
+            appearance.backgroundColor
+          );
+        }
 
         // 🔤 Fontes
         if (appearance.fontPrimary) {
