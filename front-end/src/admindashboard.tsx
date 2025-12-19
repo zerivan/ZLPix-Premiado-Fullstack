@@ -9,8 +9,8 @@ import {
   FileText
 } from "lucide-react";
 
-// 🧩 COMPONENTE CONTROLADOR (NOVO PADRÃO)
-import ConfiguracoesControl from "../components/admin/configuracoescontrol";
+// 🧩 COMPONENTE CONTROLADOR (CAMADA CORRETA)
+import ConfiguracoesControl from "./components/configuracoescontrol";
 
 const GOOGLE_FONTS = [
   "Inter",
@@ -53,11 +53,9 @@ export default function AdminDashboard() {
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔗 ESTADO REAL DO SISTEMA (continua existindo, não quebramos)
   const [resultadoAtual, setResultadoAtual] =
     useState<ResultadoAtual | null>(null);
 
-  // CMS simples
   const CMS_KEY = "home";
   const [title, setTitle] = useState("");
   const [contentHtml, setContentHtml] = useState("");
@@ -83,9 +81,6 @@ export default function AdminDashboard() {
       : root.classList.remove("dark");
   }
 
-  // =========================
-  // APARÊNCIA
-  // =========================
   async function loadAppearance() {
     try {
       const res = await fetch(
@@ -118,9 +113,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // =========================
-  // CMS
-  // =========================
   async function loadContent() {
     try {
       const res = await fetch(
@@ -156,9 +148,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // =========================
-  // INIT
-  // =========================
   useEffect(() => {
     loadAppearance();
 
@@ -218,10 +207,9 @@ export default function AdminDashboard() {
       <main className="flex-1 max-w-4xl mx-auto p-4">
         <div className="bg-white p-4 rounded shadow">
 
-          {/* ✅ CONFIGURAÇÕES — AGORA VIA COMPONENTE */}
+          {/* CONFIGURAÇÕES — AGORA VIA COMPONENTE */}
           {activeTab === "config" && <ConfiguracoesControl />}
 
-          {/* APARÊNCIA (mantido intacto) */}
           {activeTab === "appearance" && appearance && (
             <div className="space-y-3">
               <select
@@ -245,7 +233,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* CONTEÚDO (mantido intacto) */}
           {activeTab === "content" && (
             <div className="space-y-3">
               <input
