@@ -21,14 +21,19 @@ export default function ConteudoControl() {
     contentHtml: "",
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   // =========================
   // LOAD
   // =========================
   async function loadContent() {
     try {
+      setLoading(true);
+      setErro(null);
+
       const res = await fetch(
         `https://zlpix-premiado-backend.onrender.com/api/federal/content/${CMS_KEY}`,
         { headers: adminHeaders() }
@@ -41,9 +46,13 @@ export default function ConteudoControl() {
           title: json.data.title || "",
           contentHtml: json.data.contentHtml || "",
         });
+      } else {
+        setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch {
-      setStatus("Erro ao carregar conteúdo");
+    } catch (e) {
+      setErro("Erro ao carregar conteúdo do CMS");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -51,8 +60,9 @@ export default function ConteudoControl() {
   // SAVE
   // =========================
   async function saveContent() {
-    setLoading(true);
+    setSalvando(true);
     setStatus(null);
+    setErro(null);
 
     try {
       await fetch(
@@ -68,11 +78,11 @@ export default function ConteudoControl() {
         }
       );
 
-      setStatus("Conteúdo salvo com sucesso");
+      setStatus("Conteúdo salvo com sucesso.");
     } catch {
-      setStatus("Erro ao salvar conteúdo");
+      setErro("Erro ao salvar conteúdo.");
     } finally {
-      setLoading(false);
+      setSalvando(false);
     }
   }
 
@@ -80,9 +90,31 @@ export default function ConteudoControl() {
     loadContent();
   }, []);
 
+  // =========================
+  // RENDER
+  // =========================
+  if (loading) {
+    return (
+      <div className="text-sm text-gray-500 animate-pulse">
+        Carregando conteúdo do CMS...
+      </div>
+    );
+  }
+
+  if (erro) {
+    return <div className="text-sm text-red-600">{erro}</div>;
+  }
+
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
+      <h2 className="text-lg font-semibold">
+        Conteúdo da Página
+      </h2>
+
+      <p className="text-xs text-gray-500">
+        Este conteúdo é exibido no aplicativo e pode ser editado diretamente
+        pelo painel administrativo.
+      </p>
 
       {status && (
         <div className="text-sm text-gray-600">{status}</div>
@@ -109,10 +141,10 @@ export default function ConteudoControl() {
 
       <button
         onClick={saveContent}
-        disabled={loading}
+        disabled={salvando}
         className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
       >
-        {loading ? "Salvando..." : "Salvar Conteúdo"}
+        {salvando ? "Salvando..." : "Salvar Conteúdo"}
       </button>
     </div>
   );
