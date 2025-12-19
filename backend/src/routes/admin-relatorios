@@ -1,0 +1,66 @@
+import express from "express";
+import { prisma } from "../lib/prisma";
+
+const router = express.Router();
+
+/**
+ * Relatórios administrativos (resumo geral)
+ */
+router.get("/", async (_req, res) => {
+  try {
+    const [
+      totalUsuarios,
+      totalBilhetes,
+      totalTransacoes,
+      somaEntradas,
+      somaSaidas,
+      ultimaTransacao,
+    ] = await Promise.all([
+      prisma.users.count(),
+      prisma.bilhete.count(),
+      prisma.transacao.count(),
+
+      prisma.transacao.aggregate({
+        where: { status: "completed" },
+        _sum: { valor: true },
+      }),
+
+      prisma.transacao.aggregate({
+        where: {
+          status: "completed",
+          metadata: {
+            path: ["tipo"],
+            equals: "saida",
+          },
+        },
+        _sum: { valor: true },
+      }),
+
+      prisma.transacao.findFirst({
+        orderBy: { createdAt: "desc" },
+        select: {
+          valor: true,
+          createdAt: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    return res.json({
+      ok: true,
+      data: {
+        totalUsuarios,
+        totalBilhetes,
+        totalTransacoes,
+        totalArrecadado: somaEntradas._sum.valor || 0,
+        totalPago: somaSaidas._sum.valor || 0,
+        ultimaTransacao,
+      },
+    });
+  } catch (e) {
+    console.error("Erro relatórios:", e);
+    return res.status(500).json({ ok: false });
+  }
+});
+
+export default router;
