@@ -27,7 +27,8 @@ export default function ConteudoControl() {
       setLoading(true);
       setErro(null);
 
-      const res = await api.get(`/api/federal/content/${CMS_KEY}`);
+      // ✅ ROTA ADMIN CORRETA (CMS)
+      const res = await api.get(`/api/admin/content/${CMS_KEY}`);
 
       if (res.data?.ok && res.data.data) {
         setData({
@@ -37,7 +38,7 @@ export default function ConteudoControl() {
       } else {
         setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch (e) {
+    } catch {
       setErro("Erro ao carregar conteúdo do CMS");
     } finally {
       setLoading(false);
@@ -53,7 +54,8 @@ export default function ConteudoControl() {
     setErro(null);
 
     try {
-      await api.post("/api/federal/content", {
+      // ✅ ROTA ADMIN CORRETA (CMS)
+      await api.post("/api/admin/content", {
         key: CMS_KEY,
         title: data.title,
         contentHtml: data.contentHtml,
