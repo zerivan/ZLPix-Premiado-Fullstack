@@ -41,9 +41,18 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
 
   /**
+   * 🔒 ISOLAMENTO DO PAINEL ADMIN
+   * Ativa CSS exclusivo enquanto o admin estiver montado
+   */
+  useEffect(() => {
+    document.body.classList.add("admin-area");
+    return () => {
+      document.body.classList.remove("admin-area");
+    };
+  }, []);
+
+  /**
    * 🔐 LOGOUT DO ADMIN
-   * Remove o token e redireciona SEMPRE
-   * para a tela de login do ADM
    */
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
@@ -145,10 +154,10 @@ export default function AdminDashboard() {
       <main className="flex-1 w-full max-w-4xl mx-auto p-4 relative z-0">
         <div className="bg-white p-4 rounded shadow relative z-10">
 
-          {/* CONFIGURAÇÕES DO SISTEMA */}
+          {/* CONFIGURAÇÕES */}
           {activeTab === "config" && <ConfiguracoesControl />}
 
-          {/* APARÊNCIA (ISOLADA, SEM QUEBRAR O PROPÓSITO) */}
+          {/* APARÊNCIA */}
           {activeTab === "appearance" && <AparenciaControl />}
 
           {/* CONTEÚDO / CMS */}
@@ -175,7 +184,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 🧠 DIAGNÓSTICO COM IA */}
+          {/* 🧠 DIAGNÓSTICO IA */}
           {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
 
         </div>
