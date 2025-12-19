@@ -6,12 +6,14 @@ import {
   BarChart3,
   LogOut,
   Palette,
-  FileText
+  FileText,
+  Brain
 } from "lucide-react";
 
-// 🧩 COMPONENTES CONTROLADORES
+// 🧩 COMPONENTES CONTROLADORES (CAMADA CORRETA)
 import ConfiguracoesControl from "./components/configuracoescontrol";
 import AparenciaControl from "./components/aparenciacontrol";
+import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 
 type ResultadoAtual = {
   concurso: string;
@@ -38,6 +40,11 @@ export default function AdminDashboard() {
   const [contentHtml, setContentHtml] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /**
+   * 🔐 LOGOUT DO ADMIN
+   * Remove o token e redireciona SEMPRE
+   * para a tela de login do ADM
+   */
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
@@ -95,6 +102,7 @@ export default function AdminDashboard() {
     { id: "config", label: "Configurações", icon: Settings },
     { id: "appearance", label: "Aparência", icon: Palette },
     { id: "content", label: "Conteúdo", icon: FileText },
+    { id: "diagnostico", label: "Diagnóstico IA", icon: Brain },
     { id: "winners", label: "Ganhadores", icon: Trophy },
     { id: "users", label: "Usuários", icon: Users },
     { id: "reports", label: "Relatórios", icon: BarChart3 }
@@ -104,11 +112,13 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
         <h1 className="font-bold">Painel Administrativo</h1>
+
         <button
           onClick={handleLogout}
-          className="bg-red-500 px-3 py-2 rounded"
+          className="bg-red-500 px-3 py-2 rounded flex items-center gap-2"
         >
-          <LogOut size={16} /> Sair
+          <LogOut size={16} />
+          Sair
         </button>
       </header>
 
@@ -135,13 +145,13 @@ export default function AdminDashboard() {
       <main className="flex-1 w-full max-w-4xl mx-auto p-4 relative z-0">
         <div className="bg-white p-4 rounded shadow relative z-10">
 
-          {/* CONFIGURAÇÕES */}
+          {/* CONFIGURAÇÕES DO SISTEMA */}
           {activeTab === "config" && <ConfiguracoesControl />}
 
-          {/* APARÊNCIA (AGORA ISOLADA) */}
+          {/* APARÊNCIA (ISOLADA, SEM QUEBRAR O PROPÓSITO) */}
           {activeTab === "appearance" && <AparenciaControl />}
 
-          {/* CONTEÚDO */}
+          {/* CONTEÚDO / CMS */}
           {activeTab === "content" && (
             <div className="space-y-3">
               <input
@@ -164,6 +174,10 @@ export default function AdminDashboard() {
               </button>
             </div>
           )}
+
+          {/* 🧠 DIAGNÓSTICO COM IA */}
+          {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
+
         </div>
       </main>
     </div>
