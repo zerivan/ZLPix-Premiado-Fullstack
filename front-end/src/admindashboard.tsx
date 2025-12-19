@@ -9,31 +9,9 @@ import {
   FileText
 } from "lucide-react";
 
-// 🧩 COMPONENTE CONTROLADOR (CAMADA CORRETA)
+// 🧩 COMPONENTES CONTROLADORES
 import ConfiguracoesControl from "./components/configuracoescontrol";
-
-const GOOGLE_FONTS = [
-  "Inter",
-  "Poppins",
-  "Manrope",
-  "Montserrat",
-  "Roboto",
-  "Open Sans",
-  "Lato",
-  "Nunito",
-  "Playfair Display",
-  "DM Sans"
-];
-
-type AppAppearance = {
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  backgroundColor: string;
-  themeMode: string;
-  fontPrimary: string;
-  fontHeading: string;
-};
+import AparenciaControl from "./components/aparenciacontrol";
 
 type ResultadoAtual = {
   concurso: string;
@@ -50,67 +28,19 @@ function adminHeaders() {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("config");
-  const [appearance, setAppearance] = useState<AppAppearance | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const [resultadoAtual, setResultadoAtual] =
     useState<ResultadoAtual | null>(null);
 
+  // CMS simples
   const CMS_KEY = "home";
   const [title, setTitle] = useState("");
   const [contentHtml, setContentHtml] = useState("");
+  const [loading, setLoading] = useState(false);
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
-  }
-
-  function applyPreview(data: AppAppearance) {
-    const root = document.documentElement;
-    root.style.setProperty("--color-primary", data.primaryColor);
-    root.style.setProperty("--color-secondary", data.secondaryColor);
-    root.style.setProperty("--color-accent", data.accentColor);
-    root.style.setProperty("--color-background", data.backgroundColor);
-
-    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
-    if (data.fontHeading)
-      root.style.setProperty("--font-heading", data.fontHeading);
-
-    data.themeMode === "dark"
-      ? root.classList.add("dark")
-      : root.classList.remove("dark");
-  }
-
-  async function loadAppearance() {
-    try {
-      const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
-        { headers: adminHeaders() }
-      );
-      const json = await res.json();
-      if (json.ok && json.data) {
-        setAppearance(json.data);
-        applyPreview(json.data);
-      }
-    } catch {}
-  }
-
-  async function saveAppearance() {
-    if (!appearance) return;
-    setLoading(true);
-    try {
-      await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
-        {
-          method: "POST",
-          headers: adminHeaders(),
-          body: JSON.stringify(appearance)
-        }
-      );
-      alert("Aparência salva");
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function loadContent() {
@@ -149,8 +79,6 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    loadAppearance();
-
     const raw = localStorage.getItem("ZLPIX_RESULTADO_ATUAL");
     if (raw) {
       try {
@@ -184,7 +112,7 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
+      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto relative z-20">
         {tabs.map(t => {
           const Icon = t.icon;
           return (
@@ -204,35 +132,16 @@ export default function AdminDashboard() {
         })}
       </nav>
 
-      <main className="flex-1 max-w-4xl mx-auto p-4">
-        <div className="bg-white p-4 rounded shadow">
+      <main className="flex-1 w-full max-w-4xl mx-auto p-4 relative z-0">
+        <div className="bg-white p-4 rounded shadow relative z-10">
 
-          {/* CONFIGURAÇÕES — AGORA VIA COMPONENTE */}
+          {/* CONFIGURAÇÕES */}
           {activeTab === "config" && <ConfiguracoesControl />}
 
-          {activeTab === "appearance" && appearance && (
-            <div className="space-y-3">
-              <select
-                value={appearance.fontPrimary}
-                onChange={e =>
-                  setAppearance({ ...appearance, fontPrimary: e.target.value })
-                }
-                className="border p-2 w-full"
-              >
-                {GOOGLE_FONTS.map(f => (
-                  <option key={f}>{f}</option>
-                ))}
-              </select>
+          {/* APARÊNCIA (AGORA ISOLADA) */}
+          {activeTab === "appearance" && <AparenciaControl />}
 
-              <button
-                onClick={saveAppearance}
-                className="bg-indigo-600 text-white px-4 py-2 rounded"
-              >
-                Salvar Aparência
-              </button>
-            </div>
-          )}
-
+          {/* CONTEÚDO */}
           {activeTab === "content" && (
             <div className="space-y-3">
               <input
@@ -248,6 +157,7 @@ export default function AdminDashboard() {
               />
               <button
                 onClick={saveContent}
+                disabled={loading}
                 className="bg-indigo-600 text-white px-4 py-2 rounded"
               >
                 Salvar Conteúdo
