@@ -27,7 +27,7 @@ export default function ConteudoControl() {
   const [erro, setErro] = useState<string | null>(null);
 
   // =========================
-  // LOAD
+  // LOAD (OK)
   // =========================
   async function loadContent() {
     try {
@@ -49,7 +49,7 @@ export default function ConteudoControl() {
       } else {
         setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch (e) {
+    } catch {
       setErro("Erro ao carregar conteúdo do CMS");
     } finally {
       setLoading(false);
@@ -57,7 +57,7 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // SAVE
+  // SAVE (ROTA CORRIGIDA ✅)
   // =========================
   async function saveContent() {
     setSalvando(true);
@@ -65,8 +65,8 @@ export default function ConteudoControl() {
     setErro(null);
 
     try {
-      await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
+      const res = await fetch(
+        "https://zlpix-premiado-backend.onrender.com/api/federal/content",
         {
           method: "POST",
           headers: adminHeaders(),
@@ -77,6 +77,12 @@ export default function ConteudoControl() {
           }),
         }
       );
+
+      const json = await res.json();
+
+      if (!json?.ok) {
+        throw new Error("Falha ao salvar conteúdo");
+      }
 
       setStatus("Conteúdo salvo com sucesso.");
     } catch {
@@ -107,18 +113,14 @@ export default function ConteudoControl() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        Conteúdo da Página
-      </h2>
+      <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
 
       <p className="text-xs text-gray-500">
         Este conteúdo é exibido no aplicativo e pode ser editado diretamente
         pelo painel administrativo.
       </p>
 
-      {status && (
-        <div className="text-sm text-gray-600">{status}</div>
-      )}
+      {status && <div className="text-sm text-gray-600">{status}</div>}
 
       <input
         type="text"
