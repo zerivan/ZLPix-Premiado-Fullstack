@@ -37,7 +37,7 @@ export default function ConteudoControl() {
       } else {
         setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch {
+    } catch (e) {
       setErro("Erro ao carregar conteúdo do CMS");
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export default function ConteudoControl() {
     setErro(null);
 
     try {
-      await api.post("/api/federal/admin/content", {
+      await api.post("/api/federal/content", {
         key: CMS_KEY,
         title: data.title,
         contentHtml: data.contentHtml,
@@ -71,6 +71,9 @@ export default function ConteudoControl() {
     loadContent();
   }, []);
 
+  // =========================
+  // RENDER
+  // =========================
   if (loading) {
     return (
       <div className="text-sm text-gray-500 animate-pulse">
