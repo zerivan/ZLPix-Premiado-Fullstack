@@ -6,15 +6,8 @@ function DynamicPage() {
   useEffect(() => {
     async function loadPage() {
       try {
-        const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
         const res = await fetch(
-          `https://zlpix-premiado-backend.onrender.com/api/admin/pages/${slug}`,
-          {
-            headers: token
-              ? { Authorization: `Bearer ${token}` }
-              : undefined,
-          }
+          `https://zlpix-premiado-backend.onrender.com/api/admin/pages/${slug}`
         );
 
         if (!res.ok) {
@@ -55,9 +48,8 @@ function DynamicPage() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">{page.title}</h1>
 
-      {page.blocksJson && renderBlocks(page.blocksJson)}
-
-      {!page.blocksJson && page.contentHtml && (
+      {/* CMS HTML SIMPLES (SEM BLOCOS) */}
+      {page.contentHtml && (
         <div
           className="prose max-w-none"
           dangerouslySetInnerHTML={{ __html: page.contentHtml }}
