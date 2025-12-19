@@ -18,7 +18,7 @@ type AppAppearance = {
   secondaryColor: string;
   accentColor: string;
   backgroundColor: string;
-  themeMode: string;
+  themeMode: "light" | "dark";
   fontPrimary: string;
   fontHeading: string;
 };
@@ -33,18 +33,21 @@ function adminHeaders() {
 
 export default function AparenciaControl() {
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
+
     root.style.setProperty("--color-primary", data.primaryColor);
     root.style.setProperty("--color-secondary", data.secondaryColor);
     root.style.setProperty("--color-accent", data.accentColor);
     root.style.setProperty("--color-background", data.backgroundColor);
 
-    if (data.fontPrimary) document.body.style.fontFamily = data.fontPrimary;
-    if (data.fontHeading)
-      root.style.setProperty("--font-heading", data.fontHeading);
+    document.body.style.fontFamily = data.fontPrimary;
+    root.style.setProperty("--font-heading", data.fontHeading);
 
     data.themeMode === "dark"
       ? root.classList.add("dark")
@@ -53,23 +56,33 @@ export default function AparenciaControl() {
 
   async function loadAppearance() {
     try {
+      setLoading(true);
       const res = await fetch(
         "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
         { headers: adminHeaders() }
       );
       const json = await res.json();
+
       if (json.ok && json.data) {
         setAppearance(json.data);
         applyPreview(json.data);
+      } else {
+        setErro("Nenhuma aparência configurada ainda.");
       }
-    } catch (err) {
-      console.error("Erro ao carregar aparência", err);
+    } catch {
+      setErro("Erro ao carregar aparência.");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function saveAppearance() {
     if (!appearance) return;
-    setLoading(true);
+
+    setSalvando(true);
+    setStatus(null);
+    setErro(null);
+
     try {
       await fetch(
         "https://zlpix-premiado-backend.onrender.com/api/federal/admin/app-appearance",
@@ -79,11 +92,11 @@ export default function AparenciaControl() {
           body: JSON.stringify(appearance)
         }
       );
-      alert("Aparência salva com sucesso");
-    } catch (err) {
-      alert("Erro ao salvar aparência");
+      setStatus("Aparência salva com sucesso.");
+    } catch {
+      setErro("Erro ao salvar aparência.");
     } finally {
-      setLoading(false);
+      setSalvando(false);
     }
   }
 
@@ -91,14 +104,84 @@ export default function AparenciaControl() {
     loadAppearance();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="text-sm text-gray-500 animate-pulse">
+        Carregando aparência do aplicativo...
+      </div>
+    );
+  }
+
+  if (erro) {
+    return <div className="text-sm text-red-600">{erro}</div>;
+  }
+
   if (!appearance) {
-    return <div className="text-sm text-gray-500">Carregando aparência...</div>;
+    return null;
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Aparência do Aplicativo</h2>
 
+      <p className="text-xs text-gray-500">
+        As alterações aqui afetam todo o aplicativo em tempo real.
+      </p>
+
+      {status && <div className="text-sm text-gray-600">{status}</div>}
+
+      {/* CORES */}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-sm">
+          Cor Primária
+          <input
+            type="color"
+            value={appearance.primaryColor}
+            onChange={e =>
+              setAppearance({ ...appearance, primaryColor: e.target.value })
+            }
+            className="w-full h-10"
+          />
+        </label>
+
+        <label className="text-sm">
+          Cor Secundária
+          <input
+            type="color"
+            value={appearance.secondaryColor}
+            onChange={e =>
+              setAppearance({ ...appearance, secondaryColor: e.target.value })
+            }
+            className="w-full h-10"
+          />
+        </label>
+
+        <label className="text-sm">
+          Cor de Destaque
+          <input
+            type="color"
+            value={appearance.accentColor}
+            onChange={e =>
+              setAppearance({ ...appearance, accentColor: e.target.value })
+            }
+            className="w-full h-10"
+          />
+        </label>
+
+        <label className="text-sm">
+          Fundo
+          <input
+            type="color"
+            value={appearance.backgroundColor}
+            onChange={e =>
+              setAppearance({ ...appearance, backgroundColor: e.target.value })
+            }
+            className="w-full h-10"
+          />
+        </label>
+      </div>
+
+      {/* FONTES */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Fonte principal</label>
         <select
@@ -112,14 +195,45 @@ export default function AparenciaControl() {
             <option key={f}>{f}</option>
           ))}
         </select>
+
+        <label className="text-sm font-medium">Fonte de títulos</label>
+        <select
+          value={appearance.fontHeading}
+          onChange={e =>
+            setAppearance({ ...appearance, fontHeading: e.target.value })
+          }
+          className="border p-2 w-full"
+        >
+          {GOOGLE_FONTS.map(f => (
+            <option key={f}>{f}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* TEMA */}
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">Tema</label>
+        <select
+          value={appearance.themeMode}
+          onChange={e =>
+            setAppearance({
+              ...appearance,
+              themeMode: e.target.value as "light" | "dark"
+            })
+          }
+          className="border p-2"
+        >
+          <option value="light">Claro</option>
+          <option value="dark">Escuro</option>
+        </select>
       </div>
 
       <button
         onClick={saveAppearance}
-        disabled={loading}
-        className="bg-indigo-600 text-white px-4 py-2 rounded"
+        disabled={salvando}
+        className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
       >
-        {loading ? "Salvando..." : "Salvar Aparência"}
+        {salvando ? "Salvando..." : "Salvar Aparência"}
       </button>
     </div>
   );
