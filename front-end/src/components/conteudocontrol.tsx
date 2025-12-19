@@ -23,11 +23,11 @@ export default function ConteudoControl() {
 
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   // =========================
-  // LOAD (OK)
+  // LOAD CONTEÚDO (CMS)
   // =========================
   async function loadContent() {
     try {
@@ -39,6 +39,10 @@ export default function ConteudoControl() {
         { headers: adminHeaders() }
       );
 
+      if (!res.ok) {
+        throw new Error("Falha ao buscar conteúdo");
+      }
+
       const json = await res.json();
 
       if (json?.ok && json.data) {
@@ -49,7 +53,7 @@ export default function ConteudoControl() {
       } else {
         setStatus("Nenhum conteúdo cadastrado ainda.");
       }
-    } catch {
+    } catch (e) {
       setErro("Erro ao carregar conteúdo do CMS");
     } finally {
       setLoading(false);
@@ -57,16 +61,16 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // SAVE (ROTA CORRIGIDA ✅)
+  // SAVE CONTEÚDO (ADMIN)
   // =========================
   async function saveContent() {
     setSalvando(true);
-    setStatus(null);
     setErro(null);
+    setStatus(null);
 
     try {
       const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/federal/content",
+        "https://zlpix-premiado-backend.onrender.com/api/federal/admin/content",
         {
           method: "POST",
           headers: adminHeaders(),
@@ -78,10 +82,8 @@ export default function ConteudoControl() {
         }
       );
 
-      const json = await res.json();
-
-      if (!json?.ok) {
-        throw new Error("Falha ao salvar conteúdo");
+      if (!res.ok) {
+        throw new Error("Erro ao salvar");
       }
 
       setStatus("Conteúdo salvo com sucesso.");
@@ -120,7 +122,9 @@ export default function ConteudoControl() {
         pelo painel administrativo.
       </p>
 
-      {status && <div className="text-sm text-gray-600">{status}</div>}
+      {status && (
+        <div className="text-sm text-green-600">{status}</div>
+      )}
 
       <input
         type="text"
