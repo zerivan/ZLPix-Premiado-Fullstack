@@ -5,12 +5,14 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 /**
- * Calcula a próxima quarta-feira (20h)
+ * =====================================================
+ * UTIL — Próxima quarta-feira às 20h
+ * =====================================================
  */
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
+  const day = now.getDay(); // 0 = domingo
+  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
   next.setHours(20, 0, 0, 0);
@@ -19,7 +21,8 @@ function getNextWednesday(): Date {
 
 /**
  * =====================================================
- * ROTA FEDERAL — SCRAPING CAIXA
+ * API PÚBLICA — FEDERAL (SCRAPING CAIXA)
+ * GET /api/federal
  * =====================================================
  */
 router.get("/", async (_req, res) => {
@@ -70,19 +73,20 @@ router.get("/", async (_req, res) => {
         proximoSorteio: proximoSorteio.toISOString(),
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Erro Federal:", error);
     return res.status(500).json({ ok: false });
   }
 });
 
 /**
  * =====================================================
- * APP APPEARANCE (USANDO AppContent)
+ * CMS — APARÊNCIA GLOBAL DO APP
  * =====================================================
  */
 
 // GET aparência
-router.get("/admin/app-appearance", async (_req, res) => {
+router.get("/app-appearance", async (_req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
       where: { key: "app_appearance" },
@@ -92,13 +96,14 @@ router.get("/admin/app-appearance", async (_req, res) => {
       ok: true,
       data: content ? JSON.parse(content.contentHtml || "{}") : null,
     });
-  } catch {
+  } catch (error) {
+    console.error("Erro aparência:", error);
     return res.status(500).json({ ok: false });
   }
 });
 
 // POST aparência
-router.post("/admin/app-appearance", async (req, res) => {
+router.post("/app-appearance", async (req, res) => {
   try {
     const data = req.body;
 
@@ -119,55 +124,46 @@ router.post("/admin/app-appearance", async (req, res) => {
       ok: true,
       data: JSON.parse(saved.contentHtml || "{}"),
     });
-  } catch {
+  } catch (error) {
+    console.error("Erro salvar aparência:", error);
     return res.status(500).json({ ok: false });
   }
 });
 
 /**
  * =====================================================
- * CMS — AppContent
+ * CMS — CONTEÚDO PÚBLICO
  * =====================================================
  */
 
-router.get("/admin/content/:key", async (req, res) => {
+// GET conteúdo por chave
+router.get("/content/:key", async (req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
       where: { key: req.params.key },
     });
 
     return res.json({ ok: true, data: content });
-  } catch {
+  } catch (error) {
+    console.error("Erro conteúdo:", error);
     return res.status(500).json({ ok: false });
   }
 });
 
-router.post("/admin/content", async (req, res) => {
-  try {
-    const { key, title, contentHtml } = req.body;
-
-    const content = await prisma.appContent.upsert({
-      where: { key },
-      update: { title, contentHtml },
-      create: { key, title, contentHtml },
-    });
-
-    return res.json({ ok: true, data: content });
-  } catch {
-    return res.status(500).json({ ok: false });
-  }
-});
-
+// GET página pública
 router.get("/pages/:key", async (req, res) => {
   try {
     const page = await prisma.appContent.findUnique({
       where: { key: req.params.key },
     });
 
-    if (!page) return res.status(404).json({ ok: false });
+    if (!page) {
+      return res.status(404).json({ ok: false });
+    }
 
     return res.json({ ok: true, data: page });
-  } catch {
+  } catch (error) {
+    console.error("Erro página:", error);
     return res.status(500).json({ ok: false });
   }
 });
