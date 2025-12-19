@@ -28,10 +28,12 @@ function loadGoogleFont(font: string) {
 /**
  * Aplica aparência global no app
  * (cores + fontes + tema)
+ *
+ * ⚠️ ROTA ALINHADA COM A NOVA ARQUITETURA
  */
 async function applyAppearance() {
   try {
-    const res = await api.get("/api/federal/admin/app-appearance");
+    const res = await api.get("/api/federal/app-appearance");
     if (!res.data?.ok || !res.data.data) return;
 
     const appearance = res.data.data;
@@ -72,7 +74,7 @@ async function applyAppearance() {
   }
 }
 
-// Aplica aparência ANTES de renderizar
+// Aplica aparência ANTES de renderizar o React
 applyAppearance().finally(() => {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
