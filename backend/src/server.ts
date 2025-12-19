@@ -8,14 +8,16 @@ import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
-import diagnosticoRoutes from "./routes/diagnostico"; // IA simples
-import devAssistenteRoutes from "./routes/dev-assistente"; // 🧠 Assistente residente
+
+// Admin / Dev
+import diagnosticoRoutes from "./routes/diagnostico";
+import devAssistenteRoutes from "./routes/dev-assistente";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // =============================
-// CORS — LIBERADO (DEBUG / IA)
+// CORS — GLOBAL (API + ADMIN)
 // =============================
 app.use(
   cors({
@@ -26,9 +28,7 @@ app.use(
   })
 );
 
-// Preflight
 app.options("*", cors());
-
 app.use(express.json());
 
 // =============================
@@ -42,19 +42,27 @@ app.get("/", (_req, res) => {
 });
 
 // =============================
-// Rotas
+// ROTAS PÚBLICAS
 // =============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
+
+// =============================
+// ROTAS OPERACIONAIS
+// =============================
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
-// 🔥 IA — diagnóstico simples
-app.use("/diagnostico", diagnosticoRoutes);
+// =============================
+// ROTAS ADMIN / DEV
+// =============================
 
-// 🧠 IA — assistente residente (DEV)
-app.use("/dev/assistente", devAssistenteRoutes);
+// 🔥 Diagnóstico com IA (Painel Admin)
+app.use("/api/admin/diagnostico", diagnosticoRoutes);
+
+// 🧠 Assistente DEV (uso interno / futuro)
+app.use("/api/admin/dev-assistente", devAssistenteRoutes);
 
 // =============================
 // Start
