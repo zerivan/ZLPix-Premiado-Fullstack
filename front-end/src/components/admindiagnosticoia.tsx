@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Copy, Trash2, Send } from "lucide-react";
+import { api } from "../api/client";
 
 export default function AdminDiagnosticoIA() {
   const [pergunta, setPergunta] = useState("");
@@ -26,25 +27,22 @@ export default function AdminDiagnosticoIA() {
         throw new Error("Sessão do administrador expirada. Faça login novamente.");
       }
 
-      const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/admin/diagnostico",
+      // ✅ USANDO api (PADRÃO DO PROJETO)
+      const res = await api.post(
+        "/api/admin/diagnostico",
+        { pergunta },
         {
-          method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ pergunta })
         }
       );
 
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        throw new Error(data?.erro || "Falha ao consultar a IA");
+      if (!res.data?.ok) {
+        throw new Error(res.data?.erro || "Resposta inválida da IA");
       }
 
-      setResposta(data.resposta);
+      setResposta(res.data.resposta);
     } catch (e: any) {
       setErro(e.message || "Erro inesperado ao consultar a IA");
     } finally {
@@ -71,11 +69,9 @@ export default function AdminDiagnosticoIA() {
       <h2 className="text-lg font-semibold">Diagnóstico com IA</h2>
 
       <p className="text-sm text-gray-600">
-        Descreva o problema do sistema. Você pode editar a pergunta e reenviar
-        quantas vezes quiser.
+        Descreva o problema do sistema. Você pode editar a pergunta e reenviar.
       </p>
 
-      {/* PERGUNTA */}
       <textarea
         className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none"
         rows={4}
@@ -84,7 +80,6 @@ export default function AdminDiagnosticoIA() {
         onChange={(e) => setPergunta(e.target.value)}
       />
 
-      {/* AÇÕES */}
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={analisar}
@@ -107,7 +102,6 @@ export default function AdminDiagnosticoIA() {
         {erro && <span className="text-sm text-red-600">{erro}</span>}
       </div>
 
-      {/* RESPOSTA */}
       {resposta && (
         <div className="rounded-lg border bg-gray-50 p-4 text-sm text-gray-800 space-y-3">
           <div className="flex justify-between items-center">
