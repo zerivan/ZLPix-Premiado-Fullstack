@@ -17,13 +17,16 @@ export default function AdminDiagnosticoIA() {
     setResposta(null);
 
     try {
-      const res = await fetch("/diagnostico", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ pergunta }),
-      });
+      const res = await fetch(
+        "https://zlpix-premiado-backend.onrender.com/diagnostico",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ pergunta }),
+        }
+      );
 
       const data = await res.json();
 
@@ -40,26 +43,26 @@ export default function AdminDiagnosticoIA() {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <h2 className="mb-2 text-lg font-semibold">Diagnóstico com IA</h2>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Diagnóstico com IA</h2>
 
-      <p className="mb-3 text-sm text-gray-600">
+      <p className="text-sm text-gray-600">
         Descreva o problema do sistema e a IA fará uma análise técnica.
       </p>
 
       <textarea
-        className="w-full resize-none rounded-xl border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none"
+        className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none"
         rows={4}
         placeholder="Ex: O painel admin não abre após o login..."
         value={pergunta}
         onChange={(e) => setPergunta(e.target.value)}
       />
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         <button
           onClick={analisar}
           disabled={loading}
-          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
         >
           {loading ? "Analisando..." : "Analisar com IA"}
         </button>
@@ -68,7 +71,7 @@ export default function AdminDiagnosticoIA() {
       </div>
 
       {resposta && (
-        <div className="mt-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-800">
+        <div className="rounded bg-gray-50 p-3 text-sm text-gray-800">
           <strong>Resposta da IA:</strong>
           <pre className="mt-2 whitespace-pre-wrap">{resposta}</pre>
         </div>
