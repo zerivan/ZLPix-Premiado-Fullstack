@@ -1,13 +1,19 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { analisarErro } from "../services/ai";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+/**
+ * =====================================================
+ * POST /api/admin/diagnostico
+ * Diagnóstico técnico com IA (uso admin)
+ * =====================================================
+ */
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { pergunta } = req.body;
 
-    if (!pergunta) {
+    if (!pergunta || typeof pergunta !== "string") {
       return res.status(400).json({
         ok: false,
         erro: "Campo 'pergunta' é obrigatório",
@@ -20,11 +26,12 @@ router.post("/", async (req, res) => {
       ok: true,
       resposta,
     });
-  } catch (err) {
-    console.error("Erro IA:", err);
+  } catch (error) {
+    console.error("❌ Erro na rota /api/admin/diagnostico:", error);
+
     return res.status(500).json({
       ok: false,
-      erro: "Falha ao consultar IA",
+      erro: "Falha ao consultar a IA",
     });
   }
 });
