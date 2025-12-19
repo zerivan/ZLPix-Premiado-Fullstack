@@ -1,6 +1,6 @@
 /* ================================
    ZLPIX – LAYOUT PADRÃO RESPONSIVO
-   ALTURA CORRIGIDA E SIMÉTRICA
+   (ISOLADO DO PAINEL ADMIN)
    ================================ */
 
 /* Tailwind */
@@ -9,25 +9,21 @@
 @tailwind utilities;
 
 /* ================================
-   VARIÁVEIS GLOBAIS (DINÂMICAS)
+   VARIÁVEIS GLOBAIS
    ================================ */
 :root {
-  /* 🎨 Cores vindas do painel */
   --color-primary: #1e90ff;
   --color-secondary: #0b5dd8;
   --color-accent: #ffd760;
   --color-accent-strong: #ffbe00;
   --color-background: #ffffff;
 
-  /* 🔤 Fontes */
   --font-primary: Inter, Arial, sans-serif;
   --font-heading: Inter, Arial, sans-serif;
 
-  /* Textos */
   --text-dark: #111827;
   --text-light: #ffffff;
 
-  /* Cards */
   --card-bg: rgba(255, 255, 255, 0.10);
 }
 
@@ -40,33 +36,43 @@
   box-sizing: border-box;
 }
 
-/* ================================
-   ALTURA GLOBAL
-   ================================ */
 html,
 body {
   min-height: 100%;
 }
 
+/* ================================
+   ROOT
+   ================================ */
 #root {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
-body {
+/* ================================
+   🔒 APP PÚBLICO (FORA DO ADMIN)
+   ================================ */
+body:not(.admin-area) {
   background: linear-gradient(
     180deg,
     var(--color-primary),
     var(--color-secondary)
   );
   font-family: var(--font-primary);
-  overflow-x: hidden;
   color: var(--text-light);
+  overflow-x: hidden;
 }
 
 /* ================================
-   WRAPPER PADRÃO
+   🔒 PAINEL ADMIN (ISOLADO)
+   ================================ */
+body.admin-area {
+  background: #f3f4f6;
+  color: #111827;
+  font-family: Inter, Arial, sans-serif;
+}
+
+/* ================================
+   WRAPPER PÚBLICO
    ================================ */
 .page-wrapper {
   flex: 1;
@@ -76,9 +82,6 @@ body {
   padding: 25px 16px;
 }
 
-/* ================================
-   CARD
-   ================================ */
 .page-card {
   width: 100%;
   max-width: 420px;
@@ -111,7 +114,7 @@ body {
 }
 
 /* ================================
-   CAMPOS
+   INPUTS
    ================================ */
 .page-input {
   width: 100%;
@@ -129,7 +132,7 @@ body {
 }
 
 /* ================================
-   BOTÃO
+   BOTÕES
    ================================ */
 .page-btn {
   width: 100%;
