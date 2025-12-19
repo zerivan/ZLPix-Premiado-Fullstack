@@ -1,8 +1,6 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 /**
  * =====================================================
@@ -75,95 +73,6 @@ router.get("/", async (_req, res) => {
     });
   } catch (error) {
     console.error("Erro Federal:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * CMS — APARÊNCIA GLOBAL DO APP
- * =====================================================
- */
-
-// GET aparência
-router.get("/app-appearance", async (_req, res) => {
-  try {
-    const content = await prisma.appContent.findUnique({
-      where: { key: "app_appearance" },
-    });
-
-    return res.json({
-      ok: true,
-      data: content ? JSON.parse(content.contentHtml || "{}") : null,
-    });
-  } catch (error) {
-    console.error("Erro aparência:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-// POST aparência
-router.post("/app-appearance", async (req, res) => {
-  try {
-    const data = req.body;
-
-    const saved = await prisma.appContent.upsert({
-      where: { key: "app_appearance" },
-      update: {
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(data),
-      },
-      create: {
-        key: "app_appearance",
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(data),
-      },
-    });
-
-    return res.json({
-      ok: true,
-      data: JSON.parse(saved.contentHtml || "{}"),
-    });
-  } catch (error) {
-    console.error("Erro salvar aparência:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * CMS — CONTEÚDO PÚBLICO
- * =====================================================
- */
-
-// GET conteúdo por chave
-router.get("/content/:key", async (req, res) => {
-  try {
-    const content = await prisma.appContent.findUnique({
-      where: { key: req.params.key },
-    });
-
-    return res.json({ ok: true, data: content });
-  } catch (error) {
-    console.error("Erro conteúdo:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-// GET página pública
-router.get("/pages/:key", async (req, res) => {
-  try {
-    const page = await prisma.appContent.findUnique({
-      where: { key: req.params.key },
-    });
-
-    if (!page) {
-      return res.status(404).json({ ok: false });
-    }
-
-    return res.json({ ok: true, data: page });
-  } catch (error) {
-    console.error("Erro página:", error);
     return res.status(500).json({ ok: false });
   }
 });
