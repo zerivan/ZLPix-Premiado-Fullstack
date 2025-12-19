@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
 
-/**
- * Componente CONTROLADOR de Configurações do Admin
- *
- * - NÃO é página
- * - NÃO é rota
- * - NÃO acessa banco direto
- * - Recebe regras (props ou estado carregado pelo painel)
- * - Controla comportamento do sistema
- */
-
 type ConfiguracoesAdmin = {
   modoManutencao: boolean;
   diagnosticoIA: boolean;
@@ -20,31 +10,29 @@ export default function ConfiguracoesControl() {
   const [config, setConfig] = useState<ConfiguracoesAdmin | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ⚠️ SIMULAÇÃO — depois isso vem do backend
   useEffect(() => {
-    // Por enquanto NÃO chama API
-    // Serve só para provar renderização e arquitetura
+    // Simulação (depois vem do backend)
     setConfig({
       modoManutencao: false,
       diagnosticoIA: true,
-      painelFinanceiro: false,
+      painelFinanceiro: false
     });
     setLoading(false);
   }, []);
 
   if (loading) {
-    return <div>Carregando configurações...</div>;
+    return <div className="text-sm text-gray-500">Carregando...</div>;
   }
 
   if (!config) {
-    return <div>Configurações indisponíveis</div>;
+    return <div className="text-sm text-red-500">Configuração indisponível</div>;
   }
 
   return (
-    <div className="w-full rounded-xl border bg-white p-4 space-y-4">
+    <div className="relative z-10 space-y-4">
       <h2 className="text-lg font-semibold">Configurações do Sistema</h2>
 
-      <div className="space-y-2 text-sm">
+      <div className="text-sm text-gray-700 space-y-1">
         <div>
           <strong>Modo manutenção:</strong>{" "}
           {config.modoManutencao ? "Ativo" : "Desativado"}
