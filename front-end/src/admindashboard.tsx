@@ -17,7 +17,7 @@ import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("config");
+  const [activeTab, setActiveTab] = useState<"config" | "appearance" | "content" | "diagnostico" | "winners" | "users" | "reports">("config");
 
   /**
    * 🔒 ISOLAMENTO DO PAINEL ADMIN
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
     { id: "winners", label: "Ganhadores", icon: Trophy },
     { id: "users", label: "Usuários", icon: Users },
     { id: "reports", label: "Relatórios", icon: BarChart3 }
-  ];
+  ] as const;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -83,10 +83,12 @@ export default function AdminDashboard() {
         })}
       </nav>
 
-      {/* CONTEÚDO */}
+      {/* CONTEÚDO — ISOLADO POR ABA */}
       <main className="flex-1 w-full max-w-4xl mx-auto p-4">
-        <div className="bg-white p-4 rounded shadow">
-
+        <div
+          key={activeTab} // 🔥 FORÇA REMOUNT (ESSENCIAL)
+          className="bg-white p-4 rounded shadow"
+        >
           {activeTab === "config" && <ConfiguracoesControl />}
 
           {activeTab === "appearance" && <AparenciaControl />}
@@ -112,7 +114,6 @@ export default function AdminDashboard() {
               Módulo de relatórios será exibido aqui.
             </div>
           )}
-
         </div>
       </main>
     </div>
