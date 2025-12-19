@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { api } from "../api/client";
 
 export default function AdminDiagnosticoIA() {
   const [pergunta, setPergunta] = useState("");
@@ -17,40 +18,26 @@ export default function AdminDiagnosticoIA() {
     setResposta(null);
 
     try {
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+      const res = await api.post("/diagnostico", {
+        pergunta
+      });
 
-      if (!token) {
-        throw new Error("Sessão do administrador expirada. Faça login novamente.");
+      if (!res.data?.ok) {
+        throw new Error(res.data?.erro || "Resposta inválida da IA");
       }
 
-      const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/diagnostico",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ pergunta })
-        }
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(
-          `Erro ${res.status} ao consultar IA: ${text || "sem resposta"}`
+      setResposta(res.data.resposta);
+    } catch (e: any) {
+      // 🔐 sessão expirada ou não autorizado
+      if (e?.response?.status === 401 || e?.response?.status === 403) {
+        setErro("Sessão do administrador expirada. Faça login novamente.");
+      } else {
+        setErro(
+          e?.response?.data?.erro ||
+            e.message ||
+            "Erro inesperado ao consultar a IA"
         );
       }
-
-      const data = await res.json();
-
-      if (!data?.ok) {
-        throw new Error(data?.erro || "Resposta inválida da IA");
-      }
-
-      setResposta(data.resposta);
-    } catch (e: any) {
-      setErro(e.message || "Erro inesperado ao consultar a IA");
     } finally {
       setLoading(false);
     }
