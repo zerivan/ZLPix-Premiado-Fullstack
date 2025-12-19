@@ -13,7 +13,10 @@ import bilheteRoutes from "./routes/bilhetes";
 import diagnosticoRoutes from "./routes/diagnostico";
 import devAssistenteRoutes from "./routes/dev-assistente";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
-import adminRelatoriosRoutes from "./routes/admin-relatorios"; // ✅ ADICIONADO
+import adminRelatoriosRoutes from "./routes/admin-relatorios";
+
+// ✅ CMS ADMIN (CONTEÚDO + APARÊNCIA)
+import adminCmsRoutes from "./routes/admin-cms";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -43,7 +46,7 @@ app.get("/", (_req, res) => {
 });
 
 // =============================
-// ROTAS
+// ROTAS PÚBLICAS
 // =============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
@@ -57,8 +60,11 @@ app.use("/bilhete", bilheteRoutes);
 // =============================
 app.use("/api/admin/diagnostico", diagnosticoRoutes);
 app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
-app.use("/api/admin/relatorios", adminRelatoriosRoutes); // ✅ LIGADO AQUI
+app.use("/api/admin/relatorios", adminRelatoriosRoutes);
 app.use("/api/admin/dev-assistente", devAssistenteRoutes);
+
+// ✅ CMS ADMIN (AQUI ESTAVA O ERRO)
+app.use("/api/admin/cms", adminCmsRoutes);
 
 // =============================
 // START
