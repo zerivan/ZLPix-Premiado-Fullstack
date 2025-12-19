@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { api } from "../api/client";
 
 export default function AdminDiagnosticoIA() {
   const [pergunta, setPergunta] = useState("");
@@ -18,26 +17,42 @@ export default function AdminDiagnosticoIA() {
     setResposta(null);
 
     try {
-      const res = await api.post("/diagnostico", {
-        pergunta
-      });
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
-      if (!res.data?.ok) {
-        throw new Error(res.data?.erro || "Resposta inválida da IA");
-      }
-
-      setResposta(res.data.resposta);
-    } catch (e: any) {
-      // 🔐 sessão expirada ou não autorizado
-      if (e?.response?.status === 401 || e?.response?.status === 403) {
-        setErro("Sessão do administrador expirada. Faça login novamente.");
-      } else {
-        setErro(
-          e?.response?.data?.erro ||
-            e.message ||
-            "Erro inesperado ao consultar a IA"
+      if (!token) {
+        throw new Error(
+          "Sessão do administrador expirada. Faça login novamente."
         );
       }
+
+      const res = await fetch(
+        "https://zlpix-premiado-backend.onrender.com/api/admin/diagnostico",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ pergunta }),
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Erro ${res.status} ao consultar IA: ${text || "sem resposta"}`
+        );
+      }
+
+      const data = await res.json();
+
+      if (!data?.ok) {
+        throw new Error(data?.erro || "Resposta inválida da IA");
+      }
+
+      setResposta(data.resposta);
+    } catch (e: any) {
+      setErro(e.message || "Erro inesperado ao consultar a IA");
     } finally {
       setLoading(false);
     }
@@ -54,7 +69,7 @@ export default function AdminDiagnosticoIA() {
       <textarea
         className="w-full resize-none rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none"
         rows={4}
-        placeholder="Ex: O painel admin não abre após o login..."
+        placeholder="Ex: O painel admin não renderiza os componentes corretamente..."
         value={pergunta}
         onChange={(e) => setPergunta(e.target.value)}
       />
