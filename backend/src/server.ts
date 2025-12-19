@@ -1,94 +1,64 @@
+import "dotenv/config";
 import express from "express";
-import { prisma } from "../lib/prisma";
+import cors from "cors";
 
-const router = express.Router();
+// Rotas públicas / core
+import authRoutes from "./routes/auth";
+import federalRoutes from "./routes/federal";
+import pixRoutes from "./routes/pix";
+import pixWebhookRoutes from "./routes/pixwebhook";
+import bilheteRoutes from "./routes/bilhetes";
 
-/**
- * Extrai dezenas válidas do resultado federal
- * (início e fim de cada prêmio)
- */
-function extrairDezenasFederais(premios: string[]): string[] {
-  const dezenas: string[] = [];
+// Admin
+import diagnosticoRoutes from "./routes/diagnostico";
+import devAssistenteRoutes from "./routes/dev-assistente";
+import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 
-  premios.slice(0, 5).forEach((premio) => {
-    if (premio.length >= 2) {
-      dezenas.push(premio.slice(0, 2)); // início
-      dezenas.push(premio.slice(-2));   // fim
-    }
+const app = express();
+const PORT = Number(process.env.PORT) || 4000;
+
+// =============================
+// CORS
+// =============================
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.use(express.json());
+
+// =============================
+// Healthcheck
+// =============================
+app.get("/", (_req, res) => {
+  res.json({
+    status: "ok",
+    message: "ZLPix backend rodando!",
   });
-
-  return dezenas;
-}
-
-/**
- * ==========================================
- * ADMIN — GANHADORES (APENAS LEITURA)
- * GET /api/admin/ganhadores
- * ==========================================
- */
-router.get("/", async (_req, res) => {
-  try {
-    // 1️⃣ Buscar resultado federal atual
-    const federalRes = await fetch(
-      "https://zlpix-premiado-backend.onrender.com/api/federal"
-    );
-    const federalJson = await federalRes.json();
-
-    if (!federalJson?.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: "Não foi possível obter o resultado federal",
-      });
-    }
-
-    const { concurso, dataApuracao, premios } = federalJson.data;
-
-    const dezenasValidas = extrairDezenasFederais(premios);
-
-    // 2️⃣ Buscar bilhetes pagos
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        pago: true,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    // 3️⃣ Verificar ganhadores
-    const ganhadores = bilhetes.filter((b) => {
-      const dezenasBilhete = b.dezenas.split(",");
-      return dezenasBilhete.some((d) => dezenasValidas.includes(d));
-    });
-
-    // 4️⃣ Resposta para o painel
-    return res.json({
-      ok: true,
-      concurso,
-      dataApuracao,
-      dezenasValidas,
-      totalBilhetes: bilhetes.length,
-      totalGanhadores: ganhadores.length,
-      ganhadores: ganhadores.map((b) => ({
-        bilheteId: b.id,
-        dezenas: b.dezenas,
-        valor: b.valor,
-        usuario: b.user,
-      })),
-    });
-  } catch (error) {
-    console.error("Erro ao calcular ganhadores:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro interno ao calcular ganhadores",
-    });
-  }
 });
 
-export default router;
+// =============================
+// ROTAS
+// =============================
+app.use("/auth", authRoutes);
+app.use("/api/federal", federalRoutes);
+
+app.use("/pix", pixRoutes);
+app.use("/pix/webhook", pixWebhookRoutes);
+app.use("/bilhete", bilheteRoutes);
+
+// ADMIN
+app.use("/api/admin/diagnostico", diagnosticoRoutes);
+app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
+app.use("/api/admin/dev-assistente", devAssistenteRoutes);
+
+// =============================
+// START
+// =============================
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🔥 Servidor rodando na porta ${PORT}`);
+});
