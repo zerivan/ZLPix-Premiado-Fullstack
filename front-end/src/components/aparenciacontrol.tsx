@@ -58,7 +58,8 @@ export default function AparenciaControl() {
   // =========================
   async function loadAppearance() {
     try {
-      const res = await api.get("/api/federal/app-appearance");
+      // ✅ ROTA ADMIN CORRETA
+      const res = await api.get("/api/admin/app-appearance");
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
@@ -79,7 +80,8 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      await api.post("/api/federal/app-appearance", appearance);
+      // ✅ ROTA ADMIN CORRETA
+      await api.post("/api/admin/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
     } catch {
       setStatus("Erro ao salvar aparência.");
