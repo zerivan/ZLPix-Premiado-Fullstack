@@ -18,6 +18,31 @@ function getNextWednesday(): Date {
 }
 
 /**
+ * Extrai dezenas iniciais e finais de um número federal
+ * Ex: 12345
+ * iniciais: [12, 23, 34]
+ * finais:   [45, 34, 23]
+ */
+function extrairDezenas(numero: string) {
+  const chars = numero.split("");
+
+  const inicio: string[] = [];
+  const fim: string[] = [];
+
+  // iniciais
+  for (let i = 0; i < chars.length - 1; i++) {
+    inicio.push(chars[i] + chars[i + 1]);
+  }
+
+  // finais
+  for (let i = chars.length - 1; i > 0; i--) {
+    fim.push(chars[i - 1] + chars[i]);
+  }
+
+  return { inicio, fim };
+}
+
+/**
  * =====================================================
  * API PÚBLICA — FEDERAL (SCRAPING CAIXA)
  * GET /api/federal
@@ -45,20 +70,25 @@ router.get("/", async (_req, res) => {
     const dataMatch = html.match(/(\d{2}\/\d{2}\/\d{4})/);
     if (dataMatch) dataApuracao = dataMatch[1];
 
-    let premios: string[] = [];
+    let numeros: string[] = [];
     const regex =
       /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
 
     let m;
     while ((m = regex.exec(html)) !== null) {
-      premios.push(m[1]);
+      numeros.push(m[1]);
     }
 
-    if (premios.length < 5) {
-      premios = [...html.matchAll(/(\d{5})/g)]
+    if (numeros.length < 5) {
+      numeros = [...html.matchAll(/(\d{5})/g)]
         .map(v => v[1])
         .slice(0, 5);
     }
+
+    const premios = numeros.map(numero => ({
+      numero,
+      dezenas: extrairDezenas(numero),
+    }));
 
     const proximoSorteio = getNextWednesday();
 
