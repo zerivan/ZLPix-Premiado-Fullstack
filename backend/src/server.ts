@@ -15,8 +15,11 @@ import devAssistenteRoutes from "./routes/dev-assistente";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 
-// ✅ CMS ADMIN (CONTEÚDO + APARÊNCIA)
+// CMS ADMIN (CONTEÚDO + APARÊNCIA)
 import adminCmsRoutes from "./routes/admin-cms";
+
+// 🔐 MIDDLEWARE ADMIN (OBRIGATÓRIO)
+import { adminAuth } from "./middlewares/adminAuth";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -56,15 +59,15 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
 // =============================
-// ADMIN
+// ROTAS ADMIN (PROTEGIDAS)
 // =============================
-app.use("/api/admin/diagnostico", diagnosticoRoutes);
-app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
-app.use("/api/admin/relatorios", adminRelatoriosRoutes);
-app.use("/api/admin/dev-assistente", devAssistenteRoutes);
+app.use("/api/admin/diagnostico", adminAuth, diagnosticoRoutes);
+app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
+app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
+app.use("/api/admin/dev-assistente", adminAuth, devAssistenteRoutes);
 
-// ✅ CMS ADMIN (AQUI ESTAVA O ERRO)
-app.use("/api/admin/cms", adminCmsRoutes);
+// ✅ CMS ADMIN — ERA A FONTE DO ERRO (AGORA CORRETO)
+app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
 
 // =============================
 // START
