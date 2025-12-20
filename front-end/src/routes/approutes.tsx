@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // 🧭 Páginas
 import Home from "../pages/home";
@@ -20,6 +20,7 @@ import AdminDashboard from "../admindashboard";
 // Auxiliares
 import Revisao from "../pages/revisao";
 import PixPagamento from "../pages/pixpagamento";
+import DynamicPage from "../pages/dynamicpage";
 
 /**
  * ============================
@@ -27,62 +28,36 @@ import PixPagamento from "../pages/pixpagamento";
  * ============================
  */
 function isUserLoggedIn() {
-  if (typeof window === "undefined") return false;
   return !!localStorage.getItem("TOKEN_ZLPIX");
 }
 
 function isAdminLoggedIn() {
-  if (typeof window === "undefined") return false;
   return !!localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 }
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  const [checked, setChecked] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAuthorized(!!localStorage.getItem("TOKEN_ZLPIX"));
-      setChecked(true);
-    }, 200);
-
-    return () => clearTimeout(timer);
+    setReady(true);
   }, []);
 
-  if (!checked) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Verificando login...
-      </div>
-    );
-  }
+  if (!ready) return <div className="p-6">Verificando login...</div>;
 
-  return authorized ? children : <Navigate to="/" replace />;
+  return isUserLoggedIn() ? children : <Navigate to="/" replace />;
 }
 
 function PublicRoute({ children }: { children: JSX.Element }) {
-  const [checked, setChecked] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setChecked(true), 200);
-    return () => clearTimeout(timer);
+    setReady(true);
   }, []);
 
-  if (!checked) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Carregando...
-      </div>
-    );
-  }
+  if (!ready) return <div className="p-6">Carregando...</div>;
 
-  if (isAdminLoggedIn()) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  if (isUserLoggedIn()) {
-    return <Navigate to="/home" replace />;
-  }
+  if (isAdminLoggedIn()) return <Navigate to="/admin/dashboard" replace />;
+  if (isUserLoggedIn()) return <Navigate to="/home" replace />;
 
   return children;
 }
@@ -95,14 +70,13 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Públicas */}
       <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
-      <Route
-        path="/recuperar-senha"
-        element={<PublicRoute><RecuperarSenha /></PublicRoute>}
-      />
+      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
 
+      {/* Usuário */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
@@ -112,11 +86,16 @@ export default function AppRoutes() {
       <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
       <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
 
+      {/* Admin */}
       <Route path="/admin" element={<AdminLogin />} />
       <Route element={<AdminRoute />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
+      {/* CMS DINÂMICO (🔥 A CHAVE DO BUG 🔥) */}
+      <Route path="/:slug" element={<DynamicPage />} />
+
+      {/* Fallback */}
       <Route
         path="*"
         element={
