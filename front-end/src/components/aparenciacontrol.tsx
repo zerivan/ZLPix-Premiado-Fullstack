@@ -58,8 +58,7 @@ export default function AparenciaControl() {
   // =========================
   async function loadAppearance() {
     try {
-      // ✅ ROTA ADMIN CORRETA
-      const res = await api.get("/api/admin/app-appearance");
+      const res = await api.get("/api/admin/cms/app-appearance");
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
@@ -80,8 +79,7 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      // ✅ ROTA ADMIN CORRETA
-      await api.post("/api/admin/app-appearance", appearance);
+      await api.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
     } catch {
       setStatus("Erro ao salvar aparência.");
@@ -110,7 +108,6 @@ export default function AparenciaControl() {
         <div className="text-sm text-gray-600">{status}</div>
       )}
 
-      {/* FONTE PRINCIPAL */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte principal</label>
         <select
@@ -128,7 +125,6 @@ export default function AparenciaControl() {
         </select>
       </div>
 
-      {/* FONTE TÍTULOS */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte dos títulos</label>
         <select
