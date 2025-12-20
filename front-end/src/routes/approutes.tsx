@@ -44,21 +44,10 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 
   if (!ready) return <div className="p-6">Verificando login...</div>;
 
-  return isUserLoggedIn() ? children : <Navigate to="/" replace />;
+  return isUserLoggedIn() ? children : <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }: { children: JSX.Element }) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    setReady(true);
-  }, []);
-
-  if (!ready) return <div className="p-6">Carregando...</div>;
-
-  if (isAdminLoggedIn()) return <Navigate to="/admin/dashboard" replace />;
-  if (isUserLoggedIn()) return <Navigate to="/home" replace />;
-
   return children;
 }
 
@@ -71,10 +60,10 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Públicas */}
-      <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/cadastro" element={<PublicRoute><Cadastro /></PublicRoute>} />
-      <Route path="/recuperar-senha" element={<PublicRoute><RecuperarSenha /></PublicRoute>} />
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
       {/* Usuário */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
@@ -92,20 +81,18 @@ export default function AppRoutes() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* CMS DINÂMICO (🔥 A CHAVE DO BUG 🔥) */}
-      <Route path="/:slug" element={<DynamicPage />} />
-
-      {/* Fallback */}
+      {/* CMS DINÂMICO — SOMENTE PARA PÁGINAS REAIS */}
       <Route
-        path="*"
+        path="/:slug"
         element={
-          isAdminLoggedIn()
-            ? <Navigate to="/admin/dashboard" replace />
-            : isUserLoggedIn()
-              ? <Navigate to="/home" replace />
-              : <Navigate to="/" replace />
+          isAdminLoggedIn() || isUserLoggedIn()
+            ? <DynamicPage />
+            : <Navigate to="/login" replace />
         }
       />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
