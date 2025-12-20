@@ -16,7 +16,7 @@ router.post("/login", async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Dados inválidos" });
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { email },
   });
 
@@ -56,14 +56,17 @@ router.post("/register", async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Dados inválidos" });
   }
 
-  const existe = await prisma.user.findUnique({ where: { email } });
+  const existe = await prisma.users.findUnique({
+    where: { email },
+  });
+
   if (existe) {
     return res.status(400).json({ message: "E-mail já cadastrado" });
   }
 
   const hash = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
+  const user = await prisma.users.create({
     data: {
       email,
       nome,
