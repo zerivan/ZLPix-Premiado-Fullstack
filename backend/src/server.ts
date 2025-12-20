@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 
 // Rotas públicas / core
-import * as authRoutes from "./routes/auth";
+import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
@@ -51,7 +51,7 @@ app.get("/", (_req, res) => {
 // =============================
 // ROTAS PÚBLICAS
 // =============================
-app.use("/auth", authRoutes.default ?? authRoutes);
+app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 
 app.use("/pix", pixRoutes);

@@ -1,12 +1,19 @@
-import { Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
+// =====================================================
+// TIPAGEM ADMIN
+// =====================================================
 export interface AdminRequest extends Request {
   adminId?: number;
 }
 
+// =====================================================
+// MIDDLEWARE — AUTH ADMIN
+// =====================================================
 export function adminAuth(
   req: AdminRequest,
   res: Response,
@@ -42,10 +49,15 @@ export function adminAuth(
 
     req.adminId = decoded.id;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({
       ok: false,
       error: "Token expirado ou inválido",
     });
   }
 }
+
+// =====================================================
+// EXPORT DEFAULT (NECESSÁRIO PARA server.ts)
+// =====================================================
+export default router;

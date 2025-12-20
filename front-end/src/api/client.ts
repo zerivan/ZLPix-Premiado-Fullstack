@@ -1,7 +1,8 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "https://zlpix-premiado-fullstack.onrender.com",
+  // 🔥 BACKEND CORRETO (não é o front)
+  baseURL: "https://zlpix-premiado-backend.onrender.com",
 });
 
 // 🔐 Interceptor para anexar token automaticamente
