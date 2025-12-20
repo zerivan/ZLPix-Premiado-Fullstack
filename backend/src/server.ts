@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 
 // Rotas públicas / core
-import authRoutes from "./routes/auth";
+import * as authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
@@ -15,10 +15,10 @@ import devAssistenteRoutes from "./routes/dev-assistente";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 
-// CMS ADMIN (CONTEÚDO + APARÊNCIA)
+// CMS ADMIN
 import adminCmsRoutes from "./routes/admin-cms";
 
-// 🔐 MIDDLEWARE ADMIN (OBRIGATÓRIO)
+// Middleware admin
 import { adminAuth } from "./middlewares/adminAuth";
 
 const app = express();
@@ -51,7 +51,7 @@ app.get("/", (_req, res) => {
 // =============================
 // ROTAS PÚBLICAS
 // =============================
-app.use("/auth", authRoutes);
+app.use("/auth", authRoutes.default ?? authRoutes);
 app.use("/api/federal", federalRoutes);
 
 app.use("/pix", pixRoutes);
@@ -59,14 +59,12 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
 // =============================
-// ROTAS ADMIN (PROTEGIDAS)
+// ROTAS ADMIN
 // =============================
 app.use("/api/admin/diagnostico", adminAuth, diagnosticoRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/dev-assistente", adminAuth, devAssistenteRoutes);
-
-// ✅ CMS ADMIN — ERA A FONTE DO ERRO (AGORA CORRETO)
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
 
 // =============================
