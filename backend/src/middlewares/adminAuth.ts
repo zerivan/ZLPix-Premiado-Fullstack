@@ -21,28 +21,30 @@ export function adminAuth(
     });
   }
 
-  const [, token] = authHeader.split(" ");
+  const [type, token] = authHeader.split(" ");
 
-  if (!token) {
+  if (type !== "Bearer" || !token) {
     return res.status(401).json({
       ok: false,
-      error: "Token inválido",
+      error: "Formato de token inválido",
     });
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      id: number;
+    };
 
-    if (decoded.role !== "admin") {
-      return res.status(403).json({
+    if (!decoded.id) {
+      return res.status(401).json({
         ok: false,
-        error: "Acesso restrito ao administrador",
+        error: "Token inválido",
       });
     }
 
     req.adminId = decoded.id;
     next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({
       ok: false,
       error: "Token expirado ou inválido",
