@@ -1,40 +1,27 @@
+// backend/src/routes/federal.ts
 import express from "express";
 
 const router = express.Router();
 
-/**
- * =====================================================
- * UTIL — Próxima quarta-feira às 20h
- * =====================================================
- */
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay(); // 0 = domingo
-  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
+  const day = now.getDay();
+  const diff = (3 - day + 7) % 7 || 7;
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
   next.setHours(20, 0, 0, 0);
   return next;
 }
 
-/**
- * Extrai dezenas iniciais e finais de um número federal
- * Ex: 12345
- * iniciais: [12, 23, 34]
- * finais:   [45, 34, 23]
- */
 function extrairDezenas(numero: string) {
   const chars = numero.split("");
-
   const inicio: string[] = [];
   const fim: string[] = [];
 
-  // iniciais
   for (let i = 0; i < chars.length - 1; i++) {
     inicio.push(chars[i] + chars[i + 1]);
   }
 
-  // finais
   for (let i = chars.length - 1; i > 0; i--) {
     fim.push(chars[i - 1] + chars[i]);
   }
@@ -42,12 +29,6 @@ function extrairDezenas(numero: string) {
   return { inicio, fim };
 }
 
-/**
- * =====================================================
- * API PÚBLICA — FEDERAL (SCRAPING CAIXA)
- * GET /api/federal
- * =====================================================
- */
 router.get("/", async (_req, res) => {
   try {
     const response = await fetch(
@@ -85,10 +66,8 @@ router.get("/", async (_req, res) => {
         .slice(0, 5);
     }
 
-    const premios = numeros.map(numero => ({
-      numero,
-      dezenas: extrairDezenas(numero),
-    }));
+    // 🔥 CONTRATO ORIGINAL DO FRONT
+    const premiosFrontend = numeros;
 
     const proximoSorteio = getNextWednesday();
 
@@ -97,8 +76,9 @@ router.get("/", async (_req, res) => {
       data: {
         concurso,
         dataApuracao,
-        premios,
+        premios: premiosFrontend, // ✅ string[]
         proximoSorteio: proximoSorteio.toISOString(),
+        timestampProximoSorteio: proximoSorteio.getTime(),
       },
     });
   } catch (error) {
