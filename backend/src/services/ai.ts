@@ -1,86 +1,28 @@
-import OpenAI from "openai";
-
-const apiKey = process.env.OPENAI_API_KEY;
-
-if (!apiKey) {
-  console.error("❌ OPENAI_API_KEY não definida");
-}
-
-const client = new OpenAI({
-  apiKey: apiKey || "",
-});
-
 /**
- * =====================================================
- * IA — DIAGNÓSTICO PROFISSIONAL DO ZLPIX
- * =====================================================
+ * Serviço interno de diagnóstico técnico
+ * NÃO depende de serviços externos
+ * NÃO quebra o backend
+ * Seguro para produção
  */
-export async function analisarErro(mensagem: string): Promise<string> {
-  try {
-    if (!mensagem || typeof mensagem !== "string") {
-      return "Mensagem inválida para análise.";
-    }
 
-    if (!apiKey) {
-      return "IA indisponível: chave da OpenAI não configurada.";
-    }
+export async function analisarErro(pergunta: string): Promise<string> {
+  const texto = pergunta.toLowerCase();
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      messages: [
-        {
-          role: "system",
-          content: `
-Você é o ENGENHEIRO DE SOFTWARE RESPONSÁVEL pelo projeto ZLPix Premiado.
-
-CONTEXTO FIXO DO PROJETO:
-- Backend: Node.js + Express + Prisma
-- Frontend: React + Vite + Tailwind
-- Deploy: Render
-- Banco: PostgreSQL (Neon)
-- Painel Admin separado do app público
-- CMS e Aparência controlados via AppContent
-- Autenticação por TOKEN (admin e usuário)
-
-REGRAS OBRIGATÓRIAS:
-1. NÃO dê respostas genéricas.
-2. NÃO diga "verifique logs", "confira dependências" ou "teste localmente".
-3. NÃO sugira refatorações grandes.
-4. NÃO invente arquivos ou rotas.
-5. NÃO mude arquitetura.
-6. Seja direto, técnico e cirúrgico.
-
-FORMATO OBRIGATÓRIO DA RESPOSTA:
-
-CAUSA PROVÁVEL:
-- Explique tecnicamente o motivo do erro.
-
-ONDE OCORRE:
-- Informe o tipo de arquivo envolvido (rota, componente, service, css, etc).
-
-COMO CORRIGIR:
-- Diga exatamente o que deve ser alterado.
-
-OBSERVAÇÃO:
-- Apenas se houver algo crítico a alertar.
-
-Você está analisando um ERRO REAL do sistema, não um exemplo teórico.
-`
-        },
-        {
-          role: "user",
-          content: mensagem
-        }
-      ]
-    });
-
-    return (
-      response.choices?.[0]?.message?.content ||
-      "IA respondeu, mas sem conteúdo."
-    );
-  } catch (error) {
-    console.error("❌ Erro ao consultar OpenAI:", error);
-    return "Erro interno ao consultar a IA.";
+  if (texto.includes("404")) {
+    return "Diagnóstico: Erro 404 indica rota inexistente ou não registrada no server.ts.";
   }
+
+  if (texto.includes("401") || texto.includes("token")) {
+    return "Diagnóstico: Erro de autenticação. Verifique TOKEN_ZLPIX_ADMIN e middleware adminAuth.";
+  }
+
+  if (texto.includes("prisma")) {
+    return "Diagnóstico: Verifique conexão com banco e schema Prisma.";
+  }
+
+  if (texto.includes("build")) {
+    return "Diagnóstico: Erro de build. Verifique imports e exports (default vs named).";
+  }
+
+  return "Diagnóstico automático: Nenhum padrão crítico identificado. Verifique logs do backend.";
 }
