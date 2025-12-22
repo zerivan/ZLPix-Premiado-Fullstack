@@ -47,10 +47,6 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   return isUserLoggedIn() ? children : <Navigate to="/login" replace />;
 }
 
-function PublicRoute({ children }: { children: JSX.Element }) {
-  return children;
-}
-
 /**
  * ============================
  * ROTAS
@@ -59,8 +55,17 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* ENTRY POINT CORRETO */}
+      <Route
+        path="/"
+        element={
+          isUserLoggedIn()
+            ? <Navigate to="/home" replace />
+            : <Navigate to="/login" replace />
+        }
+      />
+
       {/* Públicas */}
-      <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -81,7 +86,7 @@ export default function AppRoutes() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* CMS DINÂMICO — SOMENTE PARA PÁGINAS REAIS */}
+      {/* CMS DINÂMICO */}
       <Route
         path="/:slug"
         element={
