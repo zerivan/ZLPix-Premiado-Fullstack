@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
 export interface AdminRequest extends Request {
-  adminId?: number;
+  adminEmail?: string;
 }
 
 export function adminAuth(
@@ -33,17 +33,15 @@ export function adminAuth(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    // ✅ aceita id OU adminId (compatível com seed / token provisório)
-    const adminId = decoded.id || decoded.adminId;
-
-    if (!adminId) {
+    // ✅ VALIDAÇÃO CORRETA
+    if (decoded.role !== "admin" || !decoded.email) {
       return res.status(401).json({
         ok: false,
-        error: "Token inválido",
+        error: "Token não autorizado",
       });
     }
 
-    req.adminId = Number(adminId);
+    req.adminEmail = decoded.email;
     next();
   } catch (err) {
     return res.status(401).json({
