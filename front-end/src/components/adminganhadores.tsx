@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/admin";
+import axios from "axios";
 
 type Ganhador = {
   userId: number;
@@ -18,7 +18,16 @@ export default function AdminGanhadores() {
       setLoading(true);
       setErro(null);
 
-      const res = await adminApi.get("/api/admin/ganhadores");
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      const res = await axios.get(
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/ganhadores",
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
 
       if (res.data?.ok) {
         setGanhadores(res.data.data || []);
