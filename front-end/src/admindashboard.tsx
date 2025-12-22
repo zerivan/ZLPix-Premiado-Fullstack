@@ -17,11 +17,11 @@ import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"config" | "appearance" | "content" | "diagnostico" | "winners" | "users" | "reports">("config");
+  const [activeTab, setActiveTab] = useState<
+    "config" | "appearance" | "content" | "diagnostico" | "winners" | "users" | "reports"
+  >("config");
 
-  /**
-   * 🔒 ISOLAMENTO DO PAINEL ADMIN
-   */
+  // 🔒 ISOLAMENTO DO PAINEL ADMIN
   useEffect(() => {
     document.body.classList.add("admin-area");
     return () => {
@@ -29,9 +29,7 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  /**
-   * 🔐 LOGOUT
-   */
+  // 🔐 LOGOUT
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     window.location.href = "/admin";
@@ -83,35 +81,30 @@ export default function AdminDashboard() {
         })}
       </nav>
 
-      {/* CONTEÚDO — ISOLADO POR ABA */}
+      {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-4xl mx-auto p-4">
-        <div
-          key={activeTab} // 🔥 FORÇA REMOUNT (ESSENCIAL)
-          className="bg-white p-4 rounded shadow"
-        >
+        <div className="bg-white p-4 rounded shadow">
           {activeTab === "config" && <ConfiguracoesControl />}
-
           {activeTab === "appearance" && <AparenciaControl />}
-
           {activeTab === "content" && <ConteudoControl />}
-
           {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
 
+          {/* As próximas abas continuam desativadas até você ligar ao banco */}
           {activeTab === "winners" && (
             <div className="text-sm text-gray-500">
-              Módulo de ganhadores será exibido aqui.
+              Módulo de ganhadores (backend OK, front ainda não ligado).
             </div>
           )}
 
           {activeTab === "users" && (
             <div className="text-sm text-gray-500">
-              Módulo de usuários será exibido aqui.
+              Módulo de usuários (backend OK, front ainda não ligado).
             </div>
           )}
 
           {activeTab === "reports" && (
             <div className="text-sm text-gray-500">
-              Módulo de relatórios será exibido aqui.
+              Módulo de relatórios (backend OK, front ainda não ligado).
             </div>
           )}
         </div>
