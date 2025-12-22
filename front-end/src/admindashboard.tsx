@@ -15,6 +15,7 @@ import ConfiguracoesControl from "./components/configuracoescontrol";
 import AparenciaControl from "./components/aparenciacontrol";
 import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
+import AdminGanhadores from "./components/adminganhadores";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
@@ -89,13 +90,10 @@ export default function AdminDashboard() {
           {activeTab === "content" && <ConteudoControl />}
           {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
 
-          {/* As próximas abas continuam desativadas até você ligar ao banco */}
-          {activeTab === "winners" && (
-            <div className="text-sm text-gray-500">
-              Módulo de ganhadores (backend OK, front ainda não ligado).
-            </div>
-          )}
+          {/* 🔥 GANHADORES — AGORA LIGADO AO BACKEND */}
+          {activeTab === "winners" && <AdminGanhadores />}
 
+          {/* Ainda não ligados */}
           {activeTab === "users" && (
             <div className="text-sm text-gray-500">
               Módulo de usuários (backend OK, front ainda não ligado).
