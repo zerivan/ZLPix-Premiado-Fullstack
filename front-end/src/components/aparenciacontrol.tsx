@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/admin";
+import { api } from "../api/client";
 
 const GOOGLE_FONTS = [
   "Inter",
@@ -24,7 +24,6 @@ type AppAppearance = {
   fontHeading: string;
 };
 
-// fallback seguro
 const DEFAULT_APPEARANCE: AppAppearance = {
   primaryColor: "#4f46e5",
   secondaryColor: "#6366f1",
@@ -40,7 +39,6 @@ export default function AparenciaControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  // PREVIEW
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
 
@@ -49,26 +47,25 @@ export default function AparenciaControl() {
     root.style.setProperty("--color-accent", data.accentColor);
     root.style.setProperty("--color-background", data.backgroundColor);
 
-    if (data.fontPrimary) {
-      document.body.style.fontFamily = data.fontPrimary;
-    }
-
-    if (data.fontHeading) {
-      root.style.setProperty("--font-heading", data.fontHeading);
-    }
+    document.body.style.fontFamily = data.fontPrimary;
 
     data.themeMode === "dark"
       ? root.classList.add("dark")
       : root.classList.remove("dark");
   }
 
-  // LOAD
   async function loadAppearance() {
     setLoading(true);
     setStatus(null);
 
     try {
-      const res = await adminApi.get("/api/admin/cms/app-appearance");
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      const res = await api.get("/api/admin/cms/app-appearance", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
@@ -79,7 +76,7 @@ export default function AparenciaControl() {
         setStatus("Aparência padrão carregada.");
       }
     } catch (e) {
-      console.error("Erro aparência:", e);
+      console.error(e);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -88,7 +85,6 @@ export default function AparenciaControl() {
     }
   }
 
-  // SAVE
   async function saveAppearance() {
     if (!appearance) return;
 
@@ -96,10 +92,17 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      await adminApi.post("/api/admin/cms/app-appearance", appearance);
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      await api.post("/api/admin/cms/app-appearance", appearance, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
       setStatus("Aparência salva com sucesso.");
     } catch (e) {
-      console.error("Erro salvar aparência:", e);
+      console.error(e);
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
