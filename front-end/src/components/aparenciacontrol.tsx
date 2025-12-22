@@ -70,7 +70,7 @@ export default function AparenciaControl() {
         setStatus("Aparência padrão carregada.");
       }
     } catch (e) {
-      console.error("Erro carregar aparência:", e);
+      console.error("Erro aparência:", e);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
