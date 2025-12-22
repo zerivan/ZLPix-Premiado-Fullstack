@@ -24,6 +24,17 @@ type AppAppearance = {
   fontHeading: string;
 };
 
+// 👇 fallback seguro (impede loading infinito)
+const DEFAULT_APPEARANCE: AppAppearance = {
+  primaryColor: "#4f46e5",
+  secondaryColor: "#6366f1",
+  accentColor: "#f59e0b",
+  backgroundColor: "#ffffff",
+  themeMode: "light",
+  fontPrimary: "Inter",
+  fontHeading: "Inter",
+};
+
 export default function AparenciaControl() {
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,18 +65,31 @@ export default function AparenciaControl() {
   }
 
   // =========================
-  // LOAD
+  // LOAD (CORRIGIDO)
   // =========================
   async function loadAppearance() {
+    setLoading(true);
+    setStatus(null);
+
     try {
       const res = await api.get("/api/admin/cms/app-appearance");
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
         applyPreview(res.data.data);
+      } else {
+        // 👇 saída garantida
+        setAppearance(DEFAULT_APPEARANCE);
+        applyPreview(DEFAULT_APPEARANCE);
+        setStatus("Aparência padrão carregada.");
       }
     } catch {
-      setStatus("Erro ao carregar aparência.");
+      // 👇 saída garantida mesmo com erro
+      setAppearance(DEFAULT_APPEARANCE);
+      applyPreview(DEFAULT_APPEARANCE);
+      setStatus("Erro ao carregar aparência. Usando padrão.");
+    } finally {
+      setLoading(false);
     }
   }
 
