@@ -55,22 +55,16 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* ENTRY POINT CORRETO */}
-      <Route
-        path="/"
-        element={
-          isUserLoggedIn()
-            ? <Navigate to="/home" replace />
-            : <Navigate to="/login" replace />
-        }
-      />
 
-      {/* Públicas */}
+      {/* HOME PÚBLICA — SEM REDIRECT */}
+      <Route path="/" element={<Home />} />
+
+      {/* Auth usuário */}
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
-      {/* Usuário */}
+      {/* Usuário logado */}
       <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
       <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
       <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
