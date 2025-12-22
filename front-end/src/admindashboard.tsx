@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Settings,
   Trophy,
@@ -18,6 +19,8 @@ import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState<
     "config" | "appearance" | "content" | "diagnostico" | "winners" | "users" | "reports"
   >("config");
@@ -32,9 +35,14 @@ export default function AdminDashboard() {
 
   // 🔐 LOGOUT — CORRETO PARA SPA
   function handleLogout() {
+    // remove token
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
-    // ❌ NÃO redireciona aqui
-    // ✅ AdminRoute cuida disso automaticamente
+
+    // limpa estado visual
+    document.body.classList.remove("admin-area");
+
+    // força saída do painel via Router
+    navigate("/admin", { replace: true });
   }
 
   const tabs = [
@@ -90,11 +98,8 @@ export default function AdminDashboard() {
           {activeTab === "appearance" && <AparenciaControl />}
           {activeTab === "content" && <ConteudoControl />}
           {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
-
-          {/* ✅ GANHADORES — BACKEND JÁ ESTÁ SENDO USADO */}
           {activeTab === "winners" && <AdminGanhadores />}
 
-          {/* Ainda não ligados */}
           {activeTab === "users" && (
             <div className="text-sm text-gray-500">
               Módulo de usuários (backend OK, front ainda não ligado).
