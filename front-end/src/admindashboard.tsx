@@ -11,7 +11,6 @@ import {
   Brain
 } from "lucide-react";
 
-// 🧩 COMPONENTES CONTROLADORES
 import ConfiguracoesControl from "./components/configuracoescontrol";
 import AparenciaControl from "./components/aparenciacontrol";
 import ConteudoControl from "./components/conteudocontrol";
@@ -33,15 +32,9 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // 🔐 LOGOUT — CORRETO PARA SPA
+  // ✅ LOGOUT CORRETO (SPA)
   function handleLogout() {
-    // remove token
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
-
-    // limpa estado visual
-    document.body.classList.remove("admin-area");
-
-    // força saída do painel via Router
     navigate("/admin", { replace: true });
   }
 
@@ -57,7 +50,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* HEADER */}
       <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
         <h1 className="font-bold">Painel Administrativo</h1>
 
@@ -70,7 +62,6 @@ export default function AdminDashboard() {
         </button>
       </header>
 
-      {/* NAV */}
       <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
         {tabs.map(tab => {
           const Icon = tab.icon;
@@ -91,7 +82,6 @@ export default function AdminDashboard() {
         })}
       </nav>
 
-      {/* CONTEÚDO */}
       <main className="flex-1 w-full max-w-4xl mx-auto p-4">
         <div className="bg-white p-4 rounded shadow">
           {activeTab === "config" && <ConfiguracoesControl />}
