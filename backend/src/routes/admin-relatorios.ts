@@ -4,9 +4,9 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 
 /**
- * ==========================================
- * RELATÓRIOS ADMIN — BANCO DE DADOS
- * ==========================================
+ * =====================================================
+ * ADMIN — RELATÓRIOS (BANCO DE DADOS)
+ * =====================================================
  */
 router.get("/", async (_req, res) => {
   try {
@@ -14,7 +14,7 @@ router.get("/", async (_req, res) => {
       totalUsuarios,
       totalBilhetes,
       totalTransacoes,
-      transacoesPagas,
+      transacoesAprovadas,
       ultimaTransacao,
     ] = await Promise.all([
       prisma.users.count(),
@@ -34,7 +34,7 @@ router.get("/", async (_req, res) => {
       }),
     ]);
 
-    const totalArrecadado = transacoesPagas.reduce(
+    const totalArrecadado = transacoesAprovadas.reduce(
       (acc, t) => acc + t.valor,
       0
     );
@@ -46,12 +46,12 @@ router.get("/", async (_req, res) => {
         totalBilhetes,
         totalTransacoes,
         totalArrecadado,
-        totalPago: totalArrecadado, // preparado para futuro
+        totalPago: totalArrecadado,
         ultimaTransacao,
       },
     });
   } catch (error) {
-    console.error("Erro relatório admin:", error);
+    console.error("Erro admin relatórios:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao gerar relatórios",
