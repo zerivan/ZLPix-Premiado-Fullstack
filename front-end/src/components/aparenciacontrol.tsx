@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { adminApi } from "../api/admin";
 
 const GOOGLE_FONTS = [
   "Inter",
@@ -59,13 +59,7 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
-      const res = await api.get("/api/admin/cms/app-appearance", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
+      const res = await adminApi.get("/api/admin/cms/app-appearance");
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
@@ -76,7 +70,7 @@ export default function AparenciaControl() {
         setStatus("Aparência padrão carregada.");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Erro carregar aparência:", e);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -92,17 +86,10 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
-      await api.post("/api/admin/cms/app-appearance", appearance, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-
+      await adminApi.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
     } catch (e) {
-      console.error(e);
+      console.error("Erro salvar aparência:", e);
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
