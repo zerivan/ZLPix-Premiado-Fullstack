@@ -1,14 +1,13 @@
 import React, { useEffect } from "react";
 import AppRoutes from "./routes/index";
-import { api } from "./api/client";
 
 /**
- * Aplica aparência global do sistema:
- * - cores (CSS variables)
- * - fontes
- * - modo dark/light
+ * App ROOT
+ * - NÃO consulta CMS
+ * - NÃO depende do painel ADM
+ * - NÃO trava render
  *
- * Este é o ponto CENTRAL e CORRETO para isso.
+ * CMS é responsabilidade do ADMIN, não do site público
  */
 export default function App() {
   useEffect(() => {
@@ -21,65 +20,22 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
-    // 🎨 Busca aparência no backend (ROTA CORRETA)
-    async function loadAppearance() {
-      try {
-        const res = await api.get("/api/federal/app-appearance");
-        if (!res.data?.ok || !res.data.data) return;
+    // 🎨 Aparência PADRÃO (segura)
+    const root = document.documentElement;
 
-        const appearance = res.data.data;
-        const root = document.documentElement;
+    root.style.setProperty("--color-primary", "#4f46e5");
+    root.style.setProperty("--color-secondary", "#6366f1");
+    root.style.setProperty("--color-accent", "#facc15");
+    root.style.setProperty("--color-background", "#ffffff");
+    root.style.setProperty("--font-heading", "Inter");
 
-        // 🎨 Cores
-        if (appearance.primaryColor) {
-          root.style.setProperty("--color-primary", appearance.primaryColor);
-        }
-
-        if (appearance.secondaryColor) {
-          root.style.setProperty("--color-secondary", appearance.secondaryColor);
-        }
-
-        if (appearance.accentColor) {
-          root.style.setProperty("--color-accent", appearance.accentColor);
-        }
-
-        if (appearance.backgroundColor) {
-          root.style.setProperty(
-            "--color-background",
-            appearance.backgroundColor
-          );
-        }
-
-        // 🔤 Fontes
-        if (appearance.fontPrimary) {
-          document.body.style.fontFamily = appearance.fontPrimary;
-        }
-
-        if (appearance.fontHeading) {
-          root.style.setProperty("--font-heading", appearance.fontHeading);
-        }
-
-        // 🌗 Tema
-        if (appearance.themeMode === "dark") {
-          root.classList.add("dark");
-        } else {
-          root.classList.remove("dark");
-        }
-      } catch (err) {
-        console.warn("⚠️ Aparência não carregada, usando padrão.");
-      }
-    }
-
-    loadAppearance();
+    document.body.style.fontFamily = "Inter";
+    root.classList.remove("dark");
 
     return () => {
       document.head.removeChild(style);
     };
   }, []);
 
-  return (
-    <React.StrictMode>
-      <AppRoutes />
-    </React.StrictMode>
-  );
+  return <AppRoutes />;
 }
