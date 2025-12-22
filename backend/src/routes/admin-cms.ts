@@ -20,7 +20,13 @@ router.get("/content/:key", async (req, res) => {
 
     return res.json({
       ok: true,
-      data: content,
+      data: content
+        ? {
+            key: content.key,
+            title: content.title,
+            contentHtml: content.contentHtml,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Erro CMS content:", error);
@@ -58,7 +64,11 @@ router.post("/content", async (req, res) => {
 
     return res.json({
       ok: true,
-      data: saved,
+      data: {
+        key: saved.key,
+        title: saved.title,
+        contentHtml: saved.contentHtml,
+      },
     });
   } catch (error) {
     console.error("Erro CMS salvar content:", error);
@@ -71,9 +81,19 @@ router.post("/content", async (req, res) => {
 
 /**
  * =====================================================
- * CMS — APARÊNCIA GLOBAL DO APP
+ * CMS — APARÊNCIA GLOBAL (ESPELHO DO FRONT)
  * =====================================================
  */
+
+const DEFAULT_APPEARANCE = {
+  primaryColor: "#4f46e5",
+  secondaryColor: "#6366f1",
+  accentColor: "#f59e0b",
+  backgroundColor: "#ffffff",
+  themeMode: "light",
+  fontPrimary: "Inter",
+  fontHeading: "Inter",
+};
 
 router.get("/app-appearance", async (_req, res) => {
   try {
@@ -81,19 +101,20 @@ router.get("/app-appearance", async (_req, res) => {
       where: { key: "app_appearance" },
     });
 
+    let data = DEFAULT_APPEARANCE;
+
+    if (content?.contentHtml) {
+      try {
+        data = JSON.parse(content.contentHtml);
+      } catch {
+        // mantém fallback seguro
+        data = DEFAULT_APPEARANCE;
+      }
+    }
+
     return res.json({
       ok: true,
-      data: content?.contentHtml
-        ? JSON.parse(content.contentHtml)
-        : {
-            primaryColor: "#4f46e5",
-            secondaryColor: "#6366f1",
-            accentColor: "#facc15",
-            backgroundColor: "#ffffff",
-            themeMode: "light",
-            fontPrimary: "Inter",
-            fontHeading: "Inter",
-          },
+      data,
     });
   } catch (error) {
     console.error("Erro CMS aparência:", error);
@@ -106,24 +127,27 @@ router.get("/app-appearance", async (_req, res) => {
 
 router.post("/app-appearance", async (req, res) => {
   try {
-    const data = req.body;
+    const payload = {
+      ...DEFAULT_APPEARANCE,
+      ...req.body,
+    };
 
-    const saved = await prisma.appContent.upsert({
+    await prisma.appContent.upsert({
       where: { key: "app_appearance" },
       update: {
         title: "Aparência do App",
-        contentHtml: JSON.stringify(data),
+        contentHtml: JSON.stringify(payload),
       },
       create: {
         key: "app_appearance",
         title: "Aparência do App",
-        contentHtml: JSON.stringify(data),
+        contentHtml: JSON.stringify(payload),
       },
     });
 
     return res.json({
       ok: true,
-      data: JSON.parse(saved.contentHtml || "{}"),
+      data: payload,
     });
   } catch (error) {
     console.error("Erro CMS salvar aparência:", error);
