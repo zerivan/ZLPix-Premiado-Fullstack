@@ -39,6 +39,9 @@ export default function AparenciaControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // =========================
+  // PREVIEW AO VIVO
+  // =========================
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
 
@@ -54,6 +57,9 @@ export default function AparenciaControl() {
       : root.classList.remove("dark");
   }
 
+  // =========================
+  // LOAD (ADMIN API)
+  // =========================
   async function loadAppearance() {
     setLoading(true);
     setStatus(null);
@@ -69,8 +75,8 @@ export default function AparenciaControl() {
         applyPreview(DEFAULT_APPEARANCE);
         setStatus("Aparência padrão carregada.");
       }
-    } catch (e) {
-      console.error("Erro aparência:", e);
+    } catch (error) {
+      console.error("Erro ao carregar aparência:", error);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -79,6 +85,9 @@ export default function AparenciaControl() {
     }
   }
 
+  // =========================
+  // SAVE (ADMIN API)
+  // =========================
   async function saveAppearance() {
     if (!appearance) return;
 
@@ -88,8 +97,8 @@ export default function AparenciaControl() {
     try {
       await adminApi.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
-    } catch (e) {
-      console.error("Erro salvar aparência:", e);
+    } catch (error) {
+      console.error("Erro ao salvar aparência:", error);
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
@@ -112,7 +121,9 @@ export default function AparenciaControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Aparência do Aplicativo</h2>
 
-      {status && <div className="text-sm text-gray-600">{status}</div>}
+      {status && (
+        <div className="text-sm text-gray-600">{status}</div>
+      )}
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte principal</label>
