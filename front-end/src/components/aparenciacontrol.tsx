@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { adminApi } from "../api/admin";
 
 const GOOGLE_FONTS = [
   "Inter",
@@ -24,7 +24,7 @@ type AppAppearance = {
   fontHeading: string;
 };
 
-// 👇 fallback seguro (impede loading infinito)
+// fallback seguro
 const DEFAULT_APPEARANCE: AppAppearance = {
   primaryColor: "#4f46e5",
   secondaryColor: "#6366f1",
@@ -40,9 +40,7 @@ export default function AparenciaControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  // =========================
-  // PREVIEW AO VIVO
-  // =========================
+  // PREVIEW
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
 
@@ -64,27 +62,24 @@ export default function AparenciaControl() {
       : root.classList.remove("dark");
   }
 
-  // =========================
-  // LOAD (CORRIGIDO)
-  // =========================
+  // LOAD
   async function loadAppearance() {
     setLoading(true);
     setStatus(null);
 
     try {
-      const res = await api.get("/api/admin/cms/app-appearance");
+      const res = await adminApi.get("/api/admin/cms/app-appearance");
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
         applyPreview(res.data.data);
       } else {
-        // 👇 saída garantida
         setAppearance(DEFAULT_APPEARANCE);
         applyPreview(DEFAULT_APPEARANCE);
         setStatus("Aparência padrão carregada.");
       }
-    } catch {
-      // 👇 saída garantida mesmo com erro
+    } catch (e) {
+      console.error("Erro aparência:", e);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -93,9 +88,7 @@ export default function AparenciaControl() {
     }
   }
 
-  // =========================
   // SAVE
-  // =========================
   async function saveAppearance() {
     if (!appearance) return;
 
@@ -103,9 +96,10 @@ export default function AparenciaControl() {
     setStatus(null);
 
     try {
-      await api.post("/api/admin/cms/app-appearance", appearance);
+      await adminApi.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
-    } catch {
+    } catch (e) {
+      console.error("Erro salvar aparência:", e);
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
@@ -128,9 +122,7 @@ export default function AparenciaControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Aparência do Aplicativo</h2>
 
-      {status && (
-        <div className="text-sm text-gray-600">{status}</div>
-      )}
+      {status && <div className="text-sm text-gray-600">{status}</div>}
 
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte principal</label>
