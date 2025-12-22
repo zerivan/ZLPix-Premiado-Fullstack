@@ -30,10 +30,11 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // 🔐 LOGOUT
+  // 🔐 LOGOUT — CORRETO PARA SPA
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
-    window.location.href = "/admin";
+    // ❌ NÃO redireciona aqui
+    // ✅ AdminRoute cuida disso automaticamente
   }
 
   const tabs = [
@@ -90,7 +91,7 @@ export default function AdminDashboard() {
           {activeTab === "content" && <ConteudoControl />}
           {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
 
-          {/* 🔥 GANHADORES — AGORA LIGADO AO BACKEND */}
+          {/* ✅ GANHADORES — BACKEND JÁ ESTÁ SENDO USADO */}
           {activeTab === "winners" && <AdminGanhadores />}
 
           {/* Ainda não ligados */}
