@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 
 // =============================
-// ROTAS PÚBLICAS / CORE DO SITE
+// ROTAS DO SITE
 // =============================
 import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
@@ -18,7 +18,6 @@ import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
-import diagnosticoRoutes from "./routes/diagnostico";
 
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
@@ -51,23 +50,21 @@ app.get("/", (_req, res) => {
 });
 
 // =============================
-// ROTAS DO SITE (AUTOMÁTICAS)
+// ROTAS DO SITE
 // =============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
-
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
 // =============================
-// ROTAS ADMIN (LEEM DIRETO O BANCO)
+// ROTAS ADMIN (BANCO)
 // =============================
 app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
-app.use("/api/admin/diagnostico", adminAuth, diagnosticoRoutes);
 
 // =============================
 // START
