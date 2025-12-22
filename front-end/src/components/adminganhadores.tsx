@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { adminApi } from "../api/admin";
 
 type Ganhador = {
   userId: number;
@@ -7,14 +8,6 @@ type Ganhador = {
   premio: number;
 };
 
-function adminHeaders() {
-  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export default function AdminGanhadores() {
   const [ganhadores, setGanhadores] = useState<Ganhador[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,19 +15,19 @@ export default function AdminGanhadores() {
 
   async function loadGanhadores() {
     try {
-      const res = await fetch(
-        "https://zlpix-premiado-backend.onrender.com/api/admin/ganhadores",
-        { headers: adminHeaders() }
-      );
+      setLoading(true);
+      setErro(null);
 
-      if (!res.ok) {
-        throw new Error("Erro ao buscar ganhadores");
+      const res = await adminApi.get("/api/admin/ganhadores");
+
+      if (res.data?.ok) {
+        setGanhadores(res.data.data || []);
+      } else {
+        setErro("Resposta inválida do servidor.");
       }
-
-      const json = await res.json();
-      setGanhadores(json.data || []);
     } catch (e: any) {
-      setErro(e.message || "Erro inesperado");
+      console.error("Erro ganhadores:", e);
+      setErro("Erro ao carregar ganhadores.");
     } finally {
       setLoading(false);
     }
@@ -45,11 +38,19 @@ export default function AdminGanhadores() {
   }, []);
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Carregando ganhadores...</div>;
+    return (
+      <div className="text-sm text-gray-500">
+        Carregando ganhadores...
+      </div>
+    );
   }
 
   if (erro) {
-    return <div className="text-sm text-red-600">{erro}</div>;
+    return (
+      <div className="text-sm text-red-600">
+        {erro}
+      </div>
+    );
   }
 
   if (ganhadores.length === 0) {
@@ -62,7 +63,9 @@ export default function AdminGanhadores() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Ganhadores do Sorteio</h2>
+      <h2 className="text-lg font-semibold">
+        Ganhadores do Sorteio
+      </h2>
 
       <div className="space-y-3">
         {ganhadores.map((g, i) => (
