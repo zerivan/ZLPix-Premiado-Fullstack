@@ -4,9 +4,9 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 
 /**
- * ==========================================
+ * =====================================================
  * CMS — CONTEÚDO (HTML / PÁGINAS)
- * ==========================================
+ * =====================================================
  */
 
 // GET conteúdo por key
@@ -23,7 +23,7 @@ router.get("/content/:key", async (req, res) => {
       data: content,
     });
   } catch (error) {
-    console.error("Erro ao buscar conteúdo CMS:", error);
+    console.error("Erro CMS content:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar conteúdo",
@@ -61,7 +61,7 @@ router.post("/content", async (req, res) => {
       data: saved,
     });
   } catch (error) {
-    console.error("Erro ao salvar conteúdo CMS:", error);
+    console.error("Erro CMS salvar content:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar conteúdo",
@@ -70,12 +70,11 @@ router.post("/content", async (req, res) => {
 });
 
 /**
- * ==========================================
+ * =====================================================
  * CMS — APARÊNCIA GLOBAL DO APP
- * ==========================================
+ * =====================================================
  */
 
-// GET aparência
 router.get("/app-appearance", async (_req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
@@ -97,7 +96,7 @@ router.get("/app-appearance", async (_req, res) => {
           },
     });
   } catch (error) {
-    console.error("Erro ao buscar aparência CMS:", error);
+    console.error("Erro CMS aparência:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar aparência",
@@ -105,7 +104,6 @@ router.get("/app-appearance", async (_req, res) => {
   }
 });
 
-// POST salvar aparência
 router.post("/app-appearance", async (req, res) => {
   try {
     const data = req.body;
@@ -128,7 +126,7 @@ router.post("/app-appearance", async (req, res) => {
       data: JSON.parse(saved.contentHtml || "{}"),
     });
   } catch (error) {
-    console.error("Erro ao salvar aparência CMS:", error);
+    console.error("Erro CMS salvar aparência:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar aparência",
