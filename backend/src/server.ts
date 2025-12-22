@@ -56,6 +56,13 @@ app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
 
+// SEED AUTOMÁTICO (APENAS EM PRODUÇÃO / RENDER)
+if (process.env.RUN_SEED === "true") {
+  seedAppContentPages().catch((err) => {
+    console.error("❌ Erro ao executar seed AppContent:", err);
+  });
+}
+
 // START
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
