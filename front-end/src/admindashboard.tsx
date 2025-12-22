@@ -8,7 +8,7 @@ import {
   LogOut,
   Palette,
   FileText,
-  Brain
+  Brain,
 } from "lucide-react";
 
 import ConfiguracoesControl from "./components/configuracoescontrol";
@@ -17,14 +17,21 @@ import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
 
+type TabId =
+  | "config"
+  | "appearance"
+  | "content"
+  | "diagnostico"
+  | "winners"
+  | "users"
+  | "reports";
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<
-    "config" | "appearance" | "content" | "diagnostico" | "winners" | "users" | "reports"
-  >("config");
+  // 👇 começa na aba que sabemos que funciona
+  const [activeTab, setActiveTab] = useState<TabId>("appearance");
 
-  // 🔒 ISOLAMENTO DO PAINEL ADMIN
   useEffect(() => {
     document.body.classList.add("admin-area");
     return () => {
@@ -32,21 +39,58 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // ✅ LOGOUT CORRETO (SPA)
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     navigate("/admin", { replace: true });
   }
 
-  const tabs = [
+  const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "config", label: "Configurações", icon: Settings },
     { id: "appearance", label: "Aparência", icon: Palette },
     { id: "content", label: "Conteúdo", icon: FileText },
     { id: "diagnostico", label: "Diagnóstico IA", icon: Brain },
     { id: "winners", label: "Ganhadores", icon: Trophy },
     { id: "users", label: "Usuários", icon: Users },
-    { id: "reports", label: "Relatórios", icon: BarChart3 }
-  ] as const;
+    { id: "reports", label: "Relatórios", icon: BarChart3 },
+  ];
+
+  function renderTab() {
+    try {
+      switch (activeTab) {
+        case "config":
+          return <ConfiguracoesControl />;
+        case "appearance":
+          return <AparenciaControl />;
+        case "content":
+          return <ConteudoControl />;
+        case "diagnostico":
+          return <AdminDiagnosticoIA />;
+        case "winners":
+          return <AdminGanhadores />;
+        case "users":
+          return (
+            <div className="text-sm text-gray-500">
+              Módulo de usuários (frontend ainda não ligado).
+            </div>
+          );
+        case "reports":
+          return (
+            <div className="text-sm text-gray-500">
+              Módulo de relatórios (frontend ainda não ligado).
+            </div>
+          );
+        default:
+          return null;
+      }
+    } catch (err) {
+      console.error("Erro ao renderizar aba:", err);
+      return (
+        <div className="text-sm text-red-600">
+          Erro ao carregar este módulo.
+        </div>
+      );
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -63,7 +107,7 @@ export default function AdminDashboard() {
       </header>
 
       <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
-        {tabs.map(tab => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
@@ -83,25 +127,7 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="flex-1 w-full max-w-4xl mx-auto p-4">
-        <div className="bg-white p-4 rounded shadow">
-          {activeTab === "config" && <ConfiguracoesControl />}
-          {activeTab === "appearance" && <AparenciaControl />}
-          {activeTab === "content" && <ConteudoControl />}
-          {activeTab === "diagnostico" && <AdminDiagnosticoIA />}
-          {activeTab === "winners" && <AdminGanhadores />}
-
-          {activeTab === "users" && (
-            <div className="text-sm text-gray-500">
-              Módulo de usuários (backend OK, front ainda não ligado).
-            </div>
-          )}
-
-          {activeTab === "reports" && (
-            <div className="text-sm text-gray-500">
-              Módulo de relatórios (backend OK, front ainda não ligado).
-            </div>
-          )}
-        </div>
+        <div className="bg-white p-4 rounded shadow">{renderTab()}</div>
       </main>
     </div>
   );
