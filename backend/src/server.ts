@@ -1,19 +1,17 @@
+import { seedAppContentPages } from "./seed/appcontent.seed";
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
-// =============================
 // ROTAS DO SITE
-// =============================
 import authRoutes from "./routes/auth";
 import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
 
-// =============================
 // ROTAS ADMIN (BANCO DE DADOS)
-// =============================
 import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
@@ -25,9 +23,7 @@ import { adminAuth } from "./middlewares/adminAuth";
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
-// =============================
 // CORS
-// =============================
 app.use(
   cors({
     origin: true,
@@ -39,9 +35,7 @@ app.use(
 
 app.use(express.json());
 
-// =============================
 // HEALTHCHECK
-// =============================
 app.get("/", (_req, res) => {
   res.json({
     status: "ok",
@@ -49,26 +43,20 @@ app.get("/", (_req, res) => {
   });
 });
 
-// =============================
 // ROTAS DO SITE
-// =============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
-// =============================
 // ROTAS ADMIN (BANCO)
-// =============================
 app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
 
-// =============================
 // START
-// =============================
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
