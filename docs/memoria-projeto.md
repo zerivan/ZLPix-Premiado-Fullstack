@@ -14,7 +14,7 @@ Qualquer pessoa ou IA que leia isto deve entender:
 ## 🔑 Identidade
 
 Projeto: ZLPix Premiado  
-Autor: Zerivan Barbosa  
+Autor: Zerivan Lima  
 
 Stack:
 - Front-end: React + Vite + Tailwind
