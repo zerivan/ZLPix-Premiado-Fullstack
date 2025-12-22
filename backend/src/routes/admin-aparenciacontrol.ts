@@ -10,6 +10,16 @@ const router = Router();
  * =====================================================
  */
 
+const DEFAULT_APPEARANCE = {
+  primaryColor: "#4f46e5",
+  secondaryColor: "#6366f1",
+  accentColor: "#f59e0b",
+  backgroundColor: "#ffffff",
+  themeMode: "light",
+  fontPrimary: "Inter",
+  fontHeading: "Inter",
+};
+
 /**
  * GET /api/admin/cms/app-appearance
  */
@@ -19,17 +29,15 @@ router.get("/app-appearance", async (_req, res) => {
       where: { key: "app_appearance" },
     });
 
-    const data = record?.contentHtml
-      ? JSON.parse(record.contentHtml)
-      : {
-          primaryColor: "#4f46e5",
-          secondaryColor: "#6366f1",
-          accentColor: "#f59e0b",
-          backgroundColor: "#ffffff",
-          themeMode: "light",
-          fontPrimary: "Inter",
-          fontHeading: "Inter",
-        };
+    let data = DEFAULT_APPEARANCE;
+
+    if (record?.contentHtml) {
+      try {
+        data = JSON.parse(record.contentHtml);
+      } catch (e) {
+        console.error("JSON inválido em app_appearance, usando padrão");
+      }
+    }
 
     return res.json({
       ok: true,
@@ -57,16 +65,16 @@ router.post("/app-appearance", async (req, res) => {
       themeMode,
       fontPrimary,
       fontHeading,
-    } = req.body;
+    } = req.body || {};
 
     const payload = {
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      backgroundColor,
-      themeMode,
-      fontPrimary,
-      fontHeading,
+      primaryColor: primaryColor || DEFAULT_APPEARANCE.primaryColor,
+      secondaryColor: secondaryColor || DEFAULT_APPEARANCE.secondaryColor,
+      accentColor: accentColor || DEFAULT_APPEARANCE.accentColor,
+      backgroundColor: backgroundColor || DEFAULT_APPEARANCE.backgroundColor,
+      themeMode: themeMode === "dark" ? "dark" : "light",
+      fontPrimary: fontPrimary || DEFAULT_APPEARANCE.fontPrimary,
+      fontHeading: fontHeading || DEFAULT_APPEARANCE.fontHeading,
     };
 
     await prisma.appContent.upsert({
