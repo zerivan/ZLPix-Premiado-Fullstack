@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/adminApi"; // ✅ CLIENT ADMIN (TOKEN_ZLPIX_ADMIN)
+import { api } from "../api/client";
+ ✅ CLIENT ADMIN (TOKEN_ZLPIX_ADMIN)
 
 type Usuario = {
   id: number;
