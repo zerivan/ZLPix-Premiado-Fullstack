@@ -17,10 +17,23 @@ export default function UsuariosControl() {
   async function loadUsuarios() {
     try {
       setLoading(true);
-      const res = await axios.get("/api/admin/usuarios");
+      setErro(null);
+
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      const res = await axios.get(
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/usuarios",
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
 
       if (res.data?.ok) {
         setData(res.data.data || []);
+      } else {
+        setErro("Resposta inválida do servidor.");
       }
     } catch (err) {
       console.error(err);
