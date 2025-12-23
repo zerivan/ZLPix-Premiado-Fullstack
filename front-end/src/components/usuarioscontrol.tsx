@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { adminApi } from "../api/adminApi"; // ✅ CLIENT ADMIN (TOKEN_ZLPIX_ADMIN)
 
 type Usuario = {
   id: number;
@@ -17,12 +17,12 @@ export default function UsuariosControl() {
   async function loadUsuarios() {
     try {
       setLoading(true);
-      const res = await api.get("/api/admin/usuarios");
+      const res = await adminApi.get("/api/admin/usuarios"); // ✅ ROTA OK
 
       if (res.data?.ok) {
         setData(res.data.data || []);
       }
-    } catch {
+    } catch (err) {
       setErro("Erro ao carregar usuários.");
     } finally {
       setLoading(false);
