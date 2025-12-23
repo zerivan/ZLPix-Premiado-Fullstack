@@ -16,6 +16,7 @@ import AparenciaControl from "./components/aparenciacontrol";
 import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
+import UsuariosControl from "./components/usuarioscontrol"; // ✅ IMPORT ADICIONADO
 
 type TabId =
   | "config"
@@ -68,11 +69,7 @@ export default function AdminDashboard() {
         case "winners":
           return <AdminGanhadores />;
         case "users":
-          return (
-            <div className="text-sm text-gray-500">
-              Módulo de usuários (frontend ainda não ligado).
-            </div>
-          );
+          return <UsuariosControl />; // ✅ ABA USUÁRIOS LIGADA
         case "reports":
           return (
             <div className="text-sm text-gray-500">
