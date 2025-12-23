@@ -17,12 +17,13 @@ export default function UsuariosControl() {
   async function loadUsuarios() {
     try {
       setLoading(true);
-      const res = await adminApi.get("/api/admin/usuarios"); // ✅ ROTA OK
+      const res = await axios.get("/api/admin/usuarios");
 
       if (res.data?.ok) {
         setData(res.data.data || []);
       }
     } catch (err) {
+      console.error(err);
       setErro("Erro ao carregar usuários.");
     } finally {
       setLoading(false);
