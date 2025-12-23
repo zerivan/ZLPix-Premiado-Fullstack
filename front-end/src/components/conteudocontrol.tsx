@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import axios from "axios";
 
 type Conteudo = {
   title: string;
@@ -28,19 +28,36 @@ export default function ConteudoControl() {
       setErro(null);
       setStatus(null);
 
-      // ✅ ROTA ADMIN (CMS NÃO USA FEDERAL)
-      const res = await api.get(`/api/admin/content/${CMS_KEY}`);
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
-      if (res.data?.ok && res.data.data) {
-        setData({
-          title: res.data.data.title || "",
-          contentHtml: res.data.data.contentHtml || "",
-        });
+      const res = await axios.get(
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms",
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
+
+      if (res.data?.ok && Array.isArray(res.data.data)) {
+        const page = res.data.data.find(
+          (p: any) => p.key === CMS_KEY
+        );
+
+        if (page) {
+          setData({
+            title: page.title || "",
+            contentHtml: page.contentHtml || "",
+          });
+        } else {
+          setStatus("Conteúdo ainda não cadastrado.");
+        }
       } else {
-        setStatus("Nenhum conteúdo cadastrado ainda.");
+        setStatus("Nenhum conteúdo encontrado.");
       }
     } catch (e) {
-      setErro("Erro ao carregar conteúdo do CMS");
+      console.error(e);
+      setErro("Erro ao carregar conteúdo do CMS.");
     } finally {
       setLoading(false);
     }
@@ -50,20 +67,30 @@ export default function ConteudoControl() {
   // SAVE
   // =========================
   async function saveContent() {
-    setSalvando(true);
-    setErro(null);
-    setStatus(null);
-
     try {
-      // ✅ ROTA ADMIN (CMS NÃO USA FEDERAL)
-      await api.post("/api/admin/content", {
-        key: CMS_KEY,
-        title: data.title,
-        contentHtml: data.contentHtml,
-      });
+      setSalvando(true);
+      setErro(null);
+      setStatus(null);
+
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      await axios.post(
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms",
+        {
+          key: CMS_KEY,
+          title: data.title,
+          contentHtml: data.contentHtml,
+        },
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
 
       setStatus("Conteúdo salvo com sucesso.");
-    } catch {
+    } catch (e) {
+      console.error(e);
       setErro("Erro ao salvar conteúdo.");
     } finally {
       setSalvando(false);
