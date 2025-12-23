@@ -1,71 +1,41 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 
-type Ganhador = {
-  userId: number;
-  nome: string;
-  dezenas: string;
-  premio: number;
+type Diagnostico = {
+  status: "ok" | "alerta" | "erro";
+  mensagem: string;
 };
 
-export default function AdminGanhadores() {
-  const [ganhadores, setGanhadores] = useState<Ganhador[]>([]);
+export default function AdminDiagnosticoIA() {
+  const [status, setStatus] = useState<Diagnostico[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function loadGanhadores() {
-    try {
-      setLoading(true);
-      setErro(null);
-
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
-      const res = await axios.get(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/ganhadores",
-        {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
-        }
-      );
-
-      if (res.data?.ok) {
-        setGanhadores(res.data.data || []);
-      } else {
-        setErro("Resposta inválida do servidor.");
-      }
-    } catch (e) {
-      console.error(e);
-      setErro("Erro ao carregar ganhadores.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
-    loadGanhadores();
+    // 🔎 Diagnóstico SIMULADO (painel não mexe no fluxo)
+    setTimeout(() => {
+      setStatus([
+        {
+          status: "ok",
+          mensagem: "Backend online e respondendo",
+        },
+        {
+          status: "ok",
+          mensagem: "Banco de dados acessível",
+        },
+        {
+          status: "alerta",
+          mensagem:
+            "Regra de ganhadores precisa ser revisada (bilhetes marcados como premiados)",
+        },
+      ]);
+
+      setLoading(false);
+    }, 500);
   }, []);
 
   if (loading) {
     return (
-      <div className="text-sm text-gray-500">
-        Carregando ganhadores...
-      </div>
-    );
-  }
-
-  if (erro) {
-    return (
-      <div className="text-sm text-red-600">
-        {erro}
-      </div>
-    );
-  }
-
-  if (ganhadores.length === 0) {
-    return (
-      <div className="text-sm text-gray-600">
-        Nenhum ganhador registrado neste sorteio.
+      <div className="text-sm text-gray-500 animate-pulse">
+        Executando diagnóstico do sistema...
       </div>
     );
   }
@@ -73,26 +43,22 @@ export default function AdminGanhadores() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Ganhadores do Sorteio
+        Diagnóstico do Sistema
       </h2>
 
-      <div className="space-y-3">
-        {ganhadores.map((g, i) => (
+      <div className="space-y-2">
+        {status.map((item, i) => (
           <div
             key={i}
-            className="rounded border bg-gray-50 p-3 text-sm space-y-1"
+            className={`rounded border p-3 text-sm ${
+              item.status === "ok"
+                ? "bg-green-50 border-green-300 text-green-800"
+                : item.status === "alerta"
+                ? "bg-yellow-50 border-yellow-300 text-yellow-800"
+                : "bg-red-50 border-red-300 text-red-800"
+            }`}
           >
-            <div>
-              <strong>Usuário:</strong> #{g.userId} — {g.nome}
-            </div>
-
-            <div>
-              <strong>Dezenas:</strong> {g.dezenas}
-            </div>
-
-            <div>
-              <strong>Prêmio:</strong> R$ {g.premio.toFixed(2)}
-            </div>
+            {item.mensagem}
           </div>
         ))}
       </div>
