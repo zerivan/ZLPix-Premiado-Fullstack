@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../api/client";
 
 type Relatorio = {
   totalUsuarios: number;
@@ -14,7 +14,7 @@ type Relatorio = {
   };
 };
 
-export default function AdminRelatoriosControl() {
+export default function RelatoriosControl() {
   const [data, setData] = useState<Relatorio | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -22,26 +22,12 @@ export default function AdminRelatoriosControl() {
   async function loadRelatorios() {
     try {
       setLoading(true);
-      setErro(null);
-
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
-      const res = await axios.get(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/relatorios",
-        {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
-        }
-      );
+      const res = await api.get("/api/admin/relatorios");
 
       if (res.data?.ok) {
         setData(res.data.data);
-      } else {
-        setErro("Resposta inválida do servidor.");
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       setErro("Erro ao carregar relatórios.");
     } finally {
       setLoading(false);
@@ -77,7 +63,7 @@ export default function AdminRelatoriosControl() {
         </div>
 
         <div className="border rounded p-3">
-          <strong>Bilhetes</strong>
+          <strong>Apostas</strong>
           <div>{data.totalBilhetes}</div>
         </div>
 
