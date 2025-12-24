@@ -37,21 +37,13 @@ export default function Home() {
   );
   const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
 
-  // 🔐 BLOQUEIA ADMIN NA HOME
-  useEffect(() => {
-    const adminToken = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-    if (adminToken) {
-      navigate("/admin", { replace: true });
-    }
-  }, [navigate]);
-
   // =========================
   // CARREGA CMS (KEY = home)
   // =========================
   useEffect(() => {
     async function loadContent() {
       try {
-        const res = await api.get("/api/federal/admin/content/home");
+        const res = await api.get("/api/admin/cms/content/home");
 
         if (res.data?.ok && res.data.data) {
           setHomeTitle(res.data.data.title || homeTitle);
