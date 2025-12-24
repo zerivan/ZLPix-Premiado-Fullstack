@@ -16,6 +16,13 @@ function diasAte(timestamp?: number) {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+function formatarData(data?: string) {
+  if (!data) return null;
+  const d = new Date(data);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("pt-BR");
+}
+
 export default function Resultado() {
   const [resultado, setResultado] = useState<ResultadoAPI | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +34,6 @@ export default function Resultado() {
       setErro("");
 
       try {
-        // 🔗 Fonte única da verdade (backend)
         const res = await api.get("/api/federal");
 
         if (!res.data?.ok) {
@@ -58,10 +64,12 @@ export default function Resultado() {
 
   const temResultado =
     resultado?.premios &&
-    resultado.premios.length > 0 &&
-    resultado.premios.some((p) => p && p !== "-----");
+    resultado.premios.length === 5 &&
+    resultado.premios.every((p) => p && p !== "-----");
 
   const dias = diasAte(resultado?.timestampProximoSorteio);
+  const dataSorteioFormatada = formatarData(resultado?.dataApuracao);
+  const proximoSorteioFormatado = formatarData(resultado?.proximoSorteio);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -86,12 +94,9 @@ export default function Resultado() {
             {temResultado ? (
               <>
                 <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
-                  Sorteio de{" "}
-                  {resultado.dataApuracao
-                    ? new Date(resultado.dataApuracao).toLocaleDateString(
-                        "pt-BR"
-                      )
-                    : "—"}
+                  {dataSorteioFormatada
+                    ? `Concurso do dia ${dataSorteioFormatada}`
+                    : "Resultado do sorteio"}
                 </h2>
 
                 <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
@@ -116,13 +121,11 @@ export default function Resultado() {
                   </div>
                 </div>
 
-                {resultado.proximoSorteio && (
+                {proximoSorteioFormatado && (
                   <p className="text-center text-xs text-blue-100/80 mt-4">
                     Próximo sorteio:{" "}
                     <span className="text-yellow-300 font-semibold">
-                      {new Date(resultado.proximoSorteio).toLocaleDateString(
-                        "pt-BR"
-                      )}
+                      {proximoSorteioFormatado}
                     </span>
                   </p>
                 )}
