@@ -14,6 +14,19 @@ router.post("/criar", async (_req, res) => {
 });
 
 /**
+ * Função: próxima quarta-feira às 20h
+ */
+function proximaQuarta(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 0 dom | 3 qua
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
+/**
  * Criar bilhete PAGANDO COM SALDO (CARTEIRA)
  */
 router.post("/pagar-com-saldo", async (req, res) => {
@@ -65,7 +78,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
           dezenas: dezenasStr,
           valor,
           pago: true,
-          sorteioData: new Date(),
+          status: "ATIVO",
+          sorteioData: proximaQuarta(),
           transacaoId: transacao.id,
         },
       });
@@ -80,15 +94,20 @@ router.post("/pagar-com-saldo", async (req, res) => {
 
 /**
  * ============================
- * ADMIN — BILHETES DO SORTEIO
+ * ADMIN — BILHETES DO SORTEIO ATUAL
  * ============================
- * Usado EXCLUSIVAMENTE pelo painel administrativo
  */
 router.get("/admin/sorteio-atual", async (_req, res) => {
   try {
+    const agora = new Date();
+
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         pago: true,
+        status: "ATIVO",
+        sorteioData: {
+          gt: agora,
+        },
       },
       include: {
         user: {
