@@ -31,7 +31,7 @@ export default function ConteudoControl() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       const res = await axios.get(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms",
+        `https://zlpix-premiado-fullstack.onrender.com/api/admin/cms/content/${CMS_KEY}`,
         {
           headers: token
             ? { Authorization: `Bearer ${token}` }
@@ -39,21 +39,13 @@ export default function ConteudoControl() {
         }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.data)) {
-        const page = res.data.data.find(
-          (p: any) => p.key === CMS_KEY
-        );
-
-        if (page) {
-          setData({
-            title: page.title || "",
-            contentHtml: page.contentHtml || "",
-          });
-        } else {
-          setStatus("Conteúdo ainda não cadastrado.");
-        }
+      if (res.data?.ok && res.data.data) {
+        setData({
+          title: res.data.data.title || "",
+          contentHtml: res.data.data.contentHtml || "",
+        });
       } else {
-        setStatus("Nenhum conteúdo encontrado.");
+        setStatus("Conteúdo ainda não cadastrado.");
       }
     } catch (e) {
       console.error(e);
@@ -75,7 +67,7 @@ export default function ConteudoControl() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       await axios.post(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms",
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms/content",
         {
           key: CMS_KEY,
           title: data.title,
