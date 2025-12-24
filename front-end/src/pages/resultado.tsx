@@ -4,9 +4,8 @@ import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 
 type ResultadoAPI = {
-  concurso: string;
-  dataApuracao: string;
-  premios: string[];
+  dataApuracao?: string;
+  premios?: string[];
   proximoSorteio?: string;
   timestampProximoSorteio?: number;
 };
@@ -25,8 +24,10 @@ export default function Resultado() {
   useEffect(() => {
     async function carregarResultado() {
       setLoading(true);
+      setErro("");
+
       try {
-        // 🔗 FONTE ÚNICA DA VERDADE
+        // 🔗 Fonte única da verdade (backend)
         const res = await api.get("/api/federal");
 
         if (!res.data?.ok) {
@@ -34,26 +35,14 @@ export default function Resultado() {
           return;
         }
 
-        const d = res.data.data;
+        const d = res.data.data || {};
 
-        const premios = Array.isArray(d.premios) ? d.premios : [];
-        while (premios.length < 5) premios.push("-----");
-
-        const normalizado: ResultadoAPI = {
-          concurso: d.concurso ?? "N/A",
-          dataApuracao: d.dataApuracao ?? "N/A",
-          premios: premios.slice(0, 5),
+        setResultado({
+          dataApuracao: d.dataApuracao,
+          premios: Array.isArray(d.premios) ? d.premios : [],
           proximoSorteio: d.proximoSorteio,
           timestampProximoSorteio: d.timestampProximoSorteio,
-        };
-
-        // 🧠 REGISTRA ESTADO GLOBAL DO SORTEIO
-        localStorage.setItem(
-          "ZLPIX_RESULTADO_ATUAL",
-          JSON.stringify(normalizado)
-        );
-
-        setResultado(normalizado);
+        });
       } catch (err) {
         console.error("Erro ao buscar resultado:", err);
         setErro("Falha ao conectar ao servidor.");
@@ -66,6 +55,13 @@ export default function Resultado() {
   }, []);
 
   const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
+
+  const temResultado =
+    resultado?.premios &&
+    resultado.premios.length > 0 &&
+    resultado.premios.some((p) => p && p !== "-----");
+
+  const dias = diasAte(resultado?.timestampProximoSorteio);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -85,48 +81,70 @@ export default function Resultado() {
 
         {erro && <p className="text-center text-red-400 py-4">{erro}</p>}
 
-        {!loading && !erro && resultado && (() => {
-          const dias = diasAte(resultado.timestampProximoSorteio);
+        {!loading && !erro && resultado && (
+          <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
+            {temResultado ? (
+              <>
+                <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
+                  Sorteio de{" "}
+                  {resultado.dataApuracao
+                    ? new Date(resultado.dataApuracao).toLocaleDateString(
+                        "pt-BR"
+                      )
+                    : "—"}
+                </h2>
 
-          return (
-            <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
-              <h2 className="text-lg font-bold text-yellow-300 mb-1 text-center">
-                Concurso {resultado.concurso} — {resultado.dataApuracao}
-              </h2>
+                <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
+                  {[0, 1, 2, 3].map((idx) => (
+                    <div key={idx} className="flex flex-col items-center">
+                      <span className="text-sm text-blue-100 mb-2">
+                        {positionLabels[idx]}
+                      </span>
+                      <div className="h-16 w-28 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-2xl font-bold shadow-md">
+                        {resultado.premios?.[idx]}
+                      </div>
+                    </div>
+                  ))}
 
-              {dias !== null && (
-                <p className="text-center text-xs text-blue-100/80 mb-4">
-                  ⏭ Próximo sorteio • faltam{" "}
-                  <span className="text-yellow-300 font-semibold">
-                    {dias} dias
-                  </span>
-                </p>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
-                {[0, 1, 2, 3].map((idx) => (
-                  <div key={idx} className="flex flex-col items-center">
+                  <div className="col-span-2 flex flex-col items-center mt-2">
                     <span className="text-sm text-blue-100 mb-2">
-                      {positionLabels[idx]}
+                      {positionLabels[4]}
                     </span>
-                    <div className="h-16 w-28 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-2xl font-bold shadow-md">
-                      {resultado.premios[idx]}
+                    <div className="h-14 w-32 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-xl font-bold shadow-md">
+                      {resultado.premios?.[4]}
                     </div>
                   </div>
-                ))}
-
-                <div className="col-span-2 flex flex-col items-center mt-2">
-                  <span className="text-sm text-blue-100 mb-2">
-                    {positionLabels[4]}
-                  </span>
-                  <div className="h-14 w-32 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-xl font-bold shadow-md">
-                    {resultado.premios[4]}
-                  </div>
                 </div>
-              </div>
-            </article>
-          );
-        })()}
+
+                {resultado.proximoSorteio && (
+                  <p className="text-center text-xs text-blue-100/80 mt-4">
+                    Próximo sorteio:{" "}
+                    <span className="text-yellow-300 font-semibold">
+                      {new Date(resultado.proximoSorteio).toLocaleDateString(
+                        "pt-BR"
+                      )}
+                    </span>
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold text-yellow-300 mb-2 text-center">
+                  Aguardando resultado do sorteio
+                </h2>
+
+                {dias !== null && (
+                  <p className="text-center text-sm text-blue-100">
+                    ⏳ Próximo sorteio em{" "}
+                    <span className="text-yellow-300 font-semibold">
+                      {dias} dias
+                    </span>
+                  </p>
+                )}
+              </>
+            )}
+          </article>
+        )}
       </main>
 
       <NavBottom />
