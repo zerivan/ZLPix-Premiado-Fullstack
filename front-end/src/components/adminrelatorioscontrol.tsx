@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { adminApi } from "../api/adminApi"; // ✅ CLIENTE ADMIN CORRETO
 
 type Relatorio = {
   totalUsuarios: number;
@@ -14,7 +14,7 @@ type Relatorio = {
   };
 };
 
-export default function RelatoriosControl() {
+export default function AdminRelatoriosControl() {
   const [data, setData] = useState<Relatorio | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -22,12 +22,17 @@ export default function RelatoriosControl() {
   async function loadRelatorios() {
     try {
       setLoading(true);
-      const res = await api.get("/api/admin/relatorios");
+      setErro(null);
+
+      const res = await adminApi.get("/api/admin/relatorios");
 
       if (res.data?.ok) {
         setData(res.data.data);
+      } else {
+        setErro("Resposta inválida do servidor.");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       setErro("Erro ao carregar relatórios.");
     } finally {
       setLoading(false);
