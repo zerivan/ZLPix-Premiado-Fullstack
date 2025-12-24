@@ -55,8 +55,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-
-      {/* HOME PÚBLICA — SEM REDIRECT */}
+      {/* HOME PÚBLICA */}
       <Route path="/" element={<Home />} />
 
       {/* Auth usuário */}
@@ -65,28 +64,96 @@ export default function AppRoutes() {
       <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
       {/* Usuário logado */}
-      <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-      <Route path="/aposta" element={<PrivateRoute><ApostaPainel /></PrivateRoute>} />
-      <Route path="/meus-bilhetes" element={<PrivateRoute><MeusBilhetes /></PrivateRoute>} />
-      <Route path="/resultado" element={<PrivateRoute><Resultado /></PrivateRoute>} />
-      <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
-      <Route path="/carteira" element={<PrivateRoute><Carteira /></PrivateRoute>} />
-      <Route path="/revisao" element={<PrivateRoute><Revisao /></PrivateRoute>} />
-      <Route path="/pagamento" element={<PrivateRoute><PixPagamento /></PrivateRoute>} />
+      <Route
+        path="/home"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/aposta"
+        element={
+          <PrivateRoute>
+            <ApostaPainel />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/meus-bilhetes"
+        element={
+          <PrivateRoute>
+            <MeusBilhetes />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/resultado"
+        element={
+          <PrivateRoute>
+            <Resultado />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <PrivateRoute>
+            <Perfil />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/carteira"
+        element={
+          <PrivateRoute>
+            <Carteira />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/revisao"
+        element={
+          <PrivateRoute>
+            <Revisao />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/pagamento"
+        element={
+          <PrivateRoute>
+            <PixPagamento />
+          </PrivateRoute>
+        }
+      />
 
       {/* Admin */}
       <Route path="/admin" element={<AdminLogin />} />
+
       <Route element={<AdminRoute />}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* CMS DINÂMICO */}
+      {/* CMS DINÂMICO — NUNCA INTERCEPTA ADMIN */}
       <Route
         path="/:slug"
         element={
-          isAdminLoggedIn() || isUserLoggedIn()
-            ? <DynamicPage />
-            : <Navigate to="/login" replace />
+          (() => {
+            const slug = window.location.pathname.replace("/", "");
+
+            // 🚫 BLOQUEIO ABSOLUTO DE ROTAS ADMIN
+            if (slug.startsWith("admin")) {
+              return <Navigate to="/admin" replace />;
+            }
+
+            return isAdminLoggedIn() || isUserLoggedIn() ? (
+              <DynamicPage />
+            ) : (
+              <Navigate to="/login" replace />
+            );
+          })()
         }
       />
 
