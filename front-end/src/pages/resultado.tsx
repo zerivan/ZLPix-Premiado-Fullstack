@@ -10,17 +10,17 @@ type ResultadoAPI = {
   timestampProximoSorteio?: number;
 };
 
-function diasAte(timestamp?: number) {
-  if (!timestamp) return null;
-  const diff = timestamp - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
 function formatarData(data?: string) {
   if (!data) return null;
   const d = new Date(data);
   if (isNaN(d.getTime())) return null;
   return d.toLocaleDateString("pt-BR");
+}
+
+function diasAte(timestamp?: number) {
+  if (!timestamp) return null;
+  const diff = timestamp - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 export default function Resultado() {
@@ -30,27 +30,21 @@ export default function Resultado() {
 
   useEffect(() => {
     async function carregarResultado() {
-      setLoading(true);
-      setErro("");
-
       try {
         const res = await api.get("/api/federal");
-
         if (!res.data?.ok) {
-          setErro("Não foi possível carregar os resultados.");
+          setErro("Erro ao carregar resultado.");
           return;
         }
 
         const d = res.data.data || {};
-
         setResultado({
           dataApuracao: d.dataApuracao,
           premios: Array.isArray(d.premios) ? d.premios : [],
           proximoSorteio: d.proximoSorteio,
           timestampProximoSorteio: d.timestampProximoSorteio,
         });
-      } catch (err) {
-        console.error("Erro ao buscar resultado:", err);
+      } catch {
         setErro("Falha ao conectar ao servidor.");
       } finally {
         setLoading(false);
@@ -59,8 +53,6 @@ export default function Resultado() {
 
     carregarResultado();
   }, []);
-
-  const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
 
   const temResultado =
     resultado?.premios &&
@@ -71,10 +63,12 @@ export default function Resultado() {
   const proximoResultado = formatarData(resultado?.proximoSorteio);
   const dias = diasAte(resultado?.timestampProximoSorteio);
 
+  const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center py-6">
-        <h1 className="text-2xl font-extrabold text-yellow-300 drop-shadow-md">
+        <h1 className="text-2xl font-extrabold text-yellow-300">
           🎯 Loteria Federal — Resultados Oficiais
         </h1>
         <p className="text-sm text-blue-100">Fonte oficial do sistema</p>
@@ -82,47 +76,43 @@ export default function Resultado() {
 
       <main className="max-w-2xl mx-auto px-4">
         {loading && (
-          <p className="text-center text-yellow-300 animate-pulse py-8">
-            Carregando resultados...
-          </p>
+          <p className="text-center text-yellow-300 py-8">Carregando...</p>
         )}
 
-        {erro && <p className="text-center text-red-400 py-4">{erro}</p>}
+        {erro && <p className="text-center text-red-400">{erro}</p>}
 
         {!loading && !erro && resultado && (
-          <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
+          <article className="rounded-2xl bg-white/10 border border-yellow-400/20 p-6 my-6">
             {temResultado ? (
               <>
-                <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
+                <h2 className="text-lg font-bold text-yellow-300 text-center mb-4">
                   {dataResultado
                     ? `Resultado do dia ${dataResultado}`
-                    : "Resultado do sorteio"}
+                    : "Resultado indisponível"}
                 </h2>
 
-                <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
-                  {[0, 1, 2, 3].map((idx) => (
-                    <div key={idx} className="flex flex-col items-center">
-                      <span className="text-sm text-blue-100 mb-2">
-                        {positionLabels[idx]}
-                      </span>
-                      <div className="h-16 w-28 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-2xl font-bold shadow-md">
-                        {resultado.premios?.[idx]}
+                <div className="grid grid-cols-2 gap-4 justify-items-center mb-4">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-sm text-blue-100 mb-1">
+                        {positionLabels[i]}
+                      </div>
+                      <div className="h-16 w-28 flex items-center justify-center bg-yellow-400 text-blue-900 text-2xl font-bold rounded-xl">
+                        {resultado.premios?.[i]}
                       </div>
                     </div>
                   ))}
 
-                  <div className="col-span-2 flex flex-col items-center mt-2">
-                    <span className="text-sm text-blue-100 mb-2">
-                      {positionLabels[4]}
-                    </span>
-                    <div className="h-14 w-32 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-xl font-bold shadow-md">
+                  <div className="col-span-2 text-center">
+                    <div className="text-sm text-blue-100 mb-1">5º</div>
+                    <div className="h-14 w-32 mx-auto flex items-center justify-center bg-yellow-400 text-blue-900 text-xl font-bold rounded-xl">
                       {resultado.premios?.[4]}
                     </div>
                   </div>
                 </div>
 
                 {proximoResultado && (
-                  <p className="text-center text-xs text-blue-100/80 mt-4">
+                  <p className="text-center text-xs text-blue-100">
                     Próximo resultado em{" "}
                     <span className="text-yellow-300 font-semibold">
                       {proximoResultado}
@@ -132,13 +122,13 @@ export default function Resultado() {
               </>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-yellow-300 mb-2 text-center">
+                <h2 className="text-lg font-bold text-yellow-300 text-center mb-2">
                   Aguardando resultado do sorteio
                 </h2>
 
                 {dias !== null && (
-                  <p className="text-center text-sm text-blue-100">
-                    ⏳ Próximo resultado em{" "}
+                  <p className="text-center text-blue-100">
+                    Próximo resultado em{" "}
                     <span className="text-yellow-300 font-semibold">
                       {dias} dias
                     </span>
