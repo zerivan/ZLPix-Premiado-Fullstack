@@ -10,10 +10,28 @@ type ResultadoAPI = {
   timestampProximoSorteio?: number;
 };
 
-function diasAte(timestamp?: number) {
-  if (!timestamp) return null;
-  const diff = timestamp - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+function formatarData(date: Date) {
+  return date.toLocaleDateString("pt-BR");
+}
+
+function calcularDataResultado(
+  dataApuracao?: string | null,
+  timestampProximoSorteio?: number
+): string | null {
+  // 1️⃣ Se backend mandou a data correta, usa ela
+  if (dataApuracao) {
+    const d = new Date(dataApuracao);
+    if (!isNaN(d.getTime())) return formatarData(d);
+  }
+
+  // 2️⃣ Caso contrário, calcula: próxima quarta - 7 dias
+  if (timestampProximoSorteio) {
+    const d = new Date(timestampProximoSorteio);
+    d.setDate(d.getDate() - 7);
+    return formatarData(d);
+  }
+
+  return null;
 }
 
 export default function Resultado() {
@@ -55,13 +73,15 @@ export default function Resultado() {
 
   const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
 
-  // ✅ REGRA CORRETA
   const temResultado =
     resultado?.premios &&
     resultado.premios.length === 5 &&
     resultado.premios.every((p) => typeof p === "string" && p.length === 5);
 
-  const dias = diasAte(resultado?.timestampProximoSorteio);
+  const dataResultado = calcularDataResultado(
+    resultado?.dataApuracao,
+    resultado?.timestampProximoSorteio
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -86,12 +106,7 @@ export default function Resultado() {
             {temResultado ? (
               <>
                 <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
-                  Resultado do dia{" "}
-                  {resultado.dataApuracao
-                    ? new Date(resultado.dataApuracao).toLocaleDateString(
-                        "pt-BR"
-                      )
-                    : "—"}
+                  Resultado do dia {dataResultado}
                 </h2>
 
                 <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
@@ -128,20 +143,9 @@ export default function Resultado() {
                 )}
               </>
             ) : (
-              <>
-                <h2 className="text-lg font-bold text-yellow-300 mb-2 text-center">
-                  Resultado indisponível
-                </h2>
-
-                {dias !== null && (
-                  <p className="text-center text-sm text-blue-100">
-                    ⏳ Próximo resultado em{" "}
-                    <span className="text-yellow-300 font-semibold">
-                      {dias} dias
-                    </span>
-                  </p>
-                )}
-              </>
+              <h2 className="text-lg font-bold text-yellow-300 text-center">
+                Resultado indisponível
+              </h2>
             )}
           </article>
         )}
