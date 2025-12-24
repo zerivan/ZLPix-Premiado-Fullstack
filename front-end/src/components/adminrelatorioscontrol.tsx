@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/adminApi"; // ✅ CASE CORRETO
+import axios from "axios";
 
 type Relatorio = {
   totalUsuarios: number;
@@ -24,7 +24,16 @@ export default function AdminRelatoriosControl() {
       setLoading(true);
       setErro(null);
 
-      const res = await adminApi.get("/api/admin/relatorios");
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      const res = await axios.get(
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/relatorios",
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
 
       if (res.data?.ok) {
         setData(res.data.data);
