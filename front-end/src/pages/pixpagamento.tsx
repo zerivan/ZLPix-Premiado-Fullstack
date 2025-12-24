@@ -20,10 +20,10 @@ export default function PixPagamento() {
   const qr_code_base64: string = state?.qr_code_base64 ?? "";
   const copy_paste: string = state?.copy_paste ?? "";
 
-  const [qrBase64, setQrBase64] = useState<string>(qr_code_base64);
-  const [copyPaste, setCopyPaste] = useState<string>(copy_paste);
+  const [qrBase64] = useState<string>(qr_code_base64);
+  const [copyPaste] = useState<string>(copy_paste);
   const [status, setStatus] = useState<string>("Aguardando pagamento...");
-  const [loading, setLoading] = useState<boolean>(!qr_code_base64);
+  const [loading] = useState<boolean>(!qr_code_base64);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -43,7 +43,7 @@ export default function PixPagamento() {
   }
 
   // ======================
-  // 📌 Polling do pagamento (CORRIGIDO DE VERDADE)
+  // 📌 Polling do pagamento (FINAL)
   // ======================
   useEffect(() => {
     if (!paymentId) return;
@@ -54,14 +54,12 @@ export default function PixPagamento() {
           `${API}/pix/payment-status/${paymentId}`
         );
 
-        const rawStatus = resp.data?.status;
         const paymentStatus =
-          typeof rawStatus === "string"
-            ? rawStatus.toUpperCase()
+          typeof resp.data?.status === "string"
+            ? resp.data.status.toLowerCase()
             : "";
 
-        // ✅ AGORA BATE COM O BACKEND
-        if (paymentStatus === "PAID" || paymentStatus === "APPROVED") {
+        if (paymentStatus === "paid") {
           setStatus("Pagamento confirmado! 🎉");
 
           if (pollingRef.current) {
@@ -72,8 +70,10 @@ export default function PixPagamento() {
             navigate("/meus-bilhetes", { replace: true });
           }, 1200);
         }
-      } catch {}
-    }, 5000);
+      } catch {
+        // se der erro de rede, não trava a UI
+      }
+    }, 4000);
 
     return () => {
       if (pollingRef.current) {
@@ -83,33 +83,7 @@ export default function PixPagamento() {
   }, [paymentId, API, navigate]);
 
   // ======================
-  // 📌 Recuperar QR se necessário
-  // ======================
-  useEffect(() => {
-    async function carregar() {
-      if (!paymentId) return;
-      if (qrBase64) return;
-
-      setLoading(true);
-      try {
-        const resp = await axios.get(
-          `${API}/pix/payment-status/${paymentId}`
-        );
-
-        if (resp.data?.qr_code_base64) {
-          setQrBase64(resp.data.qr_code_base64);
-          setCopyPaste(resp.data.copy_paste);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    carregar();
-  }, [paymentId, qrBase64, API]);
-
-  // ======================
-  // 📌 UI (INALTERADA)
+  // 📌 UI
   // ======================
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center p-6">
