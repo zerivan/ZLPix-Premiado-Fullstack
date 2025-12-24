@@ -17,7 +17,9 @@ import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
 import AdminUsuariosControl from "./components/adminusuarioscontrol";
-import RelatoriosControl from "./components/relatorioscontrol"; // ✅ RELATÓRIOS LIGADO
+
+// 🔥 IMPORT CORRETO DO RELATÓRIO
+import AdminRelatoriosControl from "./components/adminrelatorioscontrol";
 
 type TabId =
   | "config"
@@ -70,7 +72,7 @@ export default function AdminDashboard() {
         case "users":
           return <AdminUsuariosControl />;
         case "reports":
-          return <RelatoriosControl />; // ✅ FUNCIONAL
+          return <AdminRelatoriosControl />; // ✅ AGORA CERTO
         default:
           return null;
       }
