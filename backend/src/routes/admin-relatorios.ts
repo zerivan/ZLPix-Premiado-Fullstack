@@ -7,6 +7,7 @@ const router = Router();
  * =====================================================
  * ADMIN — RELATÓRIOS (BANCO DE DADOS)
  * =====================================================
+ * Apenas LEITURA / DIAGNÓSTICO
  */
 router.get("/", async (_req, res) => {
   try {
@@ -18,12 +19,16 @@ router.get("/", async (_req, res) => {
       ultimaTransacao,
     ] = await Promise.all([
       prisma.users.count(),
+
       prisma.bilhete.count(),
+
       prisma.transacao.count(),
+
       prisma.transacao.findMany({
         where: { status: "approved" },
         select: { valor: true },
       }),
+
       prisma.transacao.findFirst({
         orderBy: { createdAt: "desc" },
         select: {
@@ -34,10 +39,11 @@ router.get("/", async (_req, res) => {
       }),
     ]);
 
-    const totalArrecadado = transacoesAprovadas.reduce(
-      (acc, t) => acc + t.valor,
-      0
-    );
+    // 🔒 conversão segura (Decimal / bigint → number)
+    const totalArrecadado = transacoesAprovadas.reduce((acc, t) => {
+      const valor = Number(t.valor) || 0;
+      return acc + valor;
+    }, 0);
 
     return res.json({
       ok: true,
@@ -46,8 +52,13 @@ router.get("/", async (_req, res) => {
         totalBilhetes,
         totalTransacoes,
         totalArrecadado,
-        totalPago: totalArrecadado,
-        ultimaTransacao,
+        totalPago: totalArrecadado, // provisório (diagnóstico)
+        ultimaTransacao: ultimaTransacao
+          ? {
+              ...ultimaTransacao,
+              valor: Number(ultimaTransacao.valor) || 0,
+            }
+          : null,
       },
     });
   } catch (error) {
