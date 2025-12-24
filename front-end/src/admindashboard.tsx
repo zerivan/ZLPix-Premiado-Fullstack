@@ -16,7 +16,7 @@ import AparenciaControl from "./components/aparenciacontrol";
 import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
-import UsuariosControl from "./components/usuarioscontrol"; // ✅ IMPORT ADICIONADO
+import AdminUsuariosControl from "./components/adminusuarioscontrol"; // ✅ CORRETO
 
 type TabId =
   | "config"
@@ -29,8 +29,6 @@ type TabId =
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-
-  // 👇 começa na aba que sabemos que funciona
   const [activeTab, setActiveTab] = useState<TabId>("appearance");
 
   useEffect(() => {
@@ -69,7 +67,7 @@ export default function AdminDashboard() {
         case "winners":
           return <AdminGanhadores />;
         case "users":
-          return <UsuariosControl />; // ✅ ABA USUÁRIOS LIGADA
+          return <AdminUsuariosControl />; // ✅ USUÁRIOS CORRETO
         case "reports":
           return (
             <div className="text-sm text-gray-500">
@@ -124,7 +122,9 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="flex-1 w-full max-w-4xl mx-auto p-4">
-        <div className="bg-white p-4 rounded shadow">{renderTab()}</div>
+        <div className="bg-white p-4 rounded shadow">
+          {renderTab()}
+        </div>
       </main>
     </div>
   );
