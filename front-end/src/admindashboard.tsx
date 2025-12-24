@@ -16,7 +16,8 @@ import AparenciaControl from "./components/aparenciacontrol";
 import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
-import AdminUsuariosControl from "./components/adminusuarioscontrol"; // ✅ CORRETO
+import AdminUsuariosControl from "./components/adminusuarioscontrol";
+import RelatoriosControl from "./components/relatorioscontrol"; // ✅ RELATÓRIOS LIGADO
 
 type TabId =
   | "config"
@@ -67,13 +68,9 @@ export default function AdminDashboard() {
         case "winners":
           return <AdminGanhadores />;
         case "users":
-          return <AdminUsuariosControl />; // ✅ USUÁRIOS CORRETO
+          return <AdminUsuariosControl />;
         case "reports":
-          return (
-            <div className="text-sm text-gray-500">
-              Módulo de relatórios (frontend ainda não ligado).
-            </div>
-          );
+          return <RelatoriosControl />; // ✅ FUNCIONAL
         default:
           return null;
       }
