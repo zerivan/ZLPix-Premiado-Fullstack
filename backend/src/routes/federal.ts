@@ -13,20 +13,12 @@ function getNextWednesday(): Date {
   return next;
 }
 
-function extrairDezenas(numero: string) {
-  const chars = numero.split("");
-  const inicio: string[] = [];
-  const fim: string[] = [];
-
-  for (let i = 0; i < chars.length - 1; i++) {
-    inicio.push(chars[i] + chars[i + 1]);
-  }
-
-  for (let i = chars.length - 1; i > 0; i--) {
-    fim.push(chars[i - 1] + chars[i]);
-  }
-
-  return { inicio, fim };
+function parseDataBR(data: string): string | null {
+  // recebe DD/MM/YYYY e devolve ISO
+  const [d, m, y] = data.split("/");
+  if (!d || !m || !y) return null;
+  const iso = new Date(`${y}-${m}-${d}T20:00:00-03:00`);
+  return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
 router.get("/", async (_req, res) => {
@@ -43,14 +35,14 @@ router.get("/", async (_req, res) => {
 
     const html = await response.text();
 
-    let concurso = "N/A";
-    const concursoMatch = html.match(/Concurso[^0-9]*([0-9]{3,6})/i);
-    if (concursoMatch) concurso = concursoMatch[1];
-
-    let dataApuracao = "N/A";
+    // 🔹 DATA DO SORTEIO (IDENTIFICADOR REAL)
+    let dataApuracaoISO: string | null = null;
     const dataMatch = html.match(/(\d{2}\/\d{2}\/\d{4})/);
-    if (dataMatch) dataApuracao = dataMatch[1];
+    if (dataMatch) {
+      dataApuracaoISO = parseDataBR(dataMatch[1]);
+    }
 
+    // 🔹 NÚMEROS SORTEADOS (1º AO 5º)
     let numeros: string[] = [];
     const regex =
       /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
@@ -66,17 +58,13 @@ router.get("/", async (_req, res) => {
         .slice(0, 5);
     }
 
-    // 🔥 CONTRATO ORIGINAL DO FRONT
-    const premiosFrontend = numeros;
-
     const proximoSorteio = getNextWednesday();
 
     return res.json({
       ok: true,
       data: {
-        concurso,
-        dataApuracao,
-        premios: premiosFrontend, // ✅ string[]
+        dataApuracao: dataApuracaoISO, // ✅ ISO válido
+        premios: numeros,              // ✅ string[]
         proximoSorteio: proximoSorteio.toISOString(),
         timestampProximoSorteio: proximoSorteio.getTime(),
       },
