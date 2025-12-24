@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/adminapi";
-✅ CLIENTE ADMIN CORRETO
+import { adminApi } from "../api/adminapi"; // cliente admin correto
 
 type Relatorio = {
   totalUsuarios: number;
