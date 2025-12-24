@@ -5,6 +5,37 @@ const router = Router();
 
 /**
  * =====================================================
+ * CMS — LISTAR TODO CONTEÚDO (PAINEL ADMIN)
+ * =====================================================
+ */
+router.get("/", async (_req, res) => {
+  try {
+    const pages = await prisma.appContent.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        key: true,
+        slug: true,
+        title: true,
+        enabled: true,
+      },
+    });
+
+    return res.json({
+      ok: true,
+      data: pages,
+    });
+  } catch (error) {
+    console.error("Erro CMS listar:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao listar conteúdo",
+    });
+  }
+});
+
+/**
+ * =====================================================
  * CMS — CONTEÚDO (HTML / PÁGINAS)
  * =====================================================
  */
@@ -107,7 +138,6 @@ router.get("/app-appearance", async (_req, res) => {
       try {
         data = JSON.parse(content.contentHtml);
       } catch {
-        // mantém fallback seguro
         data = DEFAULT_APPEARANCE;
       }
     }
