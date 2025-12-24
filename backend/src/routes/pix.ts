@@ -81,12 +81,10 @@ router.post("/create", async (req, res) => {
       return res.status(502).json(mpJson);
     }
 
-    const paymentId = String(mpJson.id);
-
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
-        mpPaymentId: paymentId,
+        mpPaymentId: String(mpJson.id),
         metadata: {
           ...(tx.metadata as object),
           mpResponse: mpJson,
@@ -95,7 +93,7 @@ router.post("/create", async (req, res) => {
     });
 
     return res.json({
-      payment_id: paymentId,
+      payment_id: String(mpJson.id),
       qr_code_base64:
         mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
       copy_paste:
@@ -108,23 +106,23 @@ router.post("/create", async (req, res) => {
 });
 
 // =====================================================
-// STATUS DO PAGAMENTO (CORRIGIDO)
+// STATUS DO PAGAMENTO (AGORA CRIA OS BILHETES)
 // =====================================================
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
     if (!paymentId) return res.json({ status: "INVALID" });
 
-    // 1️⃣ tenta banco
     const tx = await prisma.transacao.findFirst({
       where: { mpPaymentId: paymentId },
     });
 
-    if (tx?.status === "paid") {
+    if (!tx) return res.json({ status: "INVALID" });
+
+    if (tx.status === "paid") {
       return res.json({ status: "PAID" });
     }
 
-    // 2️⃣ consulta Mercado Pago
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
@@ -138,18 +136,32 @@ router.get("/payment-status/:paymentId", async (req, res) => {
 
     const resp = await fetchFn(
       `${mpBase}/v1/payments/${paymentId}`,
-      {
-        headers: { Authorization: `Bearer ${mpToken}` },
-      }
+      { headers: { Authorization: `Bearer ${mpToken}` } }
     );
 
     const mpJson: any = await resp.json();
 
-    if (mpJson?.status === "approved" && tx) {
-      // 🔥 PONTO CRÍTICO: ATUALIZA O BACKEND
-      await prisma.transacao.update({
-        where: { id: tx.id },
-        data: { status: "paid" },
+    if (mpJson?.status === "approved") {
+      const bilhetes = (tx.metadata as any)?.bilhetes ?? [];
+
+      await prisma.$transaction(async (db) => {
+        await db.transacao.update({
+          where: { id: tx.id },
+          data: { status: "paid" },
+        });
+
+        for (const dezenas of bilhetes) {
+          await db.bilhete.create({
+            data: {
+              userId: tx.userId,
+              transacaoId: tx.id,
+              dezenas: String(dezenas),
+              valor: tx.valor / bilhetes.length,
+              pago: true,
+              sorteioData: new Date(),
+            },
+          });
+        }
       });
 
       return res.json({ status: "PAID" });
