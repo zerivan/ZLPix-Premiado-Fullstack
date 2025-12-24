@@ -67,9 +67,9 @@ export default function Resultado() {
     resultado.premios.length === 5 &&
     resultado.premios.every((p) => p && p !== "-----");
 
+  const dataResultado = formatarData(resultado?.dataApuracao);
+  const proximoResultado = formatarData(resultado?.proximoSorteio);
   const dias = diasAte(resultado?.timestampProximoSorteio);
-  const dataSorteioFormatada = formatarData(resultado?.dataApuracao);
-  const proximoSorteioFormatado = formatarData(resultado?.proximoSorteio);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -94,8 +94,8 @@ export default function Resultado() {
             {temResultado ? (
               <>
                 <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
-                  {dataSorteioFormatada
-                    ? `Concurso do dia ${dataSorteioFormatada}`
+                  {dataResultado
+                    ? `Resultado do dia ${dataResultado}`
                     : "Resultado do sorteio"}
                 </h2>
 
@@ -121,11 +121,11 @@ export default function Resultado() {
                   </div>
                 </div>
 
-                {proximoSorteioFormatado && (
+                {proximoResultado && (
                   <p className="text-center text-xs text-blue-100/80 mt-4">
-                    Próximo sorteio:{" "}
+                    Próximo resultado em{" "}
                     <span className="text-yellow-300 font-semibold">
-                      {proximoSorteioFormatado}
+                      {proximoResultado}
                     </span>
                   </p>
                 )}
@@ -138,7 +138,7 @@ export default function Resultado() {
 
                 {dias !== null && (
                   <p className="text-center text-sm text-blue-100">
-                    ⏳ Próximo sorteio em{" "}
+                    ⏳ Próximo resultado em{" "}
                     <span className="text-yellow-300 font-semibold">
                       {dias} dias
                     </span>
