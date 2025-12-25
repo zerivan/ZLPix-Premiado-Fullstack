@@ -5,13 +5,12 @@ const router = Router();
 
 /**
  * =====================================================
- * ADMIN — GANHADORES (APENAS BILHETES PREMIADOS)
+ * ADMIN — GANHADORES
  * =====================================================
  * REGRA:
- * - Só exibe bilhetes com status = 'PREMIADO'
- * - Não calcula prêmio
- * - Não inventa ganhador
+ * - Só mostra bilhetes com status = 'PREMIADO'
  * - Apenas ESPELHA o banco
+ * - Não calcula, não inventa
  */
 router.get("/", async (_req, res) => {
   try {
@@ -20,7 +19,7 @@ router.get("/", async (_req, res) => {
         status: "PREMIADO",
       },
       orderBy: {
-        apuradoem: "desc",
+        apuradoEm: "desc",
       },
       include: {
         user: {
@@ -42,10 +41,10 @@ router.get("/", async (_req, res) => {
       userId: b.user.id,
       nome: b.user.name,
       dezenas: b.dezenas,
-      premio: Number(b.premiovalor || 0),
-      resultadoFederal: b.resultadofederal,
-      apuradoEm: b.apuradoem,
-      transacaoId: b.transacao?.id,
+      premio: Number(b.premioValor || 0),
+      resultadoFederal: b.resultadoFederal,
+      apuradoEm: b.apuradoEm,
+      transacaoId: b.transacao?.id ?? null,
     }));
 
     return res.json({
