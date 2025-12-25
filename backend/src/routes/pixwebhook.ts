@@ -2,7 +2,6 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
-import { enviarWhatsApp } from "../services/whatsapp";
 
 const router = express.Router();
 
@@ -15,8 +14,8 @@ const fetchFn: typeof fetch = (...args: any) =>
  */
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay(); // 0 = domingo
-  const diff = (3 - day + 7) % 7 || 7; // 3 = quarta
+  const day = now.getDay();
+  const diff = (3 - day + 7) % 7 || 7;
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
   next.setHours(20, 0, 0, 0);
@@ -75,7 +74,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔧 Buscar transação
     const transacao = await prisma.transacao.findFirst({
       where: {
         OR: [
@@ -90,33 +88,16 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔐 garantir wallet
-    const walletExistente = await prisma.wallet.findFirst({
-      where: { userId: transacao.userId },
-    });
-
-    if (!walletExistente) {
-      await prisma.wallet.create({
-        data: {
-          user: {
-            connect: { id: transacao.userId },
-          },
-          saldo: 0,
-          createdAt: new Date(),
-        },
-      });
-    }
-
-    // ✅ metadata seguro
+    // metadata seguro
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
     // =========================================
-    // 💰 DEPÓSITO EM CARTEIRA (MANTIDO)
+    // 💰 DEPÓSITO EM CARTEIRA (INALTERADO)
     // =========================================
-    if (metadata.tipo === "deposito") {
+    if (metadata["tipo"] === "deposito") {
       await prisma.wallet.updateMany({
         where: { userId: transacao.userId },
         data: {
@@ -135,10 +116,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================================
-    // 🎟️ CRIAÇÃO DE BILHETES (CORREÇÃO AQUI)
+    // 🎟️ CRIAÇÃO DE BILHETES (TIPAGEM CORRIGIDA)
     // =========================================
-    const bilhetes = Array.isArray(metadata.bilhetes)
-      ? metadata.bilhetes
+    const bilhetesRaw = Array.isArray(metadata["bilhetes"])
+      ? metadata["bilhetes"]
       : [];
 
     await prisma.$transaction(async (db) => {
@@ -147,16 +128,28 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         data: { status: "paid" },
       });
 
-      for (const b of bilhetes) {
+      for (const item of bilhetesRaw) {
+        let dezenas = "";
+        let valor = Number(transacao.valor) / Math.max(bilhetesRaw.length, 1);
+
+        if (typeof item === "string") {
+          dezenas = item;
+        } else if (typeof item === "object" && item !== null) {
+          const obj = item as Record<string, any>;
+          dezenas = String(obj.dezenas ?? "");
+          if (obj.valor !== undefined) {
+            valor = Number(obj.valor);
+          }
+        }
+
+        if (!dezenas) continue;
+
         await db.bilhete.create({
           data: {
             userId: transacao.userId,
             transacaoId: transacao.id,
-            dezenas: typeof b === "string" ? b : String(b.dezenas),
-            valor:
-              typeof b === "object" && b.valor
-                ? Number(b.valor)
-                : Number(transacao.valor) / bilhetes.length,
+            dezenas,
+            valor,
             pago: true,
             status: "ATIVO",
             sorteioData: getNextWednesday(),
