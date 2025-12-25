@@ -114,7 +114,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     // =========================================
-    // 💰 DEPÓSITO EM CARTEIRA
+    // 💰 DEPÓSITO EM CARTEIRA (MANTIDO)
     // =========================================
     if (metadata.tipo === "deposito") {
       await prisma.wallet.updateMany({
@@ -135,15 +135,34 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================================
-    // 🚫 BILHETES NÃO SÃO CRIADOS NO WEBHOOK
+    // 🎟️ CRIAÇÃO DE BILHETES (CORREÇÃO AQUI)
     // =========================================
-    // Aqui o webhook APENAS confirma o pagamento.
-    // A criação de bilhetes deve ocorrer SOMENTE
-    // após o fechamento da página de pagamento (front).
+    const bilhetes = Array.isArray(metadata.bilhetes)
+      ? metadata.bilhetes
+      : [];
 
-    await prisma.transacao.update({
-      where: { id: transacao.id },
-      data: { status: "paid" },
+    await prisma.$transaction(async (db) => {
+      await db.transacao.update({
+        where: { id: transacao.id },
+        data: { status: "paid" },
+      });
+
+      for (const b of bilhetes) {
+        await db.bilhete.create({
+          data: {
+            userId: transacao.userId,
+            transacaoId: transacao.id,
+            dezenas: typeof b === "string" ? b : String(b.dezenas),
+            valor:
+              typeof b === "object" && b.valor
+                ? Number(b.valor)
+                : Number(transacao.valor) / bilhetes.length,
+            pago: true,
+            status: "ATIVO",
+            sorteioData: getNextWednesday(),
+          },
+        });
+      }
     });
 
     return res.status(200).send("ok");
