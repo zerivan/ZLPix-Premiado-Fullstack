@@ -19,6 +19,16 @@ type AppAppearance = {
   secondaryColor: string;
   accentColor: string;
   backgroundColor: string;
+
+  textColor: string;
+  textSecondaryColor: string;
+
+  buttonColor: string;
+  buttonTextColor: string;
+  buttonHoverColor: string;
+
+  borderColor: string;
+
   themeMode: "light" | "dark";
   fontPrimary: string;
   fontHeading: string;
@@ -29,6 +39,16 @@ const DEFAULT_APPEARANCE: AppAppearance = {
   secondaryColor: "#6366f1",
   accentColor: "#f59e0b",
   backgroundColor: "#ffffff",
+
+  textColor: "#111827",
+  textSecondaryColor: "#6b7280",
+
+  buttonColor: "#4f46e5",
+  buttonTextColor: "#ffffff",
+  buttonHoverColor: "#4338ca",
+
+  borderColor: "#e5e7eb",
+
   themeMode: "light",
   fontPrimary: "Inter",
   fontHeading: "Inter",
@@ -39,9 +59,6 @@ export default function AparenciaControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  // =========================
-  // PREVIEW AO VIVO
-  // =========================
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
 
@@ -50,6 +67,15 @@ export default function AparenciaControl() {
     root.style.setProperty("--color-accent", data.accentColor);
     root.style.setProperty("--color-background", data.backgroundColor);
 
+    root.style.setProperty("--color-text", data.textColor);
+    root.style.setProperty("--color-text-secondary", data.textSecondaryColor);
+
+    root.style.setProperty("--color-button", data.buttonColor);
+    root.style.setProperty("--color-button-text", data.buttonTextColor);
+    root.style.setProperty("--color-button-hover", data.buttonHoverColor);
+
+    root.style.setProperty("--color-border", data.borderColor);
+
     document.body.style.fontFamily = data.fontPrimary;
 
     data.themeMode === "dark"
@@ -57,9 +83,6 @@ export default function AparenciaControl() {
       : root.classList.remove("dark");
   }
 
-  // =========================
-  // LOAD
-  // =========================
   async function loadAppearance() {
     setLoading(true);
     setStatus(null);
@@ -75,8 +98,7 @@ export default function AparenciaControl() {
         applyPreview(DEFAULT_APPEARANCE);
         setStatus("Aparência padrão carregada.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -85,9 +107,6 @@ export default function AparenciaControl() {
     }
   }
 
-  // =========================
-  // SAVE
-  // =========================
   async function saveAppearance() {
     if (!appearance) return;
 
@@ -97,8 +116,7 @@ export default function AparenciaControl() {
     try {
       await adminApi.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
-    } catch (error) {
-      console.error(error);
+    } catch {
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
@@ -117,24 +135,31 @@ export default function AparenciaControl() {
     );
   }
 
+  const colorFields: [string, keyof AppAppearance][] = [
+    ["Cor Primária", "primaryColor"],
+    ["Cor Secundária", "secondaryColor"],
+    ["Cor de Destaque", "accentColor"],
+    ["Cor de Fundo", "backgroundColor"],
+    ["Texto Principal", "textColor"],
+    ["Texto Secundário", "textSecondaryColor"],
+    ["Botão", "buttonColor"],
+    ["Texto do Botão", "buttonTextColor"],
+    ["Hover do Botão", "buttonHoverColor"],
+    ["Bordas / Inputs", "borderColor"],
+  ];
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Aparência do Aplicativo</h2>
 
       {status && <div className="text-sm text-gray-600">{status}</div>}
 
-      {/* CORES */}
-      {[
-        ["Cor Primária", "primaryColor"],
-        ["Cor Secundária", "secondaryColor"],
-        ["Cor de Destaque", "accentColor"],
-        ["Cor de Fundo", "backgroundColor"],
-      ].map(([label, key]) => (
+      {colorFields.map(([label, key]) => (
         <div key={key} className="space-y-1">
           <label className="text-sm font-medium">{label}</label>
           <input
             type="color"
-            value={appearance[key as keyof AppAppearance] as string}
+            value={appearance[key] as string}
             onChange={(e) => {
               const v = { ...appearance, [key]: e.target.value };
               setAppearance(v);
@@ -144,7 +169,6 @@ export default function AparenciaControl() {
         </div>
       ))}
 
-      {/* TEMA */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Modo de Tema</label>
         <select
@@ -164,7 +188,6 @@ export default function AparenciaControl() {
         </select>
       </div>
 
-      {/* FONTES */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte principal</label>
         <select
