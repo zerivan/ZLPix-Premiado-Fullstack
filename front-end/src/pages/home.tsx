@@ -47,9 +47,7 @@ export default function Home() {
 
         if (res.data?.ok && res.data.data) {
           setHomeTitle(res.data.data.title || homeTitle);
-          setHomeSubtitle(
-            res.data.data.subtitle || homeSubtitle
-          );
+          setHomeSubtitle(res.data.data.subtitle || homeSubtitle);
           setHomeInfoHtml(res.data.data.contentHtml || null);
         }
       } catch {
@@ -85,6 +83,14 @@ export default function Home() {
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
+
+        {/* CMS – CONTEÚDO PRINCIPAL */}
+        {homeInfoHtml && (
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+               dangerouslySetInnerHTML={{ __html: homeInfoHtml }}
+          />
+        )}
+
         {/* CARD PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
           <p className="text-yellow-300 text-sm mb-1">
@@ -122,14 +128,6 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* TEXTO FIXO */}
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed">
-          Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
-          Se suas dezenas aparecerem em{" "}
-          <strong>qualquer uma das centenas sorteadas</strong>,
-          seu bilhete é premiado!
-        </div>
-
         {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
           <button
@@ -149,9 +147,7 @@ export default function Home() {
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full text-left text-sm"
               >
                 {homeInfoHtml ? (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: homeInfoHtml }}
-                  />
+                  <div dangerouslySetInnerHTML={{ __html: homeInfoHtml }} />
                 ) : (
                   <p>Conteúdo explicativo não configurado ainda.</p>
                 )}
