@@ -5,19 +5,22 @@ const router = Router();
 
 /**
  * =====================================================
- * ADMIN — GANHADORES (BASEADO EM BILHETES PAGOS)
+ * ADMIN — GANHADORES (APENAS BILHETES PREMIADOS)
  * =====================================================
- * Lê DIRETO do banco:
- * bilhete + users + transacao
+ * REGRA:
+ * - Só exibe bilhetes com status = 'PREMIADO'
+ * - Não calcula prêmio
+ * - Não inventa ganhador
+ * - Apenas ESPELHA o banco
  */
 router.get("/", async (_req, res) => {
   try {
-    const bilhetesPagos = await prisma.bilhete.findMany({
+    const bilhetesPremiados = await prisma.bilhete.findMany({
       where: {
-        pago: true,
+        status: "PREMIADO",
       },
       orderBy: {
-        createdAt: "desc",
+        apuradoem: "desc",
       },
       include: {
         user: {
@@ -30,23 +33,24 @@ router.get("/", async (_req, res) => {
           select: {
             id: true,
             status: true,
-            valor: true,
           },
         },
       },
     });
 
-    const ganhadores = bilhetesPagos.map((b) => ({
+    const ganhadores = bilhetesPremiados.map((b) => ({
       userId: b.user.id,
       nome: b.user.name,
       dezenas: b.dezenas,
-      premio: b.valor, // provisório (valor do bilhete)
+      premio: Number(b.premiovalor || 0),
+      resultadoFederal: b.resultadofederal,
+      apuradoEm: b.apuradoem,
       transacaoId: b.transacao?.id,
-      statusPagamento: b.transacao?.status,
     }));
 
     return res.json({
       ok: true,
+      total: ganhadores.length,
       data: ganhadores,
     });
   } catch (error) {
