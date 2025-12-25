@@ -58,7 +58,7 @@ export default function AparenciaControl() {
   }
 
   // =========================
-  // LOAD (ADMIN API)
+  // LOAD
   // =========================
   async function loadAppearance() {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function AparenciaControl() {
         setStatus("Aparência padrão carregada.");
       }
     } catch (error) {
-      console.error("Erro ao carregar aparência:", error);
+      console.error(error);
       setAppearance(DEFAULT_APPEARANCE);
       applyPreview(DEFAULT_APPEARANCE);
       setStatus("Erro ao carregar aparência. Usando padrão.");
@@ -86,7 +86,7 @@ export default function AparenciaControl() {
   }
 
   // =========================
-  // SAVE (ADMIN API)
+  // SAVE
   // =========================
   async function saveAppearance() {
     if (!appearance) return;
@@ -98,7 +98,7 @@ export default function AparenciaControl() {
       await adminApi.post("/api/admin/cms/app-appearance", appearance);
       setStatus("Aparência salva com sucesso.");
     } catch (error) {
-      console.error("Erro ao salvar aparência:", error);
+      console.error(error);
       setStatus("Erro ao salvar aparência.");
     } finally {
       setLoading(false);
@@ -121,10 +121,50 @@ export default function AparenciaControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Aparência do Aplicativo</h2>
 
-      {status && (
-        <div className="text-sm text-gray-600">{status}</div>
-      )}
+      {status && <div className="text-sm text-gray-600">{status}</div>}
 
+      {/* CORES */}
+      {[
+        ["Cor Primária", "primaryColor"],
+        ["Cor Secundária", "secondaryColor"],
+        ["Cor de Destaque", "accentColor"],
+        ["Cor de Fundo", "backgroundColor"],
+      ].map(([label, key]) => (
+        <div key={key} className="space-y-1">
+          <label className="text-sm font-medium">{label}</label>
+          <input
+            type="color"
+            value={appearance[key as keyof AppAppearance] as string}
+            onChange={(e) => {
+              const v = { ...appearance, [key]: e.target.value };
+              setAppearance(v);
+              applyPreview(v);
+            }}
+          />
+        </div>
+      ))}
+
+      {/* TEMA */}
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Modo de Tema</label>
+        <select
+          className="border p-2 w-full"
+          value={appearance.themeMode}
+          onChange={(e) => {
+            const v = {
+              ...appearance,
+              themeMode: e.target.value as "light" | "dark",
+            };
+            setAppearance(v);
+            applyPreview(v);
+          }}
+        >
+          <option value="light">Claro</option>
+          <option value="dark">Escuro</option>
+        </select>
+      </div>
+
+      {/* FONTES */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Fonte principal</label>
         <select
