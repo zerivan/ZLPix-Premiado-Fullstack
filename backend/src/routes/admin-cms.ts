@@ -5,25 +5,42 @@ const router = Router();
 
 /**
  * =====================================================
- * CMS — LISTAR TODO CONTEÚDO (PAINEL ADMIN)
+ * ÁREAS FIXAS DO CMS (APP INTEIRO)
+ * =====================================================
+ */
+const CMS_AREAS = [
+  { key: "home", title: "Página Inicial" },
+  { key: "resultado", title: "Resultados" },
+  { key: "ajuda", title: "Ajuda" },
+  { key: "termos", title: "Termos de Uso" },
+  { key: "pix", title: "Informações PIX" },
+  { key: "perfil", title: "Perfil do Usuário" },
+  { key: "carteira", title: "Carteira" },
+];
+
+/**
+ * =====================================================
+ * CMS — LISTAR TODAS AS ÁREAS (PAINEL ADMIN)
  * =====================================================
  */
 router.get("/", async (_req, res) => {
   try {
-    const pages = await prisma.appContent.findMany({
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        key: true,
-        slug: true,
-        title: true,
+    const contents = await prisma.appContent.findMany();
+
+    const merged = CMS_AREAS.map((area) => {
+      const found = contents.find((c) => c.key === area.key);
+
+      return {
+        key: area.key,
+        title: found?.title || area.title,
         enabled: true,
-      },
+        hasContent: !!found?.contentHtml,
+      };
     });
 
     return res.json({
       ok: true,
-      data: pages,
+      data: merged,
     });
   } catch (error) {
     console.error("Erro CMS listar:", error);
@@ -36,11 +53,9 @@ router.get("/", async (_req, res) => {
 
 /**
  * =====================================================
- * CMS — CONTEÚDO (HTML / PÁGINAS)
+ * CMS — BUSCAR CONTEÚDO POR KEY
  * =====================================================
  */
-
-// GET conteúdo por key
 router.get("/content/:key", async (req, res) => {
   try {
     const { key } = req.params;
@@ -57,7 +72,11 @@ router.get("/content/:key", async (req, res) => {
             title: content.title,
             contentHtml: content.contentHtml,
           }
-        : null,
+        : {
+            key,
+            title: CMS_AREAS.find((a) => a.key === key)?.title || "",
+            contentHtml: "",
+          },
     });
   } catch (error) {
     console.error("Erro CMS content:", error);
@@ -68,15 +87,19 @@ router.get("/content/:key", async (req, res) => {
   }
 });
 
-// POST salvar conteúdo
+/**
+ * =====================================================
+ * CMS — SALVAR CONTEÚDO
+ * =====================================================
+ */
 router.post("/content", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
 
-    if (!key || !title) {
+    if (!key) {
       return res.status(400).json({
         ok: false,
-        error: "Key e title são obrigatórios",
+        error: "Key é obrigatória",
       });
     }
 
@@ -102,7 +125,7 @@ router.post("/content", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Erro CMS salvar content:", error);
+    console.error("Erro CMS salvar:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar conteúdo",
@@ -112,7 +135,7 @@ router.post("/content", async (req, res) => {
 
 /**
  * =====================================================
- * CMS — APARÊNCIA GLOBAL (ESPELHO DO FRONT)
+ * CMS — APARÊNCIA GLOBAL
  * =====================================================
  */
 
@@ -137,17 +160,11 @@ router.get("/app-appearance", async (_req, res) => {
     if (content?.contentHtml) {
       try {
         data = JSON.parse(content.contentHtml);
-      } catch {
-        data = DEFAULT_APPEARANCE;
-      }
+      } catch {}
     }
 
-    return res.json({
-      ok: true,
-      data,
-    });
+    return res.json({ ok: true, data });
   } catch (error) {
-    console.error("Erro CMS aparência:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar aparência",
@@ -157,10 +174,7 @@ router.get("/app-appearance", async (_req, res) => {
 
 router.post("/app-appearance", async (req, res) => {
   try {
-    const payload = {
-      ...DEFAULT_APPEARANCE,
-      ...req.body,
-    };
+    const payload = { ...DEFAULT_APPEARANCE, ...req.body };
 
     await prisma.appContent.upsert({
       where: { key: "app_appearance" },
@@ -175,12 +189,8 @@ router.post("/app-appearance", async (req, res) => {
       },
     });
 
-    return res.json({
-      ok: true,
-      data: payload,
-    });
+    return res.json({ ok: true, data: payload });
   } catch (error) {
-    console.error("Erro CMS salvar aparência:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar aparência",
