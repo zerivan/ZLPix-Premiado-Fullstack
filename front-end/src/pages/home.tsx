@@ -22,17 +22,11 @@ export default function Home() {
       try {
         const res = await api.get("/api/admin/cms/content/home");
 
-        // ✅ backend retorna ARRAY
-        if (res.data?.ok && Array.isArray(res.data.data)) {
-          const homeContent = res.data.data.find(
-            (item: any) => item.key === "home"
-          );
-
-          if (homeContent?.contentHtml) {
-            setCmsHtml(homeContent.contentHtml);
-          } else {
-            setCmsHtml(null);
-          }
+        // ✅ backend retorna OBJETO
+        if (res.data?.ok && res.data.data?.contentHtml) {
+          setCmsHtml(res.data.data.contentHtml);
+        } else {
+          setCmsHtml(null);
         }
       } catch {
         setCmsHtml(null);
@@ -99,7 +93,6 @@ export default function Home() {
 
         {/* 📘 COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
-
           <button
             onClick={() => setShowInfo(!showInfo)}
             className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow-md transition-all"
@@ -123,11 +116,9 @@ export default function Home() {
               </motion.div>
             )}
           </AnimatePresence>
-
         </div>
       </main>
 
-      {/* 📱 MENU INFERIOR */}
       <NavBottom />
     </div>
   );
