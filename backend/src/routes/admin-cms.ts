@@ -9,26 +9,18 @@ const router = Router();
  * =====================================================
  */
 const CMS_AREAS = [
-  // HOME
   { key: "home_info", page: "home", title: "Home – Texto Informativo" },
   { key: "home_footer", page: "home", title: "Home – Rodapé" },
 
-  // RESULTADO
   { key: "resultado_info", page: "resultado", title: "Resultado – Informações" },
-
-  // PIX
   { key: "pix_info", page: "pix", title: "PIX – Informações" },
-
-  // PERFIL
   { key: "perfil_info", page: "perfil", title: "Perfil – Informações" },
-
-  // CARTEIRA
   { key: "carteira_info", page: "carteira", title: "Carteira – Informações" },
 ];
 
 /**
  * =====================================================
- * CMS — LISTAR TODAS AS ÁREAS (PAINEL ADMIN)
+ * CMS — LISTAR ÁREAS (ADMIN)
  * =====================================================
  */
 router.get("/", async (_req, res) => {
@@ -39,23 +31,17 @@ router.get("/", async (_req, res) => {
 
     const merged = CMS_AREAS.map((area) => {
       const found = contents.find((c) => c.key === area.key);
-
       return {
         key: area.key,
         page: area.page,
         title: found?.title || area.title,
-        enabled: true,
         hasContent: !!found?.contentHtml,
       };
     });
 
-    return res.json({ ok: true, data: merged });
-  } catch (error) {
-    console.error("Erro CMS listar:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao listar conteúdo",
-    });
+    res.json({ ok: true, data: merged });
+  } catch (e) {
+    res.status(500).json({ ok: false });
   }
 });
 
@@ -71,29 +57,21 @@ router.get("/content/:page", async (req, res) => {
     const areas = CMS_AREAS.filter((a) => a.page === page);
 
     const contents = await prisma.appContent.findMany({
-      where: {
-        key: { in: areas.map((a) => a.key) },
-        type: "content",
-      },
+      where: { key: { in: areas.map((a) => a.key) } },
     });
 
-    const result = areas.map((area) => {
-      const found = contents.find((c) => c.key === area.key);
-
+    const data = areas.map((a) => {
+      const found = contents.find((c) => c.key === a.key);
       return {
-        key: area.key,
-        title: found?.title || area.title,
+        key: a.key,
+        title: found?.title || a.title,
         contentHtml: found?.contentHtml || "",
       };
     });
 
-    return res.json({ ok: true, data: result });
-  } catch (error) {
-    console.error("Erro CMS content page:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao buscar conteúdo",
-    });
+    res.json({ ok: true, data });
+  } catch {
+    res.status(500).json({ ok: false });
   }
 });
 
@@ -106,87 +84,21 @@ router.post("/content", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
 
-    if (!key) {
-      return res.status(400).json({
-        ok: false,
-        error: "Key é obrigatória",
-      });
-    }
-
     const saved = await prisma.appContent.upsert({
       where: { key },
-      update: {
-        title,
-        contentHtml,
-        type: "content",
-      },
-      create: {
-        key,
-        title,
-        contentHtml,
-        type: "content",
-      },
+      update: { title, contentHtml, type: "content" },
+      create: { key, title, contentHtml, type: "content" },
     });
 
-    return res.json({
-      ok: true,
-      data: {
-        key: saved.key,
-        title: saved.title,
-        contentHtml: saved.contentHtml,
-      },
-    });
-  } catch (error) {
-    console.error("Erro CMS salvar:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao salvar conteúdo",
-    });
+    res.json({ ok: true, data: saved });
+  } catch {
+    res.status(500).json({ ok: false });
   }
 });
 
 /**
  * =====================================================
- * CMS — CONTEÚDO PÚBLICO (APP)
- * 👉 USADO PELO FRONT-END
- * 👉 NÃO EXIGE TOKEN
- * =====================================================
- * GET /api/admin/cms/public/home
- */
-router.get("/public/:page", async (req, res) => {
-  try {
-    const { page } = req.params;
-
-    const areas = CMS_AREAS.filter((a) => a.page === page);
-
-    const contents = await prisma.appContent.findMany({
-      where: {
-        key: { in: areas.map((a) => a.key) },
-        type: "content",
-      },
-      orderBy: { key: "asc" },
-    });
-
-    return res.json({
-      ok: true,
-      data: contents.map((c) => ({
-        key: c.key,
-        title: c.title,
-        contentHtml: c.contentHtml || "",
-      })),
-    });
-  } catch (error) {
-    console.error("Erro CMS público:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao buscar conteúdo público",
-    });
-  }
-});
-
-/**
- * =====================================================
- * CMS — APARÊNCIA GLOBAL
+ * APARÊNCIA — PADRÃO
  * =====================================================
  */
 const DEFAULT_APPEARANCE = {
@@ -199,7 +111,54 @@ const DEFAULT_APPEARANCE = {
   fontHeading: "Inter",
 };
 
+/**
+ * =====================================================
+ * APARÊNCIA — ADMIN (EDITAR)
+ * =====================================================
+ */
 router.get("/app-appearance", async (_req, res) => {
+  const content = await prisma.appContent.findUnique({
+    where: { key: "app_appearance" },
+  });
+
+  let data = DEFAULT_APPEARANCE;
+
+  if (content?.contentHtml) {
+    try {
+      data = JSON.parse(content.contentHtml);
+    } catch {}
+  }
+
+  res.json({ ok: true, data });
+});
+
+router.post("/app-appearance", async (req, res) => {
+  const payload = { ...DEFAULT_APPEARANCE, ...req.body };
+
+  await prisma.appContent.upsert({
+    where: { key: "app_appearance" },
+    update: {
+      title: "Aparência do App",
+      contentHtml: JSON.stringify(payload),
+      type: "config",
+    },
+    create: {
+      key: "app_appearance",
+      title: "Aparência do App",
+      contentHtml: JSON.stringify(payload),
+      type: "config",
+    },
+  });
+
+  res.json({ ok: true, data: payload });
+});
+
+/**
+ * =====================================================
+ * 🔓 APARÊNCIA — PÚBLICO (APP)
+ * =====================================================
+ */
+router.get("/public/app-appearance", async (_req, res) => {
   try {
     const content = await prisma.appContent.findUnique({
       where: { key: "app_appearance" },
@@ -213,40 +172,9 @@ router.get("/app-appearance", async (_req, res) => {
       } catch {}
     }
 
-    return res.json({ ok: true, data });
+    res.json({ ok: true, data });
   } catch {
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao buscar aparência",
-    });
-  }
-});
-
-router.post("/app-appearance", async (req, res) => {
-  try {
-    const payload = { ...DEFAULT_APPEARANCE, ...req.body };
-
-    await prisma.appContent.upsert({
-      where: { key: "app_appearance" },
-      update: {
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(payload),
-        type: "config",
-      },
-      create: {
-        key: "app_appearance",
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(payload),
-        type: "config",
-      },
-    });
-
-    return res.json({ ok: true, data: payload });
-  } catch {
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao salvar aparência",
-    });
+    res.status(500).json({ ok: false });
   }
 });
 
