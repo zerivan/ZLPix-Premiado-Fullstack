@@ -4,6 +4,7 @@ import axios from "axios";
 type PageItem = {
   key: string;
   title: string;
+  type: string;
 };
 
 type Conteudo = {
@@ -33,7 +34,7 @@ export default function ConteudoControl() {
     : undefined;
 
   // =========================
-  // LOAD LISTA DE PÁGINAS CMS
+  // LOAD LISTA DE CONTEÚDOS (SÓ HTML)
   // =========================
   async function loadPages() {
     try {
@@ -42,14 +43,19 @@ export default function ConteudoControl() {
       });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        setPages(res.data.data);
+        // 👉 só conteúdos HTML (ignora configs)
+        const onlyContents = res.data.data.filter(
+          (item: PageItem) => item.type === "content"
+        );
 
-        if (res.data.data.length > 0) {
-          setCmsKey(res.data.data[0].key);
+        setPages(onlyContents);
+
+        if (onlyContents.length > 0) {
+          setCmsKey(onlyContents[0].key);
         }
       }
     } catch {
-      setErro("Erro ao carregar páginas do CMS.");
+      setErro("Erro ao carregar conteúdos do CMS.");
     } finally {
       setLoading(false);
     }
@@ -141,17 +147,17 @@ export default function ConteudoControl() {
   if (pages.length === 0) {
     return (
       <div className="text-sm text-gray-500">
-        Nenhuma página CMS cadastrada no sistema.
+        Nenhum conteúdo HTML cadastrado.
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
+      <h2 className="text-lg font-semibold">Conteúdo HTML</h2>
 
       <p className="text-xs text-gray-500">
-        Edita apenas páginas de conteúdo (CMS).
+        Edita apenas conteúdos reais usados no app.
       </p>
 
       <select
