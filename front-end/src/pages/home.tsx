@@ -1,8 +1,9 @@
 // src/pages/home.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
+import { api } from "../api/client";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -10,6 +11,26 @@ export default function Home() {
 
   const premioAtual = "R$ 500";
   const dataSorteio = "04/12/2025";
+
+  // =========================
+  // CMS — HTML EDITÁVEL (HOME)
+  // =========================
+  const [cmsHtml, setCmsHtml] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadCms() {
+      try {
+        const res = await api.get("/api/admin/cms/content/home");
+        if (res.data?.ok && res.data.data?.contentHtml) {
+          setCmsHtml(res.data.data.contentHtml);
+        }
+      } catch {
+        // silencioso: se não existir conteúdo, não renderiza nada
+      }
+    }
+
+    loadCms();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
@@ -24,7 +45,15 @@ export default function Home() {
         </p>
       </header>
 
-      {/* 🔥 ÁREA DE CONTEÚDOS (CENTRALIZADA E AGRUPADA) */}
+      {/* 🧩 BLOCO CMS (HTML EDITÁVEL PELO ADM) */}
+      {cmsHtml && (
+        <div
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
+          dangerouslySetInnerHTML={{ __html: cmsHtml }}
+        />
+      )}
+
+      {/* 🔥 ÁREA DE CONTEÚDOS */}
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
 
         {/* 💎 CARD DO PRÊMIO */}
@@ -39,7 +68,7 @@ export default function Home() {
           </p>
         </div>
 
-        {/* 🎯 BOTÃO PRINCIPAL PULSANTE (AGORA FUNCIONANDO) */}
+        {/* 🎯 BOTÃO */}
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 1.8, repeat: Infinity }}
@@ -50,11 +79,11 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* 📢 INFO RÁPIDA */}
+        {/* 📢 INFO FIXA */}
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed">
           Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
-          Se suas dezenas aparecerem em
-          <strong> qualquer uma das centenas sorteadas</strong>,
+          Se suas dezenas aparecerem em{" "}
+          <strong>qualquer uma das centenas sorteadas</strong>,
           seu bilhete é premiado!
         </div>
 
@@ -77,40 +106,10 @@ export default function Home() {
                 transition={{ duration: 0.4 }}
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
               >
-                {/* 🧩 Esquema visual */}
-                <pre className="text-xs text-white/90 font-mono bg-black/20 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap w-full">
-{`┌──────────────────────────────┬──────────────────────────────┐
-│   🏆 RESULTADO OFICIAL       │        🎟️ SEU BILHETE        │
-│   (Loteria Federal)          │                              │
-├──────────────────────────────┼──────────────────────────────┤
-│ 🥇 1º Prêmio →  3️⃣2️⃣4️⃣5️⃣  │                          │
-│ 🥈 2º Prêmio →  4️⃣5️⃣6️⃣7️⃣  │                          │
-│ 🥉 3º Prêmio →  6️⃣7️⃣8️⃣9️⃣  │                          │
-│ 🎖️ 4º Prêmio →  5️⃣6️⃣5️⃣3️⃣  │                          │
-│ 🏁 5º Prêmio →  3️⃣3️⃣4️⃣5️⃣  │                          │
-│                              │   🔸 (32)                     │
-│                              │   🔸 (45)────────────🟩───────│
-│                              │   🔸 (98)                     │
-└──────────────────────────────┴──────────────────────────────┘`}
-                </pre>
-
-                {/* Explicação */}
-                <div className="text-sm space-y-2 text-white/90 leading-relaxed">
-                  <p>
-                    🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.  
-                    Se alguma delas aparecer nas <strong>centenas sorteadas</strong>,  
-                    seu bilhete é premiado!
-                  </p>
-
-                  <p>💰 O prêmio é <strong>fixo por bilhete</strong>.</p>
-
-                  <p>🔁 Se ninguém ganhar, o prêmio <strong>acumula</strong>.</p>
-
-                  <p>
-                    📅 Sorteios oficiais toda{" "}
-                    <strong>quarta-feira</strong> pela Caixa Econômica Federal.
-                  </p>
-                </div>
+                <p className="text-sm text-white/90 leading-relaxed">
+                  🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.
+                  Se alguma delas aparecer nas centenas sorteadas, seu bilhete é premiado.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
