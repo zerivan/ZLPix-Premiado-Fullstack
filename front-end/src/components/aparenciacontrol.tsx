@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adminApi } from "../api/admin";
+import axios from "axios";
 
 const GOOGLE_FONTS = [
   "Inter",
@@ -59,6 +59,18 @@ export default function AparenciaControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+
+  // 🔐 token sempre atualizado
+  function getAuthHeaders() {
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) return null;
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   function applyPreview(data: AppAppearance) {
     const root = document.documentElement;
 
@@ -87,8 +99,20 @@ export default function AparenciaControl() {
     setLoading(true);
     setStatus(null);
 
+    const headers = getAuthHeaders();
+    if (!headers) {
+      setAppearance(DEFAULT_APPEARANCE);
+      applyPreview(DEFAULT_APPEARANCE);
+      setStatus("Token de administrador ausente.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await adminApi.get("/api/admin/cms/app-appearance");
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/app-appearance`,
+        { headers }
+      );
 
       if (res.data?.ok && res.data.data) {
         setAppearance(res.data.data);
@@ -110,11 +134,21 @@ export default function AparenciaControl() {
   async function saveAppearance() {
     if (!appearance) return;
 
+    const headers = getAuthHeaders();
+    if (!headers) {
+      setStatus("Token de administrador ausente.");
+      return;
+    }
+
     setLoading(true);
     setStatus(null);
 
     try {
-      await adminApi.post("/api/admin/cms/app-appearance", appearance);
+      await axios.post(
+        `${BASE_URL}/api/admin/cms/app-appearance`,
+        appearance,
+        { headers }
+      );
       setStatus("Aparência salva com sucesso.");
     } catch {
       setStatus("Erro ao salvar aparência.");
