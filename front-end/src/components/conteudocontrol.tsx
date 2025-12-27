@@ -33,28 +33,25 @@ export default function ConteudoControl() {
     : undefined;
 
   // =========================
-  // PÁGINAS REAIS DO APP
-  // =========================
-  const REAL_PAGES = ["home"]; // hoje só a Home existe de verdade
-
-  // =========================
-  // LOAD LISTA DE PÁGINAS
+  // LOAD LISTA DE PÁGINAS CMS
   // =========================
   async function loadPages() {
-    const res = await axios.get(`${BASE_URL}/api/admin/cms`, {
-      headers,
-    });
+    try {
+      const res = await axios.get(`${BASE_URL}/api/admin/cms`, {
+        headers,
+      });
 
-    if (res.data?.ok) {
-      const filtered = res.data.data.filter((p: PageItem) =>
-        REAL_PAGES.includes(p.key)
-      );
+      if (res.data?.ok && Array.isArray(res.data.data)) {
+        setPages(res.data.data);
 
-      setPages(filtered);
-
-      if (filtered.length > 0) {
-        setCmsKey(filtered[0].key);
+        if (res.data.data.length > 0) {
+          setCmsKey(res.data.data[0].key);
+        }
       }
+    } catch {
+      setErro("Erro ao carregar páginas do CMS.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -144,7 +141,7 @@ export default function ConteudoControl() {
   if (pages.length === 0) {
     return (
       <div className="text-sm text-gray-500">
-        Nenhuma página real disponível para edição.
+        Nenhuma página CMS cadastrada no sistema.
       </div>
     );
   }
@@ -154,7 +151,7 @@ export default function ConteudoControl() {
       <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
 
       <p className="text-xs text-gray-500">
-        Edita apenas páginas que existem no aplicativo.
+        Edita apenas páginas de conteúdo (CMS).
       </p>
 
       <select
