@@ -33,6 +33,11 @@ export default function ConteudoControl() {
     : undefined;
 
   // =========================
+  // PÁGINAS REAIS DO APP
+  // =========================
+  const REAL_PAGES = ["home"]; // hoje só a Home existe de verdade
+
+  // =========================
   // LOAD LISTA DE PÁGINAS
   // =========================
   async function loadPages() {
@@ -41,9 +46,14 @@ export default function ConteudoControl() {
     });
 
     if (res.data?.ok) {
-      setPages(res.data.data);
-      if (res.data.data.length > 0) {
-        setCmsKey(res.data.data[0].key);
+      const filtered = res.data.data.filter((p: PageItem) =>
+        REAL_PAGES.includes(p.key)
+      );
+
+      setPages(filtered);
+
+      if (filtered.length > 0) {
+        setCmsKey(filtered[0].key);
       }
     }
   }
@@ -131,15 +141,22 @@ export default function ConteudoControl() {
     return <div className="text-sm text-red-600">{erro}</div>;
   }
 
+  if (pages.length === 0) {
+    return (
+      <div className="text-sm text-gray-500">
+        Nenhuma página real disponível para edição.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
 
       <p className="text-xs text-gray-500">
-        Escolha a página e edite o conteúdo exibido no aplicativo.
+        Edita apenas páginas que existem no aplicativo.
       </p>
 
-      {/* SELECT DE PÁGINAS */}
       <select
         className="w-full rounded border p-2"
         value={cmsKey}
@@ -159,7 +176,7 @@ export default function ConteudoControl() {
       <input
         type="text"
         className="w-full rounded border p-2"
-        placeholder="Título da página"
+        placeholder="Título"
         value={data.title}
         onChange={(e) =>
           setData({ ...data, title: e.target.value })
