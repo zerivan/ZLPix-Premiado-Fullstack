@@ -21,11 +21,21 @@ export default function Home() {
     async function loadCms() {
       try {
         const res = await api.get("/api/admin/cms/content/home");
-        if (res.data?.ok && res.data.data?.contentHtml) {
-          setCmsHtml(res.data.data.contentHtml);
+
+        // ✅ backend retorna ARRAY
+        if (res.data?.ok && Array.isArray(res.data.data)) {
+          const homeContent = res.data.data.find(
+            (item: any) => item.key === "home"
+          );
+
+          if (homeContent?.contentHtml) {
+            setCmsHtml(homeContent.contentHtml);
+          } else {
+            setCmsHtml(null);
+          }
         }
       } catch {
-        // silencioso: se não existir conteúdo, não renderiza nada
+        setCmsHtml(null);
       }
     }
 
