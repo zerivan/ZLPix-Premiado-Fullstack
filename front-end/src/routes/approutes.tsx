@@ -1,105 +1,155 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
-import { api } from "../api/client";
-import NavBottom from "../components/navbottom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-type CmsContent = {
-  title?: string;
-  subtitle?: string;
-  contentHtml?: string;
-};
+// 🧭 Páginas
+import Home from "../pages/home";
+import Login from "../pages/login";
+import Cadastro from "../pages/cadastro";
+import ApostaPainel from "../pages/apostapainel";
+import MeusBilhetes from "../pages/meusbilhetes";
+import Resultado from "../pages/resultado";
+import Perfil from "../pages/perfil";
+import Carteira from "../pages/carteira";
+import AdminLogin from "../pages/adminlogin";
+import RecuperarSenha from "../pages/recuperar-senha";
 
-export default function DynamicPage() {
-  const { slug } = useParams<{ slug: string }>();
+// Admin
+import AdminRoute from "../components/adminroute";
+import AdminDashboard from "../admindashboard";
 
-  const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState<CmsContent | null>(null);
-  const [notFound, setNotFound] = useState(false);
+// Auxiliares
+import Revisao from "../pages/revisao";
+import PixPagamento from "../pages/pixpagamento";
+import DynamicPage from "../pages/dynamicpage";
 
-  // 🚫 BLOQUEIO ABSOLUTO DE ROTAS ADMIN
-  if (slug?.startsWith("admin")) {
-    return <Navigate to="/admin" replace />;
-  }
+/**
+ * ============================
+ * HELPERS DE AUTH
+ * ============================
+ */
+function isUserLoggedIn() {
+  return !!localStorage.getItem("TOKEN_ZLPIX");
+}
+
+function isAdminLoggedIn() {
+  return !!localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+}
+
+function PrivateRoute({ children }: { children: JSX.Element }) {
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!slug) return;
+    setReady(true);
+  }, []);
 
-    async function loadContent() {
-      setLoading(true);
-      setNotFound(false);
+  if (!ready) return <div className="p-6">Verificando login...</div>;
 
-      try {
-        const res = await api.get(`/api/admin/cms/content/${slug}`);
+  return isUserLoggedIn() ? children : <Navigate to="/login" replace />;
+}
 
-        if (res.data?.ok && res.data.data) {
-          setContent(res.data.data);
-        } else {
-          setNotFound(true);
-        }
-      } catch (err) {
-        setNotFound(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadContent();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Carregando conteúdo...
-      </div>
-    );
-  }
-
-  if (notFound || !content) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
-        <h1 className="text-xl font-semibold mb-2">Página não encontrada</h1>
-        <p className="text-sm text-gray-500">
-          O conteúdo solicitado não existe ou ainda não foi configurado.
-        </p>
-      </div>
-    );
-  }
-
+/**
+ * ============================
+ * ROTAS
+ * ============================
+ */
+export default function AppRoutes() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-      {/* HEADER (opcional via CMS) */}
-      {(content.title || content.subtitle) && (
-        <header className="text-center py-7 border-b border-white/10 shadow-md">
-          {content.title && (
-            <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
-              {content.title}
-            </h1>
-          )}
-          {content.subtitle && (
-            <p className="text-sm text-blue-100 mt-1">
-              {content.subtitle}
-            </p>
-          )}
-        </header>
-      )}
+    <Routes>
+      {/* HOME PÚBLICA */}
+      <Route path="/" element={<Home />} />
 
-      {/* CONTEÚDO CMS */}
-      <main className="flex-1 px-6 pt-6 flex justify-center">
-        <div className="w-full max-w-3xl bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/20 text-left">
-          {content.contentHtml ? (
-            <div
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: content.contentHtml }}
-            />
+      {/* Auth usuário */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+
+      {/* Usuário logado */}
+      <Route
+        path="/home"
+        element={
+          <PrivateRoute>
+            <Home />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/aposta"
+        element={
+          <PrivateRoute>
+            <ApostaPainel />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/meus-bilhetes"
+        element={
+          <PrivateRoute>
+            <MeusBilhetes />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/resultado"
+        element={
+          <PrivateRoute>
+            <Resultado />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <PrivateRoute>
+            <Perfil />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/carteira"
+        element={
+          <PrivateRoute>
+            <Carteira />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/revisao"
+        element={
+          <PrivateRoute>
+            <Revisao />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/pagamento"
+        element={
+          <PrivateRoute>
+            <PixPagamento />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Admin */}
+      <Route path="/admin" element={<AdminLogin />} />
+
+      <Route element={<AdminRoute />}>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      </Route>
+
+      {/* CMS DINÂMICO (ISOLADO) */}
+      <Route
+        path="/p/:slug"
+        element={
+          isAdminLoggedIn() || isUserLoggedIn() ? (
+            <DynamicPage />
           ) : (
-            <p className="text-sm text-gray-300">
-              Conteúdo não configurado.
-            </p>
-          )}
-        </div>
-      </main>
+            <Navigate to="/login" replace />
+          )
+        }
+      />
 
-      <NavBottom />
-    </div>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
