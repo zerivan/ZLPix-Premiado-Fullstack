@@ -39,8 +39,7 @@ export async function seedAppContentPages() {
       update: {
         title: item.title,
         contentHtml: item.contentHtml,
-        enabled: item.enabled
-        .enabled,
+        enabled: item.enabled,
       },
       create: item,
     });
