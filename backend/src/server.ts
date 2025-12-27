@@ -16,6 +16,7 @@ import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
+import adminApuracaoRoutes from "./routes/admin-apuracao"; // ✅ ADICIONADO
 
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
@@ -43,20 +44,27 @@ app.get("/", (_req, res) => {
   });
 });
 
-// ROTAS DO SITE
+// ============================
+// ROTAS DO SITE (APP)
+// ============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 
-// ROTAS ADMIN (BANCO)
+// ============================
+// ROTAS ADMIN (PROTEGIDAS)
+// ============================
 app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
+app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes); // ✅ REGISTRADO
 
-// SEED AUTOMÁTICO (APENAS EM PRODUÇÃO / RENDER)
+// ============================
+// SEED AUTOMÁTICO (PRODUÇÃO)
+// ============================
 if (process.env.RUN_SEED === "true") {
   seedAppContentPages().catch((err) => {
     console.error("❌ Erro ao executar seed AppContent:", err);
