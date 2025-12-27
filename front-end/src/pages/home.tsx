@@ -10,40 +10,58 @@ import { api } from "../api/client";
  */
 function formatarDataBR(iso: string) {
   const d = new Date(iso);
-  d.setHours(d.getHours() - 3); // UTC → Brasil
+  d.setHours(d.getHours() - 3);
   return d.toLocaleDateString("pt-BR");
+}
+
+/**
+ * Formata valor monetário
+ */
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }
 
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
-  // ⚠️ prêmio ainda fixo (regra vem depois)
-  const premioAtual = "R$ 500";
-
-  // ✅ data dinâmica
+  // =========================
+  // PRÊMIO DINÂMICO
+  // =========================
+  const [premioAtual, setPremioAtual] = useState<number | null>(null);
   const [dataSorteio, setDataSorteio] = useState<string>("");
 
   // =========================
-  // CMS — HTML EDITÁVEL (HOME)
+  // CMS — HTML EDITÁVEL
   // =========================
   const [cmsHtml, setCmsHtml] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 DATA DO SORTEIO (backend oficial)
-        const federal = await api.get("/api/federal");
-        if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          setDataSorteio(
-            formatarDataBR(federal.data.data.proximoSorteio)
-          );
+        /**
+         * 🔹 PRÊMIO ATUAL (backend oficial)
+         */
+        const premioRes = await api.get("/api/admin/apuracao/premio-atual");
+        if (premioRes.data?.ok) {
+          setPremioAtual(premioRes.data.data.premioAtual);
+
+          if (premioRes.data.data.proximoSorteio) {
+            setDataSorteio(
+              formatarDataBR(premioRes.data.data.proximoSorteio)
+            );
+          }
         }
 
-        // 🔹 HTML DA HOME (CMS)
-        const cms = await api.get("/api/admin/cms/content/home");
-        if (cms.data?.ok && cms.data.data?.contentHtml) {
-          setCmsHtml(cms.data.data.contentHtml);
+        /**
+         * 🔹 HTML DA HOME (CMS)
+         */
+        const cmsRes = await api.get("/api/admin/cms/content/home");
+        if (cmsRes.data?.ok && cmsRes.data.data?.contentHtml) {
+          setCmsHtml(cmsRes.data.data.contentHtml);
         }
       } catch {
         // silencioso — Home não quebra
@@ -55,7 +73,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
-
       {/* 🏆 Cabeçalho */}
       <header className="text-center py-7 border-b border-white/10 shadow-md">
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
@@ -75,7 +92,6 @@ export default function Home() {
       )}
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
-
         {/* 💎 CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
           <p className="text-yellow-300 text-sm mb-1">
@@ -83,7 +99,9 @@ export default function Home() {
           </p>
 
           <h2 className="text-4xl font-extrabold drop-shadow-sm">
-            {premioAtual}
+            {premioAtual !== null
+              ? formatarMoeda(premioAtual)
+              : "Carregando..."}
           </h2>
 
           {dataSorteio && (
