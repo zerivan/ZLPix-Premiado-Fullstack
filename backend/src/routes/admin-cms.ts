@@ -5,17 +5,25 @@ const router = Router();
 
 /**
  * =====================================================
- * ÁREAS FIXAS DO CMS (APP INTEIRO)
+ * ÁREAS REAIS DO APP (HTML POR PÁGINA)
  * =====================================================
  */
 const CMS_AREAS = [
-  { key: "home", title: "Página Inicial" },
-  { key: "resultado", title: "Resultados" },
-  { key: "ajuda", title: "Ajuda" },
-  { key: "termos", title: "Termos de Uso" },
-  { key: "pix", title: "Informações PIX" },
-  { key: "perfil", title: "Perfil do Usuário" },
-  { key: "carteira", title: "Carteira" },
+  // HOME
+  { key: "home_info", page: "home", title: "Home – Texto Informativo" },
+  { key: "home_footer", page: "home", title: "Home – Rodapé" },
+
+  // RESULTADO
+  { key: "resultado_info", page: "resultado", title: "Resultado – Informações" },
+
+  // PIX
+  { key: "pix_info", page: "pix", title: "PIX – Informações" },
+
+  // PERFIL
+  { key: "perfil_info", page: "perfil", title: "Perfil – Informações" },
+
+  // CARTEIRA
+  { key: "carteira_info", page: "carteira", title: "Carteira – Informações" },
 ];
 
 /**
@@ -25,13 +33,16 @@ const CMS_AREAS = [
  */
 router.get("/", async (_req, res) => {
   try {
-    const contents = await prisma.appContent.findMany();
+    const contents = await prisma.appContent.findMany({
+      where: { type: "content" },
+    });
 
     const merged = CMS_AREAS.map((area) => {
       const found = contents.find((c) => c.key === area.key);
 
       return {
         key: area.key,
+        page: area.page,
         title: found?.title || area.title,
         enabled: true,
         hasContent: !!found?.contentHtml,
@@ -53,33 +64,39 @@ router.get("/", async (_req, res) => {
 
 /**
  * =====================================================
- * CMS — BUSCAR CONTEÚDO POR KEY
+ * CMS — BUSCAR TODAS AS ÁREAS DE UMA PÁGINA
+ * Ex: /cms/content/home
  * =====================================================
  */
-router.get("/content/:key", async (req, res) => {
+router.get("/content/:page", async (req, res) => {
   try {
-    const { key } = req.params;
+    const { page } = req.params;
 
-    const content = await prisma.appContent.findUnique({
-      where: { key },
+    const areas = CMS_AREAS.filter((a) => a.page === page);
+
+    const contents = await prisma.appContent.findMany({
+      where: {
+        key: { in: areas.map((a) => a.key) },
+        type: "content",
+      },
+    });
+
+    const result = areas.map((area) => {
+      const found = contents.find((c) => c.key === area.key);
+
+      return {
+        key: area.key,
+        title: found?.title || area.title,
+        contentHtml: found?.contentHtml || "",
+      };
     });
 
     return res.json({
       ok: true,
-      data: content
-        ? {
-            key: content.key,
-            title: content.title,
-            contentHtml: content.contentHtml,
-          }
-        : {
-            key,
-            title: CMS_AREAS.find((a) => a.key === key)?.title || "",
-            contentHtml: "",
-          },
+      data: result,
     });
   } catch (error) {
-    console.error("Erro CMS content:", error);
+    console.error("Erro CMS content page:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar conteúdo",
@@ -89,7 +106,7 @@ router.get("/content/:key", async (req, res) => {
 
 /**
  * =====================================================
- * CMS — SALVAR CONTEÚDO
+ * CMS — SALVAR CONTEÚDO (ÁREA)
  * =====================================================
  */
 router.post("/content", async (req, res) => {
@@ -108,11 +125,13 @@ router.post("/content", async (req, res) => {
       update: {
         title,
         contentHtml,
+        type: "content",
       },
       create: {
         key,
         title,
         contentHtml,
+        type: "content",
       },
     });
 
@@ -138,7 +157,6 @@ router.post("/content", async (req, res) => {
  * CMS — APARÊNCIA GLOBAL
  * =====================================================
  */
-
 const DEFAULT_APPEARANCE = {
   primaryColor: "#4f46e5",
   secondaryColor: "#6366f1",
@@ -164,7 +182,7 @@ router.get("/app-appearance", async (_req, res) => {
     }
 
     return res.json({ ok: true, data });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar aparência",
@@ -181,16 +199,18 @@ router.post("/app-appearance", async (req, res) => {
       update: {
         title: "Aparência do App",
         contentHtml: JSON.stringify(payload),
+        type: "config",
       },
       create: {
         key: "app_appearance",
         title: "Aparência do App",
         contentHtml: JSON.stringify(payload),
+        type: "config",
       },
     });
 
     return res.json({ ok: true, data: payload });
-  } catch (error) {
+  } catch {
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar aparência",
