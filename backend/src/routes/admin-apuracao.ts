@@ -25,6 +25,37 @@ function proximaQuarta(): Date {
 
 /**
  * =====================================================
+ * API — PRÊMIO ATUAL (HOME / APP)
+ * =====================================================
+ */
+router.get("/premio-atual", async (_req, res) => {
+  try {
+    const premioRow = await prisma.appContent.findUnique({
+      where: { key: "premio_atual" },
+    });
+
+    const premioAtual = premioRow
+      ? Number(premioRow.contentHtml)
+      : PREMIO_BASE;
+
+    const proximoSorteio = proximaQuarta();
+
+    return res.json({
+      ok: true,
+      data: {
+        premioAtual,
+        proximoSorteio: proximoSorteio.toISOString(),
+        timestampProximoSorteio: proximoSorteio.getTime(),
+      },
+    });
+  } catch (error) {
+    console.error("Erro prêmio atual:", error);
+    return res.status(500).json({ ok: false });
+  }
+});
+
+/**
+ * =====================================================
  * ADMIN — APURAR SORTEIO
  * =====================================================
  * - cruza Federal x Bilhetes
@@ -34,21 +65,20 @@ function proximaQuarta(): Date {
  */
 router.post("/apurar", async (req, res) => {
   try {
-    const { premiosFederal } = req.body; // array string[] ex: ["32456","98765",...]
+    const { premiosFederal } = req.body; // string[]
 
-    if (!Array.isArray(premiosFederal) || premiosFederal.length < 1) {
+    if (!Array.isArray(premiosFederal) || premiosFederal.length === 0) {
       return res.status(400).json({ error: "Resultado da Federal inválido." });
     }
 
     const dezenasPremiadas = new Set<string>();
 
-    // pega dezenas iniciais e finais das centenas
+    // dezenas iniciais e finais
     premiosFederal.forEach((num) => {
       dezenasPremiadas.add(num.slice(0, 2));
       dezenasPremiadas.add(num.slice(-2));
     });
 
-    // bilhetes ativos do sorteio atual
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         pago: true,
@@ -59,29 +89,22 @@ router.post("/apurar", async (req, res) => {
       },
     });
 
-    let ganhadores: typeof bilhetes = [];
+    const ganhadores = bilhetes.filter((b) =>
+      b.dezenas.split(",").some((d) => dezenasPremiadas.has(d))
+    );
 
-    for (const b of bilhetes) {
-      const dezenas = b.dezenas.split(",");
-
-      const ganhou = dezenas.some((d) => dezenasPremiadas.has(d));
-
-      if (ganhou) {
-        ganhadores.push(b);
-      }
-    }
-
-    // buscar prêmio atual salvo (usa AppContent)
-    const premioAtualRow = await prisma.appContent.findUnique({
+    const premioRow = await prisma.appContent.findUnique({
       where: { key: "premio_atual" },
     });
 
-    let premioAtual = premioAtualRow
-      ? Number(premioAtualRow.contentHtml)
+    let premioAtual = premioRow
+      ? Number(premioRow.contentHtml)
       : PREMIO_BASE;
 
+    /**
+     * 🔁 SEM GANHADORES → ACUMULA
+     */
     if (ganhadores.length === 0) {
-      // 🔁 ACUMULA
       premioAtual += PREMIO_BASE;
 
       await prisma.appContent.upsert({
@@ -101,7 +124,9 @@ router.post("/apurar", async (req, res) => {
       });
     }
 
-    // 💰 HOUVE GANHADORES
+    /**
+     * 💰 COM GANHADORES → DIVIDE
+     */
     const valorPorBilhete = premioAtual / ganhadores.length;
 
     for (const b of ganhadores) {
@@ -116,7 +141,9 @@ router.post("/apurar", async (req, res) => {
       });
     }
 
-    // 🔄 RESETAR PRÊMIO
+    /**
+     * 🔄 RESETAR PRÊMIO
+     */
     await prisma.appContent.upsert({
       where: { key: "premio_atual" },
       update: { contentHtml: String(PREMIO_BASE) },
