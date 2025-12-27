@@ -26,17 +26,29 @@ export default function ConteudoControl() {
   const [status, setStatus] = useState<string | null>(null);
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
-  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
-  const headers = token
-    ? { Authorization: `Bearer ${token}` }
-    : undefined;
+  // 🔐 SEMPRE buscar o token na hora da requisição
+  function getAuthHeaders() {
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) return null;
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
 
   // =========================
-  // LOAD PÁGINAS (HOME, RESULTADO, ETC)
+  // LOAD PÁGINAS
   // =========================
   async function loadPages() {
     try {
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setErro("Token de administrador ausente.");
+        setLoading(false);
+        return;
+      }
+
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, {
         headers,
       });
@@ -50,17 +62,25 @@ export default function ConteudoControl() {
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
+    } finally {
+      setLoading(false);
     }
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS
   // =========================
   async function loadAreas(page: string) {
     try {
       setLoading(true);
       setErro(null);
       setStatus(null);
+
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setErro("Token de administrador ausente.");
+        return;
+      }
 
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/content/${page}`,
@@ -91,6 +111,12 @@ export default function ConteudoControl() {
       setSalvando(true);
       setErro(null);
       setStatus(null);
+
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setErro("Token de administrador ausente.");
+        return;
+      }
 
       await axios.post(
         `${BASE_URL}/api/admin/cms/content`,
@@ -140,7 +166,6 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      {/* SELECIONAR PÁGINA */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
@@ -153,7 +178,6 @@ export default function ConteudoControl() {
         ))}
       </select>
 
-      {/* SELECIONAR ÁREA */}
       {areas.length > 0 && (
         <select
           className="w-full rounded border p-2"
