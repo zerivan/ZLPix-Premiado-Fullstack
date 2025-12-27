@@ -2,30 +2,34 @@ import { prisma } from "../lib/prisma";
 
 export async function seedAppContentPages() {
   const contents = [
-    // =========================
-    // HOME — CONTEÚDO EDITÁVEL
-    // =========================
     {
-      key: "home_html",
+      key: "home_info",
       type: "content",
-      title: "Home — Conteúdo HTML",
-      contentHtml: "", // começa vazio, o ADM edita
+      slug: "home",
+      title: "Home – Texto Informativo",
+      contentHtml: "", // ← ADM edita
+      enabled: true,
+    },
+    {
+      key: "home_footer",
+      type: "content",
+      slug: "home",
+      title: "Home – Rodapé Informativo",
+      contentHtml: "", // ← ADM edita
       enabled: true,
     },
 
-    // =========================
-    // APARÊNCIA GLOBAL DO APP
-    // =========================
+    // 🎨 aparência (já funciona)
     {
       key: "app_appearance",
       type: "config",
+      slug: "app-appearance",
       title: "Aparência do App",
       contentHtml: JSON.stringify({
-        primaryColor: "#4f46e5",
-        secondaryColor: "#6366f1",
-        accentColor: "#f59e0b",
-        backgroundColor: "#ffffff",
-        themeMode: "light",
+        primaryColor: "#facc15",
+        secondaryColor: "#16a34a",
+        backgroundGradient:
+          "from-blue-900 via-blue-800 to-green-800",
         fontPrimary: "Inter",
         fontHeading: "Inter",
       }),
