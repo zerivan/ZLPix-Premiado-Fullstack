@@ -8,7 +8,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
-  const premioAtual = "R$ 25.000,00";
+  const premioAtual = "R$ 500";
   const dataSorteio = "04/12/2025";
 
   return (
