@@ -49,10 +49,7 @@ router.get("/", async (_req, res) => {
       };
     });
 
-    return res.json({
-      ok: true,
-      data: merged,
-    });
+    return res.json({ ok: true, data: merged });
   } catch (error) {
     console.error("Erro CMS listar:", error);
     return res.status(500).json({
@@ -64,8 +61,7 @@ router.get("/", async (_req, res) => {
 
 /**
  * =====================================================
- * CMS — BUSCAR TODAS AS ÁREAS DE UMA PÁGINA
- * Ex: /cms/content/home
+ * CMS — BUSCAR ÁREAS DE UMA PÁGINA (ADMIN)
  * =====================================================
  */
 router.get("/content/:page", async (req, res) => {
@@ -91,10 +87,7 @@ router.get("/content/:page", async (req, res) => {
       };
     });
 
-    return res.json({
-      ok: true,
-      data: result,
-    });
+    return res.json({ ok: true, data: result });
   } catch (error) {
     console.error("Erro CMS content page:", error);
     return res.status(500).json({
@@ -106,7 +99,7 @@ router.get("/content/:page", async (req, res) => {
 
 /**
  * =====================================================
- * CMS — SALVAR CONTEÚDO (ÁREA)
+ * CMS — SALVAR CONTEÚDO (ADMIN)
  * =====================================================
  */
 router.post("/content", async (req, res) => {
@@ -148,6 +141,45 @@ router.post("/content", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar conteúdo",
+    });
+  }
+});
+
+/**
+ * =====================================================
+ * CMS — CONTEÚDO PÚBLICO (APP)
+ * 👉 USADO PELO FRONT-END
+ * 👉 NÃO EXIGE TOKEN
+ * =====================================================
+ * GET /api/admin/cms/public/home
+ */
+router.get("/public/:page", async (req, res) => {
+  try {
+    const { page } = req.params;
+
+    const areas = CMS_AREAS.filter((a) => a.page === page);
+
+    const contents = await prisma.appContent.findMany({
+      where: {
+        key: { in: areas.map((a) => a.key) },
+        type: "content",
+      },
+      orderBy: { key: "asc" },
+    });
+
+    return res.json({
+      ok: true,
+      data: contents.map((c) => ({
+        key: c.key,
+        title: c.title,
+        contentHtml: c.contentHtml || "",
+      })),
+    });
+  } catch (error) {
+    console.error("Erro CMS público:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao buscar conteúdo público",
     });
   }
 });
