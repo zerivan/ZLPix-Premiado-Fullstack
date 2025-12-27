@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+type PageItem = {
+  key: string;
+  title: string;
+};
+
 type Conteudo = {
   title: string;
   contentHtml: string;
 };
 
 export default function ConteudoControl() {
-  const CMS_KEY = "home";
+  const [pages, setPages] = useState<PageItem[]>([]);
+  const [cmsKey, setCmsKey] = useState<string>("");
 
   const [data, setData] = useState<Conteudo>({
     title: "",
@@ -19,24 +25,41 @@ export default function ConteudoControl() {
   const [status, setStatus] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
+  const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+  const headers = token
+    ? { Authorization: `Bearer ${token}` }
+    : undefined;
+
   // =========================
-  // LOAD
+  // LOAD LISTA DE PÁGINAS
   // =========================
-  async function loadContent() {
+  async function loadPages() {
+    const res = await axios.get(`${BASE_URL}/api/admin/cms`, {
+      headers,
+    });
+
+    if (res.data?.ok) {
+      setPages(res.data.data);
+      if (res.data.data.length > 0) {
+        setCmsKey(res.data.data[0].key);
+      }
+    }
+  }
+
+  // =========================
+  // LOAD CONTEÚDO
+  // =========================
+  async function loadContent(key: string) {
     try {
       setLoading(true);
       setErro(null);
       setStatus(null);
 
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
       const res = await axios.get(
-        `https://zlpix-premiado-fullstack.onrender.com/api/admin/cms/content/${CMS_KEY}`,
-        {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
-        }
+        `${BASE_URL}/api/admin/cms/content/${key}`,
+        { headers }
       );
 
       if (res.data?.ok && res.data.data) {
@@ -45,11 +68,11 @@ export default function ConteudoControl() {
           contentHtml: res.data.data.contentHtml || "",
         });
       } else {
+        setData({ title: "", contentHtml: "" });
         setStatus("Conteúdo ainda não cadastrado.");
       }
-    } catch (e) {
-      console.error(e);
-      setErro("Erro ao carregar conteúdo do CMS.");
+    } catch {
+      setErro("Erro ao carregar conteúdo.");
     } finally {
       setLoading(false);
     }
@@ -64,34 +87,34 @@ export default function ConteudoControl() {
       setErro(null);
       setStatus(null);
 
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
       await axios.post(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/cms/content",
+        `${BASE_URL}/api/admin/cms/content`,
         {
-          key: CMS_KEY,
+          key: cmsKey,
           title: data.title,
           contentHtml: data.contentHtml,
         },
-        {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
-        }
+        { headers }
       );
 
       setStatus("Conteúdo salvo com sucesso.");
-    } catch (e) {
-      console.error(e);
+    } catch {
       setErro("Erro ao salvar conteúdo.");
     } finally {
       setSalvando(false);
     }
   }
 
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
-    loadContent();
+    loadPages();
   }, []);
+
+  useEffect(() => {
+    if (cmsKey) loadContent(cmsKey);
+  }, [cmsKey]);
 
   // =========================
   // RENDER
@@ -113,9 +136,21 @@ export default function ConteudoControl() {
       <h2 className="text-lg font-semibold">Conteúdo da Página</h2>
 
       <p className="text-xs text-gray-500">
-        Este conteúdo é exibido no aplicativo e pode ser editado diretamente
-        pelo painel administrativo.
+        Escolha a página e edite o conteúdo exibido no aplicativo.
       </p>
+
+      {/* SELECT DE PÁGINAS */}
+      <select
+        className="w-full rounded border p-2"
+        value={cmsKey}
+        onChange={(e) => setCmsKey(e.target.value)}
+      >
+        {pages.map((p) => (
+          <option key={p.key} value={p.key}>
+            {p.title || p.key}
+          </option>
+        ))}
+      </select>
 
       {status && (
         <div className="text-sm text-gray-600">{status}</div>
