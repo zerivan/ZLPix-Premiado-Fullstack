@@ -38,7 +38,7 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 Próximo sorteio (Federal)
+        // 🔹 DATA DO PRÓXIMO SORTEIO (FEDERAL)
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
           setDataSorteio(
@@ -46,8 +46,14 @@ export default function Home() {
           );
         }
 
-        // 🔹 CMS — HOME (ARRAY DE ÁREAS)
-        const cms = await api.get("/api/admin/cms/content/home");
+        // 🔹 PRÊMIO ATUAL (BACKEND)
+        const premio = await api.get("/api/admin/cms/public/premio");
+        if (premio.data?.ok && premio.data.data?.valor) {
+          setPremioAtual(`R$ ${premio.data.data.valor}`);
+        }
+
+        // 🔹 CMS — HOME (PÚBLICO)
+        const cms = await api.get("/api/admin/cms/public/home");
         if (cms.data?.ok && Array.isArray(cms.data.data)) {
           const areas: CmsArea[] = cms.data.data;
 
@@ -58,7 +64,7 @@ export default function Home() {
           setHomeFooterHtml(footer?.contentHtml || null);
         }
       } catch {
-        // silencioso
+        // Home não quebra
       }
     }
 
@@ -78,7 +84,7 @@ export default function Home() {
         </p>
       </header>
 
-      {/* CMS — TEXTO INFORMATIVO (HOME_INFO) */}
+      {/* CMS — TEXTO INFORMATIVO */}
       {homeInfoHtml && (
         <div
           className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
