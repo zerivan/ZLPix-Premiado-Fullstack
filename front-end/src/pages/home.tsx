@@ -1,4 +1,3 @@
-// src/pages/home.tsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +37,9 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 DATA DO PRÓXIMO SORTEIO (FEDERAL)
+        /**
+         * 🔹 PRÓXIMO SORTEIO (OFICIAL)
+         */
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
           setDataSorteio(
@@ -46,25 +47,35 @@ export default function Home() {
           );
         }
 
-        // 🔹 PRÊMIO ATUAL (BACKEND)
+        /**
+         * 🔹 PRÊMIO ATUAL (PÚBLICO)
+         * resposta real: { ok: true, premio: number }
+         */
         const premio = await api.get("/api/admin/cms/public/premio");
-        if (premio.data?.ok && premio.data.data?.valor) {
-          setPremioAtual(`R$ ${premio.data.data.valor}`);
+        if (premio.data?.ok && typeof premio.data.premio === "number") {
+          setPremioAtual(`R$ ${premio.data.premio}`);
         }
 
-        // 🔹 CMS — HOME (PÚBLICO)
-        const cms = await api.get("/api/admin/cms/public/home");
-        if (cms.data?.ok && Array.isArray(cms.data.data)) {
-          const areas: CmsArea[] = cms.data.data;
+        /**
+         * 🔹 CMS HOME (se existir)
+         * não quebra se ainda não tiver endpoint público
+         */
+        try {
+          const cms = await api.get("/api/admin/cms/public/home");
+          if (cms.data?.ok && Array.isArray(cms.data.data)) {
+            const areas: CmsArea[] = cms.data.data;
 
-          const info = areas.find((a) => a.key === "home_info");
-          const footer = areas.find((a) => a.key === "home_footer");
+            const info = areas.find((a) => a.key === "home_info");
+            const footer = areas.find((a) => a.key === "home_footer");
 
-          setHomeInfoHtml(info?.contentHtml || null);
-          setHomeFooterHtml(footer?.contentHtml || null);
+            setHomeInfoHtml(info?.contentHtml || null);
+            setHomeFooterHtml(footer?.contentHtml || null);
+          }
+        } catch {
+          // CMS público ainda não existe → ignora
         }
       } catch {
-        // Home não quebra
+        // Home nunca quebra
       }
     }
 
