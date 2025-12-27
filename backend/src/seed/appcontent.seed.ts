@@ -1,37 +1,24 @@
 import { prisma } from "../lib/prisma";
 
 export async function seedAppContentPages() {
-  const pages = [
+  const contents = [
+    // =========================
+    // HOME — CONTEÚDO EDITÁVEL
+    // =========================
     {
-      key: "home",
-      type: "page",
-      slug: "home",
-      title: "Página Inicial",
-      contentHtml: "<h1>Bem-vindo ao ZLPix</h1>",
-      enabled: true,
-    },
-    {
-      key: "sobre",
-      type: "page",
-      slug: "sobre",
-      title: "Sobre o ZLPix",
-      contentHtml: "<p>Informações sobre a plataforma.</p>",
-      enabled: true,
-    },
-    {
-      key: "ajuda",
-      type: "page",
-      slug: "ajuda",
-      title: "Ajuda",
-      contentHtml: "<p>Central de ajuda do sistema.</p>",
+      key: "home_html",
+      type: "content",
+      title: "Home — Conteúdo HTML",
+      contentHtml: "", // começa vazio, o ADM edita
       enabled: true,
     },
 
-    // 👇 APARÊNCIA GLOBAL DO APP (ESPELHO DO FRONT)
+    // =========================
+    // APARÊNCIA GLOBAL DO APP
+    // =========================
     {
       key: "app_appearance",
       type: "config",
-      slug: "app-appearance",
       title: "Aparência do App",
       contentHtml: JSON.stringify({
         primaryColor: "#4f46e5",
@@ -46,15 +33,16 @@ export async function seedAppContentPages() {
     },
   ];
 
-  for (const page of pages) {
+  for (const item of contents) {
     await prisma.appContent.upsert({
-      where: { key: page.key },
+      where: { key: item.key },
       update: {
-        title: page.title,
-        contentHtml: page.contentHtml,
-        enabled: page.enabled,
+        title: item.title,
+        contentHtml: item.contentHtml,
+        enabled: item.enabled
+        .enabled,
       },
-      create: page,
+      create: item,
     });
   }
 }
