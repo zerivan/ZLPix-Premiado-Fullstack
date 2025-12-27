@@ -178,4 +178,32 @@ router.get("/public/app-appearance", async (_req, res) => {
   }
 });
 
+/**
+ * =====================================================
+ * 🏆 PRÊMIO ATUAL — PÚBLICO (HOME / APP)
+ * =====================================================
+ * ❗ NÃO usa adminAuth
+ * ❗ Resolve erro 401 definitivamente
+ */
+router.get("/public/premio", async (_req, res) => {
+  try {
+    const premio = await prisma.appContent.findUnique({
+      where: { key: "premio_atual" },
+    });
+
+    res.json({
+      ok: true,
+      premio: premio?.contentHtml
+        ? Number(premio.contentHtml)
+        : 500,
+    });
+  } catch (error) {
+    console.error("Erro prêmio público:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Erro ao buscar prêmio",
+    });
+  }
+});
+
 export default router;
