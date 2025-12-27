@@ -5,12 +5,24 @@ import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 
+/**
+ * Ajusta ISO UTC para data BR
+ */
+function formatarDataBR(iso: string) {
+  const d = new Date(iso);
+  d.setHours(d.getHours() - 3); // UTC → Brasil
+  return d.toLocaleDateString("pt-BR");
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
+  // ⚠️ prêmio ainda fixo (regra vem depois)
   const premioAtual = "R$ 500";
-  const dataSorteio = "04/12/2025";
+
+  // ✅ data dinâmica
+  const [dataSorteio, setDataSorteio] = useState<string>("");
 
   // =========================
   // CMS — HTML EDITÁVEL (HOME)
@@ -18,22 +30,27 @@ export default function Home() {
   const [cmsHtml, setCmsHtml] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadCms() {
+    async function loadData() {
       try {
-        const res = await api.get("/api/admin/cms/content/home");
+        // 🔹 DATA DO SORTEIO (backend oficial)
+        const federal = await api.get("/api/federal");
+        if (federal.data?.ok && federal.data.data?.proximoSorteio) {
+          setDataSorteio(
+            formatarDataBR(federal.data.data.proximoSorteio)
+          );
+        }
 
-        // ✅ backend retorna OBJETO
-        if (res.data?.ok && res.data.data?.contentHtml) {
-          setCmsHtml(res.data.data.contentHtml);
-        } else {
-          setCmsHtml(null);
+        // 🔹 HTML DA HOME (CMS)
+        const cms = await api.get("/api/admin/cms/content/home");
+        if (cms.data?.ok && cms.data.data?.contentHtml) {
+          setCmsHtml(cms.data.data.contentHtml);
         }
       } catch {
-        setCmsHtml(null);
+        // silencioso — Home não quebra
       }
     }
 
-    loadCms();
+    loadData();
   }, []);
 
   return (
@@ -49,7 +66,7 @@ export default function Home() {
         </p>
       </header>
 
-      {/* 🧩 BLOCO CMS (HTML EDITÁVEL PELO ADM) */}
+      {/* 🧩 CMS — HTML EDITÁVEL */}
       {cmsHtml && (
         <div
           className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
@@ -57,19 +74,26 @@ export default function Home() {
         />
       )}
 
-      {/* 🔥 ÁREA DE CONTEÚDOS */}
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
 
         {/* 💎 CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
-          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
+          <p className="text-yellow-300 text-sm mb-1">
+            Prêmio acumulado
+          </p>
+
           <h2 className="text-4xl font-extrabold drop-shadow-sm">
             {premioAtual}
           </h2>
-          <p className="text-sm text-blue-100 mt-2">
-            Próximo sorteio:{" "}
-            <span className="text-yellow-300 font-semibold">{dataSorteio}</span>
-          </p>
+
+          {dataSorteio && (
+            <p className="text-sm text-blue-100 mt-2">
+              Próximo sorteio:{" "}
+              <span className="text-yellow-300 font-semibold">
+                {dataSorteio}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* 🎯 BOTÃO */}
@@ -83,7 +107,7 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* 📢 INFO FIXA */}
+        {/* 📢 INFO */}
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed">
           Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
           Se suas dezenas aparecerem em{" "}
@@ -95,7 +119,7 @@ export default function Home() {
         <div className="w-full max-w-md space-y-4">
           <button
             onClick={() => setShowInfo(!showInfo)}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow-md transition-all"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow-md"
           >
             {showInfo ? "Fechar explicação" : "Como funciona o jogo 🎯"}
           </button>
@@ -111,7 +135,8 @@ export default function Home() {
               >
                 <p className="text-sm text-white/90 leading-relaxed">
                   🎯 Você concorre com <strong>3 dezenas</strong> por bilhete.
-                  Se alguma delas aparecer nas centenas sorteadas, seu bilhete é premiado.
+                  Se alguma delas aparecer nas centenas sorteadas,
+                  seu bilhete é premiado.
                 </p>
               </motion.div>
             )}
