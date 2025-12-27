@@ -1,30 +1,29 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-type PageItem = {
+type CmsArea = {
   key: string;
-  title: string;
-  type: string;
-};
-
-type Conteudo = {
   title: string;
   contentHtml: string;
 };
 
-export default function ConteudoControl() {
-  const [pages, setPages] = useState<PageItem[]>([]);
-  const [cmsKey, setCmsKey] = useState<string>("");
+type CmsPage = {
+  key: string;
+  page: string;
+  title: string;
+};
 
-  const [data, setData] = useState<Conteudo>({
-    title: "",
-    contentHtml: "",
-  });
+export default function ConteudoControl() {
+  const [pages, setPages] = useState<CmsPage[]>([]);
+  const [pageKey, setPageKey] = useState<string>("");
+
+  const [areas, setAreas] = useState<CmsArea[]>([]);
+  const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
   const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
@@ -34,7 +33,7 @@ export default function ConteudoControl() {
     : undefined;
 
   // =========================
-  // LOAD LISTA DE CONTEÚDOS (SÓ HTML)
+  // LOAD PÁGINAS (HOME, RESULTADO, ETC)
   // =========================
   async function loadPages() {
     try {
@@ -43,58 +42,51 @@ export default function ConteudoControl() {
       });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        // 👉 só conteúdos HTML (ignora configs)
-        const onlyContents = res.data.data.filter(
-          (item: PageItem) => item.type === "content"
-        );
+        setPages(res.data.data);
 
-        setPages(onlyContents);
-
-        if (onlyContents.length > 0) {
-          setCmsKey(onlyContents[0].key);
+        if (res.data.data.length > 0) {
+          setPageKey(res.data.data[0].page);
         }
       }
     } catch {
-      setErro("Erro ao carregar conteúdos do CMS.");
-    } finally {
-      setLoading(false);
+      setErro("Erro ao carregar páginas do CMS.");
     }
   }
 
   // =========================
-  // LOAD CONTEÚDO
+  // LOAD ÁREAS DA PÁGINA
   // =========================
-  async function loadContent(key: string) {
+  async function loadAreas(page: string) {
     try {
       setLoading(true);
       setErro(null);
       setStatus(null);
 
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/content/${key}`,
+        `${BASE_URL}/api/admin/cms/content/${page}`,
         { headers }
       );
 
-      if (res.data?.ok && res.data.data) {
-        setData({
-          title: res.data.data.title || "",
-          contentHtml: res.data.data.contentHtml || "",
-        });
+      if (res.data?.ok && Array.isArray(res.data.data)) {
+        setAreas(res.data.data);
+        setActiveArea(res.data.data[0] || null);
       } else {
-        setData({ title: "", contentHtml: "" });
-        setStatus("Conteúdo ainda não cadastrado.");
+        setAreas([]);
+        setActiveArea(null);
       }
     } catch {
-      setErro("Erro ao carregar conteúdo.");
+      setErro("Erro ao carregar conteúdo da página.");
     } finally {
       setLoading(false);
     }
   }
 
   // =========================
-  // SAVE
+  // SAVE ÁREA
   // =========================
   async function saveContent() {
+    if (!activeArea) return;
+
     try {
       setSalvando(true);
       setErro(null);
@@ -103,9 +95,9 @@ export default function ConteudoControl() {
       await axios.post(
         `${BASE_URL}/api/admin/cms/content`,
         {
-          key: cmsKey,
-          title: data.title,
-          contentHtml: data.contentHtml,
+          key: activeArea.key,
+          title: activeArea.title,
+          contentHtml: activeArea.contentHtml,
         },
         { headers }
       );
@@ -126,8 +118,8 @@ export default function ConteudoControl() {
   }, []);
 
   useEffect(() => {
-    if (cmsKey) loadContent(cmsKey);
-  }, [cmsKey]);
+    if (pageKey) loadAreas(pageKey);
+  }, [pageKey]);
 
   // =========================
   // RENDER
@@ -144,64 +136,78 @@ export default function ConteudoControl() {
     return <div className="text-sm text-red-600">{erro}</div>;
   }
 
-  if (pages.length === 0) {
-    return (
-      <div className="text-sm text-gray-500">
-        Nenhum conteúdo HTML cadastrado.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo HTML</h2>
+      <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      <p className="text-xs text-gray-500">
-        Edita apenas conteúdos reais usados no app.
-      </p>
-
+      {/* SELECIONAR PÁGINA */}
       <select
         className="w-full rounded border p-2"
-        value={cmsKey}
-        onChange={(e) => setCmsKey(e.target.value)}
+        value={pageKey}
+        onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.key}>
-            {p.title || p.key}
+          <option key={p.key} value={p.page}>
+            {p.title}
           </option>
         ))}
       </select>
 
-      {status && (
-        <div className="text-sm text-gray-600">{status}</div>
+      {/* SELECIONAR ÁREA */}
+      {areas.length > 0 && (
+        <select
+          className="w-full rounded border p-2"
+          value={activeArea?.key}
+          onChange={(e) =>
+            setActiveArea(
+              areas.find((a) => a.key === e.target.value) || null
+            )
+          }
+        >
+          {areas.map((a) => (
+            <option key={a.key} value={a.key}>
+              {a.title}
+            </option>
+          ))}
+        </select>
       )}
 
-      <input
-        type="text"
-        className="w-full rounded border p-2"
-        placeholder="Título"
-        value={data.title}
-        onChange={(e) =>
-          setData({ ...data, title: e.target.value })
-        }
-      />
+      {status && <div className="text-sm text-green-600">{status}</div>}
 
-      <textarea
-        className="w-full h-48 rounded border p-2 font-mono text-sm"
-        placeholder="HTML do conteúdo"
-        value={data.contentHtml}
-        onChange={(e) =>
-          setData({ ...data, contentHtml: e.target.value })
-        }
-      />
+      {activeArea && (
+        <>
+          <input
+            type="text"
+            className="w-full rounded border p-2"
+            value={activeArea.title}
+            onChange={(e) =>
+              setActiveArea({
+                ...activeArea,
+                title: e.target.value,
+              })
+            }
+          />
 
-      <button
-        onClick={saveContent}
-        disabled={salvando}
-        className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
-      >
-        {salvando ? "Salvando..." : "Salvar Conteúdo"}
-      </button>
+          <textarea
+            className="w-full h-48 rounded border p-2 font-mono text-sm"
+            value={activeArea.contentHtml}
+            onChange={(e) =>
+              setActiveArea({
+                ...activeArea,
+                contentHtml: e.target.value,
+              })
+            }
+          />
+
+          <button
+            onClick={saveContent}
+            disabled={salvando}
+            className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {salvando ? "Salvando..." : "Salvar Conteúdo"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
