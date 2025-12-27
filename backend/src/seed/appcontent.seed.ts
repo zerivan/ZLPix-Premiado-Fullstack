@@ -5,25 +5,25 @@ export async function seedAppContentPages() {
     {
       key: "home_info",
       type: "content",
-      slug: "home",
+      slug: "home_info",
       title: "Home – Texto Informativo",
-      contentHtml: "", // ← ADM edita
+      contentHtml: "",
       enabled: true,
     },
     {
       key: "home_footer",
       type: "content",
-      slug: "home",
-      title: "Home – Rodapé Informativo",
-      contentHtml: "", // ← ADM edita
+      slug: "home_footer",
+      title: "Home – Rodapé",
+      contentHtml: "",
       enabled: true,
     },
 
-    // 🎨 aparência (já funciona)
+    // 🎨 Aparência global
     {
       key: "app_appearance",
       type: "config",
-      slug: "app-appearance",
+      slug: "app_appearance",
       title: "Aparência do App",
       contentHtml: JSON.stringify({
         primaryColor: "#facc15",
