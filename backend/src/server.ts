@@ -16,7 +16,8 @@ import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
-import adminApuracaoRoutes from "./routes/admin-apuracao"; // ✅ ADICIONADO
+import adminApuracaoRoutes from "./routes/admin-apuracao";
+import adminConfiguracoesRoutes from "./routes/admin-configuracoes"; // ✅ NOVO
 
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
@@ -60,7 +61,12 @@ app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
-app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes); // ✅ REGISTRADO
+app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes);
+app.use(
+  "/api/admin/configuracoes",
+  adminAuth,
+  adminConfiguracoesRoutes
+); // ✅ REGISTRADO
 
 // ============================
 // SEED AUTOMÁTICO (PRODUÇÃO)
