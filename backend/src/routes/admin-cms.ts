@@ -39,9 +39,9 @@ router.get("/", async (_req, res) => {
       };
     });
 
-    res.json({ ok: true, data: merged });
-  } catch (e) {
-    res.status(500).json({ ok: false });
+    return res.json({ ok: true, data: merged });
+  } catch {
+    return res.status(500).json({ ok: false });
   }
 });
 
@@ -69,9 +69,9 @@ router.get("/content/:page", async (req, res) => {
       };
     });
 
-    res.json({ ok: true, data });
+    return res.json({ ok: true, data });
   } catch {
-    res.status(500).json({ ok: false });
+    return res.status(500).json({ ok: false });
   }
 });
 
@@ -90,9 +90,9 @@ router.post("/content", async (req, res) => {
       create: { key, title, contentHtml, type: "content" },
     });
 
-    res.json({ ok: true, data: saved });
+    return res.json({ ok: true, data: saved });
   } catch {
-    res.status(500).json({ ok: false });
+    return res.status(500).json({ ok: false });
   }
 });
 
@@ -113,7 +113,7 @@ const DEFAULT_APPEARANCE = {
 
 /**
  * =====================================================
- * APARÊNCIA — ADMIN (EDITAR)
+ * APARÊNCIA — ADMIN
  * =====================================================
  */
 router.get("/app-appearance", async (_req, res) => {
@@ -129,7 +129,7 @@ router.get("/app-appearance", async (_req, res) => {
     } catch {}
   }
 
-  res.json({ ok: true, data });
+  return res.json({ ok: true, data });
 });
 
 router.post("/app-appearance", async (req, res) => {
@@ -150,7 +150,7 @@ router.post("/app-appearance", async (req, res) => {
     },
   });
 
-  res.json({ ok: true, data: payload });
+  return res.json({ ok: true, data: payload });
 });
 
 /**
@@ -172,9 +172,9 @@ router.get("/public/app-appearance", async (_req, res) => {
       } catch {}
     }
 
-    res.json({ ok: true, data });
+    return res.json({ ok: true, data });
   } catch {
-    res.status(500).json({ ok: false });
+    return res.status(500).json({ ok: false });
   }
 });
 
@@ -182,24 +182,29 @@ router.get("/public/app-appearance", async (_req, res) => {
  * =====================================================
  * 🏆 PRÊMIO ATUAL — PÚBLICO (HOME / APP)
  * =====================================================
- * ❗ NÃO usa adminAuth
- * ❗ Resolve erro 401 definitivamente
+ * ✔ contrato compatível com o FRONT
+ * ✔ sem token
+ * ✔ sem 401
  */
 router.get("/public/premio", async (_req, res) => {
   try {
-    const premio = await prisma.appContent.findUnique({
+    const row = await prisma.appContent.findUnique({
       where: { key: "premio_atual" },
     });
 
-    res.json({
+    const valor = row?.contentHtml
+      ? Number(row.contentHtml)
+      : 500;
+
+    return res.json({
       ok: true,
-      premio: premio?.contentHtml
-        ? Number(premio.contentHtml)
-        : 500,
+      data: {
+        valor: isNaN(valor) ? 500 : valor,
+      },
     });
   } catch (error) {
     console.error("Erro prêmio público:", error);
-    res.status(500).json({
+    return res.status(500).json({
       ok: false,
       error: "Erro ao buscar prêmio",
     });
