@@ -7,6 +7,13 @@ type ConfiguracoesAdmin = {
   painelFinanceiro: boolean;
 };
 
+// ✅ DEFAULT SEGURO
+const DEFAULT_CONFIG: ConfiguracoesAdmin = {
+  modoManutencao: false,
+  diagnosticoIA: false,
+  painelFinanceiro: false,
+};
+
 export default function ConfiguracoesControl() {
   const [config, setConfig] = useState<ConfiguracoesAdmin | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,15 +51,19 @@ export default function ConfiguracoesControl() {
         { headers }
       );
 
-      if (res.data?.ok && res.data.data) {
-        setConfig(res.data.data);
+      if (res.data?.ok) {
+        // ✅ NORMALIZAÇÃO DEFINITIVA
+        setConfig({
+          modoManutencao: !!res.data.data?.modoManutencao,
+          diagnosticoIA: !!res.data.data?.diagnosticoIA,
+          painelFinanceiro: !!res.data.data?.painelFinanceiro,
+        });
       } else {
-        setErro("Configuração inválida retornada pelo servidor.");
-        setConfig(null);
+        setConfig(DEFAULT_CONFIG);
       }
     } catch {
+      setConfig(DEFAULT_CONFIG);
       setErro("Falha ao carregar configurações do sistema.");
-      setConfig(null);
     } finally {
       setLoading(false);
     }
@@ -89,12 +100,10 @@ export default function ConfiguracoesControl() {
   function toggle(key: keyof ConfiguracoesAdmin) {
     if (!config) return;
 
-    const atualizado = {
+    salvarConfiguracoes({
       ...config,
       [key]: !config[key],
-    };
-
-    salvarConfiguracoes(atualizado);
+    });
   }
 
   useEffect(() => {
@@ -109,7 +118,7 @@ export default function ConfiguracoesControl() {
     );
   }
 
-  if (erro) {
+  if (erro && !config) {
     return <div className="text-sm text-red-600">{erro}</div>;
   }
 
@@ -128,48 +137,39 @@ export default function ConfiguracoesControl() {
       </h2>
 
       <div className="space-y-3 text-sm">
-        {/* MODO MANUTENÇÃO */}
         <div className="flex items-center justify-between">
           <span><strong>Modo manutenção</strong></span>
           <button
             onClick={() => toggle("modoManutencao")}
             disabled={salvando}
             className={`px-3 py-1 rounded text-white ${
-              config.modoManutencao
-                ? "bg-green-600"
-                : "bg-gray-400"
+              config.modoManutencao ? "bg-green-600" : "bg-gray-400"
             }`}
           >
             {config.modoManutencao ? "ON" : "OFF"}
           </button>
         </div>
 
-        {/* DIAGNÓSTICO IA */}
         <div className="flex items-center justify-between">
           <span><strong>Diagnóstico com IA</strong></span>
           <button
             onClick={() => toggle("diagnosticoIA")}
             disabled={salvando}
             className={`px-3 py-1 rounded text-white ${
-              config.diagnosticoIA
-                ? "bg-green-600"
-                : "bg-gray-400"
+              config.diagnosticoIA ? "bg-green-600" : "bg-gray-400"
             }`}
           >
             {config.diagnosticoIA ? "ON" : "OFF"}
           </button>
         </div>
 
-        {/* PAINEL FINANCEIRO */}
         <div className="flex items-center justify-between">
           <span><strong>Painel financeiro</strong></span>
           <button
             onClick={() => toggle("painelFinanceiro")}
             disabled={salvando}
             className={`px-3 py-1 rounded text-white ${
-              config.painelFinanceiro
-                ? "bg-green-600"
-                : "bg-gray-400"
+              config.painelFinanceiro ? "bg-green-600" : "bg-gray-400"
             }`}
           >
             {config.painelFinanceiro ? "ON" : "OFF"}
