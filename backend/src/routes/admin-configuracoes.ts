@@ -7,15 +7,14 @@ const router = express.Router();
 /**
  * GET — Buscar configurações do sistema (singleton)
  */
-router.get("/", adminAuth, async (req, res) => {
+router.get("/", adminAuth, async (_req, res) => {
   try {
-    let config = await prisma.admin_configuracoes.findUnique({
+    let config = await prisma.adminConfiguracoes.findUnique({
       where: { id: 1 },
     });
 
-    // cria automaticamente se não existir
     if (!config) {
-      config = await prisma.admin_configuracoes.create({
+      config = await prisma.adminConfiguracoes.create({
         data: {
           id: 1,
           modoManutencao: false,
@@ -53,7 +52,7 @@ router.post("/", adminAuth, async (req, res) => {
       painelFinanceiro,
     } = req.body;
 
-    const updated = await prisma.admin_configuracoes.upsert({
+    const updated = await prisma.adminConfiguracoes.upsert({
       where: { id: 1 },
       update: {
         modoManutencao: Boolean(modoManutencao),
