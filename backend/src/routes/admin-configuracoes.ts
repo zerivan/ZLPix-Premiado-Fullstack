@@ -13,6 +13,15 @@ const router = Router();
 const CONFIG_KEY = "configuracoes_gerais";
 
 /**
+ * 🔒 ESTRUTURA PADRÃO — NUNCA MUDA
+ */
+const DEFAULT_CONFIG = {
+  modoManutencao: false,
+  diagnosticoIA: true,
+  painelFinanceiro: true,
+};
+
+/**
  * =====================================================
  * BUSCAR CONFIGURAÇÕES
  * =====================================================
@@ -23,14 +32,27 @@ router.get("/", async (_req, res) => {
       where: { key: CONFIG_KEY },
     });
 
-    let data = {};
+    let data = DEFAULT_CONFIG;
 
     if (row?.contentHtml) {
       try {
-        data = JSON.parse(row.contentHtml);
+        data = {
+          ...DEFAULT_CONFIG,
+          ...JSON.parse(row.contentHtml),
+        };
       } catch {
-        data = {};
+        data = DEFAULT_CONFIG;
       }
+    } else {
+      // ⚠️ cria automaticamente se não existir
+      await prisma.appContent.create({
+        data: {
+          key: CONFIG_KEY,
+          title: "Configurações do Sistema",
+          contentHtml: JSON.stringify(DEFAULT_CONFIG),
+          type: "config",
+        },
+      });
     }
 
     return res.json({
@@ -53,7 +75,10 @@ router.get("/", async (_req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const payload = req.body || {};
+    const payload = {
+      ...DEFAULT_CONFIG,
+      ...(req.body || {}),
+    };
 
     await prisma.appContent.upsert({
       where: { key: CONFIG_KEY },
