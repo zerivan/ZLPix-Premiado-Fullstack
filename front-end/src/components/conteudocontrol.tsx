@@ -27,7 +27,6 @@ export default function ConteudoControl() {
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
-  // 🔐 SEMPRE buscar o token na hora da requisição
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
@@ -49,15 +48,15 @@ export default function ConteudoControl() {
         return;
       }
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms`, {
-        headers,
-      });
+      const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
         setPages(res.data.data);
 
         if (res.data.data.length > 0) {
-          setPageKey(res.data.data[0].page);
+          // ✅ GARANTIA DE PAGE VÁLIDA
+          const first = res.data.data[0];
+          setPageKey(first.page || first.key);
         }
       }
     } catch {
@@ -136,9 +135,6 @@ export default function ConteudoControl() {
     }
   }
 
-  // =========================
-  // INIT
-  // =========================
   useEffect(() => {
     loadPages();
   }, []);
@@ -172,7 +168,7 @@ export default function ConteudoControl() {
         onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.page}>
+          <option key={p.key} value={p.page || p.key}>
             {p.title}
           </option>
         ))}
@@ -205,10 +201,7 @@ export default function ConteudoControl() {
             className="w-full rounded border p-2"
             value={activeArea.title}
             onChange={(e) =>
-              setActiveArea({
-                ...activeArea,
-                title: e.target.value,
-              })
+              setActiveArea({ ...activeArea, title: e.target.value })
             }
           />
 
@@ -216,10 +209,7 @@ export default function ConteudoControl() {
             className="w-full h-48 rounded border p-2 font-mono text-sm"
             value={activeArea.contentHtml}
             onChange={(e) =>
-              setActiveArea({
-                ...activeArea,
-                contentHtml: e.target.value,
-              })
+              setActiveArea({ ...activeArea, contentHtml: e.target.value })
             }
           />
 
