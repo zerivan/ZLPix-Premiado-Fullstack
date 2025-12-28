@@ -1,43 +1,44 @@
-import express from "express";
+import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import { adminAuth } from "../middlewares/adminAuth";
 
-const router = express.Router();
+const router = Router();
 
 /**
- * GET — Buscar configurações (singleton)
+ * =====================================================
+ * CONFIGURAÇÕES GERAIS DO SISTEMA
+ * (armazenadas em AppContent como type = "config")
+ * =====================================================
  */
-router.get("/", adminAuth, async (_req, res) => {
+
+const CONFIG_KEY = "configuracoes_gerais";
+
+/**
+ * =====================================================
+ * BUSCAR CONFIGURAÇÕES
+ * =====================================================
+ */
+router.get("/", async (_req, res) => {
   try {
-    const rows: any[] = await prisma.$queryRaw`
-      SELECT
-        "modoManutencao",
-        "diagnosticoIA",
-        "painelFinanceiro"
-      FROM admin_configuracoes
-      WHERE id = 1
-      LIMIT 1
-    `;
+    const row = await prisma.appContent.findUnique({
+      where: { key: CONFIG_KEY },
+    });
 
-    let config = rows[0];
+    let data = {};
 
-    if (!config) {
-      await prisma.$executeRaw`
-        INSERT INTO admin_configuracoes
-        (id, "modoManutencao", "diagnosticoIA", "painelFinanceiro")
-        VALUES (1, false, true, false)
-      `;
-
-      config = {
-        modoManutencao: false,
-        diagnosticoIA: true,
-        painelFinanceiro: false,
-      };
+    if (row?.contentHtml) {
+      try {
+        data = JSON.parse(row.contentHtml);
+      } catch {
+        data = {};
+      }
     }
 
-    return res.json({ ok: true, data: config });
-  } catch (err) {
-    console.error("Erro ao buscar configurações:", err);
+    return res.json({
+      ok: true,
+      data,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar configurações:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao buscar configurações",
@@ -46,35 +47,35 @@ router.get("/", adminAuth, async (_req, res) => {
 });
 
 /**
- * POST — Salvar configurações
+ * =====================================================
+ * SALVAR CONFIGURAÇÕES
+ * =====================================================
  */
-router.post("/", adminAuth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const {
-      modoManutencao,
-      diagnosticoIA,
-      painelFinanceiro,
-    } = req.body;
+    const payload = req.body || {};
 
-    await prisma.$executeRaw`
-      UPDATE admin_configuracoes
-      SET
-        "modoManutencao" = ${Boolean(modoManutencao)},
-        "diagnosticoIA" = ${Boolean(diagnosticoIA)},
-        "painelFinanceiro" = ${Boolean(painelFinanceiro)}
-      WHERE id = 1
-    `;
+    await prisma.appContent.upsert({
+      where: { key: CONFIG_KEY },
+      update: {
+        title: "Configurações do Sistema",
+        contentHtml: JSON.stringify(payload),
+        type: "config",
+      },
+      create: {
+        key: CONFIG_KEY,
+        title: "Configurações do Sistema",
+        contentHtml: JSON.stringify(payload),
+        type: "config",
+      },
+    });
 
     return res.json({
       ok: true,
-      data: {
-        modoManutencao: Boolean(modoManutencao),
-        diagnosticoIA: Boolean(diagnosticoIA),
-        painelFinanceiro: Boolean(painelFinanceiro),
-      },
+      data: payload,
     });
-  } catch (err) {
-    console.error("Erro ao salvar configurações:", err);
+  } catch (error) {
+    console.error("Erro ao salvar configurações:", error);
     return res.status(500).json({
       ok: false,
       error: "Erro ao salvar configurações",
