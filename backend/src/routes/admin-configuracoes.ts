@@ -44,7 +44,7 @@ router.get("/", async (_req, res) => {
         data = DEFAULT_CONFIG;
       }
     } else {
-      // ⚠️ cria automaticamente se não existir
+      // cria automaticamente se não existir
       await prisma.appContent.create({
         data: {
           key: CONFIG_KEY,
