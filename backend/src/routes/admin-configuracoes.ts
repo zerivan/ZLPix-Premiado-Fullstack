@@ -5,44 +5,48 @@ import { adminAuth } from "../middlewares/adminAuth";
 const router = express.Router();
 
 /**
- * GET — Buscar configurações do sistema (singleton)
+ * GET — Buscar configurações (singleton)
  */
 router.get("/", adminAuth, async (_req, res) => {
   try {
-    let config = await prisma.adminConfiguracoes.findUnique({
-      where: { id: 1 },
-    });
+    const rows: any[] = await prisma.$queryRaw`
+      SELECT
+        "modoManutencao",
+        "diagnosticoIA",
+        "painelFinanceiro"
+      FROM admin_configuracoes
+      WHERE id = 1
+      LIMIT 1
+    `;
+
+    let config = rows[0];
 
     if (!config) {
-      config = await prisma.adminConfiguracoes.create({
-        data: {
-          id: 1,
-          modoManutencao: false,
-          diagnosticoIA: true,
-          painelFinanceiro: false,
-        },
-      });
+      await prisma.$executeRaw`
+        INSERT INTO admin_configuracoes
+        (id, "modoManutencao", "diagnosticoIA", "painelFinanceiro")
+        VALUES (1, false, true, false)
+      `;
+
+      config = {
+        modoManutencao: false,
+        diagnosticoIA: true,
+        painelFinanceiro: false,
+      };
     }
 
-    return res.json({
-      ok: true,
-      data: {
-        modoManutencao: config.modoManutencao,
-        diagnosticoIA: config.diagnosticoIA,
-        painelFinanceiro: config.painelFinanceiro,
-      },
-    });
+    return res.json({ ok: true, data: config });
   } catch (err) {
     console.error("Erro ao buscar configurações:", err);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao buscar configurações do sistema",
+      error: "Erro ao buscar configurações",
     });
   }
 });
 
 /**
- * POST — Salvar configurações do sistema
+ * POST — Salvar configurações
  */
 router.post("/", adminAuth, async (req, res) => {
   try {
@@ -52,34 +56,28 @@ router.post("/", adminAuth, async (req, res) => {
       painelFinanceiro,
     } = req.body;
 
-    const updated = await prisma.adminConfiguracoes.upsert({
-      where: { id: 1 },
-      update: {
-        modoManutencao: Boolean(modoManutencao),
-        diagnosticoIA: Boolean(diagnosticoIA),
-        painelFinanceiro: Boolean(painelFinanceiro),
-      },
-      create: {
-        id: 1,
-        modoManutencao: Boolean(modoManutencao),
-        diagnosticoIA: Boolean(diagnosticoIA),
-        painelFinanceiro: Boolean(painelFinanceiro),
-      },
-    });
+    await prisma.$executeRaw`
+      UPDATE admin_configuracoes
+      SET
+        "modoManutencao" = ${Boolean(modoManutencao)},
+        "diagnosticoIA" = ${Boolean(diagnosticoIA)},
+        "painelFinanceiro" = ${Boolean(painelFinanceiro)}
+      WHERE id = 1
+    `;
 
     return res.json({
       ok: true,
       data: {
-        modoManutencao: updated.modoManutencao,
-        diagnosticoIA: updated.diagnosticoIA,
-        painelFinanceiro: updated.painelFinanceiro,
+        modoManutencao: Boolean(modoManutencao),
+        diagnosticoIA: Boolean(diagnosticoIA),
+        painelFinanceiro: Boolean(painelFinanceiro),
       },
     });
   } catch (err) {
     console.error("Erro ao salvar configurações:", err);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao salvar configurações do sistema",
+      error: "Erro ao salvar configurações",
     });
   }
 });
