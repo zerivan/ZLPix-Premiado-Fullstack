@@ -2,6 +2,9 @@ import { prisma } from "../lib/prisma";
 
 export async function seedAppContentPages() {
   const contents = [
+    // =========================
+    // HOME — CMS
+    // =========================
     {
       key: "home_info",
       type: "content",
@@ -19,7 +22,45 @@ export async function seedAppContentPages() {
       enabled: true,
     },
 
-    // 🎨 Aparência global
+    // =========================
+    // RESULTADO / PIX / PERFIL / CARTEIRA (BASE)
+    // =========================
+    {
+      key: "resultado_info",
+      type: "content",
+      slug: "resultado_info",
+      title: "Resultado – Informações",
+      contentHtml: "",
+      enabled: true,
+    },
+    {
+      key: "pix_info",
+      type: "content",
+      slug: "pix_info",
+      title: "PIX – Informações",
+      contentHtml: "",
+      enabled: true,
+    },
+    {
+      key: "perfil_info",
+      type: "content",
+      slug: "perfil_info",
+      title: "Perfil – Informações",
+      contentHtml: "",
+      enabled: true,
+    },
+    {
+      key: "carteira_info",
+      type: "content",
+      slug: "carteira_info",
+      title: "Carteira – Informações",
+      contentHtml: "",
+      enabled: true,
+    },
+
+    // =========================
+    // 🎨 APARÊNCIA GLOBAL
+    // =========================
     {
       key: "app_appearance",
       type: "config",
@@ -28,11 +69,40 @@ export async function seedAppContentPages() {
       contentHtml: JSON.stringify({
         primaryColor: "#facc15",
         secondaryColor: "#16a34a",
-        backgroundGradient:
-          "from-blue-900 via-blue-800 to-green-800",
+        accentColor: "#f59e0b",
+        backgroundColor: "#0f172a",
+        themeMode: "dark",
         fontPrimary: "Inter",
         fontHeading: "Inter",
       }),
+      enabled: true,
+    },
+
+    // =========================
+    // ⚙️ CONFIGURAÇÕES DO SISTEMA (ADMIN)
+    // =========================
+    {
+      key: "configuracoes_gerais",
+      type: "config",
+      slug: "configuracoes_gerais",
+      title: "Configurações do Sistema",
+      contentHtml: JSON.stringify({
+        modoManutencao: false,
+        diagnosticoIA: true,
+        painelFinanceiro: true,
+      }),
+      enabled: true,
+    },
+
+    // =========================
+    // 🏆 PRÊMIO ATUAL (PÚBLICO)
+    // =========================
+    {
+      key: "premio_atual",
+      type: "config",
+      slug: "premio_atual",
+      title: "Prêmio Atual",
+      contentHtml: "500",
       enabled: true,
     },
   ];
@@ -44,6 +114,7 @@ export async function seedAppContentPages() {
         title: item.title,
         contentHtml: item.contentHtml,
         enabled: item.enabled,
+        type: item.type,
       },
       create: item,
     });
