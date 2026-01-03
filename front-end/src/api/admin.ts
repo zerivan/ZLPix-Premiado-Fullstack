@@ -2,7 +2,7 @@ import axios from "axios";
 
 const baseURL =
   import.meta.env.VITE_API_URL ||
-  "https://serious-mead-zlpix-premiado-284414d9.koyeb.app";
+  "https://zlpix-premiado-fullstack.onrender.com";
 
 export const adminApi = axios.create({
   baseURL,
