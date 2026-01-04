@@ -1,12 +1,31 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { ASSISTENTE_CONTRATO } from "../assistente/contrato";
 import { analisarErro } from "../services/ai";
 import { adminAuth } from "../middlewares/adminAuth";
 
-// ✅ JSON agora está DENTRO de src
-import config from "../confing.json";
-
 const router = express.Router();
+
+/**
+ * Carrega confing.json usando process.cwd()
+ * Funciona em dev, build e produção (Render)
+ */
+function loadSystemConfig() {
+  try {
+    const configPath = path.join(
+      process.cwd(),
+      "backend",
+      "confing.json"
+    );
+
+    const raw = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error("Erro ao carregar confing.json:", err);
+    return null;
+  }
+}
 
 /**
  * POST /api/admin/ia/chat
@@ -24,11 +43,13 @@ router.post("/", adminAuth, async (req, res) => {
       });
     }
 
+    const systemConfig = loadSystemConfig();
+
     const prompt = `
 ${JSON.stringify(ASSISTENTE_CONTRATO, null, 2)}
 
 CONTEXTO DO SISTEMA (fonte: confing.json):
-${JSON.stringify(config, null, 2)}
+${JSON.stringify(systemConfig, null, 2)}
 
 USUÁRIO:
 ${mensagem}
