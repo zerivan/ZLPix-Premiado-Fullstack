@@ -1,29 +1,12 @@
 import express from "express";
-import fs from "fs";
-import path from "path";
 import { ASSISTENTE_CONTRATO } from "../assistente/contrato";
 import { analisarErro } from "../services/ai";
 import { adminAuth } from "../middlewares/adminAuth";
 
-const router = express.Router();
+// ✅ IMPORT DIRETO DO JSON (compatível com build + Render)
+import config from "../../confing.json";
 
-/**
- * Helper — carrega confing.json
- * Fonte de verdade do sistema
- */
-function loadSystemConfig() {
-  try {
-    const configPath = path.resolve(
-      __dirname,
-      "../../confing.json"
-    );
-    const raw = fs.readFileSync(configPath, "utf-8");
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error("Erro ao carregar confing.json:", err);
-    return null;
-  }
-}
+const router = express.Router();
 
 /**
  * POST /api/admin/ia/chat
@@ -47,9 +30,6 @@ router.post("/", adminAuth, async (req, res) => {
       });
     }
 
-    // 🔹 Carrega configurações reais do sistema
-    const systemConfig = loadSystemConfig();
-
     /**
      * Montagem do prompt com:
      * - contrato fixo
@@ -60,7 +40,7 @@ router.post("/", adminAuth, async (req, res) => {
 ${JSON.stringify(ASSISTENTE_CONTRATO, null, 2)}
 
 CONTEXTO DO SISTEMA (fonte: confing.json):
-${JSON.stringify(systemConfig, null, 2)}
+${JSON.stringify(config, null, 2)}
 
 USUÁRIO:
 ${mensagem}
