@@ -8,20 +8,20 @@ import { adminAuth } from "../middlewares/adminAuth";
 const router = express.Router();
 
 /**
- * Carrega tsconfing.json a partir da raiz do backend
+ * Carrega tsconfig.json a partir da raiz do backend
  * process.cwd() === /opt/render/project/src/backend
  */
 function loadSystemConfig() {
   try {
     const configPath = path.join(
       process.cwd(),
-      "confing.json"
+      "tsconfig.json"
     );
 
     const raw = fs.readFileSync(configPath, "utf-8");
     return JSON.parse(raw);
   } catch (err) {
-    console.error("Erro ao carregar tsconfing.json:", err);
+    console.error("Erro ao carregar tsconfig.json:", err);
     return null;
   }
 }
@@ -47,7 +47,7 @@ router.post("/", adminAuth, async (req, res) => {
     const prompt = `
 ${JSON.stringify(ASSISTENTE_CONTRATO, null, 2)}
 
-CONTEXTO DO SISTEMA (fonte: tsconfing.json):
+CONTEXTO DO SISTEMA (fonte: tsconfig.json):
 ${JSON.stringify(systemConfig, null, 2)}
 
 USUÁRIO:
