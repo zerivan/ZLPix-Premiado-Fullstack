@@ -8,14 +8,13 @@ import { adminAuth } from "../middlewares/adminAuth";
 const router = express.Router();
 
 /**
- * Carrega confing.json usando process.cwd()
- * Funciona em dev, build e produção (Render)
+ * Carrega confing.json a partir da raiz do backend
+ * process.cwd() === /opt/render/project/src/backend
  */
 function loadSystemConfig() {
   try {
     const configPath = path.join(
       process.cwd(),
-      "backend",
       "confing.json"
     );
 
