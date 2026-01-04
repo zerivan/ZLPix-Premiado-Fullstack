@@ -17,7 +17,10 @@ import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
 import adminApuracaoRoutes from "./routes/admin-apuracao";
-import adminConfiguracoesRoutes from "./routes/admin-configuracoes"; // ✅ NOVO
+import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
+
+// ✅ IA CHATGPT DO PAINEL ADMIN
+import devAssistenteRoutes from "./routes/dev-assistente";
 
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
@@ -66,7 +69,14 @@ app.use(
   "/api/admin/configuracoes",
   adminAuth,
   adminConfiguracoesRoutes
-); // ✅ REGISTRADO
+);
+
+// ✅ CHATGPT REAL DO PAINEL ADMIN
+app.use(
+  "/api/admin/ia/chat",
+  adminAuth,
+  devAssistenteRoutes
+);
 
 // ============================
 // SEED AUTOMÁTICO (PRODUÇÃO)
