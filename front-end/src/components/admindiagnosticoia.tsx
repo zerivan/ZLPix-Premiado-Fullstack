@@ -1,177 +1,121 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 
-type Diagnostico = {
-  status: "ok" | "alerta" | "erro";
-  mensagem: string;
+type Mensagem = {
+  role: "user" | "assistant";
+  content: string;
 };
 
 const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
 export default function AdminDiagnosticoIA() {
-  const [status, setStatus] = useState<Diagnostico[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function executarDiagnostico() {
-      const resultados: Diagnostico[] = [];
+  async function enviarPergunta() {
+    if (!input.trim() || loading) return;
 
-      // 1️⃣ Backend online
-      try {
-        await axios.get(`${BASE_URL}/`);
-        resultados.push({
-          status: "ok",
-          mensagem: "Backend online e respondendo",
-        });
-      } catch {
-        resultados.push({
-          status: "erro",
-          mensagem: "Backend não está respondendo",
-        });
-      }
-
-      // 2️⃣ API Federal
-      try {
-        const r = await axios.get(`${BASE_URL}/api/federal`);
-        if (r.data?.ok) {
-          resultados.push({
-            status: "ok",
-            mensagem: "API da Loteria Federal respondendo",
-          });
-        } else {
-          resultados.push({
-            status: "alerta",
-            mensagem: "API Federal respondeu, mas sem dados válidos",
-          });
-        }
-      } catch {
-        resultados.push({
-          status: "erro",
-          mensagem: "Falha ao acessar API da Loteria Federal",
-        });
-      }
-
-      // 3️⃣ Prêmio atual
-      try {
-        const r = await axios.get(
-          `${BASE_URL}/api/admin/cms/public/premio`
-        );
-        if (r.data?.ok) {
-          resultados.push({
-            status: "ok",
-            mensagem: `Prêmio atual carregado: R$ ${r.data.premio}`,
-          });
-        } else {
-          resultados.push({
-            status: "alerta",
-            mensagem: "Prêmio não encontrado, usando valor padrão",
-          });
-        }
-      } catch {
-        resultados.push({
-          status: "alerta",
-          mensagem: "Endpoint de prêmio público indisponível",
-        });
-      }
-
-      // 4️⃣ Configurações do sistema
-      try {
-        const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-        if (token) {
-          const r = await axios.get(
-            `${BASE_URL}/api/admin/configuracoes`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          if (r.data?.ok) {
-            resultados.push({
-              status: "ok",
-              mensagem: "Configurações do sistema carregadas",
-            });
-          } else {
-            resultados.push({
-              status: "alerta",
-              mensagem: "Configurações existem, mas retorno inválido",
-            });
-          }
-        } else {
-          resultados.push({
-            status: "alerta",
-            mensagem: "Token admin ausente (configurações não verificadas)",
-          });
-        }
-      } catch {
-        resultados.push({
-          status: "erro",
-          mensagem: "Erro ao acessar configurações do sistema",
-        });
-      }
-
-      // 5️⃣ CMS básico
-      try {
-        const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-        if (token) {
-          const r = await axios.get(`${BASE_URL}/api/admin/cms`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (r.data?.ok && Array.isArray(r.data.data)) {
-            resultados.push({
-              status: "ok",
-              mensagem: "CMS carregado com sucesso",
-            });
-          } else {
-            resultados.push({
-              status: "alerta",
-              mensagem: "CMS respondeu, mas sem conteúdos",
-            });
-          }
-        }
-      } catch {
-        resultados.push({
-          status: "alerta",
-          mensagem: "CMS indisponível ou com erro",
-        });
-      }
-
-      setStatus(resultados);
-      setLoading(false);
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) {
+      setErro("Token de administrador ausente.");
+      return;
     }
 
-    executarDiagnostico();
-  }, []);
+    const pergunta = input;
+    setInput("");
+    setErro(null);
 
-  if (loading) {
-    return (
-      <div className="text-sm text-gray-500 animate-pulse">
-        Executando diagnóstico inteligente do sistema...
-      </div>
-    );
+    setMensagens((prev) => [
+      ...prev,
+      { role: "user", content: pergunta },
+    ]);
+
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/api/admin/ia/chat`,
+        { mensagem: pergunta },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setMensagens((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            res.data?.resposta ||
+            "A IA não retornou uma resposta.",
+        },
+      ]);
+    } catch (e) {
+      setMensagens((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Erro ao se comunicar com a IA. Verifique o backend.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Diagnóstico Inteligente do Sistema
+        Diagnóstico IA — Assistente do Projeto
       </h2>
 
-      <div className="space-y-2">
-        {status.map((item, i) => (
+      <div className="h-80 overflow-y-auto rounded border bg-gray-50 p-3 space-y-3">
+        {mensagens.length === 0 && (
+          <div className="text-sm text-gray-500">
+            Faça uma pergunta técnica sobre o projeto ZLPix
+            (prêmio, CMS, abas, regras, erros…)
+          </div>
+        )}
+
+        {mensagens.map((msg, i) => (
           <div
             key={i}
-            className={`rounded border p-3 text-sm ${
-              item.status === "ok"
-                ? "bg-green-50 border-green-300 text-green-800"
-                : item.status === "alerta"
-                ? "bg-yellow-50 border-yellow-300 text-yellow-800"
-                : "bg-red-50 border-red-300 text-red-800"
+            className={`rounded p-3 text-sm ${
+              msg.role === "user"
+                ? "bg-indigo-600 text-white ml-auto max-w-[80%]"
+                : "bg-white border max-w-[80%]"
             }`}
           >
-            {item.mensagem}
+            {msg.content}
           </div>
         ))}
+      </div>
+
+      {erro && (
+        <div className="text-sm text-red-600">{erro}</div>
+      )}
+
+      <div className="flex gap-2">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          rows={3}
+          placeholder="Pergunte algo para a IA…"
+          className="flex-1 rounded border p-2 text-sm"
+        />
+
+        <button
+          onClick={enviarPergunta}
+          disabled={loading}
+          className="rounded bg-indigo-600 px-4 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {loading ? "Pensando…" : "Enviar"}
+        </button>
       </div>
     </div>
   );
