@@ -3,8 +3,8 @@ import { ASSISTENTE_CONTRATO } from "../assistente/contrato";
 import { analisarErro } from "../services/ai";
 import { adminAuth } from "../middlewares/adminAuth";
 
-// ✅ IMPORT DIRETO DO JSON (compatível com build + Render)
-import config from "../../confing.json";
+// ✅ JSON agora está DENTRO de src
+import config from "../confing.json";
 
 const router = express.Router();
 
@@ -12,12 +12,6 @@ const router = express.Router();
  * POST /api/admin/ia/chat
  *
  * Assistente residente do projeto (ChatGPT real do painel admin)
- *
- * Protocolo obrigatório:
- * - Analisa primeiro
- * - Explica causas e estrutura
- * - Só reconstrói código com confirmação explícita
- * - Nunca executa ações destrutivas
  */
 router.post("/", adminAuth, async (req, res) => {
   try {
@@ -30,12 +24,6 @@ router.post("/", adminAuth, async (req, res) => {
       });
     }
 
-    /**
-     * Montagem do prompt com:
-     * - contrato fixo
-     * - contexto real do projeto
-     * - pergunta do usuário
-     */
     const prompt = `
 ${JSON.stringify(ASSISTENTE_CONTRATO, null, 2)}
 
