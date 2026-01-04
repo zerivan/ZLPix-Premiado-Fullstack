@@ -1,21 +1,44 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { ASSISTENTE_CONTRATO } from "../assistente/contrato";
 import { analisarErro } from "../services/ai";
+import { adminAuth } from "../middlewares/adminAuth";
 
 const router = express.Router();
 
 /**
- * POST /dev/assistente
- *
- * Endpoint do assistente residente do projeto.
- * Ele SEMPRE segue o contrato profissional:
- * - Analisa primeiro
- * - Explica a estrutura correta
- * - Só reconstrói após confirmação explícita
+ * Helper — carrega confing.json
+ * Fonte de verdade do sistema
  */
-router.post("/", async (req, res) => {
+function loadSystemConfig() {
   try {
-    const { mensagem, contextoExtra } = req.body;
+    const configPath = path.resolve(
+      __dirname,
+      "../../confing.json"
+    );
+    const raw = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error("Erro ao carregar confing.json:", err);
+    return null;
+  }
+}
+
+/**
+ * POST /api/admin/ia/chat
+ *
+ * Assistente residente do projeto (ChatGPT real do painel admin)
+ *
+ * Protocolo obrigatório:
+ * - Analisa primeiro
+ * - Explica causas e estrutura
+ * - Só reconstrói código com confirmação explícita
+ * - Nunca executa ações destrutivas
+ */
+router.post("/", adminAuth, async (req, res) => {
+  try {
+    const { mensagem } = req.body;
 
     if (!mensagem) {
       return res.status(400).json({
@@ -24,24 +47,32 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // 🔹 Carrega configurações reais do sistema
+    const systemConfig = loadSystemConfig();
+
     /**
-     * Montagem do contexto fixo + mensagem do usuário
-     * Isso garante personalidade estável e anti-loop
+     * Montagem do prompt com:
+     * - contrato fixo
+     * - contexto real do projeto
+     * - pergunta do usuário
      */
     const prompt = `
 ${JSON.stringify(ASSISTENTE_CONTRATO, null, 2)}
 
+CONTEXTO DO SISTEMA (fonte: confing.json):
+${JSON.stringify(systemConfig, null, 2)}
+
 USUÁRIO:
 ${mensagem}
 
-CONTEXTO ADICIONAL (se houver):
-${contextoExtra || "nenhum"}
-
 INSTRUÇÕES OBRIGATÓRIAS:
-- NÃO escreva código final se o usuário não confirmar reconstrução
-- Primeiro analise e explique a estrutura correta
-- Seja técnico, direto e profissional
-`;
+- Analise antes de responder
+- Explique o PORQUÊ técnico das coisas
+- Não escreva código final sem confirmação explícita
+- Não invente arquivos ou regras
+- Respeite o estado atual do sistema
+- Seja direto, técnico e profissional
+`.trim();
 
     const resposta = await analisarErro(prompt);
 
@@ -50,7 +81,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
       resposta,
     });
   } catch (err) {
-    console.error("Erro no assistente:", err);
+    console.error("Erro no assistente admin:", err);
     return res.status(500).json({
       ok: false,
       erro: "Falha ao executar o assistente",
