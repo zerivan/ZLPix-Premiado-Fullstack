@@ -21,6 +21,7 @@ export default function ConteudoControl() {
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -54,9 +55,9 @@ export default function ConteudoControl() {
         setPages(res.data.data);
 
         if (res.data.data.length > 0) {
-          // ✅ GARANTIA DE PAGE VÁLIDA
+          // 🔑 SEMPRE usar KEY
           const first = res.data.data[0];
-          setPageKey(first.page || first.key);
+          setPageKey(first.key);
         }
       }
     } catch {
@@ -69,9 +70,9 @@ export default function ConteudoControl() {
   // =========================
   // LOAD ÁREAS
   // =========================
-  async function loadAreas(page: string) {
+  async function loadAreas(pageKey: string) {
     try {
-      setLoading(true);
+      setLoadingAreas(true);
       setErro(null);
       setStatus(null);
 
@@ -82,7 +83,7 @@ export default function ConteudoControl() {
       }
 
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/content/${page}`,
+        `${BASE_URL}/api/admin/cms/content/${pageKey}`,
         { headers }
       );
 
@@ -96,7 +97,7 @@ export default function ConteudoControl() {
     } catch {
       setErro("Erro ao carregar conteúdo da página.");
     } finally {
-      setLoading(false);
+      setLoadingAreas(false);
     }
   }
 
@@ -162,19 +163,26 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
+      {/* 🔑 SELECT DE PÁGINAS — VALUE É SEMPRE key */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.page || p.key}>
+          <option key={p.key} value={p.key}>
             {p.title}
           </option>
         ))}
       </select>
 
-      {areas.length > 0 && (
+      {loadingAreas && (
+        <div className="text-sm text-gray-500 animate-pulse">
+          Carregando áreas…
+        </div>
+      )}
+
+      {!loadingAreas && areas.length > 0 && (
         <select
           className="w-full rounded border p-2"
           value={activeArea?.key}
