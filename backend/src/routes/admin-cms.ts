@@ -156,6 +156,8 @@ router.post("/app-appearance", async (req, res) => {
 /**
  * =====================================================
  * 🔓 APARÊNCIA — PÚBLICO (APP)
+ * ⚠️ NOTA: esta rota só é pública SE este router
+ * NÃO estiver montado sob /api/admin
  * =====================================================
  */
 router.get("/public/app-appearance", async (_req, res) => {
@@ -175,39 +177,6 @@ router.get("/public/app-appearance", async (_req, res) => {
     return res.json({ ok: true, data });
   } catch {
     return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * 🏆 PRÊMIO ATUAL — PÚBLICO (HOME / APP)
- * =====================================================
- * ✔ contrato compatível com o FRONT
- * ✔ sem token
- * ✔ sem 401
- */
-router.get("/public/premio", async (_req, res) => {
-  try {
-    const row = await prisma.appContent.findUnique({
-      where: { key: "premio_atual" },
-    });
-
-    const valor = row?.contentHtml
-      ? Number(row.contentHtml)
-      : 500;
-
-    return res.json({
-      ok: true,
-      data: {
-        valor: isNaN(valor) ? 500 : valor,
-      },
-    });
-  } catch (error) {
-    console.error("Erro prêmio público:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao buscar prêmio",
-    });
   }
 });
 
