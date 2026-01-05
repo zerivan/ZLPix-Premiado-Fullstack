@@ -22,6 +22,9 @@ import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
 // ✅ IA CHATGPT DO PAINEL ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
 
+// 🆕 CMS PÚBLICO (APP / CLIENTE)
+import cmsPublicRoutes from "./routes/cms-public";
+
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
 
@@ -56,6 +59,11 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
+
+// ============================
+// CMS PÚBLICO (APP / CLIENTE)
+// ============================
+app.use("/api/cms/public", cmsPublicRoutes);
 
 // ============================
 // ROTAS ADMIN (PROTEGIDAS)
