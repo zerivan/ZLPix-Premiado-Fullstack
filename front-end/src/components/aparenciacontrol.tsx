@@ -61,7 +61,6 @@ export default function AparenciaControl() {
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
-  // 🔐 token sempre atualizado
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
@@ -115,8 +114,14 @@ export default function AparenciaControl() {
       );
 
       if (res.data?.ok && res.data.data) {
-        setAppearance(res.data.data);
-        applyPreview(res.data.data);
+        // ✅ CORREÇÃO CIRÚRGICA AQUI
+        const merged = {
+          ...DEFAULT_APPEARANCE,
+          ...res.data.data,
+        };
+
+        setAppearance(merged);
+        applyPreview(merged);
       } else {
         setAppearance(DEFAULT_APPEARANCE);
         applyPreview(DEFAULT_APPEARANCE);
