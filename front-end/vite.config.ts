@@ -16,6 +16,7 @@ export default defineConfig({
     assetsDir: "assets",
     sourcemap: false,
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1500, // ✅ ajuste do warning (não afeta o build)
   },
   server: {
     port: 5173,
