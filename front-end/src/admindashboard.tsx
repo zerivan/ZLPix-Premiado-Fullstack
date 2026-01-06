@@ -35,11 +35,18 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
 
   useEffect(() => {
+    // ✅ BLOQUEIO IMEDIATO SEM TOKEN
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) {
+      navigate("/admin", { replace: true });
+      return;
+    }
+
     document.body.classList.add("admin-area");
     return () => {
       document.body.classList.remove("admin-area");
     };
-  }, []);
+  }, [navigate]);
 
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
