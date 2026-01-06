@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -56,7 +58,6 @@ export default function ConteudoControl() {
 
         if (res.data.data.length > 0) {
           const first = res.data.data[0];
-          // ✅ USAR PAGE (compatível com CMS_AREAS.page)
           setPageKey(first.page);
         }
       }
@@ -213,12 +214,14 @@ export default function ConteudoControl() {
             }
           />
 
-          <textarea
-            className="w-full h-48 rounded border p-2 font-mono text-sm"
+          {/* EDITOR HTML REAL */}
+          <ReactQuill
+            theme="snow"
             value={activeArea.contentHtml}
-            onChange={(e) =>
-              setActiveArea({ ...activeArea, contentHtml: e.target.value })
+            onChange={(html) =>
+              setActiveArea({ ...activeArea, contentHtml: html })
             }
+            className="bg-white"
           />
 
           <button
