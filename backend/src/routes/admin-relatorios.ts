@@ -15,7 +15,7 @@ router.get("/", async (_req, res) => {
       totalUsuarios,
       totalBilhetes,
       totalTransacoes,
-      transacoesComValor,
+      transacoesConfirmadas,
       ultimaTransacao,
     ] = await Promise.all([
       prisma.users.count(),
@@ -24,11 +24,11 @@ router.get("/", async (_req, res) => {
 
       prisma.transacao.count(),
 
-      // 🔎 TODAS transações que possuem valor
+      // 💰 dinheiro efetivo (não pending)
       prisma.transacao.findMany({
         where: {
-          valor: {
-            not: null,
+          status: {
+            not: "pending",
           },
         },
         select: {
@@ -46,10 +46,8 @@ router.get("/", async (_req, res) => {
       }),
     ]);
 
-    // 🔒 conversão segura (Decimal / bigint → number)
-    const totalArrecadado = transacoesComValor.reduce((acc, t) => {
-      const valor = Number(t.valor) || 0;
-      return acc + valor;
+    const totalArrecadado = transacoesConfirmadas.reduce((acc, t) => {
+      return acc + (Number(t.valor) || 0);
     }, 0);
 
     return res.json({
@@ -59,7 +57,7 @@ router.get("/", async (_req, res) => {
         totalBilhetes,
         totalTransacoes,
         totalArrecadado,
-        totalPago: totalArrecadado, // diagnóstico
+        totalPago: totalArrecadado, // diagnóstico (por enquanto)
         ultimaTransacao: ultimaTransacao
           ? {
               ...ultimaTransacao,
