@@ -17,8 +17,6 @@ import ConteudoControl from "./components/conteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
 import AdminUsuariosControl from "./components/adminusuarioscontrol";
-
-// 🔥 IMPORT CORRETO DO RELATÓRIO
 import AdminRelatoriosControl from "./components/adminrelatorioscontrol";
 
 type TabId =
@@ -32,7 +30,9 @@ type TabId =
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabId>("appearance");
+
+  // ❗ Nenhuma aba ativa ao iniciar
+  const [activeTab, setActiveTab] = useState<TabId | null>(null);
 
   useEffect(() => {
     document.body.classList.add("admin-area");
@@ -58,6 +58,14 @@ export default function AdminDashboard() {
 
   function renderTab() {
     try {
+      if (!activeTab) {
+        return (
+          <div className="text-sm text-gray-500">
+            Selecione uma opção no menu acima.
+          </div>
+        );
+      }
+
       switch (activeTab) {
         case "config":
           return <ConfiguracoesControl />;
@@ -72,7 +80,7 @@ export default function AdminDashboard() {
         case "users":
           return <AdminUsuariosControl />;
         case "reports":
-          return <AdminRelatoriosControl />; // ✅ AGORA CERTO
+          return <AdminRelatoriosControl />;
         default:
           return null;
       }
