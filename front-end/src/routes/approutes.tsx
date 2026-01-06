@@ -132,8 +132,18 @@ export default function AppRoutes() {
       {/* Admin */}
       <Route path="/admin" element={<AdminLogin />} />
 
+      {/* 🔁 REDIRECT DE URL ANTIGA */}
+      <Route
+        path="/admin/dashboard"
+        element={<Navigate to="/admin/admindashboard" replace />}
+      />
+
+      {/* ✅ DASHBOARD ADMIN (URL CORRETA) */}
       <Route element={<AdminRoute />}>
-        <Route path="/admindashboard" element={<AdminDashboard />} />
+        <Route
+          path="/admin/admindashboard"
+          element={<AdminDashboard />}
+        />
       </Route>
 
       {/* CMS DINÂMICO (ISOLADO) */}
