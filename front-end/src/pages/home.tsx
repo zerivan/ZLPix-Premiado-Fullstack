@@ -49,6 +49,7 @@ export default function Home() {
 
         /**
          * 🔹 PRÊMIO ATUAL (PÚBLICO)
+         * resposta real: { ok: true, premio: number }
          */
         const premio = await api.get("/api/admin/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.premio === "number") {
@@ -56,7 +57,8 @@ export default function Home() {
         }
 
         /**
-         * 🔹 CMS HOME (PÚBLICO)
+         * 🔹 CMS HOME (se existir)
+         * não quebra se ainda não tiver endpoint público
          */
         try {
           const cms = await api.get("/api/admin/cms/public/home");
