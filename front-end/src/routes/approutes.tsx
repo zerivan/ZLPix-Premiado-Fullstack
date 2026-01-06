@@ -133,7 +133,7 @@ export default function AppRoutes() {
       <Route path="/admin" element={<AdminLogin />} />
 
       <Route element={<AdminRoute />}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admindashboard" element={<AdminDashboard />} />
       </Route>
 
       {/* CMS DINÂMICO (ISOLADO) */}
