@@ -55,9 +55,9 @@ export default function ConteudoControl() {
         setPages(res.data.data);
 
         if (res.data.data.length > 0) {
-          // 🔑 SEMPRE usar KEY
           const first = res.data.data[0];
-          setPageKey(first.key);
+          // ✅ USAR PAGE (compatível com CMS_AREAS.page)
+          setPageKey(first.page);
         }
       }
     } catch {
@@ -70,7 +70,7 @@ export default function ConteudoControl() {
   // =========================
   // LOAD ÁREAS
   // =========================
-  async function loadAreas(pageKey: string) {
+  async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
       setErro(null);
@@ -83,7 +83,7 @@ export default function ConteudoControl() {
       }
 
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/content/${pageKey}`,
+        `${BASE_URL}/api/admin/cms/content/${page}`,
         { headers }
       );
 
@@ -163,14 +163,14 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      {/* 🔑 SELECT DE PÁGINAS — VALUE É SEMPRE key */}
+      {/* SELECT DE PÁGINAS */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.key}>
+          <option key={p.key} value={p.page}>
             {p.title}
           </option>
         ))}
