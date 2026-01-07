@@ -1,4 +1,7 @@
 services:
+  # =========================
+  # BACKEND — NODE / EXPRESS
+  # =========================
   - type: web
     name: zlpix-backend
     env: node
@@ -30,6 +33,29 @@ services:
 
       - key: OPENAI_API_KEY
         sync: false
+
+    autoDeploy: true
+    branch: main
+
+  # =========================
+  # FRONTEND — SPA (VITE / REACT)
+  # =========================
+  - type: web
+    name: zlpix-premiado-site
+    env: static
+
+    rootDir: front-end
+    staticPublishPath: dist
+
+    buildCommand: |
+      npm install
+      npm run build
+
+    routes:
+      # 🔁 REWRITE SPA — QUALQUER ROTA VAI PARA index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
     autoDeploy: true
     branch: main
