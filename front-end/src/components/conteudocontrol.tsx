@@ -21,6 +21,9 @@ export default function ConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
+  // 🔑 estado REAL do editor
+  const [editorHtml, setEditorHtml] = useState<string>("");
+
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -39,7 +42,7 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // LOAD PÁGINAS (AGRUPADAS)
+  // LOAD PÁGINAS
   // =========================
   async function loadPages() {
     try {
@@ -81,7 +84,7 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -115,7 +118,18 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA
+  // SINCRONIZA EDITOR ← ÁREA
+  // =========================
+  useEffect(() => {
+    if (activeArea) {
+      setEditorHtml(activeArea.contentHtml || "");
+    } else {
+      setEditorHtml("");
+    }
+  }, [activeArea]);
+
+  // =========================
+  // SAVE
   // =========================
   async function saveContent() {
     if (!activeArea) return;
@@ -136,7 +150,7 @@ export default function ConteudoControl() {
         {
           key: activeArea.key,
           title: activeArea.title,
-          contentHtml: activeArea.contentHtml,
+          contentHtml: editorHtml,
         },
         { headers }
       );
@@ -176,7 +190,6 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      {/* SELECT DE PÁGINAS (CORRETO) */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
@@ -221,12 +234,9 @@ export default function ConteudoControl() {
           />
 
           <ReactQuill
-            key={activeArea.key}
             theme="snow"
-            value={activeArea.contentHtml}
-            onChange={(html) =>
-              setActiveArea({ ...activeArea, contentHtml: html })
-            }
+            value={editorHtml}
+            onChange={setEditorHtml}
             className="bg-white"
           />
 
