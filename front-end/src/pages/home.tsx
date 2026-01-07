@@ -49,19 +49,17 @@ export default function Home() {
 
         /**
          * 🔹 PRÊMIO ATUAL (PÚBLICO)
-         * resposta real: { ok: true, premio: number }
          */
-        const premio = await api.get("/api/admin/cms/public/premio");
+        const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.premio === "number") {
           setPremioAtual(`R$ ${premio.data.premio}`);
         }
 
         /**
-         * 🔹 CMS HOME (se existir)
-         * não quebra se ainda não tiver endpoint público
+         * 🔹 CMS HOME (PÚBLICO)
          */
         try {
-          const cms = await api.get("/api/admin/cms/public/home");
+          const cms = await api.get("/api/cms/public/home");
           if (cms.data?.ok && Array.isArray(cms.data.data)) {
             const areas: CmsArea[] = cms.data.data;
 
