@@ -20,6 +20,20 @@ const CMS_AREAS = [
 
 /**
  * =====================================================
+ * HTML PADRÃO (FONTE ÚNICA DE VERDADE)
+ * =====================================================
+ */
+const DEFAULT_HTML: Record<string, string> = {
+  home_info: "",
+  home_footer: "",
+  resultado_info: "",
+  pix_info: "",
+  perfil_info: "",
+  carteira_info: "",
+};
+
+/**
+ * =====================================================
  * CMS — LISTAR ÁREAS (ADMIN)
  * =====================================================
  */
@@ -48,6 +62,8 @@ router.get("/", async (_req, res) => {
 /**
  * =====================================================
  * CMS — BUSCAR ÁREAS DE UMA PÁGINA (ADMIN)
+ * 👉 SEM CRIAR CONTEÚDO AUTOMÁTICO
+ * 👉 SEM DUPLICAR
  * =====================================================
  */
 router.get("/content/:page", async (req, res) => {
@@ -62,10 +78,12 @@ router.get("/content/:page", async (req, res) => {
 
     const data = areas.map((a) => {
       const found = contents.find((c) => c.key === a.key);
+
       return {
         key: a.key,
         title: found?.title || a.title,
-        contentHtml: found?.contentHtml || "",
+        contentHtml:
+          found?.contentHtml ?? DEFAULT_HTML[a.key] ?? "",
       };
     });
 
@@ -78,11 +96,16 @@ router.get("/content/:page", async (req, res) => {
 /**
  * =====================================================
  * CMS — SALVAR CONTEÚDO (ADMIN)
+ * 👉 SALVA SOMENTE A ÁREA EXISTENTE
  * =====================================================
  */
 router.post("/content", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
+
+    if (!CMS_AREAS.find((a) => a.key === key)) {
+      return res.status(400).json({ ok: false });
+    }
 
     const saved = await prisma.appContent.upsert({
       where: { key },
@@ -156,8 +179,6 @@ router.post("/app-appearance", async (req, res) => {
 /**
  * =====================================================
  * 🔓 APARÊNCIA — PÚBLICO (APP)
- * ⚠️ NOTA: esta rota só é pública SE este router
- * NÃO estiver montado sob /api/admin
  * =====================================================
  */
 router.get("/public/app-appearance", async (_req, res) => {
