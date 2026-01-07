@@ -164,7 +164,6 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      {/* SELECT DE PÁGINAS */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
@@ -176,12 +175,6 @@ export default function ConteudoControl() {
           </option>
         ))}
       </select>
-
-      {loadingAreas && (
-        <div className="text-sm text-gray-500 animate-pulse">
-          Carregando áreas…
-        </div>
-      )}
 
       {!loadingAreas && areas.length > 0 && (
         <select
@@ -214,8 +207,9 @@ export default function ConteudoControl() {
             }
           />
 
-          {/* EDITOR HTML REAL */}
+          {/* 🔥 CORREÇÃO CRÍTICA */}
           <ReactQuill
+            key={activeArea.key}
             theme="snow"
             value={activeArea.contentHtml}
             onChange={(html) =>
