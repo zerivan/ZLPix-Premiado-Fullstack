@@ -10,7 +10,6 @@ type CmsArea = {
 };
 
 type CmsPage = {
-  key: string;
   page: string;
   title: string;
 };
@@ -40,7 +39,7 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // LOAD PÁGINAS
+  // LOAD PÁGINAS (AGRUPADAS)
   // =========================
   async function loadPages() {
     try {
@@ -54,11 +53,24 @@ export default function ConteudoControl() {
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        setPages(res.data.data);
+        const pagesMap: Record<string, CmsPage> = {};
 
-        if (res.data.data.length > 0) {
-          const first = res.data.data[0];
-          setPageKey(first.page);
+        res.data.data.forEach((item: any) => {
+          if (!pagesMap[item.page]) {
+            pagesMap[item.page] = {
+              page: item.page,
+              title:
+                item.page.charAt(0).toUpperCase() +
+                item.page.slice(1),
+            };
+          }
+        });
+
+        const pageList = Object.values(pagesMap);
+        setPages(pageList);
+
+        if (pageList.length > 0) {
+          setPageKey(pageList[0].page);
         }
       }
     } catch {
@@ -69,7 +81,7 @@ export default function ConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS
+  // LOAD ÁREAS DA PÁGINA
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -164,13 +176,14 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
+      {/* SELECT DE PÁGINAS (CORRETO) */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.page}>
+          <option key={p.page} value={p.page}>
             {p.title}
           </option>
         ))}
@@ -207,7 +220,6 @@ export default function ConteudoControl() {
             }
           />
 
-          {/* 🔥 CORREÇÃO CRÍTICA */}
           <ReactQuill
             key={activeArea.key}
             theme="snow"
