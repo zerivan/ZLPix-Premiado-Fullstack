@@ -81,4 +81,43 @@ router.get("/app-appearance", async (_req, res) => {
   }
 });
 
+/**
+ * =====================================================
+ * 📄 CMS PÚBLICO — HTML POR PÁGINA
+ * =====================================================
+ * Exemplos:
+ * GET /api/cms/public/home
+ * GET /api/cms/public/resultado
+ */
+router.get("/:page", async (req, res) => {
+  try {
+    const { page } = req.params;
+
+    const areas = await prisma.appContent.findMany({
+      where: {
+        key: {
+          startsWith: `${page}_`,
+        },
+      },
+      orderBy: {
+        key: "asc",
+      },
+    });
+
+    return res.json({
+      ok: true,
+      data: areas.map((a) => ({
+        key: a.key,
+        contentHtml: a.contentHtml,
+      })),
+    });
+  } catch (error) {
+    console.error("Erro CMS público página:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao carregar CMS público",
+    });
+  }
+});
+
 export default router;
