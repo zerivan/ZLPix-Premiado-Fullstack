@@ -6,6 +6,7 @@ export default function AdminLogin() {
 
   const API = import.meta.env.VITE_API_URL as string;
 
+  // ✅ E-mail admin correto
   const [email, setEmail] = useState("admin@zlpix.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,8 +36,8 @@ export default function AdminLogin() {
       localStorage.setItem("TOKEN_ZLPIX_ADMIN", json.token);
       localStorage.setItem("ZLPIX_ADMIN_AUTH", "true");
 
-      // ✅ ROTA ADMIN CORRETA (existente / protegida)
-      navigate("/admin/dashboard", { replace: true });
+      // ✅ ROTA ADMIN CORRETA
+      navigate("/admin/admindashboard", { replace: true });
     } catch {
       setErro("Erro ao conectar com o servidor.");
     }
@@ -46,9 +47,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-900 via-blue-700 to-green-700 font-display flex items-center justify-center px-6">
-
       <div className="w-full max-w-md bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 animate-[fadeIn_0.4s_ease-out]">
-
         <h1 className="text-center text-3xl font-extrabold text-yellow-300 mb-8 drop-shadow">
           🔐 Login Administrativo
         </h1>
@@ -102,7 +101,6 @@ export default function AdminLogin() {
         <p className="text-center text-xs text-blue-200 mt-6 opacity-70">
           Acesso restrito à administração do ZLPix
         </p>
-
       </div>
 
       <style>{`
