@@ -13,6 +13,20 @@ function formatarDataBR(iso: string) {
   return d.toLocaleDateString("pt-BR");
 }
 
+/**
+ * ✅ Garante que o HTML tenha conteúdo visível
+ */
+function hasVisibleHtml(html: string | null) {
+  if (!html) return false;
+
+  const text = html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, "")
+    .trim();
+
+  return text.length > 0;
+}
+
 type CmsArea = {
   key: string;
   contentHtml: string;
@@ -51,8 +65,8 @@ export default function Home() {
          * 🔹 PRÊMIO ATUAL (PÚBLICO)
          */
         const premio = await api.get("/api/cms/public/premio");
-        if (premio.data?.ok && typeof premio.data.premio === "number") {
-          setPremioAtual(`R$ ${premio.data.premio}`);
+        if (premio.data?.ok && typeof premio.data.valor === "number") {
+          setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
         /**
@@ -94,10 +108,10 @@ export default function Home() {
       </header>
 
       {/* CMS — TEXTO INFORMATIVO */}
-      {homeInfoHtml && (
+      {hasVisibleHtml(homeInfoHtml) && (
         <div
           className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
-          dangerouslySetInnerHTML={{ __html: homeInfoHtml }}
+          dangerouslySetInnerHTML={{ __html: homeInfoHtml! }}
         />
       )}
 
@@ -152,14 +166,14 @@ export default function Home() {
           </button>
 
           <AnimatePresence>
-            {showInfo && homeFooterHtml && (
+            {showInfo && hasVisibleHtml(homeFooterHtml) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
-                dangerouslySetInnerHTML={{ __html: homeFooterHtml }}
+                dangerouslySetInnerHTML={{ __html: homeFooterHtml! }}
               />
             )}
           </AnimatePresence>
