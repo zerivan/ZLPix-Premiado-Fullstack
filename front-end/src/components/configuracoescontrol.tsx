@@ -7,14 +7,13 @@ type ConfiguracoesAdmin = {
   painelFinanceiro: boolean;
 };
 
-// ✅ DEFAULT SEGURO
 const DEFAULT_CONFIG: ConfiguracoesAdmin = {
   modoManutencao: false,
   diagnosticoIA: false,
   painelFinanceiro: false,
 };
 
-export default function ConfiguracoesControl() {
+export default function AdminConfiguracoesControl() {
   const [config, setConfig] = useState<ConfiguracoesAdmin | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -25,15 +24,9 @@ export default function ConfiguracoesControl() {
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD CONFIGURAÇÕES
-  // =========================
   async function carregarConfiguracoes() {
     try {
       setLoading(true);
@@ -42,7 +35,6 @@ export default function ConfiguracoesControl() {
       const headers = getAuthHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
-        setLoading(false);
         return;
       }
 
@@ -52,7 +44,6 @@ export default function ConfiguracoesControl() {
       );
 
       if (res.data?.ok) {
-        // ✅ NORMALIZAÇÃO DEFINITIVA
         setConfig({
           modoManutencao: !!res.data.data?.modoManutencao,
           diagnosticoIA: !!res.data.data?.diagnosticoIA,
@@ -69,9 +60,6 @@ export default function ConfiguracoesControl() {
     }
   }
 
-  // =========================
-  // SAVE CONFIGURAÇÕES
-  // =========================
   async function salvarConfiguracoes(novoValor: ConfiguracoesAdmin) {
     try {
       setSalvando(true);
@@ -138,7 +126,7 @@ export default function ConfiguracoesControl() {
 
       <div className="space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <span><strong>Modo manutenção</strong></span>
+          <strong>Modo manutenção</strong>
           <button
             onClick={() => toggle("modoManutencao")}
             disabled={salvando}
@@ -151,7 +139,7 @@ export default function ConfiguracoesControl() {
         </div>
 
         <div className="flex items-center justify-between">
-          <span><strong>Diagnóstico com IA</strong></span>
+          <strong>Diagnóstico com IA</strong>
           <button
             onClick={() => toggle("diagnosticoIA")}
             disabled={salvando}
@@ -164,7 +152,7 @@ export default function ConfiguracoesControl() {
         </div>
 
         <div className="flex items-center justify-between">
-          <span><strong>Painel financeiro</strong></span>
+          <strong>Painel financeiro</strong>
           <button
             onClick={() => toggle("painelFinanceiro")}
             disabled={salvando}
