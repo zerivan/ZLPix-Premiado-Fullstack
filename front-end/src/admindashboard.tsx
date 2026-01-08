@@ -11,9 +11,10 @@ import {
   Brain,
 } from "lucide-react";
 
-import ConfiguracoesControl from "./components/configuracoescontrol";
-import AparenciaControl from "./components/aparenciacontrol";
-import ConteudoControl from "./components/conteudocontrol";
+// ✅ COMPONENTES ADMIN PADRONIZADOS
+import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
+import AdminAparenciaControl from "./components/adminaparenciacontrol";
+import AdminConteudoControl from "./components/adminconteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
 import AdminGanhadores from "./components/adminganhadores";
 import AdminUsuariosControl from "./components/adminusuarioscontrol";
@@ -75,11 +76,11 @@ export default function AdminDashboard() {
 
       switch (activeTab) {
         case "config":
-          return <ConfiguracoesControl />;
+          return <AdminConfiguracoesControl />;
         case "appearance":
-          return <AparenciaControl />;
+          return <AdminAparenciaControl />;
         case "content":
-          return <ConteudoControl />;
+          return <AdminConteudoControl />;
         case "diagnostico":
           return <AdminDiagnosticoIA />;
         case "winners":
