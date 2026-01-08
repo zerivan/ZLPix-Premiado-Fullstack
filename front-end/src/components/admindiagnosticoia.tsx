@@ -13,6 +13,7 @@ export default function AdminDiagnosticoIA() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [copiadoIndex, setCopiadoIndex] = useState<number | null>(null);
 
   async function enviarPergunta() {
     if (!input.trim() || loading) return;
@@ -54,7 +55,7 @@ export default function AdminDiagnosticoIA() {
             "A IA não retornou uma resposta.",
         },
       ]);
-    } catch (e) {
+    } catch {
       setMensagens((prev) => [
         ...prev,
         {
@@ -66,6 +67,12 @@ export default function AdminDiagnosticoIA() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function copiarTexto(texto: string, index: number) {
+    navigator.clipboard.writeText(texto);
+    setCopiadoIndex(index);
+    setTimeout(() => setCopiadoIndex(null), 1500);
   }
 
   return (
@@ -85,13 +92,22 @@ export default function AdminDiagnosticoIA() {
         {mensagens.map((msg, i) => (
           <div
             key={i}
-            className={`rounded p-3 text-sm ${
+            className={`relative rounded p-3 text-sm ${
               msg.role === "user"
                 ? "bg-indigo-600 text-white ml-auto max-w-[80%]"
                 : "bg-white border max-w-[80%]"
             }`}
           >
             {msg.content}
+
+            {msg.role === "assistant" && (
+              <button
+                onClick={() => copiarTexto(msg.content, i)}
+                className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                {copiadoIndex === i ? "Copiado!" : "Copiar"}
+              </button>
+            )}
           </div>
         ))}
       </div>
