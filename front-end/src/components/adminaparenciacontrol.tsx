@@ -54,7 +54,7 @@ const DEFAULT_APPEARANCE: AppAppearance = {
   fontHeading: "Inter",
 };
 
-export default function AparenciaControl() {
+export default function AdminAparenciaControl() {
   const [appearance, setAppearance] = useState<AppAppearance | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -114,7 +114,6 @@ export default function AparenciaControl() {
       );
 
       if (res.data?.ok && res.data.data) {
-        // ✅ CORREÇÃO CIRÚRGICA AQUI
         const merged = {
           ...DEFAULT_APPEARANCE,
           ...res.data.data,
