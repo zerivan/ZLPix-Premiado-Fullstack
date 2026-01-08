@@ -32,3 +32,4 @@ coverage/
 dist/
 backend/node_modules/
 front-end/node_modules/
+front-end/package-lock.json
