@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 // ✅ IMPORTS CORRETOS (case-sensitive / Linux-safe)
-import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
 import AdminAparenciaControl from "./components/adminaparenciacontrol";
 import AdminConteudoControl from "./components/adminconteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
