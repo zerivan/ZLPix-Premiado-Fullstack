@@ -1,138 +1,134 @@
-import { useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Settings,
+  Trophy,
+  Users,
+  BarChart3,
+  LogOut,
+  Palette,
+  FileText,
+  Brain,
+} from "lucide-react";
 
-type Mensagem = {
-  role: "user" | "assistant";
-  content: string;
-};
+// ✅ IMPORTS CORRETOS (case-sensitive / Linux-safe)
+import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
+import AdminAparenciaControl from "./components/adminaparenciacontrol";
+import AdminConteudoControl from "./components/adminconteudocontrol";
+import AdminDiagnosticoIA from "./components/admindiagnosticoia";
+import AdminGanhadores from "./components/adminganhadores";
+import AdminUsuariosControl from "./components/adminusuarioscontrol";
+import AdminRelatoriosControl from "./components/adminrelatorioscontrol";
 
-const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+type TabId =
+  | "config"
+  | "appearance"
+  | "content"
+  | "diagnostico"
+  | "winners"
+  | "users"
+  | "reports";
 
-export default function AdminDiagnosticoIA() {
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [copiadoIndex, setCopiadoIndex] = useState<number | null>(null);
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<TabId | null>(null);
 
-  async function enviarPergunta() {
-    if (!input.trim() || loading) return;
-
+  useEffect(() => {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) {
-      setErro("Token de administrador ausente.");
+      navigate("/admin", { replace: true });
       return;
     }
 
-    const pergunta = input;
-    setInput("");
-    setErro(null);
+    document.body.classList.add("admin-area");
+    return () => {
+      document.body.classList.remove("admin-area");
+    };
+  }, [navigate]);
 
-    setMensagens((prev) => [
-      ...prev,
-      { role: "user", content: pergunta },
-    ]);
+  function handleLogout() {
+    localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
+    navigate("/admin", { replace: true });
+  }
 
-    setLoading(true);
+  const tabs: { id: TabId; label: string; icon: any }[] = [
+    { id: "config", label: "Configurações", icon: Settings },
+    { id: "appearance", label: "Aparência", icon: Palette },
+    { id: "content", label: "Conteúdo", icon: FileText },
+    { id: "diagnostico", label: "Diagnóstico IA", icon: Brain },
+    { id: "winners", label: "Ganhadores", icon: Trophy },
+    { id: "users", label: "Usuários", icon: Users },
+    { id: "reports", label: "Relatórios", icon: BarChart3 },
+  ];
 
-    try {
-      const res = await axios.post(
-        `${BASE_URL}/api/admin/ia/chat`,
-        { mensagem: pergunta },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+  function renderTab() {
+    if (!activeTab) {
+      return (
+        <div className="text-sm text-gray-500">
+          Selecione uma opção no menu acima.
+        </div>
       );
+    }
 
-      setMensagens((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            res.data?.resposta ||
-            "A IA não retornou uma resposta.",
-        },
-      ]);
-    } catch {
-      setMensagens((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Erro ao se comunicar com a IA. Verifique o backend.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
+    switch (activeTab) {
+      case "config":
+        return <AdminConfiguracoesControl />;
+      case "appearance":
+        return <AdminAparenciaControl />;
+      case "content":
+        return <AdminConteudoControl />;
+      case "diagnostico":
+        return <AdminDiagnosticoIA />;
+      case "winners":
+        return <AdminGanhadores />;
+      case "users":
+        return <AdminUsuariosControl />;
+      case "reports":
+        return <AdminRelatoriosControl />;
+      default:
+        return null;
     }
   }
 
-  function copiarTexto(texto: string, index: number) {
-    navigator.clipboard.writeText(texto);
-    setCopiadoIndex(index);
-    setTimeout(() => setCopiadoIndex(null), 1500);
-  }
-
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        Diagnóstico IA — Assistente do Projeto
-      </h2>
-
-      <div className="h-80 overflow-y-auto rounded border bg-gray-50 p-3 space-y-3">
-        {mensagens.length === 0 && (
-          <div className="text-sm text-gray-500">
-            Faça uma pergunta técnica sobre o projeto ZLPix
-            (prêmio, CMS, abas, regras, erros…)
-          </div>
-        )}
-
-        {mensagens.map((msg, i) => (
-          <div
-            key={i}
-            className={`relative rounded p-3 text-sm ${
-              msg.role === "user"
-                ? "bg-indigo-600 text-white ml-auto max-w-[80%]"
-                : "bg-white border max-w-[80%]"
-            }`}
-          >
-            {msg.content}
-
-            {msg.role === "assistant" && (
-              <button
-                onClick={() => copiarTexto(msg.content, i)}
-                className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-              >
-                {copiadoIndex === i ? "Copiado!" : "Copiar"}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {erro && (
-        <div className="text-sm text-red-600">{erro}</div>
-      )}
-
-      <div className="flex gap-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={3}
-          placeholder="Pergunte algo para a IA…"
-          className="flex-1 rounded border p-2 text-sm"
-        />
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
+        <h1 className="font-bold">Painel Administrativo</h1>
 
         <button
-          onClick={enviarPergunta}
-          disabled={loading}
-          className="rounded bg-indigo-600 px-4 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
+          onClick={handleLogout}
+          className="bg-red-500 px-3 py-2 rounded flex items-center gap-2"
         >
-          {loading ? "Pensando…" : "Enviar"}
+          <LogOut size={16} />
+          Sair
         </button>
-      </div>
+      </header>
+
+      <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${
+                activeTab === tab.id
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100"
+              }`}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <main className="flex-1 w-full max-w-4xl mx-auto p-4">
+        <div className="bg-white p-4 rounded shadow">
+          {renderTab()}
+        </div>
+      </main>
     </div>
   );
 }
