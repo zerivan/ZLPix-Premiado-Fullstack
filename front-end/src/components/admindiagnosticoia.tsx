@@ -11,7 +11,8 @@ import {
   Brain,
 } from "lucide-react";
 
-// ✅ IMPORTS CORRETOS (case-sensitive / Linux-safe)
+// ✅ IMPORTS CORRETOS — CASE-SENSITIVE / LINUX SAFE
+import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
 import AdminAparenciaControl from "./components/adminaparenciacontrol";
 import AdminConteudoControl from "./components/adminconteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
