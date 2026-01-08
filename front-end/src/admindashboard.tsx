@@ -11,8 +11,8 @@ import {
   Brain,
 } from "lucide-react";
 
-// ✅ COMPONENTES ADMIN PADRONIZADOS
-import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
+// ✅ COMPONENTES ADMIN (NOMES ALINHADOS AO FILESYSTEM)
+import AdminConfiguracoesContr from "./components/adminconfiguracoesContr";
 import AdminAparenciaControl from "./components/adminaparenciacontrol";
 import AdminConteudoControl from "./components/adminconteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
@@ -32,11 +32,9 @@ type TabId =
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // ❗ Nenhuma aba ativa ao iniciar
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
 
   useEffect(() => {
-    // ✅ BLOQUEIO IMEDIATO SEM TOKEN
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) {
       navigate("/admin", { replace: true });
@@ -65,40 +63,31 @@ export default function AdminDashboard() {
   ];
 
   function renderTab() {
-    try {
-      if (!activeTab) {
-        return (
-          <div className="text-sm text-gray-500">
-            Selecione uma opção no menu acima.
-          </div>
-        );
-      }
-
-      switch (activeTab) {
-        case "config":
-          return <AdminConfiguracoesControl />;
-        case "appearance":
-          return <AdminAparenciaControl />;
-        case "content":
-          return <AdminConteudoControl />;
-        case "diagnostico":
-          return <AdminDiagnosticoIA />;
-        case "winners":
-          return <AdminGanhadores />;
-        case "users":
-          return <AdminUsuariosControl />;
-        case "reports":
-          return <AdminRelatoriosControl />;
-        default:
-          return null;
-      }
-    } catch (err) {
-      console.error("Erro ao renderizar aba:", err);
+    if (!activeTab) {
       return (
-        <div className="text-sm text-red-600">
-          Erro ao carregar este módulo.
+        <div className="text-sm text-gray-500">
+          Selecione uma opção no menu acima.
         </div>
       );
+    }
+
+    switch (activeTab) {
+      case "config":
+        return <AdminConfiguracoesContr />;
+      case "appearance":
+        return <AdminAparenciaControl />;
+      case "content":
+        return <AdminConteudoControl />;
+      case "diagnostico":
+        return <AdminDiagnosticoIA />;
+      case "winners":
+        return <AdminGanhadores />;
+      case "users":
+        return <AdminUsuariosControl />;
+      case "reports":
+        return <AdminRelatoriosControl />;
+      default:
+        return null;
     }
   }
 
