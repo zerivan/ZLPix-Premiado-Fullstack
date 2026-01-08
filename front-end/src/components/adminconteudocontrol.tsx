@@ -10,6 +10,7 @@ type CmsArea = {
 };
 
 type CmsPage = {
+  key: string;
   page: string;
   title: string;
 };
@@ -21,8 +22,6 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  const [editorHtml, setEditorHtml] = useState<string>("");
-
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -30,106 +29,69 @@ export default function AdminConteudoControl() {
   const [status, setStatus] = useState<string | null>(null);
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+  const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
-  function getAuthHeaders() {
-    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-    if (!token) return null;
-    return { Authorization: `Bearer ${token}` };
-  }
+  const headers = token
+    ? { Authorization: `Bearer ${token}` }
+    : undefined;
 
+  // =========================
+  // LOAD PÁGINAS
+  // =========================
   async function loadPages() {
     try {
-      const headers = getAuthHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        setLoading(false);
-        return;
-      }
+      setLoading(true);
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/pages`,
+        { headers }
+      );
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
-
-      if (res.data?.ok && Array.isArray(res.data.data)) {
-        const pagesMap: Record<string, CmsPage> = {};
-
-        res.data.data.forEach((item: any) => {
-          if (!pagesMap[item.page]) {
-            pagesMap[item.page] = {
-              page: item.page,
-              title:
-                item.page.charAt(0).toUpperCase() +
-                item.page.slice(1),
-            };
-          }
-        });
-
-        const pageList = Object.values(pagesMap);
-        setPages(pageList);
-        if (pageList.length > 0) setPageKey(pageList[0].page);
+      if (res.data?.ok) {
+        setPages(res.data.pages || []);
       }
     } catch {
-      setErro("Erro ao carregar páginas do CMS.");
+      setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadAreas(page: string) {
+  // =========================
+  // LOAD ÁREAS DA PÁGINA
+  // =========================
+  async function loadAreas(key: string) {
     try {
       setLoadingAreas(true);
-      setErro(null);
-      setStatus(null);
-
-      const headers = getAuthHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      setActiveArea(null);
 
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/content/${page}`,
+        `${BASE_URL}/api/admin/cms/areas/${key}`,
         { headers }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.data)) {
-        setAreas(res.data.data);
-        setActiveArea(res.data.data[0] || null);
-      } else {
-        setAreas([]);
-        setActiveArea(null);
+      if (res.data?.ok) {
+        setAreas(res.data.areas || []);
       }
     } catch {
-      setErro("Erro ao carregar conteúdo da página.");
+      setErro("Erro ao carregar áreas.");
     } finally {
       setLoadingAreas(false);
     }
   }
 
-  useEffect(() => {
-    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
-    else setEditorHtml("");
-  }, [activeArea]);
-
-  async function saveContent() {
+  // =========================
+  // SAVE ÁREA
+  // =========================
+  async function salvarArea() {
     if (!activeArea) return;
 
     try {
       setSalvando(true);
-      setErro(null);
       setStatus(null);
 
-      const headers = getAuthHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
-
       await axios.post(
-        `${BASE_URL}/api/admin/cms/content`,
-        {
-          key: activeArea.key,
-          title: activeArea.title,
-          contentHtml: editorHtml,
-        },
+        `${BASE_URL}/api/admin/cms/area/save`,
+        activeArea,
         { headers }
       );
 
@@ -149,80 +111,90 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
+  // =========================
+  // RENDER
+  // =========================
   if (loading) {
-    return (
-      <div className="text-sm text-gray-500 animate-pulse">
-        Carregando conteúdo do CMS...
-      </div>
-    );
-  }
-
-  if (erro) {
-    return <div className="text-sm text-red-600">{erro}</div>;
+    return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo do App</h2>
+      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
+      {erro && <div className="text-sm text-red-600">{erro}</div>}
+      {status && <div className="text-sm text-green-600">{status}</div>}
+
+      {/* PÁGINAS */}
       <select
-        className="w-full rounded border p-2"
+        className="border p-2 w-full"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
+        <option value="">Selecione uma página</option>
         {pages.map((p) => (
-          <option key={p.page} value={p.page}>
+          <option key={p.key} value={p.key}>
             {p.title}
           </option>
         ))}
       </select>
 
-      {!loadingAreas && areas.length > 0 && (
-        <select
-          className="w-full rounded border p-2"
-          value={activeArea?.key}
-          onChange={(e) =>
-            setActiveArea(
-              areas.find((a) => a.key === e.target.value) || null
-            )
-          }
-        >
-          {areas.map((a) => (
-            <option key={a.key} value={a.key}>
-              {a.title}
-            </option>
-          ))}
-        </select>
+      {/* ÁREAS */}
+      {loadingAreas && (
+        <div className="text-sm text-gray-500">Carregando áreas…</div>
       )}
 
-      {status && <div className="text-sm text-green-600">{status}</div>}
+      {areas.map((area) => (
+        <button
+          key={area.key}
+          onClick={() => setActiveArea(area)}
+          className={`block w-full text-left p-2 rounded border ${
+            activeArea?.key === area.key
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-100"
+          }`}
+        >
+          {area.title}
+        </button>
+      ))}
 
+      {/* EDITOR */}
       {activeArea && (
-        <>
-          <input
-            type="text"
-            className="w-full rounded border p-2"
-            value={activeArea.title}
-            onChange={(e) =>
-              setActiveArea({ ...activeArea, title: e.target.value })
-            }
-          />
+        <div className="space-y-4">
+          <h3 className="font-semibold">{activeArea.title}</h3>
 
           <ReactQuill
             theme="snow"
-            value={editorHtml}
-            onChange={setEditorHtml}
-            className="bg-white"
+            value={activeArea.contentHtml}
+            onChange={(html) =>
+              setActiveArea({ ...activeArea, contentHtml: html })
+            }
           />
 
           <button
-            onClick={saveContent}
+            onClick={salvarArea}
             disabled={salvando}
-            className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-60"
           >
             {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
-        </>
+
+          {/* ========================= */}
+          {/* PREVIEW SIMPLES (NOVO) */}
+          {/* ========================= */}
+          <div className="border rounded p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold mb-2">
+              Preview da Página
+            </h4>
+
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: activeArea.contentHtml,
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
