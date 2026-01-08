@@ -22,6 +22,8 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
+  const [html, setHtml] = useState(""); // ✅ ESTADO SEPARADO DO EDITOR
+
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -57,12 +59,13 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS
   // =========================
   async function loadAreas(key: string) {
     try {
       setLoadingAreas(true);
       setActiveArea(null);
+      setHtml("");
 
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/areas/${key}`,
@@ -80,7 +83,18 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA
+  // SINCRONIZA EDITOR
+  // =========================
+  useEffect(() => {
+    if (activeArea) {
+      setHtml(activeArea.contentHtml || "");
+    } else {
+      setHtml("");
+    }
+  }, [activeArea]);
+
+  // =========================
+  // SAVE
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
@@ -91,7 +105,10 @@ export default function AdminConteudoControl() {
 
       await axios.post(
         `${BASE_URL}/api/admin/cms/area/save`,
-        activeArea,
+        {
+          ...activeArea,
+          contentHtml: html,
+        },
         { headers }
       );
 
@@ -111,9 +128,6 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // RENDER
-  // =========================
   if (loading) {
     return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
   }
@@ -125,7 +139,6 @@ export default function AdminConteudoControl() {
       {erro && <div className="text-sm text-red-600">{erro}</div>}
       {status && <div className="text-sm text-green-600">{status}</div>}
 
-      {/* PÁGINAS */}
       <select
         className="border p-2 w-full"
         value={pageKey}
@@ -139,7 +152,6 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {/* ÁREAS */}
       {loadingAreas && (
         <div className="text-sm text-gray-500">Carregando áreas…</div>
       )}
@@ -158,17 +170,14 @@ export default function AdminConteudoControl() {
         </button>
       ))}
 
-      {/* EDITOR */}
       {activeArea && (
         <div className="space-y-4">
           <h3 className="font-semibold">{activeArea.title}</h3>
 
           <ReactQuill
             theme="snow"
-            value={activeArea.contentHtml}
-            onChange={(html) =>
-              setActiveArea({ ...activeArea, contentHtml: html })
-            }
+            value={html}
+            onChange={setHtml}
           />
 
           <button
@@ -179,9 +188,6 @@ export default function AdminConteudoControl() {
             {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
 
-          {/* ========================= */}
-          {/* PREVIEW SIMPLES (NOVO) */}
-          {/* ========================= */}
           <div className="border rounded p-4 bg-gray-50">
             <h4 className="text-sm font-semibold mb-2">
               Preview da Página
@@ -189,9 +195,7 @@ export default function AdminConteudoControl() {
 
             <div
               className="prose max-w-none"
-              dangerouslySetInnerHTML={{
-                __html: activeArea.contentHtml,
-              }}
+              dangerouslySetInnerHTML={{ __html: html }}
             />
           </div>
         </div>
