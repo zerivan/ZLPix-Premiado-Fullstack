@@ -11,8 +11,8 @@ import {
   Brain,
 } from "lucide-react";
 
-// ✅ COMPONENTES ADMIN (NOMES ALINHADOS AO FILESYSTEM)
-import AdminConfiguracoesContr from "./components/adminconfiguracoesContr";
+// ✅ IMPORTS CORRETOS — CASE-SENSITIVE / LINUX SAFE
+import AdminConfiguracoesControl from "./components/adminconfiguracoescontrol";
 import AdminAparenciaControl from "./components/adminaparenciacontrol";
 import AdminConteudoControl from "./components/adminconteudocontrol";
 import AdminDiagnosticoIA from "./components/admindiagnosticoia";
@@ -31,7 +31,6 @@ type TabId =
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export default function AdminDashboard() {
 
     switch (activeTab) {
       case "config":
-        return <AdminConfiguracoesContr />;
+        return <AdminConfiguracoesControl />;
       case "appearance":
         return <AdminAparenciaControl />;
       case "content":
