@@ -14,14 +14,13 @@ type CmsPage = {
   title: string;
 };
 
-export default function ConteudoControl() {
+export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState<string>("");
 
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  // 🔑 estado REAL do editor
   const [editorHtml, setEditorHtml] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
@@ -35,15 +34,9 @@ export default function ConteudoControl() {
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getAuthHeaders();
@@ -71,10 +64,7 @@ export default function ConteudoControl() {
 
         const pageList = Object.values(pagesMap);
         setPages(pageList);
-
-        if (pageList.length > 0) {
-          setPageKey(pageList[0].page);
-        }
+        if (pageList.length > 0) setPageKey(pageList[0].page);
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
@@ -83,9 +73,6 @@ export default function ConteudoControl() {
     }
   }
 
-  // =========================
-  // LOAD ÁREAS
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -117,20 +104,11 @@ export default function ConteudoControl() {
     }
   }
 
-  // =========================
-  // SINCRONIZA EDITOR ← ÁREA
-  // =========================
   useEffect(() => {
-    if (activeArea) {
-      setEditorHtml(activeArea.contentHtml || "");
-    } else {
-      setEditorHtml("");
-    }
+    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
+    else setEditorHtml("");
   }, [activeArea]);
 
-  // =========================
-  // SAVE
-  // =========================
   async function saveContent() {
     if (!activeArea) return;
 
@@ -171,9 +149,6 @@ export default function ConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // RENDER
-  // =========================
   if (loading) {
     return (
       <div className="text-sm text-gray-500 animate-pulse">
