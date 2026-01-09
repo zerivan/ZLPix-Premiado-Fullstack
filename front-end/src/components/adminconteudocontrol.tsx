@@ -36,7 +36,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD PÁGINAS (BACKEND NOVO)
+  // LOAD PÁGINAS
   // =========================
   async function loadPages() {
     try {
@@ -74,7 +74,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS DA PÁGINA (ROTA CORRETA)
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -89,12 +89,12 @@ export default function AdminConteudoControl() {
       }
 
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/content/${page}`,
+        `${BASE_URL}/api/admin/cms/areas/${page}`,
         { headers }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.data)) {
-        setAreas(res.data.data);
+      if (res.data?.ok && Array.isArray(res.data.areas)) {
+        setAreas(res.data.areas);
       } else {
         setAreas([]);
       }
@@ -107,7 +107,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA (BACKEND NOVO)
+  // SAVE ÁREA (ROTA CORRETA)
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
@@ -124,7 +124,7 @@ export default function AdminConteudoControl() {
       }
 
       await axios.post(
-        `${BASE_URL}/api/admin/cms/content`,
+        `${BASE_URL}/api/admin/cms/area/save`,
         {
           key: activeArea.key,
           title: activeArea.title,
@@ -217,7 +217,6 @@ export default function AdminConteudoControl() {
             {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
 
-          {/* PREVIEW (igual ao antigo) */}
           <div className="border rounded p-4 bg-gray-50">
             <h4 className="text-sm font-semibold mb-2">
               Preview da Página
