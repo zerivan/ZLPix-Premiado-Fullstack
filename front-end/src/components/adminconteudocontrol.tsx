@@ -21,7 +21,7 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  const [editorHtml, setEditorHtml] = useState<string>("");
+  const [editorHtml, setEditorHtml] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
@@ -37,23 +37,25 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
+  // =========================
+  // LOAD PAGES
+  // =========================
   async function loadPages() {
     try {
       const headers = getAuthHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
-        setLoading(false);
         return;
       }
 
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        const pagesMap: Record<string, CmsPage> = {};
+        const map: Record<string, CmsPage> = {};
 
         res.data.data.forEach((item: any) => {
-          if (!pagesMap[item.page]) {
-            pagesMap[item.page] = {
+          if (!map[item.page]) {
+            map[item.page] = {
               page: item.page,
               title:
                 item.page.charAt(0).toUpperCase() +
@@ -62,9 +64,9 @@ export default function AdminConteudoControl() {
           }
         });
 
-        const pageList = Object.values(pagesMap);
-        setPages(pageList);
-        if (pageList.length > 0) setPageKey(pageList[0].page);
+        const list = Object.values(map);
+        setPages(list);
+        if (list.length > 0) setPageKey(list[0].page);
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
@@ -73,6 +75,9 @@ export default function AdminConteudoControl() {
     }
   }
 
+  // =========================
+  // LOAD AREAS
+  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -99,6 +104,8 @@ export default function AdminConteudoControl() {
       }
     } catch {
       setErro("Erro ao carregar conteúdo da página.");
+      setAreas([]);
+      setActiveArea(null);
     } finally {
       setLoadingAreas(false);
     }
@@ -109,6 +116,9 @@ export default function AdminConteudoControl() {
     else setEditorHtml("");
   }, [activeArea]);
 
+  // =========================
+  // SAVE
+  // =========================
   async function saveContent() {
     if (!activeArea) return;
 
@@ -157,19 +167,20 @@ export default function AdminConteudoControl() {
     );
   }
 
-  if (erro) {
-    return <div className="text-sm text-red-600">{erro}</div>;
-  }
-
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
+      {erro && <div className="text-sm text-red-600">{erro}</div>}
+      {status && <div className="text-sm text-green-600">{status}</div>}
+
+      {/* PÁGINA */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
+        <option value="">Selecione uma página</option>
         {pages.map((p) => (
           <option key={p.page} value={p.page}>
             {p.title}
@@ -177,6 +188,7 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
+      {/* ÁREA */}
       {!loadingAreas && areas.length > 0 && (
         <select
           className="w-full rounded border p-2"
@@ -195,8 +207,7 @@ export default function AdminConteudoControl() {
         </select>
       )}
 
-      {status && <div className="text-sm text-green-600">{status}</div>}
-
+      {/* EDITOR */}
       {activeArea && (
         <>
           <input
