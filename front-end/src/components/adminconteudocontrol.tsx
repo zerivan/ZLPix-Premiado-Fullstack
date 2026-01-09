@@ -16,7 +16,7 @@ type CmsPage = {
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
-  const [pageKey, setPageKey] = useState<string>("");
+  const [pageKey, setPageKey] = useState("");
 
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
@@ -29,7 +29,10 @@ export default function AdminConteudoControl() {
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+  // ✅ URL CORRETA (Render + Local)
+  const BASE_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://zlpix-premiado-fullstack.onrender.com";
 
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
@@ -66,7 +69,10 @@ export default function AdminConteudoControl() {
 
         const list = Object.values(map);
         setPages(list);
-        if (list.length > 0) setPageKey(list[0].page);
+
+        if (list.length > 0) {
+          setPageKey(list[0].page);
+        }
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
@@ -112,8 +118,11 @@ export default function AdminConteudoControl() {
   }
 
   useEffect(() => {
-    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
-    else setEditorHtml("");
+    if (activeArea) {
+      setEditorHtml(activeArea.contentHtml || "");
+    } else {
+      setEditorHtml("");
+    }
   }, [activeArea]);
 
   // =========================
