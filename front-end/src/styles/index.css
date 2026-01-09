@@ -52,7 +52,11 @@ body {
    🔒 APP PÚBLICO (FORA DO ADMIN)
    ================================ */
 body:not(.admin-area) {
-  background: linear-gradient(180deg, var(--color-primary), var(--color-secondary));
+  background: linear-gradient(
+    180deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
   font-family: var(--font-primary);
   color: var(--text-light);
   overflow-x: hidden;
