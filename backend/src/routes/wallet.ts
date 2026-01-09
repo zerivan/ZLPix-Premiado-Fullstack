@@ -21,6 +21,42 @@ function getUserId(req: any): number | null {
 
 /**
  * =========================
+ * POST /wallet/ensure
+ * =========================
+ * Garante que a wallet do usuário exista
+ * (rota mínima para evitar 404 no front)
+ */
+router.post("/ensure", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    if (!wallet) {
+      await prisma.wallet.create({
+        data: {
+          user: { connect: { id: userId } },
+          saldo: 0,
+          createdAt: new Date(),
+        },
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Erro ao garantir wallet:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
  * GET /wallet/saldo
  * =========================
  * Retorna o saldo atual da carteira
@@ -73,7 +109,7 @@ router.post("/depositar", async (req, res) => {
             connect: { id: userId },
           },
           saldo: 0,
-          createdAt: new Date(), // 👈 O CAMPO QUE FALTAVA
+          createdAt: new Date(),
         },
       });
     }
