@@ -36,7 +36,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD PÁGINAS
+  // LOAD PÁGINAS (CORRIGIDO)
   // =========================
   async function loadPages() {
     try {
@@ -46,25 +46,16 @@ export default function AdminConteudoControl() {
         return;
       }
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/pages`,
+        { headers }
+      );
 
-      if (res.data?.ok && Array.isArray(res.data.data)) {
-        const map: Record<string, CmsPage> = {};
-
-        res.data.data.forEach((item: any) => {
-          if (!map[item.page]) {
-            map[item.page] = {
-              page: item.page,
-              title:
-                item.page.charAt(0).toUpperCase() +
-                item.page.slice(1),
-            };
-          }
-        });
-
-        const list = Object.values(map);
-        setPages(list);
-        if (list.length > 0) setPageKey(list[0].page);
+      if (res.data?.ok && Array.isArray(res.data.pages)) {
+        setPages(res.data.pages);
+        if (res.data.pages.length > 0) {
+          setPageKey(res.data.pages[0].page);
+        }
       }
     } catch {
       setErro("Erro ao carregar páginas.");
@@ -149,9 +140,6 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // RENDER
-  // =========================
   if (loading) {
     return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
   }
@@ -163,7 +151,6 @@ export default function AdminConteudoControl() {
       {erro && <div className="text-sm text-red-600">{erro}</div>}
       {status && <div className="text-sm text-green-600">{status}</div>}
 
-      {/* PÁGINAS */}
       <select
         className="border p-2 w-full"
         value={pageKey}
@@ -177,7 +164,6 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {/* ÁREAS */}
       {loadingAreas && (
         <div className="text-sm text-gray-500">Carregando áreas…</div>
       )}
@@ -185,12 +171,7 @@ export default function AdminConteudoControl() {
       {areas.map((area) => (
         <button
           key={area.key}
-          onClick={() =>
-            setActiveArea({
-              ...area,
-              contentHtml: area.contentHtml ?? "",
-            })
-          }
+          onClick={() => setActiveArea(area)}
           className={`block w-full text-left p-2 rounded border ${
             activeArea?.key === area.key
               ? "bg-indigo-600 text-white"
@@ -201,14 +182,13 @@ export default function AdminConteudoControl() {
         </button>
       ))}
 
-      {/* EDITOR */}
       {activeArea && (
         <div className="space-y-4">
           <h3 className="font-semibold">{activeArea.title}</h3>
 
           <ReactQuill
             theme="snow"
-            value={activeArea.contentHtml ?? ""}
+            value={activeArea.contentHtml}
             onChange={(html) =>
               setActiveArea({ ...activeArea, contentHtml: html })
             }
