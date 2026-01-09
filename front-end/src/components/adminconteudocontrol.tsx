@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -8,17 +10,18 @@ type CmsArea = {
 };
 
 type CmsPage = {
-  key: string;
   page: string;
   title: string;
 };
 
-export default function ConteudoControl() {
+export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState<string>("");
 
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
+
+  const [editorHtml, setEditorHtml] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
@@ -31,15 +34,9 @@ export default function ConteudoControl() {
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getAuthHeaders();
@@ -52,13 +49,22 @@ export default function ConteudoControl() {
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        setPages(res.data.data);
+        const pagesMap: Record<string, CmsPage> = {};
 
-        if (res.data.data.length > 0) {
-          const first = res.data.data[0];
-          // ✅ USAR PAGE (compatível com CMS_AREAS.page)
-          setPageKey(first.page);
-        }
+        res.data.data.forEach((item: any) => {
+          if (!pagesMap[item.page]) {
+            pagesMap[item.page] = {
+              page: item.page,
+              title:
+                item.page.charAt(0).toUpperCase() +
+                item.page.slice(1),
+            };
+          }
+        });
+
+        const pageList = Object.values(pagesMap);
+        setPages(pageList);
+        if (pageList.length > 0) setPageKey(pageList[0].page);
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
@@ -67,9 +73,6 @@ export default function ConteudoControl() {
     }
   }
 
-  // =========================
-  // LOAD ÁREAS
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -101,9 +104,11 @@ export default function ConteudoControl() {
     }
   }
 
-  // =========================
-  // SAVE ÁREA
-  // =========================
+  useEffect(() => {
+    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
+    else setEditorHtml("");
+  }, [activeArea]);
+
   async function saveContent() {
     if (!activeArea) return;
 
@@ -123,7 +128,7 @@ export default function ConteudoControl() {
         {
           key: activeArea.key,
           title: activeArea.title,
-          contentHtml: activeArea.contentHtml,
+          contentHtml: editorHtml,
         },
         { headers }
       );
@@ -144,9 +149,6 @@ export default function ConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // RENDER
-  // =========================
   if (loading) {
     return (
       <div className="text-sm text-gray-500 animate-pulse">
@@ -163,24 +165,17 @@ export default function ConteudoControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do App</h2>
 
-      {/* SELECT DE PÁGINAS */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
         {pages.map((p) => (
-          <option key={p.key} value={p.page}>
+          <option key={p.page} value={p.page}>
             {p.title}
           </option>
         ))}
       </select>
-
-      {loadingAreas && (
-        <div className="text-sm text-gray-500 animate-pulse">
-          Carregando áreas…
-        </div>
-      )}
 
       {!loadingAreas && areas.length > 0 && (
         <select
@@ -213,12 +208,11 @@ export default function ConteudoControl() {
             }
           />
 
-          <textarea
-            className="w-full h-48 rounded border p-2 font-mono text-sm"
-            value={activeArea.contentHtml}
-            onChange={(e) =>
-              setActiveArea({ ...activeArea, contentHtml: e.target.value })
-            }
+          <ReactQuill
+            theme="snow"
+            value={editorHtml}
+            onChange={setEditorHtml}
+            className="bg-white"
           />
 
           <button
