@@ -11,8 +11,8 @@ module.exports = {
         dark: "#0D1117",
         background: {
           light: "#F5F9FF",
-          dark: "#0D1117"
-        }
+          dark: "#0D1117",
+        },
       },
       gradientColorStops: {
         primary: "#3B82F6", // azul principal
@@ -34,7 +34,48 @@ module.exports = {
           "50%": { transform: "scale(1.05)" },
         },
       },
-    },
-  },
-  plugins: [],
-};
+      // 💅 Personalização da tipografia (plugin @tailwindcss/typography)
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme("colors.gray.800"),
+            a: {
+              color: theme("colors.blue.600"),
+              "&:hover": { color: theme("colors.blue.800") },
+              textDecoration: "underline",
+            },
+            h1: {
+              color: theme("colors.ocean"),
+              fontWeight: "700",
+              borderBottom: "2px solid " + theme("colors.emerald"),
+              paddingBottom: "0.3em",
+            },
+            h2: {
+              color: theme("colors.emerald"),
+              fontWeight: "600",
+              marginTop: "1.2em",
+            },
+            h3: {
+              color: theme("colors.ocean"),
+              fontWeight: "600",
+            },
+            strong: { color: theme("colors.dark") },
+            code: {
+              backgroundColor: theme("colors.gray.100"),
+              color: theme("colors.ocean"),
+              padding: "2px 4px",
+              borderRadius: "4px",
+            },
+            blockquote: {
+              borderLeftColor: theme("colors.emerald"),
+              color: theme("colors.gray.700"),
+              fontStyle: "italic",
+            },
+          },
+        },
+        invert: {
+          css: {
+            color: theme("colors.gray.300"),
+            a: {
+              color: theme("colors.gold"),
+              "&:hover": { color: theme("colors
