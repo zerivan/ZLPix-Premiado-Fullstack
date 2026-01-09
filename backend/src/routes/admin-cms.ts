@@ -20,7 +20,7 @@ const CMS_AREAS = [
 
 /**
  * =====================================================
- * HTML PADRÃO (FONTE ÚNICA DE VERDADE)
+ * HTML PADRÃO
  * =====================================================
  */
 const DEFAULT_HTML: Record<string, string> = {
@@ -34,7 +34,7 @@ const DEFAULT_HTML: Record<string, string> = {
 
 /**
  * =====================================================
- * CMS — LISTAR ÁREAS (ADMIN)
+ * CMS — LISTAR TODAS AS ÁREAS (LEGADO / INTERNO)
  * =====================================================
  */
 router.get("/", async (_req, res) => {
@@ -61,12 +61,33 @@ router.get("/", async (_req, res) => {
 
 /**
  * =====================================================
- * CMS — BUSCAR ÁREAS DE UMA PÁGINA (ADMIN)
- * 👉 SEM CRIAR CONTEÚDO AUTOMÁTICO
- * 👉 SEM DUPLICAR
+ * CMS — LISTAR PÁGINAS (ALIAS PARA FRONT)
+ * 👉 GET /api/admin/cms/pages
  * =====================================================
  */
-router.get("/content/:page", async (req, res) => {
+router.get("/pages", async (_req, res) => {
+  try {
+    const pages = Array.from(
+      new Set(CMS_AREAS.map((a) => a.page))
+    ).map((page) => ({
+      key: page,
+      page,
+      title: page.charAt(0).toUpperCase() + page.slice(1),
+    }));
+
+    return res.json({ ok: true, pages });
+  } catch {
+    return res.status(500).json({ ok: false });
+  }
+});
+
+/**
+ * =====================================================
+ * CMS — LISTAR ÁREAS DE UMA PÁGINA (ALIAS PARA FRONT)
+ * 👉 GET /api/admin/cms/areas/:page
+ * =====================================================
+ */
+router.get("/areas/:page", async (req, res) => {
   try {
     const { page } = req.params;
 
@@ -87,7 +108,7 @@ router.get("/content/:page", async (req, res) => {
       };
     });
 
-    return res.json({ ok: true, data });
+    return res.json({ ok: true, areas: data });
   } catch {
     return res.status(500).json({ ok: false });
   }
@@ -95,11 +116,11 @@ router.get("/content/:page", async (req, res) => {
 
 /**
  * =====================================================
- * CMS — SALVAR CONTEÚDO (ADMIN)
- * 👉 SALVA SOMENTE A ÁREA EXISTENTE
+ * CMS — SALVAR ÁREA (ALIAS PARA FRONT)
+ * 👉 POST /api/admin/cms/area/save
  * =====================================================
  */
-router.post("/content", async (req, res) => {
+router.post("/area/save", async (req, res) => {
   try {
     const { key, title, contentHtml } = req.body;
 
@@ -178,7 +199,7 @@ router.post("/app-appearance", async (req, res) => {
 
 /**
  * =====================================================
- * 🔓 APARÊNCIA — PÚBLICO (APP)
+ * APARÊNCIA — PÚBLICO
  * =====================================================
  */
 router.get("/public/app-appearance", async (_req, res) => {
