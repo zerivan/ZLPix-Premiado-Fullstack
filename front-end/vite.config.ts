@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: "./",
+  base: "/", // 🔥 FUNDAMENTAL para SPA com subrotas
   plugins: [react()],
   resolve: {
     alias: {
@@ -16,7 +16,7 @@ export default defineConfig({
     assetsDir: "assets",
     sourcemap: false,
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1500, // ✅ ajuste do warning (não afeta o build)
+    chunkSizeWarningLimit: 1500,
   },
   server: {
     port: 5173,
