@@ -16,12 +16,12 @@ type CmsPage = {
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
-  const [pageKey, setPageKey] = useState("");
+  const [pageKey, setPageKey] = useState<string>("");
 
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  const [editorHtml, setEditorHtml] = useState("");
+  const [editorHtml, setEditorHtml] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
@@ -29,10 +29,7 @@ export default function AdminConteudoControl() {
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  // ✅ URL CORRETA (Render + Local)
-  const BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    "https://zlpix-premiado-fullstack.onrender.com";
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
@@ -48,17 +45,18 @@ export default function AdminConteudoControl() {
       const headers = getAuthHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
+        setLoading(false);
         return;
       }
 
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        const map: Record<string, CmsPage> = {};
+        const pagesMap: Record<string, CmsPage> = {};
 
         res.data.data.forEach((item: any) => {
-          if (!map[item.page]) {
-            map[item.page] = {
+          if (!pagesMap[item.page]) {
+            pagesMap[item.page] = {
               page: item.page,
               title:
                 item.page.charAt(0).toUpperCase() +
@@ -67,12 +65,9 @@ export default function AdminConteudoControl() {
           }
         });
 
-        const list = Object.values(map);
-        setPages(list);
-
-        if (list.length > 0) {
-          setPageKey(list[0].page);
-        }
+        const pageList = Object.values(pagesMap);
+        setPages(pageList);
+        if (pageList.length > 0) setPageKey(pageList[0].page);
       }
     } catch {
       setErro("Erro ao carregar páginas do CMS.");
@@ -117,12 +112,12 @@ export default function AdminConteudoControl() {
     }
   }
 
+  // =========================
+  // SYNC EDITOR
+  // =========================
   useEffect(() => {
-    if (activeArea) {
-      setEditorHtml(activeArea.contentHtml || "");
-    } else {
-      setEditorHtml("");
-    }
+    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
+    else setEditorHtml("");
   }, [activeArea]);
 
   // =========================
@@ -183,13 +178,12 @@ export default function AdminConteudoControl() {
       {erro && <div className="text-sm text-red-600">{erro}</div>}
       {status && <div className="text-sm text-green-600">{status}</div>}
 
-      {/* PÁGINA */}
+      {/* PÁGINAS */}
       <select
         className="w-full rounded border p-2"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
-        <option value="">Selecione uma página</option>
         {pages.map((p) => (
           <option key={p.page} value={p.page}>
             {p.title}
@@ -197,7 +191,7 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {/* ÁREA */}
+      {/* ÁREAS */}
       {!loadingAreas && areas.length > 0 && (
         <select
           className="w-full rounded border p-2"
