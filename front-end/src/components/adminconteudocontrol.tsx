@@ -21,8 +21,6 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  const [editorHtml, setEditorHtml] = useState<string>("");
-
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -31,32 +29,31 @@ export default function AdminConteudoControl() {
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  function getAuthHeaders() {
+  function getHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
     return { Authorization: `Bearer ${token}` };
   }
 
   // =========================
-  // LOAD PAGES
+  // LOAD PÁGINAS (BACKEND NOVO)
   // =========================
   async function loadPages() {
     try {
-      const headers = getAuthHeaders();
+      const headers = getHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
-        setLoading(false);
         return;
       }
 
       const res = await axios.get(`${BASE_URL}/api/admin/cms`, { headers });
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
-        const pagesMap: Record<string, CmsPage> = {};
+        const map: Record<string, CmsPage> = {};
 
         res.data.data.forEach((item: any) => {
-          if (!pagesMap[item.page]) {
-            pagesMap[item.page] = {
+          if (!map[item.page]) {
+            map[item.page] = {
               page: item.page,
               title:
                 item.page.charAt(0).toUpperCase() +
@@ -65,27 +62,27 @@ export default function AdminConteudoControl() {
           }
         });
 
-        const pageList = Object.values(pagesMap);
-        setPages(pageList);
-        if (pageList.length > 0) setPageKey(pageList[0].page);
+        const list = Object.values(map);
+        setPages(list);
+        if (list.length > 0) setPageKey(list[0].page);
       }
     } catch {
-      setErro("Erro ao carregar páginas do CMS.");
+      setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
   // =========================
-  // LOAD AREAS
+  // LOAD ÁREAS DA PÁGINA
   // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
+      setActiveArea(null);
       setErro(null);
-      setStatus(null);
 
-      const headers = getAuthHeaders();
+      const headers = getHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
         return;
@@ -98,40 +95,29 @@ export default function AdminConteudoControl() {
 
       if (res.data?.ok && Array.isArray(res.data.data)) {
         setAreas(res.data.data);
-        setActiveArea(res.data.data[0] || null);
       } else {
         setAreas([]);
-        setActiveArea(null);
       }
     } catch {
-      setErro("Erro ao carregar conteúdo da página.");
+      setErro("Erro ao carregar áreas.");
       setAreas([]);
-      setActiveArea(null);
     } finally {
       setLoadingAreas(false);
     }
   }
 
   // =========================
-  // SYNC EDITOR
+  // SAVE ÁREA (BACKEND NOVO)
   // =========================
-  useEffect(() => {
-    if (activeArea) setEditorHtml(activeArea.contentHtml || "");
-    else setEditorHtml("");
-  }, [activeArea]);
-
-  // =========================
-  // SAVE
-  // =========================
-  async function saveContent() {
+  async function salvarArea() {
     if (!activeArea) return;
 
     try {
       setSalvando(true);
-      setErro(null);
       setStatus(null);
+      setErro(null);
 
-      const headers = getAuthHeaders();
+      const headers = getHeaders();
       if (!headers) {
         setErro("Token de administrador ausente.");
         return;
@@ -142,7 +128,7 @@ export default function AdminConteudoControl() {
         {
           key: activeArea.key,
           title: activeArea.title,
-          contentHtml: editorHtml,
+          contentHtml: activeArea.contentHtml,
         },
         { headers }
       );
@@ -163,27 +149,27 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
+  // =========================
+  // RENDER
+  // =========================
   if (loading) {
-    return (
-      <div className="text-sm text-gray-500 animate-pulse">
-        Carregando conteúdo do CMS...
-      </div>
-    );
+    return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo do App</h2>
+      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
       {erro && <div className="text-sm text-red-600">{erro}</div>}
       {status && <div className="text-sm text-green-600">{status}</div>}
 
       {/* PÁGINAS */}
       <select
-        className="w-full rounded border p-2"
+        className="border p-2 w-full"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
+        <option value="">Selecione uma página</option>
         {pages.map((p) => (
           <option key={p.page} value={p.page}>
             {p.title}
@@ -192,51 +178,59 @@ export default function AdminConteudoControl() {
       </select>
 
       {/* ÁREAS */}
-      {!loadingAreas && areas.length > 0 && (
-        <select
-          className="w-full rounded border p-2"
-          value={activeArea?.key}
-          onChange={(e) =>
-            setActiveArea(
-              areas.find((a) => a.key === e.target.value) || null
-            )
-          }
-        >
-          {areas.map((a) => (
-            <option key={a.key} value={a.key}>
-              {a.title}
-            </option>
-          ))}
-        </select>
+      {loadingAreas && (
+        <div className="text-sm text-gray-500">Carregando áreas…</div>
       )}
+
+      {areas.map((area) => (
+        <button
+          key={area.key}
+          onClick={() => setActiveArea(area)}
+          className={`block w-full text-left p-2 rounded border ${
+            activeArea?.key === area.key
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-100"
+          }`}
+        >
+          {area.title}
+        </button>
+      ))}
 
       {/* EDITOR */}
       {activeArea && (
-        <>
-          <input
-            type="text"
-            className="w-full rounded border p-2"
-            value={activeArea.title}
-            onChange={(e) =>
-              setActiveArea({ ...activeArea, title: e.target.value })
-            }
-          />
+        <div className="space-y-4">
+          <h3 className="font-semibold">{activeArea.title}</h3>
 
           <ReactQuill
             theme="snow"
-            value={editorHtml}
-            onChange={setEditorHtml}
-            className="bg-white"
+            value={activeArea.contentHtml}
+            onChange={(html) =>
+              setActiveArea({ ...activeArea, contentHtml: html })
+            }
           />
 
           <button
-            onClick={saveContent}
+            onClick={salvarArea}
             disabled={salvando}
-            className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
+            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-60"
           >
             {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
-        </>
+
+          {/* PREVIEW (igual ao antigo) */}
+          <div className="border rounded p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold mb-2">
+              Preview da Página
+            </h4>
+
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: activeArea.contentHtml,
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
