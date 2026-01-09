@@ -74,7 +74,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA (ROTA CORRETA)
+  // LOAD ÁREAS DA PÁGINA
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -107,7 +107,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA (ROTA CORRETA)
+  // SAVE ÁREA
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
@@ -185,7 +185,12 @@ export default function AdminConteudoControl() {
       {areas.map((area) => (
         <button
           key={area.key}
-          onClick={() => setActiveArea(area)}
+          onClick={() =>
+            setActiveArea({
+              ...area,
+              contentHtml: area.contentHtml ?? "",
+            })
+          }
           className={`block w-full text-left p-2 rounded border ${
             activeArea?.key === area.key
               ? "bg-indigo-600 text-white"
@@ -203,7 +208,7 @@ export default function AdminConteudoControl() {
 
           <ReactQuill
             theme="snow"
-            value={activeArea.contentHtml}
+            value={activeArea.contentHtml ?? ""}
             onChange={(html) =>
               setActiveArea({ ...activeArea, contentHtml: html })
             }
