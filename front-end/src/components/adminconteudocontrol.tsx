@@ -31,7 +31,11 @@ export default function AdminConteudoControl() {
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
+  // 🔹 BACKEND (API)
   const BASE_URL = import.meta.env.VITE_API_URL;
+
+  // 🔹 SITE (FRONTEND)
+  const SITE_URL = import.meta.env.VITE_SITE_URL;
 
   function getHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
@@ -208,7 +212,7 @@ export default function AdminConteudoControl() {
 
         <iframe
           key={iframeKey}
-          src={`${BASE_URL}/?preview=1`}
+          src={`${SITE_URL}/?preview=1`}
           className="w-full h-[80vh] bg-white"
         />
       </div>
