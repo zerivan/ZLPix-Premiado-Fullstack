@@ -10,8 +10,13 @@ const router = Router();
  * =====================================================
  */
 const CMS_AREAS = [
-  { key: "home_info", page: "home", title: "Home – Texto Informativo" },
-  { key: "home_footer", page: "home", title: "Home – Rodapé" },
+  // HOME
+  { key: "home_info", page: "home", title: "Home – Texto Topo" },
+  { key: "home_card_info", page: "home", title: "Home – Texto do Card" },
+  { key: "home_extra_info", page: "home", title: "Home – Texto Abaixo do Botão" },
+  { key: "home_footer", page: "home", title: "Home – Como Funciona" },
+
+  // OUTRAS PÁGINAS
   { key: "resultado_info", page: "resultado", title: "Resultado – Informações" },
   { key: "pix_info", page: "pix", title: "PIX – Informações" },
   { key: "perfil_info", page: "perfil", title: "Perfil – Informações" },
@@ -27,6 +32,7 @@ interface CacheEntry<T> {
   data: T;
   timestamp: number;
 }
+
 const cmsCache = {
   pages: null as any[] | null,
   areas: {} as Record<string, CacheEntry<any[]>>,
@@ -44,7 +50,10 @@ const generateETag = (data: any): string =>
  */
 const DEFAULT_HTML: Record<string, string> = {
   home_info: "",
+  home_card_info: "",
+  home_extra_info: "",
   home_footer: "",
+
   resultado_info: "",
   pix_info: "",
   perfil_info: "",
@@ -100,13 +109,13 @@ router.get("/pages", async (_req: Request, res: Response) => {
   }
 
   try {
-    const pages = Array.from(
-      new Set(CMS_AREAS.map((a) => a.page))
-    ).map((page) => ({
-      key: page,
-      page,
-      title: page.charAt(0).toUpperCase() + page.slice(1),
-    }));
+    const pages = Array.from(new Set(CMS_AREAS.map((a) => a.page))).map(
+      (page) => ({
+        key: page,
+        page,
+        title: page.charAt(0).toUpperCase() + page.slice(1),
+      })
+    );
 
     cmsCache.pages = pages;
     cmsCache.lastPagesFetch = now;
@@ -132,7 +141,10 @@ router.get("/areas/:page", async (req: Request, res: Response) => {
   const cacheKey = `areas_${page}`;
   const now = Date.now();
 
-  if (cmsCache.areas[cacheKey] && now - cmsCache.areas[cacheKey].timestamp < 30000) {
+  if (
+    cmsCache.areas[cacheKey] &&
+    now - cmsCache.areas[cacheKey].timestamp < 30000
+  ) {
     const etag = generateETag(cmsCache.areas[cacheKey].data);
     res.set("ETag", etag);
     res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
@@ -191,95 +203,14 @@ router.post("/area/save", async (req: Request, res: Response) => {
       create: { key, title, contentHtml, type: "content" },
     });
 
-    // limpa cache da área salva
+    // limpa cache da página
     Object.keys(cmsCache.areas).forEach((k) => {
-      if (k.includes(key)) delete cmsCache.areas[k];
+      if (k.includes("home") || k.includes(key)) delete cmsCache.areas[k];
     });
 
     return res.json({ ok: true, data: saved });
   } catch (err) {
     console.error("❌ Erro ao salvar área CMS:", err);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * APARÊNCIA — PADRÃO + ADMIN + PÚBLICO
- * =====================================================
- */
-const DEFAULT_APPEARANCE = {
-  primaryColor: "#4f46e5",
-  secondaryColor: "#6366f1",
-  accentColor: "#f59e0b",
-  backgroundColor: "#ffffff",
-  themeMode: "light",
-  fontPrimary: "Inter",
-  fontHeading: "Inter",
-};
-
-router.get("/app-appearance", async (_req: Request, res: Response) => {
-  try {
-    const content = await prisma.appContent.findUnique({
-      where: { key: "app_appearance" },
-    });
-
-    let data = DEFAULT_APPEARANCE;
-    if (content?.contentHtml) {
-      try {
-        data = JSON.parse(content.contentHtml);
-      } catch {}
-    }
-
-    return res.json({ ok: true, data });
-  } catch (err) {
-    console.error("❌ Erro ao carregar aparência:", err);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-router.post("/app-appearance", async (req: Request, res: Response) => {
-  try {
-    const payload = { ...DEFAULT_APPEARANCE, ...req.body };
-
-    await prisma.appContent.upsert({
-      where: { key: "app_appearance" },
-      update: {
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(payload),
-        type: "config",
-      },
-      create: {
-        key: "app_appearance",
-        title: "Aparência do App",
-        contentHtml: JSON.stringify(payload),
-        type: "config",
-      },
-    });
-
-    return res.json({ ok: true, data: payload });
-  } catch (err) {
-    console.error("❌ Erro ao salvar aparência:", err);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-router.get("/public/app-appearance", async (_req: Request, res: Response) => {
-  try {
-    const content = await prisma.appContent.findUnique({
-      where: { key: "app_appearance" },
-    });
-
-    let data = DEFAULT_APPEARANCE;
-    if (content?.contentHtml) {
-      try {
-        data = JSON.parse(content.contentHtml);
-      } catch {}
-    }
-
-    return res.json({ ok: true, data });
-  } catch (err) {
-    console.error("❌ Erro ao carregar aparência pública:", err);
     return res.status(500).json({ ok: false });
   }
 });
