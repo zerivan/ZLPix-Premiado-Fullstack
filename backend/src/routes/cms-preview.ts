@@ -16,7 +16,11 @@ router.get("/preview/:page", async (req, res) => {
 
   try {
     const areas = await prisma.appContent.findMany({
-      where: { pageKey: page }, // ✅ CORRETO
+      where: {
+        key: {
+          startsWith: `${page}_`, // ✅ REGRA REAL DO SEU CMS
+        },
+      },
       select: {
         key: true,
         contentHtml: true,
