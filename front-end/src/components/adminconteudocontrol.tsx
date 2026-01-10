@@ -131,11 +131,15 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
+  // =========================
+  // INIT TINYMCE (CORRIGIDO)
+  // =========================
   useEffect(() => {
     if (!activeArea) return;
 
     loadTinyMCE().then(() => {
       const tinymce = (window as any).tinymce;
+
       tinymce.remove("#cms-editor");
 
       tinymce.init({
@@ -149,8 +153,11 @@ export default function AdminConteudoControl() {
           editor.on("Change KeyUp", () => {
             setEditorHtml(editor.getContent());
           });
+
           editor.on("init", () => {
-            editor.setContent(editorHtml);
+            // ✅ fonte correta no init
+            editor.setContent(activeArea.contentHtml || "");
+            setEditorHtml(activeArea.contentHtml || "");
           });
         },
       });
@@ -184,10 +191,7 @@ export default function AdminConteudoControl() {
         <button
           key={area.key}
           className="block w-full text-left border p-2"
-          onClick={() => {
-            setActiveArea(area);
-            setEditorHtml(area.contentHtml || "");
-          }}
+          onClick={() => setActiveArea(area)}
         >
           {area.title}
         </button>
@@ -195,19 +199,20 @@ export default function AdminConteudoControl() {
 
       {activeArea && (
         <>
-          <textarea id="cms-editor" />
+          <textarea id="cms-editor" className="hidden" />
 
           <button
             onClick={salvarArea}
+            disabled={salvando}
             className="bg-indigo-600 text-white px-4 py-2 rounded"
           >
-            Salvar
+            {salvando ? "Salvando..." : "Salvar"}
           </button>
 
           <div className="border p-4">
             <strong>Preview</strong>
             <div
-              className="prose"
+              className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: editorHtml }}
             />
           </div>
