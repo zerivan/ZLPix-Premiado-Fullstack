@@ -98,4 +98,90 @@ export default function AdminConteudoControl() {
     }
   }
 
-  // ============
+  // =========================
+  // EFEITOS INICIAIS
+  // =========================
+  useEffect(() => {
+    loadPages();
+  }, []);
+
+  // =========================
+  // RETORNO DO COMPONENTE
+  // =========================
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Gerenciar Conteúdo</h1>
+
+      {erro && <p className="text-red-600">{erro}</p>}
+
+      {loading ? (
+        <p>Carregando páginas...</p>
+      ) : (
+        <div>
+          <p className="mb-2">
+            Páginas carregadas: <strong>{pages.length}</strong>
+          </p>
+
+          {pages.length > 0 && (
+            <select
+              value={pageKey}
+              onChange={(e) => {
+                const newPage = e.target.value;
+                setPageKey(newPage);
+                loadAreas(newPage);
+              }}
+              className="border p-2 rounded"
+            >
+              {pages.map((p) => (
+                <option key={p.page} value={p.page}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {loadingAreas ? (
+            <p className="mt-4">Carregando áreas...</p>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {areas.map((area) => (
+                <div
+                  key={area.key}
+                  className="border rounded p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => setActiveArea(area)}
+                >
+                  <h2 className="font-semibold">{area.title}</h2>
+                  <div
+                    className="text-sm text-gray-600"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(area.contentHtml),
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeArea && (
+        <div className="mt-6 border-t pt-4">
+          <h2 className="font-semibold text-lg mb-2">{activeArea.title}</h2>
+          <ReactQuill
+            theme="snow"
+            value={activeArea.contentHtml}
+            onChange={(html) =>
+              setActiveArea({ ...activeArea, contentHtml: html })
+            }
+          />
+          <button
+            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            disabled={salvando}
+          >
+            {salvando ? "Salvando..." : "Salvar Alterações"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
