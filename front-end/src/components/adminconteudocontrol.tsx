@@ -1,9 +1,5 @@
-import { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import axios from "axios";
-
-// 🔥 REMOVIDO import direto do react-quill
-// import ReactQuill from "react-quill";
-// import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -16,8 +12,20 @@ type CmsPage = {
   title: string;
 };
 
-// 🔥 ReactQuill carregado SOB DEMANDA
+// 🔥 ReactQuill carregado SOB DEMANDA (React precisa existir!)
 const ReactQuill = React.lazy(() => import("react-quill"));
+
+// 🔥 CSS do Quill carregado só quando necessário
+function loadQuillCss() {
+  if (document.getElementById("quill-css")) return;
+
+  const link = document.createElement("link");
+  link.id = "quill-css";
+  link.rel = "stylesheet";
+  link.href =
+    "https://cdn.jsdelivr.net/npm/react-quill@2.0.0/dist/quill.snow.css";
+  document.head.appendChild(link);
+}
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
@@ -133,7 +141,10 @@ export default function AdminConteudoControl() {
                 <div
                   key={area.key}
                   className="border rounded p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => setActiveArea(area)}
+                  onClick={() => {
+                    loadQuillCss();
+                    setActiveArea(area);
+                  }}
                 >
                   <h2 className="font-semibold">{area.title}</h2>
                   <div
@@ -151,7 +162,6 @@ export default function AdminConteudoControl() {
         <div className="mt-6 border-t pt-4">
           <h2 className="font-semibold text-lg mb-2">{activeArea.title}</h2>
 
-          {/* 🔥 Editor carregado só quando necessário */}
           <Suspense fallback={<p>Carregando editor...</p>}>
             <ReactQuill
               theme="snow"
