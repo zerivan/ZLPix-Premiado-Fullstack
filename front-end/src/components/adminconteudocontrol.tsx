@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { Editor } from "@tinymce/tinymce-react";
 
 type CmsArea = {
   key: string;
@@ -16,7 +15,7 @@ type CmsPage = {
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
-  const [pageKey, setPageKey] = useState<string>("");
+  const [pageKey, setPageKey] = useState("");
 
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
@@ -35,71 +34,46 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/pages`,
         { headers }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.pages)) {
+      if (res.data?.ok) {
         setPages(res.data.pages);
         if (res.data.pages.length > 0) {
           setPageKey(res.data.pages[0].page);
         }
       }
-    } catch {
-      setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
-  // =========================
-  // LOAD ÁREAS
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
-      setErro(null);
       setActiveArea(null);
 
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/areas/${page}`,
         { headers }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.areas)) {
-        setAreas(res.data.areas);
-      } else {
-        setAreas([]);
-      }
-    } catch {
-      setErro("Erro ao carregar áreas.");
-      setAreas([]);
+      setAreas(res.data?.areas || []);
     } finally {
       setLoadingAreas(false);
     }
   }
 
-  // =========================
-  // SAVE ÁREA (CORRIGIDO)
-  // =========================
   async function salvarArea() {
     if (!activeArea) return;
 
@@ -109,22 +83,14 @@ export default function AdminConteudoControl() {
       setStatus(null);
 
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
       await axios.post(
         `${BASE_URL}/api/admin/cms/area/save`,
-        {
-          key: activeArea.key,
-          title: activeArea.title,
-          contentHtml: activeArea.contentHtml,
-        },
+        activeArea,
         { headers }
       );
 
-      // 🔑 SINCRONIZA A LISTA (BUG RESOLVIDO)
       setAreas((prev) =>
         prev.map((a) =>
           a.key === activeArea.key
@@ -150,22 +116,21 @@ export default function AdminConteudoControl() {
   }, [pageKey]);
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Carregando conteúdo…</div>;
+    return <div className="text-sm text-gray-500">Carregando…</div>;
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
-      {erro && <div className="text-sm text-red-600">{erro}</div>}
-      {status && <div className="text-sm text-green-600">{status}</div>}
+      {erro && <div className="text-red-600 text-sm">{erro}</div>}
+      {status && <div className="text-green-600 text-sm">{status}</div>}
 
       <select
         className="border p-2 w-full"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
-        <option value="">Selecione uma página</option>
         {pages.map((p) => (
           <option key={p.page} value={p.page}>
             {p.title}
@@ -173,9 +138,7 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {loadingAreas && (
-        <div className="text-sm text-gray-500">Carregando áreas…</div>
-      )}
+      {loadingAreas && <div>Carregando áreas…</div>}
 
       {areas.map((area) => (
         <button
@@ -187,7 +150,7 @@ export default function AdminConteudoControl() {
               contentHtml: area.contentHtml || "",
             })
           }
-          className={`block w-full text-left p-2 rounded border ${
+          className={`block w-full text-left p-2 rounded ${
             activeArea?.key === area.key
               ? "bg-indigo-600 text-white"
               : "bg-gray-100"
@@ -201,29 +164,33 @@ export default function AdminConteudoControl() {
         <div className="space-y-4">
           <h3 className="font-semibold">{activeArea.title}</h3>
 
-          <ReactQuill
-            theme="snow"
+          <Editor
             value={activeArea.contentHtml}
-            onChange={(html) =>
+            onEditorChange={(content) =>
               setActiveArea((prev) =>
-                prev ? { ...prev, contentHtml: html } : prev
+                prev ? { ...prev, contentHtml: content } : prev
               )
             }
+            init={{
+              height: 300,
+              menubar: false,
+              plugins:
+                "lists link image preview code fullscreen",
+              toolbar:
+                "undo redo | bold italic | bullist numlist | link | preview | code",
+            }}
           />
 
           <button
             onClick={salvarArea}
             disabled={salvando}
-            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-60"
+            className="bg-indigo-600 text-white px-4 py-2 rounded"
           >
             {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
 
-          <div className="border rounded p-4 bg-gray-50">
-            <h4 className="text-sm font-semibold mb-2">
-              Preview da Página
-            </h4>
-
+          <div className="border p-4 bg-gray-50 rounded">
+            <h4 className="text-sm font-semibold mb-2">Preview</h4>
             <div
               className="prose max-w-none"
               dangerouslySetInnerHTML={{
