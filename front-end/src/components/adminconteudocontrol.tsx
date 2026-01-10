@@ -36,7 +36,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD PÁGINAS (CORRIGIDO)
+  // LOAD PÁGINAS
   // =========================
   async function loadPages() {
     try {
@@ -65,13 +65,13 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS
   // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
-      setActiveArea(null);
       setErro(null);
+      setActiveArea(null);
 
       const headers = getHeaders();
       if (!headers) {
@@ -98,15 +98,15 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA
+  // SAVE ÁREA (CORRIGIDO)
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
 
     try {
       setSalvando(true);
-      setStatus(null);
       setErro(null);
+      setStatus(null);
 
       const headers = getHeaders();
       if (!headers) {
@@ -122,6 +122,15 @@ export default function AdminConteudoControl() {
           contentHtml: activeArea.contentHtml,
         },
         { headers }
+      );
+
+      // 🔑 SINCRONIZA A LISTA (BUG RESOLVIDO)
+      setAreas((prev) =>
+        prev.map((a) =>
+          a.key === activeArea.key
+            ? { ...a, contentHtml: activeArea.contentHtml }
+            : a
+        )
       );
 
       setStatus("Conteúdo salvo com sucesso.");
@@ -141,7 +150,7 @@ export default function AdminConteudoControl() {
   }, [pageKey]);
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
+    return <div className="text-sm text-gray-500">Carregando conteúdo…</div>;
   }
 
   return (
@@ -171,7 +180,13 @@ export default function AdminConteudoControl() {
       {areas.map((area) => (
         <button
           key={area.key}
-          onClick={() => setActiveArea(area)}
+          onClick={() =>
+            setActiveArea({
+              key: area.key,
+              title: area.title,
+              contentHtml: area.contentHtml || "",
+            })
+          }
           className={`block w-full text-left p-2 rounded border ${
             activeArea?.key === area.key
               ? "bg-indigo-600 text-white"
@@ -190,7 +205,9 @@ export default function AdminConteudoControl() {
             theme="snow"
             value={activeArea.contentHtml}
             onChange={(html) =>
-              setActiveArea({ ...activeArea, contentHtml: html })
+              setActiveArea((prev) =>
+                prev ? { ...prev, contentHtml: html } : prev
+              )
             }
           />
 
