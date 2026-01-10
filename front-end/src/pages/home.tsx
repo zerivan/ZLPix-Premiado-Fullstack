@@ -152,7 +152,7 @@ export default function Home() {
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed">
           Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
           Se suas dezenas aparecerem em{" "}
-          <strong>qualquer uma das centenas sorteadas</strong>,
+          <strong>qualquer uma das milhares sorteadas</strong>,
           seu bilhete é premiado!
         </div>
 
