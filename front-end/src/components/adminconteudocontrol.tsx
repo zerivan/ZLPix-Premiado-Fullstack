@@ -19,7 +19,7 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  // 🔑 HTML PURO (source of truth)
+  // 🔑 HTML PURO = fonte da verdade
   const [editorHtml, setEditorHtml] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -57,13 +57,14 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS
+  // LOAD ÁREAS DA PÁGINA
   // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
       setActiveArea(null);
       setEditorHtml("");
+      setStatus(null);
 
       const headers = getHeaders();
       if (!headers) return;
@@ -83,7 +84,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA (SEM GAMBIARRA)
+  // SAVE ÁREA (CONFIRMAÇÃO REAL)
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
@@ -106,14 +107,8 @@ export default function AdminConteudoControl() {
         { headers }
       );
 
-      // sincroniza lista local
-      setAreas((prev) =>
-        prev.map((a) =>
-          a.key === activeArea.key
-            ? { ...a, contentHtml: editorHtml }
-            : a
-        )
-      );
+      // 🔄 recarrega áreas direto do backend (fonte única)
+      await loadAreas(pageKey);
 
       setStatus("Conteúdo salvo com sucesso.");
     } catch {
@@ -123,6 +118,9 @@ export default function AdminConteudoControl() {
     }
   }
 
+  // =========================
+  // INIT
+  // =========================
   useEffect(() => {
     loadPages();
   }, []);
