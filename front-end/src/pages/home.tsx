@@ -14,7 +14,7 @@ function formatarDataBR(iso: string) {
 }
 
 /**
- * ✅ Garante que o HTML tenha conteúdo visível
+ * Garante que o HTML tenha conteúdo visível
  */
 function hasVisibleHtml(html: string | null) {
   if (!html) return false;
@@ -47,12 +47,15 @@ export default function Home() {
   // =========================
   const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
   const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
+  const [homeCardRegrasHtml, setHomeCardRegrasHtml] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     async function loadData() {
       try {
         /**
-         * 🔹 PRÓXIMO SORTEIO (OFICIAL)
+         * PRÓXIMO SORTEIO
          */
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
@@ -62,7 +65,7 @@ export default function Home() {
         }
 
         /**
-         * 🔹 PRÊMIO ATUAL (PÚBLICO)
+         * PRÊMIO ATUAL
          */
         const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.valor === "number") {
@@ -70,21 +73,29 @@ export default function Home() {
         }
 
         /**
-         * 🔹 CMS HOME (PÚBLICO)
+         * CMS HOME (PÚBLICO)
          */
         try {
           const cms = await api.get("/api/cms/public/home");
           if (cms.data?.ok && Array.isArray(cms.data.data)) {
             const areas: CmsArea[] = cms.data.data;
 
-            const info = areas.find((a) => a.key === "home_info");
-            const footer = areas.find((a) => a.key === "home_footer");
+            setHomeInfoHtml(
+              areas.find((a) => a.key === "home_info")?.contentHtml || null
+            );
 
-            setHomeInfoHtml(info?.contentHtml || null);
-            setHomeFooterHtml(footer?.contentHtml || null);
+            setHomeFooterHtml(
+              areas.find((a) => a.key === "home_footer")?.contentHtml || null
+            );
+
+            setHomeCardRegrasHtml(
+              areas.find(
+                (a) => a.key === "home.card.regras.texto"
+              )?.contentHtml || null
+            );
           }
         } catch {
-          // CMS público ainda não existe → ignora
+          // CMS público ainda não existe
         }
       } catch {
         // Home nunca quebra
@@ -148,13 +159,22 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* INFO FIXA */}
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed">
-          Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
-          Se suas dezenas aparecerem em{" "}
-          <strong>qualquer uma das milhares sorteadas</strong>,
-          seu bilhete é premiado!
-        </div>
+        {/* INFO FIXA — AGORA COM CMS + FALLBACK */}
+        <div
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+          dangerouslySetInnerHTML={{
+            __html:
+              homeCardRegrasHtml ??
+              `
+                <p>
+                  Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
+                  Se suas dezenas aparecerem em
+                  <strong> qualquer uma das milhares sorteadas</strong>,
+                  seu bilhete é premiado!
+                </p>
+              `,
+          }}
+        />
 
         {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
