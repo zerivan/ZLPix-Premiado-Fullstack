@@ -34,8 +34,8 @@ export default function AdminConteudoControl() {
   // 🔹 BACKEND (API)
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  // 🔹 SITE (FRONTEND)
-  const SITE_URL = import.meta.env.VITE_SITE_URL;
+  // 🔹 SITE (FRONTEND) — sem env
+  const SITE_URL = window.location.origin;
 
   function getHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
