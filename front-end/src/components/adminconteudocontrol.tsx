@@ -22,6 +22,9 @@ export default function AdminConteudoControl() {
   // 🔑 HTML PURO = fonte da verdade
   const [editorHtml, setEditorHtml] = useState("");
 
+  // 🔄 força reload do iframe
+  const [iframeKey, setIframeKey] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -57,7 +60,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS DA PÁGINA
+  // LOAD ÁREAS
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -84,7 +87,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // SAVE ÁREA (CONFIRMAÇÃO REAL)
+  // SAVE ÁREA
   // =========================
   async function salvarArea() {
     if (!activeArea) return;
@@ -107,8 +110,10 @@ export default function AdminConteudoControl() {
         { headers }
       );
 
-      // 🔄 recarrega áreas direto do backend (fonte única)
       await loadAreas(pageKey);
+
+      // 🔄 força reload do iframe (preview real)
+      setIframeKey((k) => k + 1);
 
       setStatus("Conteúdo salvo com sucesso.");
     } catch {
@@ -132,73 +137,81 @@ export default function AdminConteudoControl() {
   if (loading) return <p>Carregando conteúdo…</p>;
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ===== COLUNA ESQUERDA — CMS ===== */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
-      {erro && <div className="text-red-600 text-sm">{erro}</div>}
-      {status && <div className="text-green-600 text-sm">{status}</div>}
+        {erro && <div className="text-red-600 text-sm">{erro}</div>}
+        {status && <div className="text-green-600 text-sm">{status}</div>}
 
-      <select
-        className="border p-2 w-full"
-        value={pageKey}
-        onChange={(e) => setPageKey(e.target.value)}
-      >
-        {pages.map((p) => (
-          <option key={p.page} value={p.page}>
-            {p.title}
-          </option>
-        ))}
-      </select>
-
-      {loadingAreas && <p>Carregando áreas…</p>}
-
-      {areas.map((area) => (
-        <button
-          key={area.key}
-          className={`block w-full text-left p-2 border rounded ${
-            activeArea?.key === area.key
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-100"
-          }`}
-          onClick={() => {
-            setActiveArea(area);
-            setEditorHtml(area.contentHtml || "");
-          }}
+        <select
+          className="border p-2 w-full"
+          value={pageKey}
+          onChange={(e) => setPageKey(e.target.value)}
         >
-          {area.title}
-        </button>
-      ))}
+          {pages.map((p) => (
+            <option key={p.page} value={p.page}>
+              {p.title}
+            </option>
+          ))}
+        </select>
 
-      {activeArea && (
-        <>
-          <label className="text-sm font-medium">
-            HTML da área: {activeArea.title}
-          </label>
+        {loadingAreas && <p>Carregando áreas…</p>}
 
-          <textarea
-            className="w-full h-48 border p-2 font-mono text-sm"
-            value={editorHtml}
-            onChange={(e) => setEditorHtml(e.target.value)}
-            placeholder="<p>Digite o HTML aqui</p>"
-          />
-
+        {areas.map((area) => (
           <button
-            onClick={salvarArea}
-            disabled={salvando}
-            className="bg-indigo-600 text-white px-4 py-2 rounded"
+            key={area.key}
+            className={`block w-full text-left p-2 border rounded ${
+              activeArea?.key === area.key
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100"
+            }`}
+            onClick={() => {
+              setActiveArea(area);
+              setEditorHtml(area.contentHtml || "");
+            }}
           >
-            {salvando ? "Salvando..." : "Salvar Conteúdo"}
+            {area.title}
           </button>
+        ))}
 
-          <div className="border rounded p-4 bg-gray-50">
-            <strong>Preview</strong>
-            <div
-              className="prose max-w-none mt-2"
-              dangerouslySetInnerHTML={{ __html: editorHtml }}
+        {activeArea && (
+          <>
+            <label className="text-sm font-medium">
+              HTML da área: {activeArea.title}
+            </label>
+
+            <textarea
+              className="w-full h-48 border p-2 font-mono text-sm"
+              value={editorHtml}
+              onChange={(e) => setEditorHtml(e.target.value)}
+              placeholder="<p>Digite o HTML aqui</p>"
             />
-          </div>
-        </>
-      )}
+
+            <button
+              onClick={salvarArea}
+              disabled={salvando}
+              className="bg-indigo-600 text-white px-4 py-2 rounded"
+            >
+              {salvando ? "Salvando..." : "Salvar Conteúdo"}
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ===== COLUNA DIREITA — PREVIEW REAL ===== */}
+      <div className="border rounded overflow-hidden">
+        <div className="bg-gray-800 text-white text-sm px-3 py-2">
+          Preview real da página
+        </div>
+
+        <iframe
+          key={iframeKey}
+          src={`${BASE_URL}/?preview=1`}
+          className="w-full h-[80vh] bg-white"
+        />
+      </div>
     </div>
   );
 }
