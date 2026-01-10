@@ -17,6 +17,11 @@ export default defineConfig({
     sourcemap: false,
     emptyOutDir: true,
     chunkSizeWarningLimit: 1500,
+
+    // 🧠 Adicionamos esta parte:
+    rollupOptions: {
+      external: ["dompurify"],
+    },
   },
   server: {
     port: 5173,
