@@ -40,6 +40,9 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
+  // 🔑 estado SEPARADO para editor / preview
+  const [editorHtml, setEditorHtml] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -54,114 +57,72 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms/pages`, {
-        headers,
-      });
-
-      if (res.data?.ok && Array.isArray(res.data.pages)) {
+      const res = await axios.get(`${BASE_URL}/api/admin/cms/pages`, { headers });
+      if (res.data?.ok) {
         setPages(res.data.pages);
-        if (res.data.pages.length > 0) {
-          setPageKey(res.data.pages[0].page);
-        }
+        setPageKey(res.data.pages[0]?.page || "");
       }
-    } catch {
-      setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
-  // =========================
-  // LOAD ÁREAS
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
       setActiveArea(null);
-      setErro(null);
+      setEditorHtml("");
 
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/areas/${page}`,
         { headers }
       );
 
-      if (res.data?.ok && Array.isArray(res.data.areas)) {
-        setAreas(res.data.areas);
-      } else {
-        setAreas([]);
-      }
-    } catch {
-      setErro("Erro ao carregar áreas.");
-      setAreas([]);
+      setAreas(res.data?.areas || []);
     } finally {
       setLoadingAreas(false);
     }
   }
 
-  // =========================
-  // SAVE ÁREA
-  // =========================
   async function salvarArea() {
     if (!activeArea) return;
 
     try {
       setSalvando(true);
-      setErro(null);
-      setStatus(null);
 
       const headers = getHeaders();
-      if (!headers) {
-        setErro("Token de administrador ausente.");
-        return;
-      }
+      if (!headers) return;
 
       await axios.post(
         `${BASE_URL}/api/admin/cms/area/save`,
         {
           key: activeArea.key,
           title: activeArea.title,
-          contentHtml: activeArea.contentHtml,
+          contentHtml: editorHtml,
         },
         { headers }
       );
 
-      // 🔑 sincroniza frontend
       setAreas((prev) =>
         prev.map((a) =>
-          a.key === activeArea.key
-            ? { ...a, contentHtml: activeArea.contentHtml }
-            : a
+          a.key === activeArea.key ? { ...a, contentHtml: editorHtml } : a
         )
       );
 
       setStatus("Conteúdo salvo com sucesso.");
-    } catch {
-      setErro("Erro ao salvar conteúdo.");
     } finally {
       setSalvando(false);
     }
   }
 
-  // =========================
-  // INIT
-  // =========================
   useEffect(() => {
     loadPages();
   }, []);
@@ -170,67 +131,48 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // INIT TINYMCE
-  // =========================
   useEffect(() => {
     if (!activeArea) return;
 
-    let destroyed = false;
-
     loadTinyMCE().then(() => {
-      if (destroyed) return;
-
       const tinymce = (window as any).tinymce;
-
       tinymce.remove("#cms-editor");
 
       tinymce.init({
         selector: "#cms-editor",
-        height: 300,
+        height: 320,
         menubar: false,
-        plugins:
-          "anchor autolink charmap codesample emoticons link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode advtemplate tableofcontents footnotes mergetags autocorrect typography inlinecss markdown",
+        plugins: "link lists table code",
         toolbar:
-          "undo redo | blocks fontfamily fontsize | bold italic underline | align | bullist numlist | link table | preview code",
+          "undo redo | bold italic underline | bullist numlist | link table | code",
         setup(editor: any) {
           editor.on("Change KeyUp", () => {
-            setActiveArea((prev) =>
-              prev ? { ...prev, contentHtml: editor.getContent() } : prev
-            );
+            setEditorHtml(editor.getContent());
           });
-
           editor.on("init", () => {
-            editor.setContent(activeArea.contentHtml || "");
+            editor.setContent(editorHtml);
           });
         },
       });
     });
 
     return () => {
-      destroyed = true;
       const tinymce = (window as any).tinymce;
       if (tinymce) tinymce.remove("#cms-editor");
     };
   }, [activeArea?.key]);
 
-  if (loading) {
-    return <div className="text-sm text-gray-500">Carregando conteúdo…</div>;
-  }
+  if (loading) return <p>Carregando…</p>;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
-
-      {erro && <div className="text-sm text-red-600">{erro}</div>}
-      {status && <div className="text-sm text-green-600">{status}</div>}
+      <h2 className="font-semibold">Conteúdo</h2>
 
       <select
         className="border p-2 w-full"
         value={pageKey}
         onChange={(e) => setPageKey(e.target.value)}
       >
-        <option value="">Selecione uma página</option>
         {pages.map((p) => (
           <option key={p.page} value={p.page}>
             {p.title}
@@ -238,58 +180,38 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {loadingAreas && (
-        <div className="text-sm text-gray-500">Carregando áreas…</div>
-      )}
-
       {areas.map((area) => (
         <button
           key={area.key}
-          onClick={() =>
-            setActiveArea({
-              key: area.key,
-              title: area.title,
-              contentHtml: area.contentHtml || "",
-            })
-          }
-          className={`block w-full text-left p-2 rounded border ${
-            activeArea?.key === area.key
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-100"
-          }`}
+          className="block w-full text-left border p-2"
+          onClick={() => {
+            setActiveArea(area);
+            setEditorHtml(area.contentHtml || "");
+          }}
         >
           {area.title}
         </button>
       ))}
 
       {activeArea && (
-        <div className="space-y-4">
-          <h3 className="font-semibold">{activeArea.title}</h3>
-
-          {/* TinyMCE controla este textarea */}
-          <textarea id="cms-editor" className="hidden" />
+        <>
+          <textarea id="cms-editor" />
 
           <button
             onClick={salvarArea}
-            disabled={salvando}
-            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-60"
+            className="bg-indigo-600 text-white px-4 py-2 rounded"
           >
-            {salvando ? "Salvando..." : "Salvar Conteúdo"}
+            Salvar
           </button>
 
-          <div className="border rounded p-4 bg-gray-50">
-            <h4 className="text-sm font-semibold mb-2">
-              Preview da Página
-            </h4>
-
+          <div className="border p-4">
+            <strong>Preview</strong>
             <div
-              className="prose max-w-none"
-              dangerouslySetInnerHTML={{
-                __html: activeArea.contentHtml,
-              }}
+              className="prose"
+              dangerouslySetInnerHTML={{ __html: editorHtml }}
             />
           </div>
-        </div>
+        </>
       )}
     </div>
   );
