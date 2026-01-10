@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import DOMPurify from "dompurify"; // 🔒 Sanitização do HTML
 
 type CmsArea = {
   key: string;
@@ -154,7 +153,7 @@ export default function AdminConteudoControl() {
                   <div
                     className="text-sm text-gray-600"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(area.contentHtml),
+                      __html: area.contentHtml,
                     }}
                   />
                 </div>
