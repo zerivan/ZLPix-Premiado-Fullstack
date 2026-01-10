@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import axios from "axios";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+
+// 🔥 REMOVIDO import direto do react-quill
+// import ReactQuill from "react-quill";
+// import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -14,6 +16,9 @@ type CmsPage = {
   title: string;
 };
 
+// 🔥 ReactQuill carregado SOB DEMANDA
+const ReactQuill = React.lazy(() => import("react-quill"));
+
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState<string>("");
@@ -25,7 +30,6 @@ export default function AdminConteudoControl() {
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -35,9 +39,6 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
@@ -56,17 +57,13 @@ export default function AdminConteudoControl() {
           setPageKey(res.data.pages[0].page);
         }
       }
-    } catch (err) {
-      console.error("Erro ao carregar páginas:", err);
+    } catch {
       setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
-  // =========================
-  // LOAD ÁREAS DA PÁGINA
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -88,8 +85,7 @@ export default function AdminConteudoControl() {
       } else {
         setAreas([]);
       }
-    } catch (err) {
-      console.error("Erro ao carregar áreas:", err);
+    } catch {
       setErro("Erro ao carregar áreas.");
       setAreas([]);
     } finally {
@@ -97,16 +93,10 @@ export default function AdminConteudoControl() {
     }
   }
 
-  // =========================
-  // EFEITOS INICIAIS
-  // =========================
   useEffect(() => {
     loadPages();
   }, []);
 
-  // =========================
-  // RETORNO DO COMPONENTE
-  // =========================
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Gerenciar Conteúdo</h1>
@@ -116,11 +106,7 @@ export default function AdminConteudoControl() {
       {loading ? (
         <p>Carregando páginas...</p>
       ) : (
-        <div>
-          <p className="mb-2">
-            Páginas carregadas: <strong>{pages.length}</strong>
-          </p>
-
+        <>
           {pages.length > 0 && (
             <select
               value={pageKey}
@@ -152,27 +138,30 @@ export default function AdminConteudoControl() {
                   <h2 className="font-semibold">{area.title}</h2>
                   <div
                     className="text-sm text-gray-600"
-                    dangerouslySetInnerHTML={{
-                      __html: area.contentHtml,
-                    }}
+                    dangerouslySetInnerHTML={{ __html: area.contentHtml }}
                   />
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {activeArea && (
         <div className="mt-6 border-t pt-4">
           <h2 className="font-semibold text-lg mb-2">{activeArea.title}</h2>
-          <ReactQuill
-            theme="snow"
-            value={activeArea.contentHtml}
-            onChange={(html) =>
-              setActiveArea({ ...activeArea, contentHtml: html })
-            }
-          />
+
+          {/* 🔥 Editor carregado só quando necessário */}
+          <Suspense fallback={<p>Carregando editor...</p>}>
+            <ReactQuill
+              theme="snow"
+              value={activeArea.contentHtml}
+              onChange={(html) =>
+                setActiveArea({ ...activeArea, contentHtml: html })
+              }
+            />
+          </Suspense>
+
           <button
             className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             disabled={salvando}
