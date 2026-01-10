@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { api } from "../api/client";
 import NavBottom from "../components/navbottom";
-import DOMPurify from "dompurify"; // 🔒 sanitização segura
 
 function renderBlocks(blocks: any[]) {
   if (!Array.isArray(blocks)) return null;
@@ -74,9 +73,7 @@ export default function DynamicPage() {
     return <div className="p-6 text-gray-300">Página não encontrada.</div>;
   }
 
-  const safeHtml = page.contentHtml
-    ? DOMPurify.sanitize(page.contentHtml)
-    : null;
+  const html = page.contentHtml || null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
@@ -88,19 +85,18 @@ export default function DynamicPage() {
             </h1>
           )}
 
-          {/* 🧱 Se a página usa blocos estruturados */}
+          {/* 🧱 Blocos estruturados */}
           {page.blocksJson && renderBlocks(page.blocksJson)}
 
-          {/* 🧩 Se a página tem HTML salvo pelo editor Quill */}
-          {!page.blocksJson && safeHtml && (
+          {/* 🧩 HTML salvo pelo editor */}
+          {!page.blocksJson && html && (
             <div
               className="prose prose-invert max-w-none leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: safeHtml }}
+              dangerouslySetInnerHTML={{ __html: html }}
             />
           )}
 
-          {/* ⚠️ Fallback se nada foi renderizado */}
-          {!page.blocksJson && !safeHtml && (
+          {!page.blocksJson && !html && (
             <p className="text-gray-400 text-center mt-6">
               Nenhum conteúdo disponível para esta página.
             </p>
