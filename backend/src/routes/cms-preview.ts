@@ -9,12 +9,14 @@ router.get("/preview/:page", async (req, res) => {
   const token = req.query.token;
 
   if (!token) {
-    return res.status(401).json({ ok: false, message: "Preview não autorizado" });
+    return res
+      .status(401)
+      .json({ ok: false, message: "Preview não autorizado" });
   }
 
   try {
     const areas = await prisma.appContent.findMany({
-      where: { page },
+      where: { pageKey: page }, // ✅ CORRETO
       select: {
         key: true,
         contentHtml: true,
