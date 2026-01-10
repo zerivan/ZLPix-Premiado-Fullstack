@@ -25,6 +25,9 @@ import devAssistenteRoutes from "./routes/dev-assistente";
 // 🆕 CMS PÚBLICO (APP / CLIENTE)
 import cmsPublicRoutes from "./routes/cms-public";
 
+// 🆕 CMS PREVIEW (IFRAME)
+import cmsPreviewRoutes from "./routes/cms-preview";
+
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
 
@@ -64,6 +67,11 @@ app.use("/bilhete", bilheteRoutes);
 // CMS PÚBLICO (APP / CLIENTE)
 // ============================
 app.use("/api/cms/public", cmsPublicRoutes);
+
+// ============================
+// CMS PREVIEW (IFRAME)
+// ============================
+app.use("/api/cms", cmsPreviewRoutes);
 
 // ============================
 // ROTAS ADMIN (PROTEGIDAS)
