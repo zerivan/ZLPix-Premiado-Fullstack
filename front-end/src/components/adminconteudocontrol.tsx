@@ -1,5 +1,7 @@
-import React, { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -12,21 +14,6 @@ type CmsPage = {
   title: string;
 };
 
-// 🔥 ReactQuill carregado SOB DEMANDA (React precisa existir!)
-const ReactQuill = React.lazy(() => import("react-quill"));
-
-// 🔥 CSS do Quill carregado só quando necessário
-function loadQuillCss() {
-  if (document.getElementById("quill-css")) return;
-
-  const link = document.createElement("link");
-  link.id = "quill-css";
-  link.rel = "stylesheet";
-  link.href =
-    "https://cdn.jsdelivr.net/npm/react-quill@2.0.0/dist/quill.snow.css";
-  document.head.appendChild(link);
-}
-
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState<string>("");
@@ -38,6 +25,7 @@ export default function AdminConteudoControl() {
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -47,6 +35,9 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
+  // =========================
+  // LOAD PÁGINAS (CORRIGIDO)
+  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
@@ -55,9 +46,10 @@ export default function AdminConteudoControl() {
         return;
       }
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms/pages`, {
-        headers,
-      });
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/pages`,
+        { headers }
+      );
 
       if (res.data?.ok && Array.isArray(res.data.pages)) {
         setPages(res.data.pages);
@@ -72,6 +64,9 @@ export default function AdminConteudoControl() {
     }
   }
 
+  // =========================
+  // LOAD ÁREAS DA PÁGINA
+  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -84,9 +79,10 @@ export default function AdminConteudoControl() {
         return;
       }
 
-      const res = await axios.get(`${BASE_URL}/api/admin/cms/areas/${page}`, {
-        headers,
-      });
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/areas/${page}`,
+        { headers }
+      );
 
       if (res.data?.ok && Array.isArray(res.data.areas)) {
         setAreas(res.data.areas);
@@ -101,83 +97,123 @@ export default function AdminConteudoControl() {
     }
   }
 
+  // =========================
+  // SAVE ÁREA
+  // =========================
+  async function salvarArea() {
+    if (!activeArea) return;
+
+    try {
+      setSalvando(true);
+      setStatus(null);
+      setErro(null);
+
+      const headers = getHeaders();
+      if (!headers) {
+        setErro("Token de administrador ausente.");
+        return;
+      }
+
+      await axios.post(
+        `${BASE_URL}/api/admin/cms/area/save`,
+        {
+          key: activeArea.key,
+          title: activeArea.title,
+          contentHtml: activeArea.contentHtml,
+        },
+        { headers }
+      );
+
+      setStatus("Conteúdo salvo com sucesso.");
+    } catch {
+      setErro("Erro ao salvar conteúdo.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   useEffect(() => {
     loadPages();
   }, []);
 
+  useEffect(() => {
+    if (pageKey) loadAreas(pageKey);
+  }, [pageKey]);
+
+  if (loading) {
+    return <div className="text-sm text-gray-500">Carregando conteúdo...</div>;
+  }
+
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Gerenciar Conteúdo</h1>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
-      {erro && <p className="text-red-600">{erro}</p>}
+      {erro && <div className="text-sm text-red-600">{erro}</div>}
+      {status && <div className="text-sm text-green-600">{status}</div>}
 
-      {loading ? (
-        <p>Carregando páginas...</p>
-      ) : (
-        <>
-          {pages.length > 0 && (
-            <select
-              value={pageKey}
-              onChange={(e) => {
-                const newPage = e.target.value;
-                setPageKey(newPage);
-                loadAreas(newPage);
-              }}
-              className="border p-2 rounded"
-            >
-              {pages.map((p) => (
-                <option key={p.page} value={p.page}>
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          )}
+      <select
+        className="border p-2 w-full"
+        value={pageKey}
+        onChange={(e) => setPageKey(e.target.value)}
+      >
+        <option value="">Selecione uma página</option>
+        {pages.map((p) => (
+          <option key={p.page} value={p.page}>
+            {p.title}
+          </option>
+        ))}
+      </select>
 
-          {loadingAreas ? (
-            <p className="mt-4">Carregando áreas...</p>
-          ) : (
-            <div className="mt-4 space-y-4">
-              {areas.map((area) => (
-                <div
-                  key={area.key}
-                  className="border rounded p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    loadQuillCss();
-                    setActiveArea(area);
-                  }}
-                >
-                  <h2 className="font-semibold">{area.title}</h2>
-                  <div
-                    className="text-sm text-gray-600"
-                    dangerouslySetInnerHTML={{ __html: area.contentHtml }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+      {loadingAreas && (
+        <div className="text-sm text-gray-500">Carregando áreas…</div>
       )}
 
-      {activeArea && (
-        <div className="mt-6 border-t pt-4">
-          <h2 className="font-semibold text-lg mb-2">{activeArea.title}</h2>
+      {areas.map((area) => (
+        <button
+          key={area.key}
+          onClick={() => setActiveArea(area)}
+          className={`block w-full text-left p-2 rounded border ${
+            activeArea?.key === area.key
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-100"
+          }`}
+        >
+          {area.title}
+        </button>
+      ))}
 
-          <Suspense fallback={<p>Carregando editor...</p>}>
-            <ReactQuill
-              theme="snow"
-              value={activeArea.contentHtml}
-              onChange={(html) =>
-                setActiveArea({ ...activeArea, contentHtml: html })
-              }
-            />
-          </Suspense>
+      {activeArea && (
+        <div className="space-y-4">
+          <h3 className="font-semibold">{activeArea.title}</h3>
+
+          <ReactQuill
+            theme="snow"
+            value={activeArea.contentHtml}
+            onChange={(html) =>
+              setActiveArea({ ...activeArea, contentHtml: html })
+            }
+          />
 
           <button
-            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            onClick={salvarArea}
             disabled={salvando}
+            className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-60"
           >
-            {salvando ? "Salvando..." : "Salvar Alterações"}
+            {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
+
+          <div className="border rounded p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold mb-2">
+              Preview da Página
+            </h4>
+
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: activeArea.contentHtml,
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
