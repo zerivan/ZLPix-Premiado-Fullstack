@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 
 /**
- * Ajusta ISO UTC para data BR
+ * Utils
  */
 function formatarDataBR(iso: string) {
   const d = new Date(iso);
@@ -13,17 +13,9 @@ function formatarDataBR(iso: string) {
   return d.toLocaleDateString("pt-BR");
 }
 
-/**
- * Garante que o HTML tenha conteúdo visível
- */
 function hasVisibleHtml(html: string | null) {
   if (!html) return false;
-
-  const text = html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, "")
-    .trim();
-
+  const text = html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, "").trim();
   return text.length > 0;
 }
 
@@ -34,7 +26,42 @@ type CmsArea = {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [showInfo, setShowInfo] = useState(false);
+  const location = useLocation();
+
+  // =========================
+  // MODO CMS
+  // =========================
+  const isCmsMode =
+    location.pathname.startsWith("/admin/editor") &&
+    !!localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editingHtml, setEditingHtml] = useState<string>("");
+
+  async function salvarCms(key: string, html: string) {
+    await api.post(
+      "/api/admin/cms",
+      { key, contentHtml: html },
+      {
+        headers: {
+          Authorization:
+            "Bearer " + localStorage.getItem("TOKEN_ZLPIX_ADMIN"),
+        },
+      }
+    );
+  }
+
+  function startEdit(key: string, html: string) {
+    if (!isCmsMode) return;
+    setEditingKey(key);
+    setEditingHtml(html);
+  }
+
+  function finishEdit() {
+    if (!editingKey) return;
+    salvarCms(editingKey, editingHtml);
+    setEditingKey(null);
+  }
 
   // =========================
   // DADOS AUTOMÁTICOS
@@ -43,60 +70,76 @@ export default function Home() {
   const [dataSorteio, setDataSorteio] = useState<string>("");
 
   // =========================
-  // CMS — HOME
+  // CMS
   // =========================
-  const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
-  const [homeCardInfoHtml, setHomeCardInfoHtml] = useState<string | null>(null);
-  const [homeExtraInfoHtml, setHomeExtraInfoHtml] = useState<string | null>(null);
-  const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
+  const [cms, setCms] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 PRÓXIMO SORTEIO
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          setDataSorteio(
-            formatarDataBR(federal.data.data.proximoSorteio)
-          );
+          setDataSorteio(formatarDataBR(federal.data.data.proximoSorteio));
         }
 
-        // 🔹 PRÊMIO ATUAL
         const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.valor === "number") {
           setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
-        // 🔹 CMS HOME
-        const cms = await api.get("/api/cms/public/home");
-        if (cms.data?.ok && Array.isArray(cms.data.data)) {
-          const areas: CmsArea[] = cms.data.data;
-
-          setHomeInfoHtml(
-            areas.find((a) => a.key === "home_info")?.contentHtml || null
-          );
-          setHomeCardInfoHtml(
-            areas.find((a) => a.key === "home_card_info")?.contentHtml || null
-          );
-          setHomeExtraInfoHtml(
-            areas.find((a) => a.key === "home_extra_info")?.contentHtml || null
-          );
-          setHomeFooterHtml(
-            areas.find((a) => a.key === "home_footer")?.contentHtml || null
-          );
+        const cmsRes = await api.get("/api/cms/public/home");
+        if (cmsRes.data?.ok && Array.isArray(cmsRes.data.data)) {
+          const map: Record<string, string> = {};
+          cmsRes.data.data.forEach((a: CmsArea) => {
+            map[a.key] = a.contentHtml;
+          });
+          setCms(map);
         }
-      } catch {
-        // Home nunca quebra
-      }
+      } catch {}
     }
 
     loadData();
   }, []);
 
+  function CmsBlock({
+    k,
+    className,
+  }: {
+    k: string;
+    className?: string;
+  }) {
+    const html = cms[k];
+    if (!hasVisibleHtml(html)) return null;
+
+    const isEditing = editingKey === k;
+
+    return (
+      <div
+        className={`${className} ${
+          isCmsMode ? "outline outline-1 outline-yellow-400/40 cursor-pointer" : ""
+        }`}
+        onClick={() => startEdit(k, html)}
+      >
+        {isEditing ? (
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            className="bg-black/30 p-2 rounded"
+            onBlur={finishEdit}
+            onInput={(e) =>
+              setEditingHtml((e.target as HTMLElement).innerHTML)
+            }
+            dangerouslySetInnerHTML={{ __html: editingHtml }}
+          />
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-
-      {/* HEADER */}
       <header className="text-center py-7 border-b border-white/10 shadow-md">
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
           ZLPIX PREMIADO 💰
@@ -106,25 +149,15 @@ export default function Home() {
         </p>
       </header>
 
-      {/* CMS — TEXTO TOPO */}
-      {hasVisibleHtml(homeInfoHtml) && (
-        <div
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
-          dangerouslySetInnerHTML={{ __html: homeInfoHtml! }}
-        />
-      )}
+      <CmsBlock
+        k="home_info"
+        className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm shadow-inner w-full max-w-md mx-auto mt-6"
+      />
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
-
-        {/* CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
-          <p className="text-yellow-300 text-sm mb-1">
-            Prêmio acumulado
-          </p>
-
-          <h2 className="text-4xl font-extrabold drop-shadow-sm">
-            {premioAtual}
-          </h2>
+          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
+          <h2 className="text-4xl font-extrabold">{premioAtual}</h2>
 
           {dataSorteio && (
             <p className="text-sm text-blue-100 mt-2">
@@ -135,16 +168,12 @@ export default function Home() {
             </p>
           )}
 
-          {/* CMS — TEXTO DENTRO DO CARD */}
-          {hasVisibleHtml(homeCardInfoHtml) && (
-            <div
-              className="mt-4 text-sm text-white/90 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
-            />
-          )}
+          <CmsBlock
+            k="home_card_info"
+            className="mt-4 text-sm text-white/90 leading-relaxed"
+          />
         </div>
 
-        {/* BOTÃO */}
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 1.8, repeat: Infinity }}
@@ -155,36 +184,17 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* CMS — TEXTO EXTRA */}
-        {hasVisibleHtml(homeExtraInfoHtml) && (
-          <div
-            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
+        <CmsBlock
+          k="home_extra_info"
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm shadow-inner w-full max-w-md leading-relaxed"
+        />
+
+        <AnimatePresence>
+          <CmsBlock
+            k="home_footer"
+            className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full max-w-md"
           />
-        )}
-
-        {/* COMO FUNCIONA */}
-        <div className="w-full max-w-md space-y-4">
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow-md"
-          >
-            {showInfo ? "Fechar explicação" : "Como funciona o jogo 🎯"}
-          </button>
-
-          <AnimatePresence>
-            {showInfo && hasVisibleHtml(homeFooterHtml) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
-                dangerouslySetInnerHTML={{ __html: homeFooterHtml! }}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+        </AnimatePresence>
       </main>
 
       <NavBottom />
