@@ -12,27 +12,6 @@ type CmsPage = {
   title: string;
 };
 
-// =========================
-// LOAD TINYMCE VIA CDN
-// =========================
-function loadTinyMCE(): Promise<void> {
-  return new Promise((resolve) => {
-    if ((window as any).tinymce) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src =
-      "https://cdn.tiny.cloud/1/nodl6plzej0qovadyg591uo9gano2pp30y989zuoyep0jy5g/tinymce/8/tinymce.min.js";
-    script.referrerPolicy = "origin";
-    script.crossOrigin = "anonymous";
-    script.onload = () => resolve();
-
-    document.head.appendChild(script);
-  });
-}
-
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState("");
@@ -40,7 +19,7 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  // 🔑 estado SEPARADO para editor / preview
+  // 🔑 HTML PURO (source of truth)
   const [editorHtml, setEditorHtml] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -57,6 +36,9 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
+  // =========================
+  // LOAD PÁGINAS
+  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
@@ -67,11 +49,16 @@ export default function AdminConteudoControl() {
         setPages(res.data.pages);
         setPageKey(res.data.pages[0]?.page || "");
       }
+    } catch {
+      setErro("Erro ao carregar páginas.");
     } finally {
       setLoading(false);
     }
   }
 
+  // =========================
+  // LOAD ÁREAS
+  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -87,16 +74,24 @@ export default function AdminConteudoControl() {
       );
 
       setAreas(res.data?.areas || []);
+    } catch {
+      setErro("Erro ao carregar áreas.");
+      setAreas([]);
     } finally {
       setLoadingAreas(false);
     }
   }
 
+  // =========================
+  // SAVE ÁREA (SEM GAMBIARRA)
+  // =========================
   async function salvarArea() {
     if (!activeArea) return;
 
     try {
       setSalvando(true);
+      setErro(null);
+      setStatus(null);
 
       const headers = getHeaders();
       if (!headers) return;
@@ -111,13 +106,18 @@ export default function AdminConteudoControl() {
         { headers }
       );
 
+      // sincroniza lista local
       setAreas((prev) =>
         prev.map((a) =>
-          a.key === activeArea.key ? { ...a, contentHtml: editorHtml } : a
+          a.key === activeArea.key
+            ? { ...a, contentHtml: editorHtml }
+            : a
         )
       );
 
       setStatus("Conteúdo salvo com sucesso.");
+    } catch {
+      setErro("Erro ao salvar conteúdo.");
     } finally {
       setSalvando(false);
     }
@@ -131,49 +131,14 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
-  // =========================
-  // INIT TINYMCE (CORRIGIDO)
-  // =========================
-  useEffect(() => {
-    if (!activeArea) return;
-
-    loadTinyMCE().then(() => {
-      const tinymce = (window as any).tinymce;
-
-      tinymce.remove("#cms-editor");
-
-      tinymce.init({
-        selector: "#cms-editor",
-        height: 320,
-        menubar: false,
-        plugins: "link lists table code",
-        toolbar:
-          "undo redo | bold italic underline | bullist numlist | link table | code",
-        setup(editor: any) {
-          editor.on("Change KeyUp", () => {
-            setEditorHtml(editor.getContent());
-          });
-
-          editor.on("init", () => {
-            // ✅ fonte correta no init
-            editor.setContent(activeArea.contentHtml || "");
-            setEditorHtml(activeArea.contentHtml || "");
-          });
-        },
-      });
-    });
-
-    return () => {
-      const tinymce = (window as any).tinymce;
-      if (tinymce) tinymce.remove("#cms-editor");
-    };
-  }, [activeArea?.key]);
-
-  if (loading) return <p>Carregando…</p>;
+  if (loading) return <p>Carregando conteúdo…</p>;
 
   return (
     <div className="space-y-4">
-      <h2 className="font-semibold">Conteúdo</h2>
+      <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
+
+      {erro && <div className="text-red-600 text-sm">{erro}</div>}
+      {status && <div className="text-green-600 text-sm">{status}</div>}
 
       <select
         className="border p-2 w-full"
@@ -187,11 +152,20 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
+      {loadingAreas && <p>Carregando áreas…</p>}
+
       {areas.map((area) => (
         <button
           key={area.key}
-          className="block w-full text-left border p-2"
-          onClick={() => setActiveArea(area)}
+          className={`block w-full text-left p-2 border rounded ${
+            activeArea?.key === area.key
+              ? "bg-indigo-600 text-white"
+              : "bg-gray-100"
+          }`}
+          onClick={() => {
+            setActiveArea(area);
+            setEditorHtml(area.contentHtml || "");
+          }}
         >
           {area.title}
         </button>
@@ -199,20 +173,29 @@ export default function AdminConteudoControl() {
 
       {activeArea && (
         <>
-          <textarea id="cms-editor" className="hidden" />
+          <label className="text-sm font-medium">
+            HTML da área: {activeArea.title}
+          </label>
+
+          <textarea
+            className="w-full h-48 border p-2 font-mono text-sm"
+            value={editorHtml}
+            onChange={(e) => setEditorHtml(e.target.value)}
+            placeholder="<p>Digite o HTML aqui</p>"
+          />
 
           <button
             onClick={salvarArea}
             disabled={salvando}
             className="bg-indigo-600 text-white px-4 py-2 rounded"
           >
-            {salvando ? "Salvando..." : "Salvar"}
+            {salvando ? "Salvando..." : "Salvar Conteúdo"}
           </button>
 
-          <div className="border p-4">
+          <div className="border rounded p-4 bg-gray-50">
             <strong>Preview</strong>
             <div
-              className="prose max-w-none"
+              className="prose max-w-none mt-2"
               dangerouslySetInnerHTML={{ __html: editorHtml }}
             />
           </div>
