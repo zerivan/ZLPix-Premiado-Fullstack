@@ -37,26 +37,23 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
 
   // =========================
-  // DADOS DINÂMICOS
+  // DADOS AUTOMÁTICOS
   // =========================
   const [premioAtual, setPremioAtual] = useState<string>("R$ 500");
   const [dataSorteio, setDataSorteio] = useState<string>("");
 
   // =========================
-  // CMS — ÁREAS DA HOME
+  // CMS — HOME
   // =========================
   const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
+  const [homeCardInfoHtml, setHomeCardInfoHtml] = useState<string | null>(null);
+  const [homeExtraInfoHtml, setHomeExtraInfoHtml] = useState<string | null>(null);
   const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
-  const [homeCardRegrasHtml, setHomeCardRegrasHtml] = useState<string | null>(
-    null
-  );
 
   useEffect(() => {
     async function loadData() {
       try {
-        /**
-         * PRÓXIMO SORTEIO
-         */
+        // 🔹 PRÓXIMO SORTEIO
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
           setDataSorteio(
@@ -64,38 +61,29 @@ export default function Home() {
           );
         }
 
-        /**
-         * PRÊMIO ATUAL
-         */
+        // 🔹 PRÊMIO ATUAL
         const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.valor === "number") {
           setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
-        /**
-         * CMS HOME (PÚBLICO)
-         */
-        try {
-          const cms = await api.get("/api/cms/public/home");
-          if (cms.data?.ok && Array.isArray(cms.data.data)) {
-            const areas: CmsArea[] = cms.data.data;
+        // 🔹 CMS HOME
+        const cms = await api.get("/api/cms/public/home");
+        if (cms.data?.ok && Array.isArray(cms.data.data)) {
+          const areas: CmsArea[] = cms.data.data;
 
-            setHomeInfoHtml(
-              areas.find((a) => a.key === "home_info")?.contentHtml || null
-            );
-
-            setHomeFooterHtml(
-              areas.find((a) => a.key === "home_footer")?.contentHtml || null
-            );
-
-            setHomeCardRegrasHtml(
-              areas.find(
-                (a) => a.key === "home.card.regras.texto"
-              )?.contentHtml || null
-            );
-          }
-        } catch {
-          // CMS público ainda não existe
+          setHomeInfoHtml(
+            areas.find((a) => a.key === "home_info")?.contentHtml || null
+          );
+          setHomeCardInfoHtml(
+            areas.find((a) => a.key === "home_card_info")?.contentHtml || null
+          );
+          setHomeExtraInfoHtml(
+            areas.find((a) => a.key === "home_extra_info")?.contentHtml || null
+          );
+          setHomeFooterHtml(
+            areas.find((a) => a.key === "home_footer")?.contentHtml || null
+          );
         }
       } catch {
         // Home nunca quebra
@@ -118,7 +106,7 @@ export default function Home() {
         </p>
       </header>
 
-      {/* CMS — TEXTO INFORMATIVO */}
+      {/* CMS — TEXTO TOPO */}
       {hasVisibleHtml(homeInfoHtml) && (
         <div
           className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
@@ -146,6 +134,14 @@ export default function Home() {
               </span>
             </p>
           )}
+
+          {/* CMS — TEXTO DENTRO DO CARD */}
+          {hasVisibleHtml(homeCardInfoHtml) && (
+            <div
+              className="mt-4 text-sm text-white/90 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
+            />
+          )}
         </div>
 
         {/* BOTÃO */}
@@ -159,22 +155,13 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* INFO FIXA — AGORA COM CMS + FALLBACK */}
-        <div
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
-          dangerouslySetInnerHTML={{
-            __html:
-              homeCardRegrasHtml ??
-              `
-                <p>
-                  Você concorre do <strong>1º ao 5º prêmio</strong> da Loteria Federal.
-                  Se suas dezenas aparecerem em
-                  <strong> qualquer uma das milhares sorteadas</strong>,
-                  seu bilhete é premiado!
-                </p>
-              `,
-          }}
-        />
+        {/* CMS — TEXTO EXTRA */}
+        {hasVisibleHtml(homeExtraInfoHtml) && (
+          <div
+            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
+          />
+        )}
 
         {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
