@@ -140,4 +140,36 @@ export default function MeusBilhetes() {
                       : "bg-yellow-400 text-blue-900"
                   }`}
                 >
-                  {
+                  {isPremiado(b)
+                    ? "Premiado"
+                    : b.pago
+                    ? "Pago"
+                    : "Pendente"}
+                </span>
+              </div>
+
+              <div className="flex gap-2 mb-3">
+                {(b.dezenas ? b.dezenas.split(",") : []).map(
+                  (n: string, i: number) => (
+                    <span
+                      key={i}
+                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
+                    >
+                      {n}
+                    </span>
+                  )
+                )}
+              </div>
+
+              <p className="text-sm text-green-400 font-semibold">
+                R$ {Number(b.valor).toFixed(2)}
+              </p>
+            </div>
+          ))
+        )}
+      </main>
+
+      <NavBottom />
+    </div>
+  );
+}
