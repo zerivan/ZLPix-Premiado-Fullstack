@@ -23,6 +23,30 @@ function getNextWednesday(): Date {
 }
 
 /**
+ * ⏰ Decide status do bilhete conforme regra das 17h
+ */
+function definirStatusBilhete(): {
+  status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
+  sorteioData: Date;
+} {
+  const agora = new Date();
+  const dia = agora.getDay(); // 3 = quarta
+  const hora = agora.getHours();
+
+  if (dia === 3 && hora >= 17) {
+    return {
+      status: "ATIVO_PROXIMO",
+      sorteioData: getNextWednesday(),
+    };
+  }
+
+  return {
+    status: "ATIVO_ATUAL",
+    sorteioData: getNextWednesday(),
+  };
+}
+
+/**
  * Busca info do Mercado Pago
  */
 async function fetchMpPayment(paymentId: string) {
@@ -88,7 +112,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // metadata seguro
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
@@ -116,11 +139,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================================
-    // 🎟️ CRIAÇÃO DE BILHETES (TIPAGEM CORRIGIDA)
+    // 🎟️ CRIAÇÃO DE BILHETES (AJUSTE CIRÚRGICO)
     // =========================================
     const bilhetesRaw = Array.isArray(metadata["bilhetes"])
       ? metadata["bilhetes"]
       : [];
+
+    const { status, sorteioData } = definirStatusBilhete();
 
     await prisma.$transaction(async (db) => {
       await db.transacao.update({
@@ -151,8 +176,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             dezenas,
             valor,
             pago: true,
-            status: "ATIVO",
-            sorteioData: getNextWednesday(),
+            status,
+            sorteioData,
           },
         });
       }
