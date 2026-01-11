@@ -3,7 +3,6 @@ import NavBottom from "../components/navbottom";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
-const DIAS_VISIVEIS = 15;
 
 export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
@@ -47,26 +46,27 @@ export default function MeusBilhetes() {
     load();
   }, [userId]);
 
-  // 🔥 identifica premiado (case-safe)
+  // =========================
+  // HELPERS
+  // =========================
   function isPremiado(b: any) {
-    return (
-      b.status === "PREMIADO" ||
-      b.status === "premiado" ||
-      b.premiado === true
-    );
+    return b.status === "PREMIADO" || b.premiado === true;
   }
 
-  // 🔥 regra de visibilidade
-  function dentroDoPrazo(b: any) {
-    if (isPremiado(b)) return true; // premiado nunca some
-    if (!b.sorteioData) return true;
-
+  function isAtivoDoSorteioAtual(b: any) {
+    if (!b.sorteioData) return false;
     const sorteio = new Date(b.sorteioData).getTime();
-    const limite = sorteio + DIAS_VISIVEIS * 24 * 60 * 60 * 1000;
-    return Date.now() <= limite;
+    return sorteio >= Date.now();
   }
 
-  const bilhetesVisiveis = bilhetes.filter(dentroDoPrazo);
+  // =========================
+  // REGRA FINAL DE VISIBILIDADE
+  // =========================
+  const bilhetesVisiveis = bilhetes.filter((b) => {
+    if (isPremiado(b)) return true;
+    if (b.status === "ATIVO" && isAtivoDoSorteioAtual(b)) return true;
+    return false;
+  });
 
   const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
     if (filtro === "premiados") return isPremiado(b);
@@ -78,7 +78,9 @@ export default function MeusBilhetes() {
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center pt-6 pb-2">
         <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
-        <p className="text-sm text-blue-100">Histórico dos seus bilhetes.</p>
+        <p className="text-sm text-blue-100">
+          Bilhetes válidos para o sorteio atual
+        </p>
       </header>
 
       <div className="flex justify-center gap-3 mt-4 mb-5">
@@ -108,7 +110,7 @@ export default function MeusBilhetes() {
       <main className="px-4 max-w-lg mx-auto space-y-4 pb-10">
         {bilhetesFiltrados.length === 0 ? (
           <p className="text-center text-white/70 mt-10">
-            Nenhum bilhete encontrado.
+            Nenhum bilhete ativo no momento.
           </p>
         ) : (
           bilhetesFiltrados.map((b: any) => (
@@ -138,38 +140,4 @@ export default function MeusBilhetes() {
                       : "bg-yellow-400 text-blue-900"
                   }`}
                 >
-                  {isPremiado(b)
-                    ? "Premiado"
-                    : b.pago
-                    ? "Pago"
-                    : "Pendente"}
-                </span>
-              </div>
-
-              <div className="flex gap-2 mb-3">
-                {(b.dezenas ? b.dezenas.split(",") : []).map(
-                  (n: string, i: number) => (
-                    <span
-                      key={i}
-                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
-                    >
-                      {n}
-                    </span>
-                  )
-                )}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-green-400 font-semibold">
-                  R$ {Number(b.valor).toFixed(2)}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </main>
-
-      <NavBottom />
-    </div>
-  );
-}
+                  {
