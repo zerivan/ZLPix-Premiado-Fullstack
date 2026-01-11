@@ -37,7 +37,7 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
 
   // =========================
-  // DETECTA PREVIEW + CMS MODE
+  // PREVIEW + CMS MODE
   // =========================
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
@@ -104,7 +104,7 @@ export default function Home() {
   }, [isPreview]);
 
   // =========================
-  // CMS OVERLAY + CLICK
+  // CMS OVERLAY
   // =========================
   useEffect(() => {
     if (!isCmsMode) return;
@@ -160,14 +160,16 @@ export default function Home() {
       </header>
 
       {/* CMS — TEXTO TOPO */}
-      {hasVisibleHtml(homeInfoHtml) && (
-        <div
-          data-cms="home_info"
-          data-cms-title="Home – Texto Informativo"
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
-          dangerouslySetInnerHTML={{ __html: homeInfoHtml! }}
-        />
-      )}
+      <div
+        data-cms="home_info"
+        data-cms-title="Home – Texto Informativo"
+        className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
+        dangerouslySetInnerHTML={{
+          __html:
+            homeInfoHtml ||
+            `<p>Escolha suas dezenas, pague via PIX e concorra a prêmios reais toda semana.</p>`,
+        }}
+      />
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
         {/* CARD DO PRÊMIO */}
@@ -187,14 +189,16 @@ export default function Home() {
             </p>
           )}
 
-          {hasVisibleHtml(homeCardInfoHtml) && (
-            <div
-              data-cms="home_card_info"
-              data-cms-title="Home – Texto do Card"
-              className="mt-4 text-sm text-white/90 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
-            />
-          )}
+          <div
+            data-cms="home_card_info"
+            data-cms-title="Home – Texto do Card"
+            className="mt-4 text-sm text-white/90 leading-relaxed"
+            dangerouslySetInnerHTML={{
+              __html:
+                homeCardInfoHtml ||
+                `<p>Concorra do 1º ao 5º prêmio da Loteria Federal com total transparência.</p>`,
+            }}
+          />
         </div>
 
         {/* BOTÃO */}
@@ -208,15 +212,17 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* CMS — TEXTO EXTRA */}
-        {hasVisibleHtml(homeExtraInfoHtml) && (
-          <div
-            data-cms="home_extra_info"
-            data-cms-title="Home – Texto Extra"
-            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
-          />
-        )}
+        {/* TEXTO ABAIXO DO BOTÃO */}
+        <div
+          data-cms="home_extra_info"
+          data-cms-title="Home – Texto Extra"
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+          dangerouslySetInnerHTML={{
+            __html:
+              homeExtraInfoHtml ||
+              `<p>Você pode escolher até <strong>3 dezenas</strong>. Pagamento rápido e seguro via PIX.</p>`,
+          }}
+        />
 
         {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
@@ -228,16 +234,20 @@ export default function Home() {
           </button>
 
           <AnimatePresence>
-            {showInfo && hasVisibleHtml(homeFooterHtml) && (
+            {showInfo && (
               <motion.div
                 data-cms="home_footer"
-                data-cms-title="Home – Rodapé"
+                data-cms-title="Home – Como Funciona"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
-                dangerouslySetInnerHTML={{ __html: homeFooterHtml! }}
+                dangerouslySetInnerHTML={{
+                  __html:
+                    homeFooterHtml ||
+                    `<p>Escolha seus números, pague via PIX e acompanhe o sorteio oficial da Loteria Federal.</p>`,
+                }}
               />
             )}
           </AnimatePresence>
