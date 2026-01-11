@@ -41,7 +41,6 @@ export default function Home() {
   // =========================
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
-  const isCmsMode = sessionStorage.getItem("CMS_MODE") === "true";
 
   // =========================
   // DADOS AUTOMÁTICOS
@@ -52,7 +51,6 @@ export default function Home() {
   // =========================
   // CMS — HOME
   // =========================
-  const [homeInfoHtml, setHomeInfoHtml] = useState<string | null>(null);
   const [homeCardInfoHtml, setHomeCardInfoHtml] = useState<string | null>(null);
   const [homeExtraInfoHtml, setHomeExtraInfoHtml] = useState<string | null>(null);
   const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
@@ -82,9 +80,6 @@ export default function Home() {
         if (cms.data?.ok && Array.isArray(cms.data.data)) {
           const areas: CmsArea[] = cms.data.data;
 
-          setHomeInfoHtml(
-            areas.find((a) => a.key === "home_info")?.contentHtml || null
-          );
           setHomeCardInfoHtml(
             areas.find((a) => a.key === "home_card_info")?.contentHtml || null
           );
@@ -103,50 +98,6 @@ export default function Home() {
     loadData();
   }, [isPreview]);
 
-  // =========================
-  // CMS OVERLAY
-  // =========================
-  useEffect(() => {
-    if (!isCmsMode) return;
-
-    const areas = document.querySelectorAll<HTMLElement>("[data-cms]");
-
-    areas.forEach((el) => {
-      el.style.outline = "2px dashed #facc15";
-      el.style.cursor = "pointer";
-      el.style.position = "relative";
-
-      const label = document.createElement("div");
-      label.innerText = el.dataset.cmsTitle || el.dataset.cms || "CMS";
-      label.style.position = "absolute";
-      label.style.top = "-10px";
-      label.style.left = "0";
-      label.style.background = "#facc15";
-      label.style.color = "#000";
-      label.style.fontSize = "10px";
-      label.style.padding = "2px 6px";
-      label.style.borderRadius = "4px";
-      label.style.zIndex = "50";
-
-      el.appendChild(label);
-
-      el.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        window.parent.postMessage(
-          {
-            type: "CMS_EDIT",
-            key: el.dataset.cms,
-            title: el.dataset.cmsTitle,
-            contentHtml: el.innerHTML,
-          },
-          "*"
-        );
-      };
-    });
-  }, [isCmsMode]);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
       {/* HEADER */}
@@ -159,22 +110,12 @@ export default function Home() {
         </p>
       </header>
 
-      {/* CMS — TEXTO TOPO */}
-      <div
-        data-cms="home_info"
-        data-cms-title="Home – Texto Informativo"
-        className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
-        dangerouslySetInnerHTML={{
-          __html:
-            homeInfoHtml ||
-            `<p>Escolha suas dezenas, pague via PIX e concorra a prêmios reais toda semana.</p>`,
-        }}
-      />
-
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
         {/* CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
-          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
+          <p className="text-yellow-300 text-sm mb-1">
+            Prêmio acumulado
+          </p>
 
           <h2 className="text-4xl font-extrabold drop-shadow-sm">
             {premioAtual}
@@ -189,16 +130,14 @@ export default function Home() {
             </p>
           )}
 
-          <div
-            data-cms="home_card_info"
-            data-cms-title="Home – Texto do Card"
-            className="mt-4 text-sm text-white/90 leading-relaxed"
-            dangerouslySetInnerHTML={{
-              __html:
-                homeCardInfoHtml ||
-                `<p>Concorra do 1º ao 5º prêmio da Loteria Federal com total transparência.</p>`,
-            }}
-          />
+          {hasVisibleHtml(homeCardInfoHtml) && (
+            <div
+              data-cms="home_card_info"
+              data-cms-title="Home › Card do Prêmio › Texto Informativo"
+              className="mt-4 text-sm text-white/90 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
+            />
+          )}
         </div>
 
         {/* BOTÃO */}
@@ -212,17 +151,15 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* TEXTO ABAIXO DO BOTÃO */}
-        <div
-          data-cms="home_extra_info"
-          data-cms-title="Home – Texto Extra"
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
-          dangerouslySetInnerHTML={{
-            __html:
-              homeExtraInfoHtml ||
-              `<p>Você pode escolher até <strong>3 dezenas</strong>. Pagamento rápido e seguro via PIX.</p>`,
-          }}
-        />
+        {/* CMS — TEXTO EXTRA */}
+        {hasVisibleHtml(homeExtraInfoHtml) && (
+          <div
+            data-cms="home_extra_info"
+            data-cms-title="Home › Seção Extra › Texto"
+            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
+          />
+        )}
 
         {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
@@ -234,20 +171,16 @@ export default function Home() {
           </button>
 
           <AnimatePresence>
-            {showInfo && (
+            {showInfo && hasVisibleHtml(homeFooterHtml) && (
               <motion.div
                 data-cms="home_footer"
-                data-cms-title="Home – Como Funciona"
+                data-cms-title="Home › Rodapé › Como Funciona"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
                 className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    homeFooterHtml ||
-                    `<p>Escolha seus números, pague via PIX e acompanhe o sorteio oficial da Loteria Federal.</p>`,
-                }}
+                dangerouslySetInnerHTML={{ __html: homeFooterHtml! }}
               />
             )}
           </AnimatePresence>
