@@ -1,7 +1,40 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import ReactQuill from "react-quill";
+import Quill from "quill";
 import "react-quill/dist/quill.snow.css";
+
+/* =========================
+   REGISTRO DE FONTES (QUILL)
+========================= */
+const Font = Quill.import("formats/font");
+
+Font.whitelist = [
+  "inter",
+  "poppins",
+  "montserrat",
+  "bebas",
+  "oswald",
+  "roboto",
+];
+
+Quill.register(Font, true);
+
+/* =========================
+   TOOLBAR COMPLETA
+========================= */
+const QUILL_MODULES = {
+  toolbar: [
+    [{ font: Font.whitelist }],
+    [{ size: ["small", false, "large", "huge"] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link"],
+    ["clean"],
+  ],
+};
 
 type CmsArea = {
   key: string;
@@ -15,42 +48,23 @@ type CmsPage = {
 };
 
 /**
- * 🔒 MAPA FIXO DO LAYOUT (FONTE DA VERDADE)
+ * 🔒 MAPA FIXO DO LAYOUT
  */
 const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
   home: [
-    {
-      key: "home_info",
-      title: "Home › Header › Subtítulo",
-      contentHtml: "",
-    },
-    {
-      key: "home_card_info",
-      title: "Home › Card do Prêmio › Texto Informativo",
-      contentHtml: "",
-    },
-    {
-      key: "home_extra_info",
-      title: "Home › Seção Extra › Texto",
-      contentHtml: "",
-    },
-    {
-      key: "home_footer",
-      title: "Home › Rodapé › Como Funciona",
-      contentHtml: "",
-    },
+    { key: "home_info", title: "Home › Header › Subtítulo", contentHtml: "" },
+    { key: "home_card_info", title: "Home › Card do Prêmio › Texto Informativo", contentHtml: "" },
+    { key: "home_extra_info", title: "Home › Seção Extra › Texto", contentHtml: "" },
+    { key: "home_footer", title: "Home › Rodapé › Como Funciona", contentHtml: "" },
   ],
 };
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState("");
-
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
-
   const [editorHtml, setEditorHtml] = useState("");
-
   const [iframeKey, setIframeKey] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -68,9 +82,6 @@ export default function AdminConteudoControl() {
     return { Authorization: `Bearer ${token}` };
   }
 
-  // =========================
-  // LOAD PÁGINAS
-  // =========================
   async function loadPages() {
     try {
       const headers = getHeaders();
@@ -88,9 +99,6 @@ export default function AdminConteudoControl() {
     }
   }
 
-  // =========================
-  // LOAD ÁREAS (LAYOUT + BANCO)
-  // =========================
   async function loadAreas(page: string) {
     try {
       setLoadingAreas(true);
@@ -112,10 +120,7 @@ export default function AdminConteudoControl() {
 
       const merged = layoutAreas.map((area) => {
         const saved = savedAreas.find((s) => s.key === area.key);
-        return {
-          ...area,
-          contentHtml: saved?.contentHtml || "",
-        };
+        return { ...area, contentHtml: saved?.contentHtml || "" };
       });
 
       setAreas(merged);
@@ -127,9 +132,6 @@ export default function AdminConteudoControl() {
     }
   }
 
-  // =========================
-  // SAVE ÁREA
-  // =========================
   async function salvarArea() {
     if (!activeArea) return;
 
@@ -153,7 +155,6 @@ export default function AdminConteudoControl() {
 
       await loadAreas(pageKey);
       setIframeKey((k) => k + 1);
-
       setStatus("Conteúdo salvo com sucesso.");
     } catch {
       setErro("Erro ao salvar conteúdo.");
@@ -162,26 +163,6 @@ export default function AdminConteudoControl() {
     }
   }
 
-  // =========================
-  // RECEBE CLICK DO PREVIEW
-  // =========================
-  useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (!event.data || event.data.type !== "CMS_EDIT") return;
-
-      const { key, title, contentHtml } = event.data;
-
-      setActiveArea({ key, title, contentHtml });
-      setEditorHtml(contentHtml || "");
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  // =========================
-  // INIT
-  // =========================
   useEffect(() => {
     loadPages();
   }, []);
@@ -194,7 +175,6 @@ export default function AdminConteudoControl() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* ===== CMS ===== */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
@@ -213,15 +193,11 @@ export default function AdminConteudoControl() {
           ))}
         </select>
 
-        {loadingAreas && <p>Carregando áreas…</p>}
-
         {areas.map((area) => (
           <button
             key={area.key}
             className={`block w-full text-left p-2 border rounded ${
-              activeArea?.key === area.key
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100"
+              activeArea?.key === area.key ? "bg-indigo-600 text-white" : "bg-gray-100"
             }`}
             onClick={() => {
               setActiveArea(area);
@@ -242,6 +218,7 @@ export default function AdminConteudoControl() {
               theme="snow"
               value={editorHtml}
               onChange={setEditorHtml}
+              modules={QUILL_MODULES}
             />
 
             <button
@@ -255,7 +232,6 @@ export default function AdminConteudoControl() {
         )}
       </div>
 
-      {/* ===== PREVIEW ===== */}
       <div className="border rounded overflow-hidden">
         <div className="bg-gray-800 text-white text-sm px-3 py-2">
           Preview real da página
