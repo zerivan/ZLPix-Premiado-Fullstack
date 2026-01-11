@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 type CmsArea = {
   key: string;
@@ -14,7 +16,6 @@ type CmsPage = {
 
 /**
  * 🔒 MAPA FIXO DO LAYOUT (FONTE DA VERDADE)
- * O seletor passa a respeitar o layout real
  */
 const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
   home: [
@@ -234,13 +235,13 @@ export default function AdminConteudoControl() {
         {activeArea && (
           <>
             <label className="text-sm font-medium">
-              HTML da área: {activeArea.title}
+              Conteúdo: {activeArea.title}
             </label>
 
-            <textarea
-              className="w-full h-48 border p-2 font-mono text-sm"
+            <ReactQuill
+              theme="snow"
               value={editorHtml}
-              onChange={(e) => setEditorHtml(e.target.value)}
+              onChange={setEditorHtml}
             />
 
             <button
