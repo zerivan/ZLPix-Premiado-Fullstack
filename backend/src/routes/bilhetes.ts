@@ -14,7 +14,7 @@ router.post("/criar", async (_req, res) => {
 });
 
 /**
- * Função: próxima quarta-feira às 20h
+ * 📆 Próxima quarta-feira às 20h
  */
 function proximaQuarta(): Date {
   const now = new Date();
@@ -27,7 +27,35 @@ function proximaQuarta(): Date {
 }
 
 /**
- * Criar bilhete PAGANDO COM SALDO (CARTEIRA)
+ * ⏰ Decide se o bilhete vale para o sorteio atual ou próximo
+ */
+function definirStatusBilhete(): {
+  status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
+  sorteioData: Date;
+} {
+  const agora = new Date();
+  const dia = agora.getDay(); // 3 = quarta
+  const hora = agora.getHours();
+
+  // Quarta após 17h → próximo sorteio
+  if (dia === 3 && hora >= 17) {
+    return {
+      status: "ATIVO_PROXIMO",
+      sorteioData: proximaQuarta(),
+    };
+  }
+
+  // Qualquer outro caso → sorteio atual
+  return {
+    status: "ATIVO_ATUAL",
+    sorteioData: proximaQuarta(),
+  };
+}
+
+/**
+ * ============================
+ * CRIAR BILHETE PAGANDO COM SALDO (CARTEIRA)
+ * ============================
  */
 router.post("/pagar-com-saldo", async (req, res) => {
   try {
@@ -51,6 +79,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
     if (Number(wallet.saldo) < valor) {
       return res.status(400).json({ error: "Saldo insuficiente." });
     }
+
+    const { status, sorteioData } = definirStatusBilhete();
 
     await prisma.$transaction(async (tx) => {
       const transacao = await tx.transacao.create({
@@ -78,14 +108,14 @@ router.post("/pagar-com-saldo", async (req, res) => {
           dezenas: dezenasStr,
           valor,
           pago: true,
-          status: "ATIVO",
-          sorteioData: proximaQuarta(),
+          status,
+          sorteioData,
           transacaoId: transacao.id,
         },
       });
     });
 
-    return res.json({ status: "ok" });
+    return res.json({ ok: true });
   } catch (e) {
     console.error("Erro ao pagar bilhete com saldo:", e);
     return res.status(500).json({ error: "Erro interno." });
@@ -99,15 +129,10 @@ router.post("/pagar-com-saldo", async (req, res) => {
  */
 router.get("/admin/sorteio-atual", async (_req, res) => {
   try {
-    const agora = new Date();
-
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         pago: true,
-        status: "ATIVO",
-        sorteioData: {
-          gt: agora,
-        },
+        status: "ATIVO_ATUAL",
       },
       include: {
         user: {
@@ -142,15 +167,25 @@ router.get("/admin/sorteio-atual", async (_req, res) => {
 });
 
 /**
- * Listar bilhetes de um usuário (APP)
+ * ============================
+ * APP — LISTAR BILHETES DO USUÁRIO
+ * (somente os que ainda valem)
+ * ============================
  */
 router.get("/listar/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
 
   try {
     const bilhetes = await prisma.bilhete.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
+      where: {
+        userId,
+        status: {
+          in: ["ATIVO_ATUAL", "ATIVO_PROXIMO"],
+        },
+      },
+      orderBy: {
+        sorteioData: "asc",
+      },
     });
 
     return res.json({ bilhetes });
