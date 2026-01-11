@@ -58,40 +58,45 @@ router.get("/premio-atual", async (_req, res) => {
  * =====================================================
  * ADMIN — APURAR SORTEIO
  * =====================================================
- * - cruza Federal x Bilhetes
- * - define ganhadores
- * - calcula prêmio
- * - acumula ou reseta
  */
 router.post("/apurar", async (req, res) => {
   try {
     const { premiosFederal } = req.body; // string[]
 
-    if (!Array.isArray(premiosFederal) || premiosFederal.length === 0) {
+    if (!Array.isArray(premiosFederal) || premiosFederal.length !== 5) {
       return res.status(400).json({ error: "Resultado da Federal inválido." });
     }
 
-    const dezenasPremiadas = new Set<string>();
+    /**
+     * 🎯 DEZENAS PREMIADAS (FRENTE + FUNDO)
+     */
+    const dezenasPremiadas: string[] = [];
 
-    // dezenas iniciais e finais
     premiosFederal.forEach((num) => {
-      dezenasPremiadas.add(num.slice(0, 2));
-      dezenasPremiadas.add(num.slice(-2));
+      dezenasPremiadas.push(num.slice(0, 2)); // frente
+      dezenasPremiadas.push(num.slice(-2));  // fundo
     });
 
+    /**
+     * 🎟️ SOMENTE BILHETES DO SORTEIO ATUAL
+     */
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         pago: true,
-        status: "ATIVO",
-        sorteioData: {
-          lte: proximaQuarta(),
-        },
+        status: "ATIVO_ATUAL",
       },
     });
 
-    const ganhadores = bilhetes.filter((b) =>
-      b.dezenas.split(",").some((d) => dezenasPremiadas.has(d))
-    );
+    /**
+     * 🏆 GANHADORES = ACERTAR 3 DEZENAS
+     */
+    const ganhadores = bilhetes.filter((b) => {
+      const dezenasBilhete = b.dezenas.split(",");
+      const acertos = dezenasBilhete.filter((d) =>
+        dezenasPremiadas.includes(d)
+      );
+      return acertos.length >= 3;
+    });
 
     const premioRow = await prisma.appContent.findUnique({
       where: { key: "premio_atual" },
