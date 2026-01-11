@@ -37,10 +37,11 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
 
   // =========================
-  // DETECTA PREVIEW (IFRAME)
+  // DETECTA PREVIEW + CMS MODE
   // =========================
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
+  const isCmsMode = sessionStorage.getItem("CMS_MODE") === "true";
 
   // =========================
   // DADOS AUTOMÁTICOS
@@ -62,9 +63,7 @@ export default function Home() {
         // 🔹 PRÓXIMO SORTEIO
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          setDataSorteio(
-            formatarDataBR(federal.data.data.proximoSorteio)
-          );
+          setDataSorteio(formatarDataBR(federal.data.data.proximoSorteio));
         }
 
         // 🔹 PRÊMIO ATUAL
@@ -73,7 +72,7 @@ export default function Home() {
           setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
-        // 🔹 CMS HOME (PUBLICO ou PREVIEW)
+        // 🔹 CMS HOME
         const cms = await api.get(
           isPreview
             ? "/api/cms/preview/home?token=preview"
@@ -104,6 +103,50 @@ export default function Home() {
     loadData();
   }, [isPreview]);
 
+  // =========================
+  // CMS OVERLAY + CLICK
+  // =========================
+  useEffect(() => {
+    if (!isCmsMode) return;
+
+    const areas = document.querySelectorAll<HTMLElement>("[data-cms]");
+
+    areas.forEach((el) => {
+      el.style.outline = "2px dashed #facc15";
+      el.style.cursor = "pointer";
+      el.style.position = "relative";
+
+      const label = document.createElement("div");
+      label.innerText = el.dataset.cmsTitle || el.dataset.cms || "CMS";
+      label.style.position = "absolute";
+      label.style.top = "-10px";
+      label.style.left = "0";
+      label.style.background = "#facc15";
+      label.style.color = "#000";
+      label.style.fontSize = "10px";
+      label.style.padding = "2px 6px";
+      label.style.borderRadius = "4px";
+      label.style.zIndex = "50";
+
+      el.appendChild(label);
+
+      el.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        window.parent.postMessage(
+          {
+            type: "CMS_EDIT",
+            key: el.dataset.cms,
+            title: el.dataset.cmsTitle,
+            contentHtml: el.innerHTML,
+          },
+          "*"
+        );
+      };
+    });
+  }, [isCmsMode]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
       {/* HEADER */}
@@ -119,6 +162,8 @@ export default function Home() {
       {/* CMS — TEXTO TOPO */}
       {hasVisibleHtml(homeInfoHtml) && (
         <div
+          data-cms="home_info"
+          data-cms-title="Home – Texto Informativo"
           className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md mx-auto mt-6"
           dangerouslySetInnerHTML={{ __html: homeInfoHtml! }}
         />
@@ -142,9 +187,10 @@ export default function Home() {
             </p>
           )}
 
-          {/* CMS — TEXTO DENTRO DO CARD */}
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
+              data-cms="home_card_info"
+              data-cms-title="Home – Texto do Card"
               className="mt-4 text-sm text-white/90 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
             />
@@ -165,6 +211,8 @@ export default function Home() {
         {/* CMS — TEXTO EXTRA */}
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
+            data-cms="home_extra_info"
+            data-cms-title="Home – Texto Extra"
             className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
             dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
           />
@@ -182,6 +230,8 @@ export default function Home() {
           <AnimatePresence>
             {showInfo && hasVisibleHtml(homeFooterHtml) && (
               <motion.div
+                data-cms="home_footer"
+                data-cms-title="Home – Rodapé"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
