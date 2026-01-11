@@ -34,7 +34,7 @@ export default function AdminConteudoControl() {
   // 🔹 BACKEND (API)
   const BASE_URL = import.meta.env.VITE_API_URL;
 
-  // 🔹 SITE (FRONTEND) — sem env
+  // 🔹 SITE (FRONTEND)
   const SITE_URL = window.location.origin;
 
   function getHeaders() {
@@ -116,7 +116,7 @@ export default function AdminConteudoControl() {
 
       await loadAreas(pageKey);
 
-      // 🔄 força reload do iframe (preview real)
+      // 🔄 força reload do iframe
       setIframeKey((k) => k + 1);
 
       setStatus("Conteúdo salvo com sucesso.");
@@ -126,6 +126,39 @@ export default function AdminConteudoControl() {
       setSalvando(false);
     }
   }
+
+  // =========================
+  // CMS — LISTENER DO IFRAME
+  // =========================
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (!event.data || event.data.type !== "CMS_EDIT") return;
+
+      const { key, title, contentHtml } = event.data;
+
+      // garante que a página certa está selecionada
+      if (key && typeof key === "string") {
+        const pageFromKey = key.split("_")[0];
+        if (pageFromKey && pageFromKey !== pageKey) {
+          setPageKey(pageFromKey);
+        }
+      }
+
+      setActiveArea({
+        key,
+        title,
+        contentHtml,
+      });
+
+      setEditorHtml(contentHtml || "");
+    }
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [pageKey]);
 
   // =========================
   // INIT
