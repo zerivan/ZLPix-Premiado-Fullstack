@@ -12,6 +12,35 @@ type CmsPage = {
   title: string;
 };
 
+/**
+ * 🔒 MAPA FIXO DO LAYOUT (FONTE DA VERDADE)
+ * O seletor passa a respeitar o layout real
+ */
+const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
+  home: [
+    {
+      key: "home_info",
+      title: "Home › Header › Subtítulo",
+      contentHtml: "",
+    },
+    {
+      key: "home_card_info",
+      title: "Home › Card do Prêmio › Texto Informativo",
+      contentHtml: "",
+    },
+    {
+      key: "home_extra_info",
+      title: "Home › Seção Extra › Texto",
+      contentHtml: "",
+    },
+    {
+      key: "home_footer",
+      title: "Home › Rodapé › Como Funciona",
+      contentHtml: "",
+    },
+  ],
+};
+
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState("");
@@ -19,10 +48,8 @@ export default function AdminConteudoControl() {
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
 
-  // 🔑 HTML PURO = fonte da verdade
   const [editorHtml, setEditorHtml] = useState("");
 
-  // 🔄 força reload do iframe
   const [iframeKey, setIframeKey] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -31,10 +58,7 @@ export default function AdminConteudoControl() {
   const [erro, setErro] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  // 🔹 BACKEND (API)
   const BASE_URL = import.meta.env.VITE_API_URL;
-
-  // 🔹 SITE (FRONTEND)
   const SITE_URL = window.location.origin;
 
   function getHeaders() {
@@ -64,7 +88,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // LOAD ÁREAS
+  // LOAD ÁREAS (LAYOUT + BANCO)
   // =========================
   async function loadAreas(page: string) {
     try {
@@ -76,12 +100,24 @@ export default function AdminConteudoControl() {
       const headers = getHeaders();
       if (!headers) return;
 
+      const layoutAreas = CMS_LAYOUT_MAP[page] || [];
+
       const res = await axios.get(
         `${BASE_URL}/api/admin/cms/areas/${page}`,
         { headers }
       );
 
-      setAreas(res.data?.areas || []);
+      const savedAreas: CmsArea[] = res.data?.areas || [];
+
+      const merged = layoutAreas.map((area) => {
+        const saved = savedAreas.find((s) => s.key === area.key);
+        return {
+          ...area,
+          contentHtml: saved?.contentHtml || "",
+        };
+      });
+
+      setAreas(merged);
     } catch {
       setErro("Erro ao carregar áreas.");
       setAreas([]);
@@ -115,8 +151,6 @@ export default function AdminConteudoControl() {
       );
 
       await loadAreas(pageKey);
-
-      // 🔄 força reload do iframe
       setIframeKey((k) => k + 1);
 
       setStatus("Conteúdo salvo com sucesso.");
@@ -128,7 +162,7 @@ export default function AdminConteudoControl() {
   }
 
   // =========================
-  // CMS — LISTENER DO IFRAME
+  // RECEBE CLICK DO PREVIEW
   // =========================
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
@@ -136,29 +170,13 @@ export default function AdminConteudoControl() {
 
       const { key, title, contentHtml } = event.data;
 
-      // garante que a página certa está selecionada
-      if (key && typeof key === "string") {
-        const pageFromKey = key.split("_")[0];
-        if (pageFromKey && pageFromKey !== pageKey) {
-          setPageKey(pageFromKey);
-        }
-      }
-
-      setActiveArea({
-        key,
-        title,
-        contentHtml,
-      });
-
+      setActiveArea({ key, title, contentHtml });
       setEditorHtml(contentHtml || "");
     }
 
     window.addEventListener("message", handleMessage);
-
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [pageKey]);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   // =========================
   // INIT
@@ -175,7 +193,7 @@ export default function AdminConteudoControl() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* ===== COLUNA ESQUERDA — CMS ===== */}
+      {/* ===== CMS ===== */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Conteúdo do Site</h2>
 
@@ -223,7 +241,6 @@ export default function AdminConteudoControl() {
               className="w-full h-48 border p-2 font-mono text-sm"
               value={editorHtml}
               onChange={(e) => setEditorHtml(e.target.value)}
-              placeholder="<p>Digite o HTML aqui</p>"
             />
 
             <button
@@ -237,7 +254,7 @@ export default function AdminConteudoControl() {
         )}
       </div>
 
-      {/* ===== COLUNA DIREITA — PREVIEW REAL ===== */}
+      {/* ===== PREVIEW ===== */}
       <div className="border rounded overflow-hidden">
         <div className="bg-gray-800 text-white text-sm px-3 py-2">
           Preview real da página
