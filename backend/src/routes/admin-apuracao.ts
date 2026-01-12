@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import admin from "firebase-admin";
+import nodemailer from "nodemailer";
 
 const router = Router();
 
@@ -20,23 +21,67 @@ if (!admin.apps.length) {
 }
 
 /**
- * =====================================================
- * CONFIGURAÇÃO DO PRÊMIO
- * =====================================================
+ * ============================
+ * EMAIL — CONFIGURAÇÃO SMTP
+ * ============================
  */
-const PREMIO_BASE = 500;
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 /**
- * Próxima quarta-feira às 20h
+ * =====================================================
+ * EMAIL — BILHETE PREMIADO
+ * =====================================================
  */
-function proximaQuarta(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0);
-  return next;
+async function enviarEmailBilhetePremiado(params: {
+  email: string;
+  nome?: string | null;
+  bilheteId: number;
+  premio: number;
+}) {
+  if (!params.email) return;
+
+  const link = `${process.env.FRONTEND_URL}/meus-bilhetes`;
+
+  const html = `
+    <p>🎉 <strong>PARABÉNS ${params.nome || ""}!</strong></p>
+
+    <p>Seu bilhete foi <strong>PREMIADO</strong> no ZLPix 🎟️</p>
+
+    <p>
+      <strong>Bilhete:</strong> #${params.bilheteId}<br/>
+      <strong>Prêmio:</strong> R$ ${params.premio.toFixed(2)}
+    </p>
+
+    <p>
+      👉 <a href="${link}">Ver meus bilhetes</a>
+    </p>
+
+    <p>
+      O valor do prêmio será processado conforme as regras do sorteio.<br/>
+      Obrigado por participar 🍀
+    </p>
+
+    <p>ZLPix Premiado</p>
+  `;
+
+  try {
+    await mailTransporter.sendMail({
+      from: `"ZLPix Premiado" <${process.env.SMTP_FROM}>`,
+      to: params.email,
+      subject: "🎉 Parabéns! Seu bilhete foi PREMIADO",
+      html,
+    });
+  } catch (err) {
+    console.error("Erro ao enviar email premiado:", err);
+  }
 }
 
 /**
@@ -75,34 +120,23 @@ async function enviarPushBilhetePremiado(
 
 /**
  * =====================================================
- * API — PRÊMIO ATUAL (HOME / APP)
+ * CONFIGURAÇÃO DO PRÊMIO
  * =====================================================
  */
-router.get("/premio-atual", async (_req, res) => {
-  try {
-    const premioRow = await prisma.appContent.findUnique({
-      where: { key: "premio_atual" },
-    });
+const PREMIO_BASE = 500;
 
-    const premioAtual = premioRow
-      ? Number(premioRow.contentHtml)
-      : PREMIO_BASE;
-
-    const proximoSorteio = proximaQuarta();
-
-    return res.json({
-      ok: true,
-      data: {
-        premioAtual,
-        proximoSorteio: proximoSorteio.toISOString(),
-        timestampProximoSorteio: proximoSorteio.getTime(),
-      },
-    });
-  } catch (error) {
-    console.error("Erro prêmio atual:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
+/**
+ * Próxima quarta-feira às 20h
+ */
+function proximaQuarta(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
 
 /**
  * =====================================================
@@ -118,17 +152,13 @@ router.post("/apurar", async (req, res) => {
     }
 
     const dezenasPremiadas: string[] = [];
-
     premiosFederal.forEach((num) => {
       dezenasPremiadas.push(num.slice(0, 2));
       dezenasPremiadas.push(num.slice(-2));
     });
 
     const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        pago: true,
-        status: "ATIVO_ATUAL",
-      },
+      where: { pago: true, status: "ATIVO_ATUAL" },
     });
 
     const ganhadores = bilhetes.filter((b) => {
@@ -139,17 +169,14 @@ router.post("/apurar", async (req, res) => {
       return acertos.length >= 3;
     });
 
+    let premioAtual = PREMIO_BASE;
     const premioRow = await prisma.appContent.findUnique({
       where: { key: "premio_atual" },
     });
-
-    let premioAtual = premioRow
-      ? Number(premioRow.contentHtml)
-      : PREMIO_BASE;
+    if (premioRow) premioAtual = Number(premioRow.contentHtml);
 
     if (ganhadores.length === 0) {
       premioAtual += PREMIO_BASE;
-
       await prisma.appContent.upsert({
         where: { key: "premio_atual" },
         update: { contentHtml: String(premioAtual) },
@@ -180,12 +207,27 @@ router.post("/apurar", async (req, res) => {
         },
       });
 
-      // 🔔 PUSH — BILHETE PREMIADO
+      // 🔔 Push
       await enviarPushBilhetePremiado(
         b.userId,
         b.id,
         valorPorBilhete
       );
+
+      // 📧 Email
+      const user = await prisma.users.findUnique({
+        where: { id: b.userId },
+        select: { email: true, name: true },
+      });
+
+      if (user?.email) {
+        await enviarEmailBilhetePremiado({
+          email: user.email,
+          nome: user.name,
+          bilheteId: b.id,
+          premio: valorPorBilhete,
+        });
+      }
     }
 
     await prisma.appContent.upsert({
