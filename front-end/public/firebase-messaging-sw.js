@@ -5,28 +5,45 @@ importScripts(
 );
 
 /**
- * FIREBASE CONFIG
- * (copiar os mesmos dados do vite.config.ts)
+ * ============================
+ * FIREBASE CONFIG — SERVICE WORKER
+ * (MESMO PROJETO DO FRONT)
+ * ============================
  */
 firebase.initializeApp({
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_STORAGE_BUCKET",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID",
+  apiKey: "AIzaSyBTJanXweYDNFHvYvW7EP6fUbyUMcDz3Ig",
+  authDomain: "zlpix-premiado.firebaseapp.com",
+  projectId: "zlpix-premiado",
+  storageBucket: "zlpix-premiado.firebasestorage.app",
+  messagingSenderId: "530368618940",
+  appId: "1:530368618940:web:bfbb8dd5d343eb1526cbb9",
 });
 
+/**
+ * ============================
+ * FIREBASE MESSAGING
+ * ============================
+ */
 const messaging = firebase.messaging();
 
 /**
- * Recebe push em background
+ * ============================
+ * PUSH EM BACKGROUND
+ * ============================
  */
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || "ZLPix Premiado";
+  console.log(
+    "[firebase-messaging-sw.js] Push recebido:",
+    payload
+  );
+
+  const notificationTitle =
+    payload.notification?.title || "ZLPix Premiado";
+
   const notificationOptions = {
-    body: payload.notification?.body,
-    icon: "/icon-192.png", // se existir
+    body: payload.notification?.body || "Você tem uma nova notificação 🎉",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
     data: {
       url: payload.data?.url || "/meus-bilhetes",
     },
@@ -39,7 +56,9 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 /**
- * Clique na notificação
+ * ============================
+ * CLIQUE NA NOTIFICAÇÃO
+ * ============================
  */
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
@@ -47,8 +66,9 @@ self.addEventListener("notificationclick", (event) => {
   const url = event.notification?.data?.url || "/meus-bilhetes";
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then(
-      (clientList) => {
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
         for (const client of clientList) {
           if (client.url.includes(url) && "focus" in client) {
             return client.focus();
@@ -57,7 +77,6 @@ self.addEventListener("notificationclick", (event) => {
         if (clients.openWindow) {
           return clients.openWindow(url);
         }
-      }
-    )
+      })
   );
 });
