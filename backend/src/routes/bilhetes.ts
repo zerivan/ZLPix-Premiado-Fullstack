@@ -6,38 +6,24 @@ import admin from "firebase-admin";
 const router = express.Router();
 
 /**
- * FIREBASE ADMIN (OPCIONAL)
- * Não pode derrubar o servidor
+ * ============================
+ * FIREBASE ADMIN (BACKEND)
+ * ============================
  */
-let firebaseAtivo = false;
-
-function initFirebaseAdmin() {
-  if (
-    !process.env.FIREBASE_PROJECT_ID ||
-    !process.env.FIREBASE_CLIENT_EMAIL ||
-    !process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    console.warn("Firebase Admin desativado (credenciais ausentes).");
-    return;
-  }
-
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
-
-  firebaseAtivo = true;
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
 }
 
-initFirebaseAdmin();
-
 /**
+ * ============================
  * EMAIL — CONFIGURAÇÃO SMTP
+ * ============================
  */
 const mailTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -50,7 +36,9 @@ const mailTransporter = nodemailer.createTransport({
 });
 
 /**
+ * ============================
  * PUSH — SALVAR TOKEN
+ * ============================
  */
 router.post("/push/token", async (req, res) => {
   try {
@@ -74,11 +62,11 @@ router.post("/push/token", async (req, res) => {
 });
 
 /**
- * PUSH — ENVIAR (somente se Firebase ativo)
+ * ============================
+ * FUNÇÃO — ENVIAR PUSH
+ * ============================
  */
 async function enviarPushBilheteCriado(userId: number, bilheteId: number) {
-  if (!firebaseAtivo) return;
-
   try {
     const tokens = await prisma.pushToken.findMany({
       where: { userId },
@@ -89,8 +77,8 @@ async function enviarPushBilheteCriado(userId: number, bilheteId: number) {
     await admin.messaging().sendEachForMulticast({
       tokens: tokens.map((t) => t.token),
       notification: {
-        title: "Bilhete gerado",
-        body: `Seu bilhete #${bilheteId} foi gerado.`,
+        title: "🎟️ Bilhete gerado com sucesso!",
+        body: `Seu bilhete #${bilheteId} já está disponível.`,
       },
       data: {
         url: "/meus-bilhetes",
@@ -102,7 +90,9 @@ async function enviarPushBilheteCriado(userId: number, bilheteId: number) {
 }
 
 /**
+ * ============================
  * EMAIL — ENVIO
+ * ============================
  */
 async function enviarEmailBilheteCriado(params: {
   email: string;
@@ -117,21 +107,21 @@ async function enviarEmailBilheteCriado(params: {
 
   const html = `
     <p>Olá ${params.nome || ""},</p>
-    <p>Seu bilhete foi gerado com sucesso.</p>
+    <p>Seu bilhete foi gerado com sucesso 🎟️</p>
     <p>
-      Bilhete: #${params.bilheteId}<br/>
-      Dezenas: ${params.dezenas}<br/>
-      Sorteio: ${params.sorteioData.toLocaleDateString("pt-BR")}
+      <strong>Bilhete:</strong> #${params.bilheteId}<br/>
+      <strong>Dezenas:</strong> ${params.dezenas}<br/>
+      <strong>Sorteio:</strong> ${params.sorteioData.toLocaleDateString("pt-BR")}
     </p>
-    <p><a href="${link}">Ver meus bilhetes</a></p>
-    <p>ZLPix Premiado</p>
+    <p>👉 <a href="${link}">Ver meus bilhetes</a></p>
+    <p>Boa sorte 🍀<br/>ZLPix Premiado</p>
   `;
 
   try {
     await mailTransporter.sendMail({
       from: `"ZLPix Premiado" <${process.env.SMTP_FROM}>`,
       to: params.email,
-      subject: "Bilhete gerado - ZLPix",
+      subject: "🎟️ Seu bilhete foi gerado – ZLPix",
       html,
     });
   } catch (err) {
@@ -140,7 +130,9 @@ async function enviarEmailBilheteCriado(params: {
 }
 
 /**
+ * ============================
  * CRIAR BILHETE PAGANDO COM SALDO
+ * ============================
  */
 router.post("/pagar-com-saldo", async (req, res) => {
   try {
@@ -193,8 +185,10 @@ router.post("/pagar-com-saldo", async (req, res) => {
       });
     });
 
+    // 🔔 Push
     await enviarPushBilheteCriado(userId, bilheteCriado.id);
 
+    // 📧 Email
     if (usuario?.email) {
       await enviarEmailBilheteCriado({
         email: usuario.email,
