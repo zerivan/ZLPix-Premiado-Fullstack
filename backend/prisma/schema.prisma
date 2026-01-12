@@ -20,6 +20,7 @@ model users {
   transacoes     transacao[]
   wallets        wallet[]
   passwordResets password_reset[]
+  pushTokens     PushToken[]
 }
 
 model wallet {
@@ -101,4 +102,20 @@ model AppContent {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/**
+ * 🔔 PUSH TOKENS
+ * Tabela já existe no banco: push_tokens
+ */
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("userid")
+  token     String   @unique
+  platform  String?
+  createdAt DateTime @default(now()) @map("createdat")
+
+  user users @relation(fields: [userId], references: [id])
+
+  @@map("push_tokens")
 }
