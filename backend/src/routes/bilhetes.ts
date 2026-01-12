@@ -14,11 +14,33 @@ router.post("/criar", async (_req, res) => {
 });
 
 /**
- * 📆 Próxima quarta-feira às 20h
+ * 📆 Quarta-feira ATUAL às 20h (se ainda não passou)
+ */
+function quartaAtualOuProxima(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 3 = quarta
+
+  // Se hoje é quarta e ainda não passou das 20h
+  if (day === 3 && now.getHours() < 20) {
+    const hoje = new Date(now);
+    hoje.setHours(20, 0, 0, 0);
+    return hoje;
+  }
+
+  // Caso contrário, próxima quarta
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
+/**
+ * 📆 Próxima quarta-feira às 20h (sempre futuro)
  */
 function proximaQuarta(): Date {
   const now = new Date();
-  const day = now.getDay(); // 0 dom | 3 qua
+  const day = now.getDay();
   const diff = (3 - day + 7) % 7 || 7;
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
@@ -28,6 +50,7 @@ function proximaQuarta(): Date {
 
 /**
  * ⏰ Decide se o bilhete vale para o sorteio atual ou próximo
+ * Regra: quarta após 17h → próximo sorteio
  */
 function definirStatusBilhete(): {
   status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
@@ -37,7 +60,6 @@ function definirStatusBilhete(): {
   const dia = agora.getDay(); // 3 = quarta
   const hora = agora.getHours();
 
-  // Quarta após 17h → próximo sorteio
   if (dia === 3 && hora >= 17) {
     return {
       status: "ATIVO_PROXIMO",
@@ -45,10 +67,9 @@ function definirStatusBilhete(): {
     };
   }
 
-  // Qualquer outro caso → sorteio atual
   return {
     status: "ATIVO_ATUAL",
-    sorteioData: proximaQuarta(),
+    sorteioData: quartaAtualOuProxima(),
   };
 }
 
@@ -169,7 +190,6 @@ router.get("/admin/sorteio-atual", async (_req, res) => {
 /**
  * ============================
  * APP — LISTAR BILHETES DO USUÁRIO
- * (somente os que ainda valem)
  * ============================
  */
 router.get("/listar/:userId", async (req, res) => {
