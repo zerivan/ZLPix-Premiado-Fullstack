@@ -32,18 +32,36 @@ export default function MeusBilhetes() {
 
   const userId = resolveUserId();
 
+  // =========================
+  // LOAD BILHETES
+  // =========================
+  async function loadBilhetes() {
+    try {
+      if (!userId) return;
+      const res = await axios.get(`${API}/bilhete/listar/${userId}`);
+      setBilhetes(res.data.bilhetes || []);
+    } catch (e) {
+      console.log("Erro ao carregar bilhetes:", e);
+    }
+  }
+
+  // Load inicial
   useEffect(() => {
-    async function load() {
-      try {
-        if (!userId) return;
-        const res = await axios.get(`${API}/bilhete/listar/${userId}`);
-        setBilhetes(res.data.bilhetes || []);
-      } catch (e) {
-        console.log("Erro ao carregar bilhetes:", e);
+    loadBilhetes();
+  }, [userId]);
+
+  // Recarrega quando volta para a aba (corrige “não apareceu”)
+  useEffect(() => {
+    function onFocus() {
+      if (document.visibilityState === "visible") {
+        loadBilhetes();
       }
     }
 
-    load();
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [userId]);
 
   // =========================
@@ -59,7 +77,7 @@ export default function MeusBilhetes() {
   }
 
   // =========================
-  // REGRA FINAL DE VISIBILIDADE (CORRIGIDA)
+  // REGRA FINAL DE VISIBILIDADE
   // =========================
   const bilhetesVisiveis = bilhetes.filter((b) => {
     if (isPremiado(b)) return true;
