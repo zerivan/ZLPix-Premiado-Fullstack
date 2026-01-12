@@ -1,7 +1,64 @@
 import express from "express";
 import { prisma } from "../lib/prisma";
+import nodemailer from "nodemailer";
 
 const router = express.Router();
+
+/**
+ * ============================
+ * EMAIL — CONFIGURAÇÃO SMTP
+ * ============================
+ */
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+async function enviarEmailBilheteCriado(params: {
+  email: string;
+  nome?: string | null;
+  bilheteId: number;
+  dezenas: string;
+  sorteioData: Date;
+}) {
+  if (!params.email) return;
+
+  const link = `${process.env.FRONTEND_URL}/meus-bilhetes`;
+
+  const html = `
+    <p>Olá ${params.nome || ""},</p>
+
+    <p>Seu bilhete foi gerado com sucesso 🎟️</p>
+
+    <p>
+      <strong>Bilhete:</strong> #${params.bilheteId}<br/>
+      <strong>Dezenas:</strong> ${params.dezenas}<br/>
+      <strong>Sorteio:</strong> ${params.sorteioData.toLocaleDateString("pt-BR")}
+    </p>
+
+    <p>
+      👉 <a href="${link}">Ver meus bilhetes</a>
+    </p>
+
+    <p>Boa sorte 🍀<br/>ZLPix Premiado</p>
+  `;
+
+  try {
+    await mailTransporter.sendMail({
+      from: `"ZLPix Premiado" <${process.env.SMTP_FROM}>`,
+      to: params.email,
+      subject: "🎟️ Seu bilhete foi gerado – ZLPix",
+      html,
+    });
+  } catch (err) {
+    console.error("Erro ao enviar email do bilhete:", err);
+  }
+}
 
 /**
  * ❌ CRIAÇÃO DIRETA DE BILHETE BLOQUEADA
@@ -18,16 +75,14 @@ router.post("/criar", async (_req, res) => {
  */
 function quartaAtualOuProxima(): Date {
   const now = new Date();
-  const day = now.getDay(); // 3 = quarta
+  const day = now.getDay();
 
-  // Se hoje é quarta e ainda não passou das 20h
   if (day === 3 && now.getHours() < 20) {
     const hoje = new Date(now);
     hoje.setHours(20, 0, 0, 0);
     return hoje;
   }
 
-  // Caso contrário, próxima quarta
   const diff = (3 - day + 7) % 7 || 7;
   const next = new Date(now);
   next.setDate(now.getDate() + diff);
@@ -36,7 +91,7 @@ function quartaAtualOuProxima(): Date {
 }
 
 /**
- * 📆 Próxima quarta-feira às 20h (sempre futuro)
+ * 📆 Próxima quarta-feira às 20h
  */
 function proximaQuarta(): Date {
   const now = new Date();
@@ -50,14 +105,13 @@ function proximaQuarta(): Date {
 
 /**
  * ⏰ Decide se o bilhete vale para o sorteio atual ou próximo
- * Regra: quarta após 17h → próximo sorteio
  */
 function definirStatusBilhete(): {
   status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
   sorteioData: Date;
 } {
   const agora = new Date();
-  const dia = agora.getDay(); // 3 = quarta
+  const dia = agora.getDay();
   const hora = agora.getHours();
 
   if (dia === 3 && hora >= 17) {
@@ -75,7 +129,7 @@ function definirStatusBilhete(): {
 
 /**
  * ============================
- * CRIAR BILHETE PAGANDO COM SALDO (CARTEIRA)
+ * CRIAR BILHETE PAGANDO COM SALDO
  * ============================
  */
 router.post("/pagar-com-saldo", async (req, res) => {
@@ -103,6 +157,9 @@ router.post("/pagar-com-saldo", async (req, res) => {
 
     const { status, sorteioData } = definirStatusBilhete();
 
+    let bilheteCriado: any = null;
+    let usuario: any = null;
+
     await prisma.$transaction(async (tx) => {
       const transacao = await tx.transacao.create({
         data: {
@@ -123,7 +180,7 @@ router.post("/pagar-com-saldo", async (req, res) => {
         },
       });
 
-      await tx.bilhete.create({
+      bilheteCriado = await tx.bilhete.create({
         data: {
           userId,
           dezenas: dezenasStr,
@@ -134,84 +191,31 @@ router.post("/pagar-com-saldo", async (req, res) => {
           transacaoId: transacao.id,
         },
       });
+
+      usuario = await tx.users.findUnique({
+        where: { id: userId },
+        select: {
+          email: true,
+          name: true,
+        },
+      });
     });
+
+    // 📧 Envio de email (fora da transação)
+    if (bilheteCriado && usuario?.email) {
+      await enviarEmailBilheteCriado({
+        email: usuario.email,
+        nome: usuario.name,
+        bilheteId: bilheteCriado.id,
+        dezenas: dezenasStr,
+        sorteioData,
+      });
+    }
 
     return res.json({ ok: true });
   } catch (e) {
     console.error("Erro ao pagar bilhete com saldo:", e);
     return res.status(500).json({ error: "Erro interno." });
-  }
-});
-
-/**
- * ============================
- * ADMIN — BILHETES DO SORTEIO ATUAL
- * ============================
- */
-router.get("/admin/sorteio-atual", async (_req, res) => {
-  try {
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        pago: true,
-        status: "ATIVO_ATUAL",
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        transacao: {
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return res.json({
-      ok: true,
-      total: bilhetes.length,
-      bilhetes,
-    });
-  } catch (e) {
-    console.error("Erro ao listar bilhetes do sorteio:", e);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * ============================
- * APP — LISTAR BILHETES DO USUÁRIO
- * ============================
- */
-router.get("/listar/:userId", async (req, res) => {
-  const userId = Number(req.params.userId);
-
-  try {
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        userId,
-        status: {
-          in: ["ATIVO_ATUAL", "ATIVO_PROXIMO"],
-        },
-      },
-      orderBy: {
-        sorteioData: "asc",
-      },
-    });
-
-    return res.json({ bilhetes });
-  } catch (e) {
-    console.error("Erro ao listar bilhetes:", e);
-    return res.status(500).json({ error: "erro interno" });
   }
 });
 
