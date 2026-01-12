@@ -11,6 +11,9 @@ import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
 
+// 🆕 PUSH NOTIFICATIONS
+import pushRoutes from "./routes/push";
+
 // ROTAS ADMIN (BANCO DE DADOS)
 import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
@@ -62,6 +65,11 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
+
+// ============================
+// PUSH NOTIFICATIONS (APP)
+// ============================
+app.use("/", pushRoutes);
 
 // ============================
 // CMS PÚBLICO (APP / CLIENTE)
