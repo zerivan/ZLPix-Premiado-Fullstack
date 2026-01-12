@@ -9,7 +9,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 5173 --host 0.0.0.0",
-    "start": "vite preview --port 10000 --host 0.0.0.0"
+    "start": "vite preview --port 10000 --host 0.0.0.0",
+
+    "firebase:install": "npm install firebase",
+    "firebase:clean": "rm -rf node_modules/firebase && npm install firebase"
   },
 
   "dependencies": {
@@ -20,7 +23,8 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
     "framer-motion": "^11.0.0",
-    "react-quill": "^2.0.0"
+    "react-quill": "^2.0.0",
+    "firebase": "^10.7.1"
   },
 
   "devDependencies": {
