@@ -55,16 +55,22 @@ export default function MeusBilhetes() {
 
   function isAtivoDoSorteioAtual(b: any) {
     if (!b.sorteioData) return false;
-    const sorteio = new Date(b.sorteioData).getTime();
-    return sorteio >= Date.now();
+    return new Date(b.sorteioData).getTime() >= Date.now();
   }
 
   // =========================
-  // REGRA FINAL DE VISIBILIDADE
+  // REGRA FINAL DE VISIBILIDADE (CORRIGIDA)
   // =========================
   const bilhetesVisiveis = bilhetes.filter((b) => {
     if (isPremiado(b)) return true;
-    if (b.status === "ATIVO" && isAtivoDoSorteioAtual(b)) return true;
+
+    if (
+      (b.status === "ATIVO_ATUAL" || b.status === "ATIVO_PROXIMO") &&
+      isAtivoDoSorteioAtual(b)
+    ) {
+      return true;
+    }
+
     return false;
   });
 
