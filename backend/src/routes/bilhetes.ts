@@ -131,13 +131,65 @@ async function enviarEmailBilheteCriado(params: {
 
 /**
  * ============================
- * LISTAR BILHETES DO USUÁRIO  ✅ (ROTA QUE FALTAVA)
+ * REGRA DE SORTEIO — 17H
+ * ============================
+ */
+function quartaAtualOuProxima(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 3 = quarta
+
+  if (day === 3 && now.getHours() < 20) {
+    const hoje = new Date(now);
+    hoje.setHours(20, 0, 0, 0);
+    return hoje;
+  }
+
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
+function proximaQuarta(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
+function definirStatusBilhete(): {
+  status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
+  sorteioData: Date;
+} {
+  const agora = new Date();
+  const dia = agora.getDay();
+  const hora = agora.getHours();
+
+  if (dia === 3 && hora >= 17) {
+    return {
+      status: "ATIVO_PROXIMO",
+      sorteioData: proximaQuarta(),
+    };
+  }
+
+  return {
+    status: "ATIVO_ATUAL",
+    sorteioData: quartaAtualOuProxima(),
+  };
+}
+
+/**
+ * ============================
+ * LISTAR BILHETES DO USUÁRIO
  * ============================
  */
 router.get("/listar/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
-
     if (!userId) {
       return res.status(400).json({ error: "UserId inválido." });
     }
@@ -175,6 +227,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
       return res.status(400).json({ error: "Saldo insuficiente." });
     }
 
+    const { status, sorteioData } = definirStatusBilhete();
+
     let bilheteCriado: any = null;
     let usuario: any = null;
 
@@ -199,8 +253,8 @@ router.post("/pagar-com-saldo", async (req, res) => {
           dezenas: dezenasStr,
           valor,
           pago: true,
-          status: "ATIVO_ATUAL",
-          sorteioData: new Date(),
+          status,
+          sorteioData,
         },
       });
 
@@ -210,17 +264,15 @@ router.post("/pagar-com-saldo", async (req, res) => {
       });
     });
 
-    // 🔔 Push
     await enviarPushBilheteCriado(userId, bilheteCriado.id);
 
-    // 📧 Email
     if (usuario?.email) {
       await enviarEmailBilheteCriado({
         email: usuario.email,
         nome: usuario.name,
         bilheteId: bilheteCriado.id,
         dezenas: dezenasStr,
-        sorteioData: new Date(),
+        sorteioData,
       });
     }
 
