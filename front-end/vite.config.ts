@@ -11,6 +11,25 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+
+  /**
+   * ============================
+   * FIREBASE — CONFIG INJETADA
+   * ============================
+   * (chaves públicas, seguro no front)
+   */
+  define: {
+    __FIREBASE_CONFIG__: JSON.stringify({
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH_DOMAIN",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_STORAGE_BUCKET",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID",
+      vapidKey: "SUA_VAPID_KEY",
+    }),
+  },
+
   build: {
     outDir: "dist",
     assetsDir: "assets",
@@ -18,7 +37,6 @@ export default defineConfig({
     emptyOutDir: true,
     chunkSizeWarningLimit: 1500,
 
-    // 🧠 Adicionamos esta parte:
     rollupOptions: {
       external: ["dompurify"],
     },
