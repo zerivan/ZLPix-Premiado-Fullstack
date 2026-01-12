@@ -1,11 +1,7 @@
 import React, { useEffect } from "react";
 import AppRoutes from "./routes/index";
 import { initializeApp } from "firebase/app";
-import {
-  getMessaging,
-  getToken,
-  isSupported,
-} from "firebase/messaging";
+import { getMessaging, getToken, isSupported } from "firebase/messaging";
 
 /**
  * ============================
@@ -69,11 +65,9 @@ export default function App() {
   useEffect(() => {
     async function initPush() {
       try {
-        // Verifica se o browser suporta Push
         const supported = await isSupported();
         if (!supported) return;
 
-        // Só pede permissão se ainda não foi decidida
         if (Notification.permission !== "granted") {
           const permission = await Notification.requestPermission();
           if (permission !== "granted") return;
@@ -87,17 +81,29 @@ export default function App() {
 
         if (!token) return;
 
-        // Envia token para o backend
-        await fetch(
-          `${import.meta.env.VITE_API_URL}/push/token`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ token }),
-          }
-        );
+        // 🔑 RESOLVE USER ID (CORREÇÃO)
+        const stored = localStorage.getItem("USER_ZLPIX");
+        const parsed = stored ? JSON.parse(stored) : null;
+
+        const userId =
+          localStorage.getItem("USER_ID") ||
+          parsed?.id ||
+          parsed?.userId ||
+          parsed?._id;
+
+        if (!userId) return;
+
+        // 📡 ENVIA TOKEN + USERID (CORRETO)
+        await fetch(`${import.meta.env.VITE_API_URL}/push/token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token,
+            userId: Number(userId),
+          }),
+        });
       } catch (err) {
         console.warn("Push notification indisponível:", err);
       }
