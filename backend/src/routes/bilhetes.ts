@@ -131,6 +131,31 @@ async function enviarEmailBilheteCriado(params: {
 
 /**
  * ============================
+ * LISTAR BILHETES DO USUÁRIO  ✅ (ROTA QUE FALTAVA)
+ * ============================
+ */
+router.get("/listar/:userId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+
+    if (!userId) {
+      return res.status(400).json({ error: "UserId inválido." });
+    }
+
+    const bilhetes = await prisma.bilhete.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ bilhetes });
+  } catch (e) {
+    console.error("Erro ao listar bilhetes:", e);
+    return res.status(500).json({ error: "Erro interno." });
+  }
+});
+
+/**
+ * ============================
  * CRIAR BILHETE PAGANDO COM SALDO
  * ============================
  */
