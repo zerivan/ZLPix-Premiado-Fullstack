@@ -1,7 +1,23 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import admin from "firebase-admin";
 
 const router = Router();
+
+/**
+ * ============================
+ * FIREBASE ADMIN (BACKEND)
+ * ============================
+ */
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 /**
  * =====================================================
@@ -21,6 +37,40 @@ function proximaQuarta(): Date {
   next.setDate(now.getDate() + diff);
   next.setHours(20, 0, 0, 0);
   return next;
+}
+
+/**
+ * =====================================================
+ * PUSH — BILHETE PREMIADO
+ * =====================================================
+ */
+async function enviarPushBilhetePremiado(
+  userId: number,
+  bilheteId: number,
+  premio: number
+) {
+  try {
+    const tokens = await prisma.pushToken.findMany({
+      where: { userId },
+    });
+
+    if (tokens.length === 0) return;
+
+    await admin.messaging().sendEachForMulticast({
+      tokens: tokens.map((t) => t.token),
+      notification: {
+        title: "🎉 PARABÉNS! BILHETE PREMIADO!",
+        body: `Seu bilhete #${bilheteId} foi premiado. Valor: R$ ${premio.toFixed(
+          2
+        )}`,
+      },
+      data: {
+        url: "/meus-bilhetes",
+      },
+    });
+  } catch (e) {
+    console.error("Erro ao enviar push premiado:", e);
+  }
 }
 
 /**
@@ -61,25 +111,19 @@ router.get("/premio-atual", async (_req, res) => {
  */
 router.post("/apurar", async (req, res) => {
   try {
-    const { premiosFederal } = req.body; // string[]
+    const { premiosFederal } = req.body;
 
     if (!Array.isArray(premiosFederal) || premiosFederal.length !== 5) {
       return res.status(400).json({ error: "Resultado da Federal inválido." });
     }
 
-    /**
-     * 🎯 DEZENAS PREMIADAS (FRENTE + FUNDO)
-     */
     const dezenasPremiadas: string[] = [];
 
     premiosFederal.forEach((num) => {
-      dezenasPremiadas.push(num.slice(0, 2)); // frente
-      dezenasPremiadas.push(num.slice(-2));  // fundo
+      dezenasPremiadas.push(num.slice(0, 2));
+      dezenasPremiadas.push(num.slice(-2));
     });
 
-    /**
-     * 🎟️ SOMENTE BILHETES DO SORTEIO ATUAL
-     */
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         pago: true,
@@ -87,9 +131,6 @@ router.post("/apurar", async (req, res) => {
       },
     });
 
-    /**
-     * 🏆 GANHADORES = ACERTAR 3 DEZENAS
-     */
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas.split(",");
       const acertos = dezenasBilhete.filter((d) =>
@@ -106,9 +147,6 @@ router.post("/apurar", async (req, res) => {
       ? Number(premioRow.contentHtml)
       : PREMIO_BASE;
 
-    /**
-     * 🔁 SEM GANHADORES → ACUMULA
-     */
     if (ganhadores.length === 0) {
       premioAtual += PREMIO_BASE;
 
@@ -129,9 +167,6 @@ router.post("/apurar", async (req, res) => {
       });
     }
 
-    /**
-     * 💰 COM GANHADORES → DIVIDE
-     */
     const valorPorBilhete = premioAtual / ganhadores.length;
 
     for (const b of ganhadores) {
@@ -144,11 +179,15 @@ router.post("/apurar", async (req, res) => {
           apuradoEm: new Date(),
         },
       });
+
+      // 🔔 PUSH — BILHETE PREMIADO
+      await enviarPushBilhetePremiado(
+        b.userId,
+        b.id,
+        valorPorBilhete
+      );
     }
 
-    /**
-     * 🔄 RESETAR PRÊMIO
-     */
     await prisma.appContent.upsert({
       where: { key: "premio_atual" },
       update: { contentHtml: String(PREMIO_BASE) },
