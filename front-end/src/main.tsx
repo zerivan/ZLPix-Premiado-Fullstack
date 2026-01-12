@@ -54,3 +54,21 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <AppRoutes />
   </BrowserRouter>
 );
+
+/**
+ * ============================
+ * SERVICE WORKER — FIREBASE PUSH
+ * ============================
+ */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/firebase-messaging-sw.js")
+      .then(() => {
+        console.log("Service Worker registrado (Push)");
+      })
+      .catch((err) => {
+        console.warn("Erro ao registrar Service Worker:", err);
+      });
+  });
+}
