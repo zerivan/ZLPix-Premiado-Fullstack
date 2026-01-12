@@ -104,10 +104,6 @@ model AppContent {
   updatedAt   DateTime @updatedAt
 }
 
-/**
- * 🔔 PUSH TOKENS
- * Tabela já existe no banco: push_tokens
- */
 model PushToken {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("userid")
