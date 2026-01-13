@@ -34,7 +34,6 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido." });
     }
 
-    // cria transação pendente
     const tx = await prisma.transacao.create({
       data: {
         userId: uid,
@@ -76,7 +75,6 @@ router.post("/create", async (req, res) => {
       return res.status(502).json(mpJson);
     }
 
-    // associa pagamento à transação
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -108,45 +106,30 @@ router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
 
-    if (!paymentId) {
-      return res.json({ status: "INVALID" });
-    }
+    if (!paymentId) return res.json({ status: "INVALID" });
 
-    // 1️⃣ consulta banco local
     const tx = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
       select: { status: true },
     });
 
-    if (!tx) {
-      return res.json({ status: "PENDING" });
-    }
+    if (!tx) return res.json({ status: "PENDING" });
+    if (tx.status === "paid") return res.json({ status: "PAID" });
 
-    if (tx.status === "paid") {
-      return res.json({ status: "PAID" });
-    }
-
-    // 2️⃣ consulta Mercado Pago (somente leitura)
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
 
-    if (!mpToken) {
-      return res.json({ status: "PENDING" });
-    }
+    if (!mpToken) return res.json({ status: "PENDING" });
 
     const resp = await fetchFn(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      {
-        headers: { Authorization: `Bearer ${mpToken}` },
-      }
+      { headers: { Authorization: `Bearer ${mpToken}` } }
     );
 
     const mpJson: any = await resp.json();
 
     if (mpJson?.status === "approved") {
-      // ❗ NÃO cria bilhete
-      // ❗ NÃO altera transação
       return res.json({ status: "PAID" });
     }
 
@@ -154,6 +137,32 @@ router.get("/payment-status/:paymentId", async (req, res) => {
   } catch (err) {
     console.error("payment-status erro:", err);
     return res.status(500).json({ status: "ERROR" });
+  }
+});
+
+// =====================================================
+// 📌 INFO DO PAGAMENTO (QR + COPIA E COLA)
+// =====================================================
+router.get("/payment-info/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    const tx = await prisma.transacao.findFirst({
+      where: { mpPaymentId: String(paymentId) },
+      select: { metadata: true },
+    });
+
+    const mp = (tx?.metadata as any)?.mpResponse;
+
+    return res.json({
+      qr_code_base64:
+        mp?.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+      copy_paste:
+        mp?.point_of_interaction?.transaction_data?.qr_code ?? null,
+    });
+  } catch (err) {
+    console.error("payment-info erro:", err);
+    return res.status(500).json({});
   }
 });
 
