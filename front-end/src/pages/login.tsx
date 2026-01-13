@@ -23,7 +23,7 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // 🔐 Login no backend (USUÁRIO)
+      // 🔐 LOGIN USUÁRIO
       const response = await api.post("/auth/login", {
         email,
         password: senha,
@@ -36,7 +36,7 @@ export default function Login() {
         throw new Error("Resposta inválida do servidor.");
       }
 
-      // 🚫 LIMPA QUALQUER ESTADO ADMIN (EVITA HERANÇA DE FLUXO)
+      // 🚫 LIMPA QUALQUER ESTADO ADMIN
       localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
       localStorage.removeItem("ZLPIX_ADMIN_AUTH");
 
@@ -45,17 +45,10 @@ export default function Login() {
       localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
       localStorage.setItem("USER_ID", String(user.id));
 
-      // 🔐 aplica token nas próximas chamadas
+      // 🔐 aplica token no axios
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // 🧠 garante que a carteira exista
-      try {
-        await api.post("/wallet/ensure");
-      } catch (e) {
-        console.warn("Não foi possível garantir wallet:", e);
-      }
-
-      // 👉 vai pra Home (APENAS USUÁRIO)
+      // 👉 REDIRECIONA (SEM FAZER MAIS NADA)
       navigate("/home", { replace: true });
 
     } catch (err: any) {
@@ -71,7 +64,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display">
       <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm border border-green-400/30">
-        
+
         <div className="text-center mb-5">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
@@ -87,7 +80,6 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* EMAIL */}
           <div>
             <label className="text-sm">E-mail</label>
             <input
@@ -99,7 +91,6 @@ export default function Login() {
             />
           </div>
 
-          {/* SENHA */}
           <div>
             <label className="text-sm">Senha</label>
             <div className="relative">
