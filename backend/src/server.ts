@@ -39,15 +39,25 @@ import { adminAuth } from "./middlewares/adminAuth";
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
-// CORS
+// ============================
+// ✅ CORS — CORREÇÃO DEFINITIVA
+// ============================
 app.use(
   cors({
     origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-User-Id",
+      "x-user-id",
+    ],
   })
 );
+
+// 🔥 RESPONDE PREFLIGHT (CRÍTICO)
+app.options("*", cors());
 
 app.use(express.json());
 
@@ -67,7 +77,7 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
-app.use("/wallet", walletRoutes); // ✅ ESSENCIAL PARA HOME / TIMELINE
+app.use("/wallet", walletRoutes); // ✅ ESSENCIAL (HOME / CARTEIRA)
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
