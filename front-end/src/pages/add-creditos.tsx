@@ -88,10 +88,33 @@ export default function AddCreditos() {
     return () => clearInterval(pollingRef.current);
   }, [paymentId, navigate]);
 
+  // ✅ COPIAR PIX — fallback universal (Android / WebView)
   function copiarCodigo() {
     if (!copyPaste) return;
-    navigator.clipboard.writeText(copyPaste);
-    alert("Código PIX copiado!");
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = copyPaste;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "-9999px";
+
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      const ok = document.execCommand("copy");
+      document.body.removeChild(textarea);
+
+      if (ok) {
+        alert("Código PIX copiado!");
+      } else {
+        alert("Não foi possível copiar o código PIX.");
+      }
+    } catch (err) {
+      console.error("Erro ao copiar PIX:", err);
+      alert("Falha ao copiar o código PIX.");
+    }
   }
 
   return (
