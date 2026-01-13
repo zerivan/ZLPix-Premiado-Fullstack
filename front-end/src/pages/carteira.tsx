@@ -1,43 +1,69 @@
 // src/pages/carteira.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
-import { useNavigate } from "react-router-dom"; // ✅
+import { useNavigate } from "react-router-dom";
 
 export default function Carteira() {
-  const navigate = useNavigate(); // ✅
+  const navigate = useNavigate();
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
+  const lastSaldoRef = useRef<number | null>(null);
+
+  async function carregarSaldo() {
+    try {
+      const userId = localStorage.getItem("USER_ID");
+
+      if (!userId) {
+        setSaldo(0);
+        return;
+      }
+
+      const res = await api.get("/wallet/saldo", {
+        headers: { "x-user-id": userId },
+      });
+
+      const valor = Number(res.data?.saldo ?? 0);
+      setSaldo(valor);
+      return valor;
+    } catch {
+      setSaldo(0);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function carregarSaldo() {
-      try {
-        const userId = localStorage.getItem("USER_ID");
+    let tentativas = 0;
 
-        if (!userId) {
-          console.warn("Usuário não identificado (USER_ID ausente)");
-          setSaldo(0);
-          return;
-        }
+    const interval = setInterval(async () => {
+      tentativas++;
 
-        const res = await api.get("/wallet/saldo", {
-          headers: {
-            "x-user-id": userId,
-          },
-        });
+      const novoSaldo = await carregarSaldo();
 
-        const valor = Number(res.data?.saldo ?? 0);
-        setSaldo(valor);
-      } catch (e) {
-        console.error("Erro ao carregar saldo:", e);
-        setSaldo(0);
-      } finally {
-        setLoading(false);
+      // se o saldo mudou, para o polling
+      if (
+        lastSaldoRef.current !== null &&
+        novoSaldo !== null &&
+        novoSaldo !== lastSaldoRef.current
+      ) {
+        clearInterval(interval);
       }
-    }
 
+      lastSaldoRef.current = novoSaldo;
+
+      // segurança: para após ~20s
+      if (tentativas >= 7) {
+        clearInterval(interval);
+      }
+    }, 3000);
+
+    // primeira carga imediata
     carregarSaldo();
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -60,20 +86,18 @@ export default function Carteira() {
         </div>
 
         <div className="w-full max-w-md space-y-4">
-          {/* DEPOSITAR */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-lg"
-            onClick={() => navigate("/add-creditos")} // ✅
+            onClick={() => navigate("/add-creditos")}
           >
             ➕ ADICIONAR CRÉDITOS
           </motion.button>
 
-          {/* SACAR */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 font-extrabold text-lg shadow-lg"
-            onClick={() => navigate("/saque")} // ✅
+            onClick={() => navigate("/saque")}
           >
             💸 SACAR CRÉDITOS
           </motion.button>
