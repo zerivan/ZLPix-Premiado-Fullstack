@@ -10,19 +10,6 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 // ===============================
-// Função: próxima quarta-feira às 20h
-// ===============================
-function proximaQuarta(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0);
-  return next;
-}
-
-// ===============================
 // CRIAR PIX
 // ===============================
 router.post("/create", async (req, res) => {
@@ -47,6 +34,7 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido." });
     }
 
+    // cria transação pendente
     const tx = await prisma.transacao.create({
       data: {
         userId: uid,
@@ -88,6 +76,7 @@ router.post("/create", async (req, res) => {
       return res.status(502).json(mpJson);
     }
 
+    // vincula pagamento à transação
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -113,69 +102,30 @@ router.post("/create", async (req, res) => {
 });
 
 // =====================================================
-// STATUS DO PAGAMENTO — CRIA BILHETES CORRETAMENTE
+// STATUS DO PAGAMENTO (LEITURA APENAS)
 // =====================================================
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
-    if (!paymentId) return res.json({ status: "invalid" });
+    if (!paymentId) return res.json({ status: "INVALID" });
 
     const tx = await prisma.transacao.findFirst({
       where: { mpPaymentId: paymentId },
+      select: { status: true },
     });
 
-    if (!tx) return res.json({ status: "invalid" });
+    if (!tx) {
+      return res.json({ status: "PENDING" });
+    }
 
     if (tx.status === "paid") {
-      return res.json({ status: "paid" });
+      return res.json({ status: "PAID" });
     }
 
-    const mpToken =
-      process.env.MP_ACCESS_TOKEN ||
-      process.env.MP_ACCESS_TOKEN_TEST;
-
-    if (!mpToken) {
-      return res.json({ status: "pending" });
-    }
-
-    const resp = await fetchFn(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      { headers: { Authorization: `Bearer ${mpToken}` } }
-    );
-
-    const mpJson: any = await resp.json();
-
-    if (mpJson?.status === "approved") {
-      const bilhetes = (tx.metadata as any)?.bilhetes ?? [];
-
-      await prisma.$transaction(async (db) => {
-        await db.transacao.update({
-          where: { id: tx.id },
-          data: { status: "paid" },
-        });
-
-        for (const b of bilhetes) {
-          await db.bilhete.create({
-            data: {
-              userId: tx.userId,
-              transacaoId: tx.id,
-              dezenas: typeof b === "string" ? b : String(b.dezenas),
-              valor: Number(b.valor) || tx.valor / bilhetes.length,
-              pago: true,
-              status: "ATIVO",
-              sorteioData: proximaQuarta(),
-            },
-          });
-        }
-      });
-
-      return res.json({ status: "paid" });
-    }
-
-    return res.json({ status: "pending" });
+    return res.json({ status: "PENDING" });
   } catch (err) {
     console.error("payment-status erro:", err);
-    return res.json({ status: "error" });
+    return res.json({ status: "ERROR" });
   }
 });
 
