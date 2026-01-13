@@ -1,3 +1,4 @@
+// src/server.ts
 import { seedAppContentPages } from "./seed/appcontent.seed";
 
 import "dotenv/config";
@@ -68,7 +69,7 @@ app.use("/bilhete", bilheteRoutes);
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
-// ✅ CORREÇÃO AQUI
+// ✅ CORREÇÃO CRÍTICA AQUI
 // ============================
 app.use("/push", pushRoutes);
 
