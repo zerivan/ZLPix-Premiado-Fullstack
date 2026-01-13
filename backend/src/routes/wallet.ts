@@ -5,8 +5,7 @@ import { prisma } from "../lib/prisma";
 const router = express.Router();
 
 /**
- * 🔐 Middleware simples para identificar usuário
- * (usa USER_ID que já existe no projeto)
+ * 🔐 Identifica usuário (USER_ID)
  */
 function getUserId(req: any): number | null {
   const userId =
@@ -23,12 +22,11 @@ function getUserId(req: any): number | null {
  * =========================
  * POST /wallet/ensure
  * =========================
- * Garante que a wallet do usuário exista
+ * Garante que a wallet exista
  */
 router.post("/ensure", async (req, res) => {
   try {
     const userId = getUserId(req);
-
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
@@ -40,15 +38,16 @@ router.post("/ensure", async (req, res) => {
     if (!wallet) {
       await prisma.wallet.create({
         data: {
-          user: { connect: { id: userId } },
+          userId,
           saldo: 0,
+          createdAt: new Date(),
         },
       });
     }
 
     return res.json({ ok: true });
   } catch (err) {
-    console.error("Erro ao garantir wallet:", err);
+    console.error("Erro wallet/ensure:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -57,7 +56,6 @@ router.post("/ensure", async (req, res) => {
  * =========================
  * GET /wallet/saldo
  * =========================
- * Retorna o saldo atual da carteira
  */
 router.get("/saldo", async (req, res) => {
   try {
@@ -74,7 +72,7 @@ router.get("/saldo", async (req, res) => {
       saldo: wallet ? Number(wallet.saldo) : 0,
     });
   } catch (err) {
-    console.error("Erro ao buscar saldo:", err);
+    console.error("Erro wallet/saldo:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -83,8 +81,8 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * POST /wallet/depositar
  * =========================
- * Cria uma transação PIX de DEPÓSITO
- * O saldo só é creditado no webhook
+ * Cria transação de DEPÓSITO
+ * Crédito entra só no webhook
  */
 router.post("/depositar", async (req, res) => {
   try {
@@ -95,21 +93,22 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    // garante que a wallet existe
-    const walletExistente = await prisma.wallet.findFirst({
+    // garante wallet
+    const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
-    if (!walletExistente) {
+    if (!wallet) {
       await prisma.wallet.create({
         data: {
-          user: { connect: { id: userId } },
+          userId,
           saldo: 0,
+          createdAt: new Date(),
         },
       });
     }
 
-    // cria transação PIX (tipo DEPÓSITO)
+    // cria transação PIX (depósito)
     const transacao = await prisma.transacao.create({
       data: {
         userId,
@@ -125,7 +124,7 @@ router.post("/depositar", async (req, res) => {
       redirectUrl: `/pix?transacaoId=${transacao.id}`,
     });
   } catch (err) {
-    console.error("Erro ao criar depósito:", err);
+    console.error("Erro wallet/depositar:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
