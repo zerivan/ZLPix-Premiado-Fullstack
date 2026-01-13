@@ -11,6 +11,7 @@ import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
+import walletRoutes from "./routes/wallet"; // ✅ RESTAURADO
 
 // 🆕 PUSH NOTIFICATIONS
 import pushRoutes from "./routes/push";
@@ -66,10 +67,10 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
+app.use("/wallet", walletRoutes); // ✅ ESSENCIAL PARA HOME / TIMELINE
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
-// ✅ CORREÇÃO CRÍTICA AQUI
 // ============================
 app.use("/push", pushRoutes);
 
