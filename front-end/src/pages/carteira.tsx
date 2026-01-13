@@ -11,7 +11,20 @@ export default function Carteira() {
   useEffect(() => {
     async function carregarSaldo() {
       try {
-        const res = await api.get("/wallet/saldo");
+        const userId = localStorage.getItem("USER_ID");
+
+        if (!userId) {
+          console.warn("Usuário não identificado (USER_ID ausente)");
+          setSaldo(0);
+          return;
+        }
+
+        const res = await api.get("/wallet/saldo", {
+          headers: {
+            "x-user-id": userId, // ✅ CORREÇÃO CRÍTICA
+          },
+        });
+
         const valor = Number(res.data?.saldo ?? 0);
         setSaldo(valor);
       } catch (e) {
