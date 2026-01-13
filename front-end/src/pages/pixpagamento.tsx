@@ -31,30 +31,20 @@ export default function AddCreditos() {
     try {
       setLoading(true);
 
-      // 1️⃣ cria transação de DEPÓSITO
-      await api.post(
+      // 🔑 ÚNICA chamada necessária
+      const res = await api.post(
         "/wallet/depositar",
         { valor },
-        {
-          headers: { "x-user-id": userId },
-        }
+        { headers: { "x-user-id": userId } }
       );
 
-      // 2️⃣ cria PIX no Mercado Pago
-      const pix = await api.post("/pix/create", {
-        userId: Number(userId),
-        amount: valor,
-        bilhetes: ["deposito"], // marcador interno
-        description: "Depósito em carteira",
-      });
-
-      const paymentId = pix.data?.payment_id;
+      const paymentId = res.data?.paymentId;
 
       if (!paymentId) {
-        throw new Error("paymentId não retornado");
+        throw new Error("paymentId não retornado pelo backend");
       }
 
-      // 3️⃣ navega CORRETAMENTE para a página PIX
+      // 👉 vai para a tela de PIX
       navigate(`/pagamento?paymentId=${paymentId}`);
     } catch (e) {
       console.error("Erro ao gerar PIX:", e);
@@ -82,7 +72,7 @@ export default function AddCreditos() {
               key={v}
               whileTap={{ scale: 0.93 }}
               onClick={() => selecionarValor(v)}
-              className={`py-4 rounded-2xl backdrop-blur-md border text-lg font-bold shadow-md ${
+              className={`py-4 rounded-2xl border text-lg font-bold shadow-md ${
                 valor === v
                   ? "bg-yellow-400 text-blue-900 border-yellow-300"
                   : "bg-white/10 text-yellow-300 border-white/20"
@@ -94,14 +84,11 @@ export default function AddCreditos() {
         </div>
 
         <div className="w-full max-w-md">
-          <label className="text-sm text-blue-100 font-semibold">
-            Outro valor
-          </label>
           <input
             type="number"
             value={valor ?? ""}
             onChange={(e) => setValor(Number(e.target.value))}
-            className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300"
+            className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white"
             placeholder="Digite um valor"
           />
         </div>
@@ -110,7 +97,7 @@ export default function AddCreditos() {
           whileTap={{ scale: 0.95 }}
           onClick={gerarPix}
           disabled={loading}
-          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
+          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl"
         >
           {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
         </motion.button>
