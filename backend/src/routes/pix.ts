@@ -10,7 +10,7 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 // ===============================
-// CRIAR PIX
+// CRIAR PIX (INTENÇÃO DE PAGAMENTO)
 // ===============================
 router.post("/create", async (req, res) => {
   try {
@@ -76,7 +76,7 @@ router.post("/create", async (req, res) => {
       return res.status(502).json(mpJson);
     }
 
-    // vincula pagamento à transação
+    // associa pagamento à transação
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -102,15 +102,19 @@ router.post("/create", async (req, res) => {
 });
 
 // =====================================================
-// STATUS DO PAGAMENTO (LEITURA APENAS)
+// 📌 STATUS DO PAGAMENTO (PASSIVO – NÃO CRIA BILHETE)
 // =====================================================
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
-    if (!paymentId) return res.json({ status: "INVALID" });
 
+    if (!paymentId) {
+      return res.json({ status: "INVALID" });
+    }
+
+    // 1️⃣ consulta banco local
     const tx = await prisma.transacao.findFirst({
-      where: { mpPaymentId: paymentId },
+      where: { mpPaymentId: String(paymentId) },
       select: { status: true },
     });
 
@@ -122,10 +126,34 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       return res.json({ status: "PAID" });
     }
 
+    // 2️⃣ consulta Mercado Pago (somente leitura)
+    const mpToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+
+    if (!mpToken) {
+      return res.json({ status: "PENDING" });
+    }
+
+    const resp = await fetchFn(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        headers: { Authorization: `Bearer ${mpToken}` },
+      }
+    );
+
+    const mpJson: any = await resp.json();
+
+    if (mpJson?.status === "approved") {
+      // ❗ NÃO cria bilhete
+      // ❗ NÃO altera transação
+      return res.json({ status: "PAID" });
+    }
+
     return res.json({ status: "PENDING" });
   } catch (err) {
     console.error("payment-status erro:", err);
-    return res.json({ status: "ERROR" });
+    return res.status(500).json({ status: "ERROR" });
   }
 });
 
