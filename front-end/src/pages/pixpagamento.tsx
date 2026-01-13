@@ -1,84 +1,122 @@
-// src/pages/pixpagamento.tsx
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+// src/pages/add-creditos.tsx
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
+import { useNavigate } from "react-router-dom";
 
-export default function PixPagamento() {
+export default function AddCreditos() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const paymentId = params.get("paymentId") || params.get("payment_id");
+  const [valor, setValor] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const [qrBase64, setQrBase64] = useState<string>("");
-  const [copyPaste, setCopyPaste] = useState<string>("");
-  const [status, setStatus] = useState("Aguardando pagamento...");
-  const pollingRef = useRef<any>(null);
+  const valoresRapidos = [10, 20, 50, 100];
 
-  // 🔹 Buscar QR + copia/cola
-  useEffect(() => {
-    if (!paymentId) return;
+  function selecionarValor(v: number) {
+    setValor(v);
+  }
 
-    api.get(`/pix/payment-info/${paymentId}`).then((res) => {
-      setQrBase64(res.data?.qr_code_base64 || "");
-      setCopyPaste(res.data?.copy_paste || "");
-    });
-  }, [paymentId]);
+  async function gerarPix() {
+    if (!valor || valor <= 0) {
+      alert("Digite um valor válido.");
+      return;
+    }
 
-  // 🔹 Polling do pagamento
-  useEffect(() => {
-    if (!paymentId) return;
+    const userId = localStorage.getItem("USER_ID");
+    if (!userId) {
+      alert("Usuário não identificado.");
+      return;
+    }
 
-    pollingRef.current = setInterval(async () => {
-      const res = await api.get(`/pix/payment-status/${paymentId}`);
+    try {
+      setLoading(true);
 
-      if (res.data?.status === "PAID") {
-        clearInterval(pollingRef.current);
-        setStatus("Pagamento confirmado! 🎉");
+      // 1️⃣ cria transação de DEPÓSITO
+      await api.post(
+        "/wallet/depositar",
+        { valor },
+        {
+          headers: { "x-user-id": userId },
+        }
+      );
 
-        setTimeout(() => {
-          navigate("/carteira", { replace: true });
-        }, 1200);
+      // 2️⃣ cria PIX no Mercado Pago
+      const pix = await api.post("/pix/create", {
+        userId: Number(userId),
+        amount: valor,
+        bilhetes: ["deposito"], // marcador interno
+        description: "Depósito em carteira",
+      });
+
+      const paymentId = pix.data?.payment_id;
+
+      if (!paymentId) {
+        throw new Error("paymentId não retornado");
       }
-    }, 5000);
 
-    return () => clearInterval(pollingRef.current);
-  }, [paymentId, navigate]);
-
-  function copiar() {
-    if (!copyPaste) return;
-    navigator.clipboard.writeText(copyPaste);
-    alert("Código PIX copiado!");
+      // 3️⃣ navega CORRETAMENTE para a página PIX
+      navigate(`/pagamento?paymentId=${paymentId}`);
+    } catch (e) {
+      console.error("Erro ao gerar PIX:", e);
+      alert("Não foi possível gerar o PIX. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 text-white flex flex-col items-center p-6">
-      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">
-        Pagamento PIX
-      </h1>
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
+      <header className="text-center py-6 border-b border-white/10 shadow-md">
+        <h1 className="text-2xl font-extrabold text-yellow-300 drop-shadow">
+          ➕ Adicionar Créditos
+        </h1>
+        <p className="text-blue-100 text-sm mt-1">
+          Escolha um valor para depositar
+        </p>
+      </header>
 
-      <p className="mb-3 text-sm">{status}</p>
+      <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8">
+        <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+          {valoresRapidos.map((v) => (
+            <motion.button
+              key={v}
+              whileTap={{ scale: 0.93 }}
+              onClick={() => selecionarValor(v)}
+              className={`py-4 rounded-2xl backdrop-blur-md border text-lg font-bold shadow-md ${
+                valor === v
+                  ? "bg-yellow-400 text-blue-900 border-yellow-300"
+                  : "bg-white/10 text-yellow-300 border-white/20"
+              }`}
+            >
+              R$ {v}
+            </motion.button>
+          ))}
+        </div>
 
-      {qrBase64 && (
-        <img
-          src={`data:image/png;base64,${qrBase64}`}
-          alt="QR Code PIX"
-          className="w-60 h-60 bg-white p-2 rounded-xl"
-        />
-      )}
+        <div className="w-full max-w-md">
+          <label className="text-sm text-blue-100 font-semibold">
+            Outro valor
+          </label>
+          <input
+            type="number"
+            value={valor ?? ""}
+            onChange={(e) => setValor(Number(e.target.value))}
+            className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300"
+            placeholder="Digite um valor"
+          />
+        </div>
 
-      {copyPaste && (
-        <>
-          <p className="mt-4 text-xs break-all bg-black/30 p-3 rounded-xl">
-            {copyPaste}
-          </p>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={gerarPix}
+          disabled={loading}
+          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
+        >
+          {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
+        </motion.button>
+      </main>
 
-          <button
-            onClick={copiar}
-            className="mt-4 w-full max-w-md bg-yellow-400 text-blue-900 font-bold py-3 rounded-xl"
-          >
-            📋 Copiar código PIX
-          </button>
-        </>
-      )}
+      <NavBottom />
     </div>
   );
 }
