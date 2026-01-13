@@ -3,12 +3,13 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
-import { useNavigate } from "react-router-dom";
 
 export default function AddCreditos() {
-  const navigate = useNavigate();
   const [valor, setValor] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const [copyPaste, setCopyPaste] = useState<string | null>(null);
 
   const valoresRapidos = [10, 20, 50, 100];
 
@@ -41,12 +42,12 @@ export default function AddCreditos() {
         }
       );
 
-      const redirectUrl = res.data?.redirectUrl;
-      if (!redirectUrl) {
-        throw new Error("Resposta inválida do servidor");
-      }
+      setQrBase64(res.data?.qr_code_base64 ?? null);
+      setCopyPaste(res.data?.copy_paste ?? null);
 
-      navigate(redirectUrl);
+      if (!res.data?.qr_code_base64 && !res.data?.copy_paste) {
+        throw new Error("PIX não retornou QR nem código");
+      }
     } catch (e) {
       console.error("Erro ao gerar PIX:", e);
       alert("Não foi possível gerar o PIX. Tente novamente.");
@@ -67,52 +68,81 @@ export default function AddCreditos() {
         </p>
       </header>
 
-      {/* Conteúdo */}
       <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8">
-        {/* VALORES RÁPIDOS */}
-        <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-          {valoresRapidos.map((v) => (
+        {!qrBase64 && (
+          <>
+            {/* VALORES RÁPIDOS */}
+            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+              {valoresRapidos.map((v) => (
+                <motion.button
+                  key={v}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => selecionarValor(v)}
+                  className={`py-4 rounded-2xl border text-lg font-bold shadow-md ${
+                    valor === v
+                      ? "bg-yellow-400 text-blue-900 border-yellow-300"
+                      : "bg-white/10 text-yellow-300 border-white/20"
+                  }`}
+                >
+                  R$ {v}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* CAMPO MANUAL */}
+            <div className="w-full max-w-md">
+              <label className="text-sm text-blue-100 font-semibold">
+                Outro valor
+              </label>
+              <input
+                type="number"
+                value={valor ?? ""}
+                onChange={(e) => setValor(Number(e.target.value))}
+                className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white"
+                placeholder="Digite um valor"
+              />
+            </div>
+
+            {/* BOTÃO */}
             <motion.button
-              key={v}
-              whileTap={{ scale: 0.93 }}
-              onClick={() => selecionarValor(v)}
-              className={`py-4 rounded-2xl backdrop-blur-md border text-lg font-bold shadow-md ${
-                valor === v
-                  ? "bg-yellow-400 text-blue-900 border-yellow-300"
-                  : "bg-white/10 text-yellow-300 border-white/20"
-              }`}
+              whileTap={{ scale: 0.95 }}
+              onClick={gerarPix}
+              disabled={loading}
+              className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
             >
-              R$ {v}
+              {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
             </motion.button>
-          ))}
-        </div>
+          </>
+        )}
 
-        {/* CAMPO MANUAL */}
-        <div className="w-full max-w-md">
-          <label className="text-sm text-blue-100 font-semibold">
-            Outro valor
-          </label>
-          <input
-            type="number"
-            value={valor ?? ""}
-            onChange={(e) => setValor(Number(e.target.value))}
-            className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-yellow-300"
-            placeholder="Digite um valor"
-          />
-        </div>
+        {/* TELA PIX */}
+        {qrBase64 && (
+          <div className="bg-white/10 backdrop-blur-xl p-6 rounded-3xl w-full max-w-md text-center space-y-4">
+            <h2 className="text-xl font-bold text-yellow-300">
+              Pague com PIX
+            </h2>
 
-        {/* BOTÃO GERAR PIX */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={gerarPix}
-          disabled={loading}
-          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
-        >
-          {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
-        </motion.button>
+            <img
+              src={`data:image/png;base64,${qrBase64}`}
+              alt="QR Code PIX"
+              className="mx-auto w-64 h-64"
+            />
+
+            {copyPaste && (
+              <textarea
+                readOnly
+                value={copyPaste}
+                className="w-full p-3 rounded-xl bg-black/30 text-white text-xs"
+              />
+            )}
+
+            <p className="text-blue-100 text-sm">
+              Após o pagamento, o saldo será creditado automaticamente.
+            </p>
+          </div>
+        )}
       </main>
 
-      {/* MENU INFERIOR */}
       <NavBottom />
     </div>
   );
