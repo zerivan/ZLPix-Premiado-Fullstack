@@ -24,7 +24,6 @@ function getUserId(req: any): number | null {
  * POST /wallet/ensure
  * =========================
  * Garante que a wallet do usuário exista
- * (rota mínima para evitar 404 no front)
  */
 router.post("/ensure", async (req, res) => {
   try {
@@ -43,7 +42,6 @@ router.post("/ensure", async (req, res) => {
         data: {
           user: { connect: { id: userId } },
           saldo: 0,
-          createdAt: new Date(),
         },
       });
     }
@@ -105,11 +103,8 @@ router.post("/depositar", async (req, res) => {
     if (!walletExistente) {
       await prisma.wallet.create({
         data: {
-          user: {
-            connect: { id: userId },
-          },
+          user: { connect: { id: userId } },
           saldo: 0,
-          createdAt: new Date(),
         },
       });
     }
@@ -126,7 +121,6 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
-    // redireciona para o fluxo PIX já existente
     return res.json({
       redirectUrl: `/pix?transacaoId=${transacao.id}`,
     });
