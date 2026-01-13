@@ -1,8 +1,13 @@
 // backend/src/routes/wallet.ts
 import express from "express";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 
 const router = express.Router();
+
+// fetch nativo
+const fetchFn: typeof fetch = (...args: any) =>
+  (globalThis as any).fetch(...args);
 
 /**
  * 🔐 Identifica usuário (USER_ID)
@@ -22,7 +27,6 @@ function getUserId(req: any): number | null {
  * =========================
  * POST /wallet/ensure
  * =========================
- * Garante que a wallet exista
  */
 router.post("/ensure", async (req, res) => {
   try {
@@ -81,8 +85,8 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * POST /wallet/depositar
  * =========================
- * Cria transação de DEPÓSITO
- * Crédito entra só no webhook
+ * GERA PIX REAL (QR + copia e cola)
+ * Crédito só entra no webhook
  */
 router.post("/depositar", async (req, res) => {
   try {
@@ -108,8 +112,8 @@ router.post("/depositar", async (req, res) => {
       });
     }
 
-    // cria transação PIX (depósito)
-    const transacao = await prisma.transacao.create({
+    // cria transação de DEPÓSITO
+    const tx = await prisma.transacao.create({
       data: {
         userId,
         valor: Number(valor),
@@ -120,8 +124,59 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
+    // token MP
+    const mpToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+
+    if (!mpToken) {
+      return res.status(500).json({ error: "MP token ausente" });
+    }
+
+    // cria PIX no Mercado Pago
+    const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${mpToken}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": crypto.randomUUID(),
+      },
+      body: JSON.stringify({
+        transaction_amount: Number(valor),
+        description: "Depósito ZLPix",
+        payment_method_id: "pix",
+        payer: {
+          email: "cliente@zlpix.com", // obrigatório no MP
+          first_name: "Cliente",
+        },
+      }),
+    });
+
+    const mpJson: any = await resp.json();
+
+    if (!resp.ok) {
+      console.error("Erro MP depósito:", mpJson);
+      return res.status(502).json({ error: "Erro ao gerar PIX" });
+    }
+
+    // salva mpPaymentId
+    await prisma.transacao.update({
+      where: { id: tx.id },
+      data: {
+        mpPaymentId: String(mpJson.id),
+        metadata: {
+          tipo: "deposito",
+          mpResponse: mpJson,
+        },
+      },
+    });
+
     return res.json({
-      redirectUrl: `/pix?transacaoId=${transacao.id}`,
+      payment_id: String(mpJson.id),
+      qr_code_base64:
+        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+      copy_paste:
+        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
     });
   } catch (err) {
     console.error("Erro wallet/depositar:", err);
