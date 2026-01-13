@@ -7,7 +7,6 @@ import { getMessaging, getToken, isSupported } from "firebase/messaging";
  * ============================
  * FIREBASE CONFIG (VITE DEFINE)
  * ============================
- * Injetado via vite.config.ts
  */
 declare const __FIREBASE_CONFIG__: {
   apiKey: string;
@@ -19,7 +18,7 @@ declare const __FIREBASE_CONFIG__: {
   vapidKey: string;
 };
 
-// Inicializa Firebase uma única vez
+// 🔥 Inicializa Firebase UMA VEZ
 const firebaseApp = initializeApp({
   apiKey: __FIREBASE_CONFIG__.apiKey,
   authDomain: __FIREBASE_CONFIG__.authDomain,
@@ -30,8 +29,12 @@ const firebaseApp = initializeApp({
 });
 
 export default function App() {
+  /**
+   * ============================
+   * APARÊNCIA GLOBAL (SEGURA)
+   * ============================
+   */
   useEffect(() => {
-    // 🔠 Fonte dos títulos (CSS global)
     const style = document.createElement("style");
     style.innerHTML = `
       h1, h2, h3, h4, h5, h6 {
@@ -40,9 +43,7 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
-    // 🎨 Aparência PADRÃO (segura)
     const root = document.documentElement;
-
     root.style.setProperty("--color-primary", "#4f46e5");
     root.style.setProperty("--color-secondary", "#6366f1");
     root.style.setProperty("--color-accent", "#facc15");
@@ -59,11 +60,13 @@ export default function App() {
 
   /**
    * ============================
-   * WEB PUSH — ANDROID / DESKTOP
+   * PUSH NOTIFICATION (ROBUSTO)
    * ============================
    */
   useEffect(() => {
-    async function initPush() {
+    let interval: any;
+
+    async function tryInitPush() {
       try {
         const supported = await isSupported();
         if (!supported) return;
@@ -73,15 +76,7 @@ export default function App() {
           if (permission !== "granted") return;
         }
 
-        const messaging = getMessaging(firebaseApp);
-
-        const token = await getToken(messaging, {
-          vapidKey: __FIREBASE_CONFIG__.vapidKey,
-        });
-
-        if (!token) return;
-
-        // 🔑 RESOLVE USER ID (CORREÇÃO)
+        // 🔑 Resolve USER ID (espera login)
         const stored = localStorage.getItem("USER_ZLPIX");
         const parsed = stored ? JSON.parse(stored) : null;
 
@@ -93,23 +88,53 @@ export default function App() {
 
         if (!userId) return;
 
-        // 📡 ENVIA TOKEN + USERID (CORRETO)
-        await fetch(`${import.meta.env.VITE_API_URL}/push/token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token,
-            userId: Number(userId),
-          }),
+        // 🔒 Evita registrar token duas vezes
+        if (localStorage.getItem("PUSH_TOKEN_SENT") === "true") return;
+
+        const messaging = getMessaging(firebaseApp);
+
+        const token = await getToken(messaging, {
+          vapidKey: __FIREBASE_CONFIG__.vapidKey,
         });
+
+        if (!token) {
+          console.warn("⚠️ Push: token vazio");
+          return;
+        }
+
+        console.log("✅ FCM TOKEN:", token);
+        console.log("👤 USER ID:", userId);
+
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/push/token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token,
+              userId: Number(userId),
+            }),
+          }
+        );
+
+        console.log("📡 PUSH BACKEND STATUS:", res.status);
+
+        if (res.ok) {
+          localStorage.setItem("PUSH_TOKEN_SENT", "true");
+          clearInterval(interval);
+        }
       } catch (err) {
-        console.warn("Push notification indisponível:", err);
+        console.warn("❌ Push notification indisponível:", err);
       }
     }
 
-    initPush();
+    // 🔁 Tenta a cada 2s até o usuário logar
+    interval = setInterval(tryInitPush, 2000);
+    tryInitPush();
+
+    return () => clearInterval(interval);
   }, []);
 
   return <AppRoutes />;
