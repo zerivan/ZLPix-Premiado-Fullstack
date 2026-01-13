@@ -112,6 +112,12 @@ router.post("/depositar", async (req, res) => {
       });
     }
 
+    // busca email real do usuário (se existir)
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+
     // cria transação de DEPÓSITO
     const tx = await prisma.transacao.create({
       data: {
@@ -146,8 +152,8 @@ router.post("/depositar", async (req, res) => {
         description: "Depósito ZLPix",
         payment_method_id: "pix",
         payer: {
-          email: "cliente@zlpix.com", // obrigatório no MP
-          first_name: "Cliente",
+          email: user?.email || "cliente@zlpix.com",
+          first_name: user?.name || "Cliente",
         },
       }),
     });
@@ -171,8 +177,9 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
+    // 🔑 CONTRATO FINAL COM O FRONT
     return res.json({
-      payment_id: String(mpJson.id),
+      paymentId: String(mpJson.id),
       qr_code_base64:
         mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
       copy_paste:
