@@ -68,8 +68,9 @@ app.use("/bilhete", bilheteRoutes);
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
+// ✅ CORREÇÃO AQUI
 // ============================
-app.use("/", pushRoutes);
+app.use("/push", pushRoutes);
 
 // ============================
 // CMS PÚBLICO (APP / CLIENTE)
