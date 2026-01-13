@@ -10,6 +10,7 @@ import MeusBilhetes from "../pages/meusbilhetes";
 import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import Carteira from "../pages/carteira";
+import AddCreditos from "../pages/add-creditos"; // ✅ IMPORTADO
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
@@ -112,6 +113,17 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
+      {/* ✅ ADD CRÉDITOS (ROTA QUE FALTAVA) */}
+      <Route
+        path="/add-creditos"
+        element={
+          <PrivateRoute>
+            <AddCreditos />
+          </PrivateRoute>
+        }
+      />
+
       <Route
         path="/revisao"
         element={
@@ -132,13 +144,11 @@ export default function AppRoutes() {
       {/* Admin */}
       <Route path="/admin" element={<AdminLogin />} />
 
-      {/* 🔁 REDIRECT DE URL ANTIGA */}
       <Route
         path="/admin/dashboard"
         element={<Navigate to="/admin/admindashboard" replace />}
       />
 
-      {/* ✅ DASHBOARD ADMIN (URL CORRETA) */}
       <Route element={<AdminRoute />}>
         <Route
           path="/admin/admindashboard"
@@ -146,7 +156,7 @@ export default function AppRoutes() {
         />
       </Route>
 
-      {/* CMS DINÂMICO (ISOLADO) */}
+      {/* CMS DINÂMICO */}
       <Route
         path="/p/:slug"
         element={
