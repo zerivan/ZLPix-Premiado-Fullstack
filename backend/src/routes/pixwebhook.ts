@@ -23,27 +23,18 @@ function getNextWednesday(): Date {
 }
 
 /**
- * ⏰ Decide status do bilhete conforme regra das 17h
+ * Decide data do sorteio conforme regra das 17h
  */
-function definirStatusBilhete(): {
-  status: "ATIVO_ATUAL" | "ATIVO_PROXIMO";
-  sorteioData: Date;
-} {
+function definirSorteio(): Date {
   const agora = new Date();
-  const dia = agora.getDay(); // 3 = quarta
+  const dia = agora.getDay(); // quarta = 3
   const hora = agora.getHours();
 
   if (dia === 3 && hora >= 17) {
-    return {
-      status: "ATIVO_PROXIMO",
-      sorteioData: getNextWednesday(),
-    };
+    return getNextWednesday();
   }
 
-  return {
-    status: "ATIVO_ATUAL",
-    sorteioData: getNextWednesday(),
-  };
+  return getNextWednesday();
 }
 
 /**
@@ -118,7 +109,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     // =========================================
-    // 💰 DEPÓSITO EM CARTEIRA (INALTERADO)
+    // 💰 DEPÓSITO EM CARTEIRA
     // =========================================
     if (metadata["tipo"] === "deposito") {
       await prisma.wallet.updateMany({
@@ -139,13 +130,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================================
-    // 🎟️ CRIAÇÃO DE BILHETES (AJUSTE CIRÚRGICO)
+    // 🎟️ CRIAÇÃO DE BILHETES (FONTE ÚNICA)
     // =========================================
     const bilhetesRaw = Array.isArray(metadata["bilhetes"])
       ? metadata["bilhetes"]
       : [];
 
-    const { status, sorteioData } = definirStatusBilhete();
+    const sorteioData = definirSorteio();
 
     await prisma.$transaction(async (db) => {
       await db.transacao.update({
@@ -176,7 +167,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             dezenas,
             valor,
             pago: true,
-            status,
             sorteioData,
           },
         });
