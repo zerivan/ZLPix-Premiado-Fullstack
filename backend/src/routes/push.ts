@@ -8,10 +8,9 @@ const router = Router();
  * ============================
  * PUSH — SALVAR TOKEN DO USUÁRIO
  * ============================
- * Chamado pelo FRONT-END
- * POST /push/token
+ * FRONT chama: POST /push/token
  */
-router.post("/push/token", async (req, res) => {
+router.post("/token", async (req, res) => {
   try {
     const { token, userId } = req.body;
 
