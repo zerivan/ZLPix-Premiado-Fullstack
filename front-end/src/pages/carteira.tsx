@@ -5,6 +5,16 @@ import { motion } from "framer-motion";
 import { api } from "../api/client";
 import { useNavigate } from "react-router-dom";
 
+type Transacao = {
+  id: number;
+  valor: number;
+  status: string;
+  createdAt: string;
+  metadata?: {
+    tipo?: string;
+  };
+};
+
 export default function Carteira() {
   const navigate = useNavigate();
   const [saldo, setSaldo] = useState(0);
@@ -17,6 +27,9 @@ export default function Carteira() {
   const [pixKey, setPixKey] = useState("");
   const [statusSaque, setStatusSaque] = useState<string | null>(null);
   const [loadingSaque, setLoadingSaque] = useState(false);
+
+  // === HISTÓRICO ===
+  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
   async function carregarSaldo() {
     try {
@@ -39,6 +52,21 @@ export default function Carteira() {
       return null;
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function carregarTransacoes() {
+    try {
+      const userId = localStorage.getItem("USER_ID");
+      if (!userId) return;
+
+      const res = await api.get("/wallet/transacoes", {
+        headers: { "x-user-id": userId },
+      });
+
+      setTransacoes(res.data || []);
+    } catch {
+      setTransacoes([]);
     }
   }
 
@@ -66,19 +94,14 @@ export default function Carteira() {
 
       await api.post(
         "/wallet/saque",
-        {
-          valor,
-          pixKey,
-        },
-        {
-          headers: { "x-user-id": userId },
-        }
+        { valor, pixKey },
+        { headers: { "x-user-id": userId } }
       );
 
       setStatusSaque("Saque solicitado. Em análise.");
       setValorSaque("");
       setPixKey("");
-      carregarSaldo();
+      carregarTransacoes();
     } catch {
       setStatusSaque("Erro ao solicitar saque");
     } finally {
@@ -110,6 +133,7 @@ export default function Carteira() {
     }, 3000);
 
     carregarSaldo();
+    carregarTransacoes();
 
     return () => clearInterval(interval);
   }, []);
@@ -149,6 +173,38 @@ export default function Carteira() {
           >
             💸 SACAR CRÉDITOS
           </motion.button>
+        </div>
+
+        {/* === HISTÓRICO === */}
+        <div className="w-full max-w-md text-left space-y-3">
+          <h3 className="text-lg font-bold text-yellow-300">
+            📜 Histórico da Carteira
+          </h3>
+
+          {transacoes.length === 0 && (
+            <p className="text-sm text-blue-100">
+              Nenhuma movimentação ainda.
+            </p>
+          )}
+
+          {transacoes.map((t) => (
+            <div
+              key={t.id}
+              className="bg-white/10 rounded-xl p-3 flex justify-between text-sm"
+            >
+              <div>
+                <p className="font-bold">
+                  {t.metadata?.tipo === "saque" ? "💸 Saque" : "➕ Depósito"}
+                </p>
+                <p className="text-blue-100">
+                  {t.status === "pending" ? "Em análise" : t.status}
+                </p>
+              </div>
+              <div className="font-bold text-yellow-300">
+                R$ {Number(t.valor).toFixed(2)}
+              </div>
+            </div>
+          ))}
         </div>
 
         {mostrarSaque && (
