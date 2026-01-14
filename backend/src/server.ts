@@ -23,6 +23,7 @@ import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
 import adminApuracaoRoutes from "./routes/admin-apuracao";
 import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
+import adminSaquesRoutes from "./routes/admin-saques"; // ✅ NOVO
 
 // ✅ IA CHATGPT DO PAINEL ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
@@ -77,7 +78,7 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
-app.use("/wallet", walletRoutes); // ✅ ESSENCIAL (HOME / CARTEIRA)
+app.use("/wallet", walletRoutes); // ✅ HOME / CARTEIRA (USUÁRIO)
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
@@ -107,6 +108,9 @@ app.use(
   adminAuth,
   adminConfiguracoesRoutes
 );
+
+// 🆕 SAQUES (ADMIN)
+app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 
 // ✅ CHATGPT REAL DO PAINEL ADMIN
 app.use(
