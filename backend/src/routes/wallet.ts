@@ -83,6 +83,38 @@ router.get("/saldo", async (req, res) => {
 
 /**
  * =========================
+ * GET /wallet/transacoes
+ * =========================
+ * HISTÓRICO (depósitos e saques)
+ */
+router.get("/transacoes", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const transacoes = await prisma.transacao.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        valor: true,
+        status: true,
+        createdAt: true,
+        metadata: true,
+      },
+    });
+
+    return res.json(transacoes);
+  } catch (err) {
+    console.error("Erro wallet/transacoes:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
  * POST /wallet/depositar
  * =========================
  * GERA PIX REAL (QR + copia e cola)
@@ -97,7 +129,6 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    // garante wallet
     const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
@@ -190,7 +221,6 @@ router.post("/depositar", async (req, res) => {
  * POST /wallet/saque
  * =========================
  * SAQUE MANUAL (PIX feito pelo admin)
- * NÃO desconta saldo
  */
 router.post("/saque", async (req, res) => {
   try {
