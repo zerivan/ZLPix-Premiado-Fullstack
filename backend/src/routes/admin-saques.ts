@@ -5,13 +5,43 @@ const router = Router();
 
 /**
  * ======================================
+ * ADMIN — LISTAR SAQUES
+ * ======================================
+ * Retorna TODOS os saques (pending / paid)
+ */
+router.get("/", async (_req, res) => {
+  try {
+    const saques = await prisma.transacao.findMany({
+      where: {
+        metadata: {
+          path: ["tipo"],
+          equals: "saque",
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        userId: true,
+        valor: true,
+        status: true,
+        createdAt: true,
+        metadata: true,
+      },
+    });
+
+    return res.json(saques);
+  } catch (err) {
+    console.error("Erro admin-saques/listar:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * ======================================
  * ADMIN — MARCAR SAQUE COMO PAGO
  * ======================================
- * Fluxo:
- * - Usuário solicita saque (wallet/saque) → status: pending
- * - Admin faz o PIX manualmente
- * - Admin chama esta rota
- * - Transação passa para status: paid
  */
 router.post("/pagar", async (req, res) => {
   try {
@@ -23,7 +53,6 @@ router.post("/pagar", async (req, res) => {
       });
     }
 
-    // 🔎 Busca somente SAQUE pendente
     const saque = await prisma.transacao.findFirst({
       where: {
         id: Number(transacaoId),
@@ -41,12 +70,9 @@ router.post("/pagar", async (req, res) => {
       });
     }
 
-    // ✅ Marca como pago
     await prisma.transacao.update({
       where: { id: saque.id },
-      data: {
-        status: "paid",
-      },
+      data: { status: "paid" },
     });
 
     return res.json({ ok: true });
