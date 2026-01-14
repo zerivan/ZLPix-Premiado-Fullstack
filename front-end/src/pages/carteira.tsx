@@ -11,9 +11,21 @@ type Transacao = {
   status: string;
   createdAt: string;
   metadata?: {
-    tipo?: string;
+    tipo?: "deposito" | "saque";
   };
 };
+
+function formatarDataHora(data: string) {
+  const d = new Date(data);
+  return d.toLocaleDateString("pt-BR") + " às " +
+    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function traduzirStatus(status: string) {
+  if (status === "pending") return "Em análise";
+  if (status === "paid") return "Pago";
+  return status;
+}
 
 export default function Carteira() {
   const navigate = useNavigate();
@@ -34,11 +46,7 @@ export default function Carteira() {
   async function carregarSaldo() {
     try {
       const userId = localStorage.getItem("USER_ID");
-
-      if (!userId) {
-        setSaldo(0);
-        return;
-      }
+      if (!userId) return null;
 
       const res = await api.get("/wallet/saldo", {
         headers: { "x-user-id": userId },
@@ -127,9 +135,7 @@ export default function Carteira() {
 
       lastSaldoRef.current = novoSaldo;
 
-      if (tentativas >= 7) {
-        clearInterval(interval);
-      }
+      if (tentativas >= 7) clearInterval(interval);
     }, 3000);
 
     carregarSaldo();
@@ -175,7 +181,7 @@ export default function Carteira() {
           </motion.button>
         </div>
 
-        {/* === HISTÓRICO === */}
+        {/* HISTÓRICO */}
         <div className="w-full max-w-md text-left space-y-3">
           <h3 className="text-lg font-bold text-yellow-300">
             📜 Histórico da Carteira
@@ -187,24 +193,33 @@ export default function Carteira() {
             </p>
           )}
 
-          {transacoes.map((t) => (
-            <div
-              key={t.id}
-              className="bg-white/10 rounded-xl p-3 flex justify-between text-sm"
-            >
-              <div>
-                <p className="font-bold">
-                  {t.metadata?.tipo === "saque" ? "💸 Saque" : "➕ Depósito"}
-                </p>
-                <p className="text-blue-100">
-                  {t.status === "pending" ? "Em análise" : t.status}
-                </p>
+          {transacoes.map((t) => {
+            const isSaque = t.metadata?.tipo === "saque";
+
+            return (
+              <div
+                key={t.id}
+                className="bg-white/10 rounded-xl p-3 text-sm space-y-1"
+              >
+                <div className="flex justify-between font-bold">
+                  <span>
+                    {isSaque ? "💸 Saque solicitado" : "➕ Depósito via PIX"}
+                  </span>
+                  <span className="text-yellow-300">
+                    R$ {Number(t.valor).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="text-blue-100 text-xs">
+                  {formatarDataHora(t.createdAt)}
+                </div>
+
+                <div className="text-blue-200 text-xs">
+                  Status: {traduzirStatus(t.status)}
+                </div>
               </div>
-              <div className="font-bold text-yellow-300">
-                R$ {Number(t.valor).toFixed(2)}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {mostrarSaque && (
