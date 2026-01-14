@@ -14,20 +14,26 @@ function formatarDataBR(iso: string) {
 }
 
 /**
- * Verifica se já pode virar o sorteio
- * REGRA:
- * - somente QUARTA-FEIRA
- * - somente APÓS 17:00 (horário BR)
+ * REGRA OFICIAL:
+ * - Sorteio só vira depois das 17h da quarta-feira
+ * - Se a API adiantar, corrigimos no front
  */
-function podeVirarSorteio(): boolean {
+function ajustarDataSorteio(iso: string) {
   const agora = new Date();
-  const diaSemana = agora.getDay(); // 0 dom, 3 quarta
+  const diaSemana = agora.getDay(); // 3 = quarta
   const hora = agora.getHours();
 
-  if (diaSemana !== 3) return false;
-  if (hora < 17) return false;
+  const dataApi = new Date(iso);
 
-  return true;
+  // ❌ Quarta-feira ANTES das 17h → ainda é o sorteio atual
+  if (diaSemana === 3 && hora < 17) {
+    const corrigida = new Date(dataApi);
+    corrigida.setDate(corrigida.getDate() - 7);
+    return formatarDataBR(corrigida.toISOString());
+  }
+
+  // ✅ Fora disso, usa normalmente
+  return formatarDataBR(iso);
 }
 
 /**
@@ -53,21 +59,12 @@ export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
-  // =========================
-  // PREVIEW + CMS MODE
-  // =========================
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
 
-  // =========================
-  // DADOS AUTOMÁTICOS
-  // =========================
   const [premioAtual, setPremioAtual] = useState<string>("R$ 500");
   const [dataSorteio, setDataSorteio] = useState<string>("");
 
-  // =========================
-  // CMS — HOME
-  // =========================
   const [homeCardInfoHtml, setHomeCardInfoHtml] = useState<string | null>(null);
   const [homeExtraInfoHtml, setHomeExtraInfoHtml] = useState<string | null>(null);
   const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
@@ -75,17 +72,12 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 FEDERAL — CONTROLE DE VIRADA (QUARTA 17H)
+        // 🔹 PRÓXIMO SORTEIO (corrigido pela regra)
         const federal = await api.get("/api/federal");
-
-        if (federal.data?.ok && federal.data.data) {
-          const { sorteioAtual, proximoSorteio } = federal.data.data;
-
-          if (podeVirarSorteio() && proximoSorteio) {
-            setDataSorteio(formatarDataBR(proximoSorteio));
-          } else if (sorteioAtual) {
-            setDataSorteio(formatarDataBR(sorteioAtual));
-          }
+        if (federal.data?.ok && federal.data.data?.proximoSorteio) {
+          setDataSorteio(
+            ajustarDataSorteio(federal.data.data.proximoSorteio)
+          );
         }
 
         // 🔹 PRÊMIO ATUAL
@@ -124,7 +116,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-      {/* HEADER */}
       <header className="text-center py-7 border-b border-white/10 shadow-md">
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
           ZLPIX PREMIADO 💰
@@ -135,11 +126,8 @@ export default function Home() {
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
-        {/* CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
-          <p className="text-yellow-300 text-sm mb-1">
-            Prêmio acumulado
-          </p>
+          <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
 
           <h2 className="text-4xl font-extrabold drop-shadow-sm">
             {premioAtual}
@@ -156,8 +144,6 @@ export default function Home() {
 
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
-              data-cms="home_card_info"
-              data-cms-title="Home › Card do Prêmio › Texto Informativo"
               className="mt-4 text-sm text-white/90 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
             />
@@ -176,8 +162,6 @@ export default function Home() {
 
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
-            data-cms="home_extra_info"
-            data-cms-title="Home › Seção Extra › Texto"
             className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
             dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
           />
@@ -194,8 +178,6 @@ export default function Home() {
           <AnimatePresence>
             {showInfo && hasVisibleHtml(homeFooterHtml) && (
               <motion.div
-                data-cms="home_footer"
-                data-cms-title="Home › Rodapé › Como Funciona"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
