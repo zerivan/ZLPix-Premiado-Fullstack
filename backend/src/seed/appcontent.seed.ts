@@ -2,9 +2,6 @@ import { prisma } from "../lib/prisma";
 
 export async function seedAppContentPages() {
   const contents = [
-    // =========================
-    // HOME — CMS
-    // =========================
     {
       key: "home_info",
       type: "content",
@@ -21,10 +18,6 @@ export async function seedAppContentPages() {
       contentHtml: "",
       enabled: true,
     },
-
-    // =========================
-    // RESULTADO / PIX / PERFIL / CARTEIRA (BASE)
-    // =========================
     {
       key: "resultado_info",
       type: "content",
@@ -57,10 +50,6 @@ export async function seedAppContentPages() {
       contentHtml: "",
       enabled: true,
     },
-
-    // =========================
-    // 🎨 APARÊNCIA GLOBAL
-    // =========================
     {
       key: "app_appearance",
       type: "config",
@@ -77,10 +66,6 @@ export async function seedAppContentPages() {
       }),
       enabled: true,
     },
-
-    // =========================
-    // ⚙️ CONFIGURAÇÕES DO SISTEMA (ADMIN)
-    // =========================
     {
       key: "configuracoes_gerais",
       type: "config",
@@ -93,10 +78,6 @@ export async function seedAppContentPages() {
       }),
       enabled: true,
     },
-
-    // =========================
-    // 🏆 PRÊMIO ATUAL (PÚBLICO)
-    // =========================
     {
       key: "premio_atual",
       type: "config",
