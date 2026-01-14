@@ -34,9 +34,7 @@ router.post("/ensure", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     if (!wallet) {
       await prisma.wallet.create({
@@ -67,9 +65,7 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     return res.json({
       saldo: wallet ? Number(wallet.saldo) : 0,
@@ -135,12 +131,10 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    let wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     if (!wallet) {
-      await prisma.wallet.create({
+      wallet = await prisma.wallet.create({
         data: {
           userId,
           saldo: 0,
@@ -235,15 +229,13 @@ router.post("/saque", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
-    await prisma.transacao.create({
+    const saque = await prisma.transacao.create({
       data: {
         userId,
         valor: Number(valor),
@@ -257,7 +249,10 @@ router.post("/saque", async (req, res) => {
 
     return res.json({
       ok: true,
-      message: "Saque solicitado e enviado para análise",
+      transacaoId: saque.id,
+      status: saque.status,
+      createdAt: saque.createdAt,
+      message: "Saque solicitado. Em análise.",
     });
   } catch (err) {
     console.error("Erro wallet/saque:", err);
