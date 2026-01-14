@@ -1,250 +1,134 @@
+// src/server.ts
+import { seedAppContentPages } from "./seed/appcontent.seed";
+
+import "dotenv/config";
 import express from "express";
-import crypto from "crypto";
-import { prisma } from "../lib/prisma";
+import cors from "cors";
 
-const router = express.Router();
+// ROTAS DO SITE
+import authRoutes from "./routes/auth";
+import federalRoutes from "./routes/federal";
+import pixRoutes from "./routes/pix";
+import pixWebhookRoutes from "./routes/pixwebhook";
+import bilheteRoutes from "./routes/bilhetes";
+import walletRoutes from "./routes/wallet"; // ✅ RESTAURADO
 
-// fetch nativo
-const fetchFn: typeof fetch = (...args: any) =>
-  (globalThis as any).fetch(...args);
+// 🆕 PUSH NOTIFICATIONS
+import pushRoutes from "./routes/push";
 
-/**
- * 🔐 Identifica usuário (USER_ID)
- */
-function getUserId(req: any): number | null {
-  const userId =
-    req.headers["x-user-id"] ||
-    req.query.userId ||
-    req.body?.userId;
+// ROTAS ADMIN (BANCO DE DADOS)
+import adminUsuariosRoutes from "./routes/admin-usuarios";
+import adminGanhadoresRoutes from "./routes/admin-ganhadores";
+import adminRelatoriosRoutes from "./routes/admin-relatorios";
+import adminCmsRoutes from "./routes/admin-cms";
+import adminApuracaoRoutes from "./routes/admin-apuracao";
+import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
+import adminSaquesRoutes from "./routes/admin-saques"; // ✅ NOVO
 
-  if (!userId) return null;
-  const n = Number(userId);
-  return Number.isNaN(n) ? null : n;
+// ✅ IA CHATGPT DO PAINEL ADMIN
+import devAssistenteRoutes from "./routes/dev-assistente";
+
+// 🆕 CMS PÚBLICO (APP / CLIENTE)
+import cmsPublicRoutes from "./routes/cms-public";
+
+// 🆕 CMS PREVIEW (IFRAME)
+import cmsPreviewRoutes from "./routes/cms-preview";
+
+// Middleware ADMIN
+import { adminAuth } from "./middlewares/adminAuth";
+
+const app = express();
+const PORT = Number(process.env.PORT) || 4000;
+
+// ============================
+// ✅ CORS — CORREÇÃO DEFINITIVA
+// ============================
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-User-Id",
+      "x-user-id",
+    ],
+  })
+);
+
+// 🔥 RESPONDE PREFLIGHT (CRÍTICO)
+app.options("*", cors());
+
+app.use(express.json());
+
+// HEALTHCHECK
+app.get("/", (_req, res) => {
+  res.json({
+    status: "ok",
+    message: "ZLPix backend rodando!",
+  });
+});
+
+// ============================
+// ROTAS DO SITE (APP)
+// ============================
+app.use("/auth", authRoutes);
+app.use("/api/federal", federalRoutes);
+app.use("/pix", pixRoutes);
+app.use("/pix/webhook", pixWebhookRoutes);
+app.use("/bilhete", bilheteRoutes);
+app.use("/wallet", walletRoutes); // ✅ HOME / CARTEIRA (USUÁRIO)
+
+// ============================
+// PUSH NOTIFICATIONS (APP)
+// ============================
+app.use("/push", pushRoutes);
+
+// ============================
+// CMS PÚBLICO (APP / CLIENTE)
+// ============================
+app.use("/api/cms/public", cmsPublicRoutes);
+
+// ============================
+// CMS PREVIEW (IFRAME)
+// ============================
+app.use("/api/cms", cmsPreviewRoutes);
+
+// ============================
+// ROTAS ADMIN (PROTEGIDAS)
+// ============================
+app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
+app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
+app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
+app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
+app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes);
+app.use(
+  "/api/admin/configuracoes",
+  adminAuth,
+  adminConfiguracoesRoutes
+);
+
+// 🆕 SAQUES (ADMIN)
+app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
+
+// ✅ CHATGPT REAL DO PAINEL ADMIN
+app.use(
+  "/api/admin/ia/chat",
+  adminAuth,
+  devAssistenteRoutes
+);
+
+// ============================
+// SEED AUTOMÁTICO (PRODUÇÃO)
+// ============================
+if (process.env.RUN_SEED === "true") {
+  seedAppContentPages().catch((err) => {
+    console.error("❌ Erro ao executar seed AppContent:", err);
+  });
 }
 
-/**
- * =========================
- * POST /wallet/ensure
- * =========================
- */
-router.post("/ensure", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Usuário não identificado" });
-    }
-
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
-
-    if (!wallet) {
-      await prisma.wallet.create({
-        data: {
-          userId,
-          saldo: 0,
-          createdAt: new Date(),
-        },
-      });
-    }
-
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error("Erro wallet/ensure:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
+// START
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
-
-/**
- * =========================
- * GET /wallet/saldo
- * =========================
- */
-router.get("/saldo", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Usuário não identificado" });
-    }
-
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
-
-    return res.json({
-      saldo: wallet ? Number(wallet.saldo) : 0,
-    });
-  } catch (err) {
-    console.error("Erro wallet/saldo:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * =========================
- * GET /wallet/transacoes
- * =========================
- */
-router.get("/transacoes", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Usuário não identificado" });
-    }
-
-    const transacoes = await prisma.transacao.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return res.json(transacoes);
-  } catch (err) {
-    console.error("Erro wallet/transacoes:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * =========================
- * POST /wallet/depositar
- * =========================
- */
-router.post("/depositar", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const { valor } = req.body;
-
-    if (!userId || !valor || Number(valor) <= 0) {
-      return res.status(400).json({ error: "Dados inválidos" });
-    }
-
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
-
-    if (!wallet) {
-      await prisma.wallet.create({
-        data: {
-          userId,
-          saldo: 0,
-          createdAt: new Date(),
-        },
-      });
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: { email: true, name: true },
-    });
-
-    const tx = await prisma.transacao.create({
-      data: {
-        userId,
-        valor: Number(valor),
-        status: "pending",
-        metadata: { tipo: "deposito" },
-      },
-    });
-
-    const mpToken =
-      process.env.MP_ACCESS_TOKEN ||
-      process.env.MP_ACCESS_TOKEN_TEST;
-
-    if (!mpToken) {
-      return res.status(500).json({ error: "MP token ausente" });
-    }
-
-    const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpToken}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": crypto.randomUUID(),
-      },
-      body: JSON.stringify({
-        transaction_amount: Number(valor),
-        description: "Depósito ZLPix",
-        payment_method_id: "pix",
-        payer: {
-          email: user?.email || "cliente@zlpix.com",
-          first_name: user?.name || "Cliente",
-        },
-      }),
-    });
-
-    const mpJson: any = await resp.json();
-
-    if (!resp.ok) {
-      console.error("Erro MP depósito:", mpJson);
-      return res.status(502).json({ error: "Erro ao gerar PIX" });
-    }
-
-    await prisma.transacao.update({
-      where: { id: tx.id },
-      data: {
-        mpPaymentId: String(mpJson.id),
-        metadata: {
-          tipo: "deposito",
-          mpResponse: mpJson,
-        },
-      },
-    });
-
-    return res.json({
-      paymentId: String(mpJson.id),
-      qr_code_base64:
-        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
-      copy_paste:
-        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
-    });
-  } catch (err) {
-    console.error("Erro wallet/depositar:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * =========================
- * POST /wallet/saque
- * =========================
- */
-router.post("/saque", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const { valor, pixKey } = req.body;
-
-    if (!userId || !valor || Number(valor) <= 0) {
-      return res.status(400).json({ error: "Dados inválidos" });
-    }
-
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
-
-    if (!wallet || Number(wallet.saldo) < Number(valor)) {
-      return res.status(400).json({ error: "Saldo insuficiente" });
-    }
-
-    await prisma.transacao.create({
-      data: {
-        userId,
-        valor: Number(valor),
-        status: "pending",
-        metadata: {
-          tipo: "saque",
-          pixKey: pixKey || null,
-        },
-      },
-    });
-
-    return res.json({
-      ok: true,
-      message: "Saque solicitado",
-    });
-  } catch (err) {
-    console.error("Erro wallet/saque:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-export default router;
