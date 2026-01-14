@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import EditorQuill from "../editor/EditorQuill";
 
 type CmsArea = {
   key: string;
@@ -13,7 +14,6 @@ type CmsPage = {
 
 /**
  * 🔒 MAPA FIXO DO LAYOUT (ESTRUTURA APENAS)
- * ❌ NÃO CONTÉM HTML
  */
 const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
   home: [
@@ -29,6 +29,8 @@ export default function AdminConteudoControl() {
   const [pageKey, setPageKey] = useState("");
   const [areas, setAreas] = useState<CmsArea[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
+
+  const [initialHtml, setInitialHtml] = useState<string>("");
 
   const [loading, setLoading] = useState(true);
   const [loadingAreas, setLoadingAreas] = useState(false);
@@ -67,6 +69,7 @@ export default function AdminConteudoControl() {
     try {
       setLoadingAreas(true);
       setActiveArea(null);
+      setInitialHtml("");
 
       const layoutAreas = CMS_LAYOUT_MAP[page] || [];
       setAreas(layoutAreas);
@@ -78,6 +81,41 @@ export default function AdminConteudoControl() {
     }
   }
 
+  async function loadAreaContent(area: CmsArea) {
+    try {
+      const headers = getHeaders();
+      if (!headers) return;
+
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/cms/areas/${pageKey}`,
+        { headers }
+      );
+
+      const found = res.data?.areas?.find(
+        (a: any) => a.key === area.key
+      );
+
+      setInitialHtml(found?.contentHtml || "");
+    } catch {
+      setInitialHtml("");
+    }
+  }
+
+  async function salvarConteudo(html: string) {
+    const headers = getHeaders();
+    if (!headers || !activeArea) return;
+
+    await axios.post(
+      `${BASE_URL}/api/admin/cms/area/save`,
+      {
+        key: activeArea.key,
+        title: activeArea.title,
+        contentHtml: html,
+      },
+      { headers }
+    );
+  }
+
   useEffect(() => {
     loadPages();
   }, []);
@@ -86,10 +124,14 @@ export default function AdminConteudoControl() {
     if (pageKey) loadAreas(pageKey);
   }, [pageKey]);
 
+  useEffect(() => {
+    if (activeArea) loadAreaContent(activeArea);
+  }, [activeArea]);
+
   if (loading) return <p>Carregando conteúdo…</p>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h2 className="text-lg font-semibold">CMS — Estrutura de Conteúdo</h2>
 
       {erro && <div className="text-red-600 text-sm">{erro}</div>}
@@ -127,13 +169,13 @@ export default function AdminConteudoControl() {
       </div>
 
       {activeArea && (
-        <div className="text-sm text-gray-600 border-t pt-3">
-          Área selecionada: <strong>{activeArea.title}</strong>
-          <br />
-          <span className="italic">
-            (Editor será conectado aqui na próxima etapa)
-          </span>
-        </div>
+        <EditorQuill
+          page={pageKey}
+          areaKey={activeArea.key}
+          areaTitle={activeArea.title}
+          initialHtml={initialHtml}
+          onSave={salvarConteudo}
+        />
       )}
     </div>
   );
