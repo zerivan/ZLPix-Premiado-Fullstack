@@ -34,7 +34,9 @@ router.post("/ensure", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     if (!wallet) {
       await prisma.wallet.create({
@@ -65,7 +67,9 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     return res.json({
       saldo: wallet ? Number(wallet.saldo) : 0,
@@ -93,10 +97,20 @@ router.get("/historico", async (req, res) => {
     const historico = await prisma.transacao.findMany({
       where: {
         userId,
-        metadata: {
-          path: ["tipo"],
-          in: ["deposito", "saque"],
-        },
+        OR: [
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "deposito",
+            },
+          },
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "saque",
+            },
+          },
+        ],
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -119,8 +133,6 @@ router.get("/historico", async (req, res) => {
  * =========================
  * POST /wallet/depositar
  * =========================
- * Gera PIX real (QR + copia e cola)
- * Crédito entra via webhook
  */
 router.post("/depositar", async (req, res) => {
   try {
@@ -131,10 +143,12 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    let wallet = await prisma.wallet.findFirst({ where: { userId } });
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     if (!wallet) {
-      wallet = await prisma.wallet.create({
+      await prisma.wallet.create({
         data: {
           userId,
           saldo: 0,
@@ -218,7 +232,6 @@ router.post("/depositar", async (req, res) => {
  * =========================
  * POST /wallet/saque
  * =========================
- * Solicitação de saque (manual)
  */
 router.post("/saque", async (req, res) => {
   try {
@@ -229,13 +242,15 @@ router.post("/saque", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
-    const saque = await prisma.transacao.create({
+    await prisma.transacao.create({
       data: {
         userId,
         valor: Number(valor),
@@ -249,10 +264,7 @@ router.post("/saque", async (req, res) => {
 
     return res.json({
       ok: true,
-      transacaoId: saque.id,
-      status: saque.status,
-      createdAt: saque.createdAt,
-      message: "Saque solicitado. Em análise.",
+      message: "Saque solicitado e enviado para análise",
     });
   } catch (err) {
     console.error("Erro wallet/saque:", err);
