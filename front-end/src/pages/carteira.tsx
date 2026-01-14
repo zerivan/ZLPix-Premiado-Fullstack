@@ -11,6 +11,13 @@ export default function Carteira() {
   const [loading, setLoading] = useState(true);
   const lastSaldoRef = useRef<number | null>(null);
 
+  // === SAQUE ===
+  const [mostrarSaque, setMostrarSaque] = useState(false);
+  const [valorSaque, setValorSaque] = useState("");
+  const [pixKey, setPixKey] = useState("");
+  const [statusSaque, setStatusSaque] = useState<string | null>(null);
+  const [loadingSaque, setLoadingSaque] = useState(false);
+
   async function carregarSaldo() {
     try {
       const userId = localStorage.getItem("USER_ID");
@@ -35,6 +42,50 @@ export default function Carteira() {
     }
   }
 
+  async function solicitarSaque() {
+    try {
+      setLoadingSaque(true);
+      setStatusSaque(null);
+
+      const userId = localStorage.getItem("USER_ID");
+      if (!userId) {
+        setStatusSaque("Usuário não identificado");
+        return;
+      }
+
+      const valor = Number(valorSaque);
+      if (!valor || valor <= 0) {
+        setStatusSaque("Valor inválido");
+        return;
+      }
+
+      if (valor > saldo) {
+        setStatusSaque("Saldo insuficiente");
+        return;
+      }
+
+      await api.post(
+        "/wallet/saque",
+        {
+          valor,
+          pixKey,
+        },
+        {
+          headers: { "x-user-id": userId },
+        }
+      );
+
+      setStatusSaque("Saque solicitado. Em análise.");
+      setValorSaque("");
+      setPixKey("");
+      carregarSaldo();
+    } catch {
+      setStatusSaque("Erro ao solicitar saque");
+    } finally {
+      setLoadingSaque(false);
+    }
+  }
+
   useEffect(() => {
     let tentativas = 0;
 
@@ -43,7 +94,6 @@ export default function Carteira() {
 
       const novoSaldo = await carregarSaldo();
 
-      // se o saldo mudou, para o polling
       if (
         lastSaldoRef.current !== null &&
         novoSaldo !== null &&
@@ -54,13 +104,11 @@ export default function Carteira() {
 
       lastSaldoRef.current = novoSaldo;
 
-      // segurança: para após ~20s
       if (tentativas >= 7) {
         clearInterval(interval);
       }
     }, 3000);
 
-    // primeira carga imediata
     carregarSaldo();
 
     return () => clearInterval(interval);
@@ -97,11 +145,55 @@ export default function Carteira() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 font-extrabold text-lg shadow-lg"
-            onClick={() => navigate("/saque")}
+            onClick={() => setMostrarSaque(true)}
           >
             💸 SACAR CRÉDITOS
           </motion.button>
         </div>
+
+        {mostrarSaque && (
+          <div className="bg-black/60 p-6 rounded-2xl w-full max-w-md space-y-4">
+            <h3 className="text-xl font-bold text-yellow-300">
+              Solicitar Saque
+            </h3>
+
+            <input
+              type="number"
+              placeholder="Valor do saque"
+              value={valorSaque}
+              onChange={(e) => setValorSaque(e.target.value)}
+              className="w-full p-3 rounded text-black"
+            />
+
+            <input
+              type="text"
+              placeholder="Chave PIX"
+              value={pixKey}
+              onChange={(e) => setPixKey(e.target.value)}
+              className="w-full p-3 rounded text-black"
+            />
+
+            {statusSaque && (
+              <p className="text-sm text-yellow-200">{statusSaque}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                className="flex-1 py-3 rounded bg-gray-500"
+                onClick={() => setMostrarSaque(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="flex-1 py-3 rounded bg-yellow-400 text-blue-900 font-bold"
+                disabled={loadingSaque}
+                onClick={solicitarSaque}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       <NavBottom />
