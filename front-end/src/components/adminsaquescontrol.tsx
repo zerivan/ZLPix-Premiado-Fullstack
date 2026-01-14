@@ -23,13 +23,8 @@ export default function AdminSaquesControl() {
 
   async function carregarSaques() {
     try {
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-
-      const res = await api.get("/wallet/transacoes", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-        },
-      });
+      // 🔐 rota ADMIN (protegida por adminAuth)
+      const res = await api.get("/api/admin/saques");
 
       const todos = res.data || [];
 
@@ -50,7 +45,8 @@ export default function AdminSaquesControl() {
     try {
       setProcessando(transacaoId);
 
-      await api.post("/wallet/saque/pagar", {
+      // 🔐 rota ADMIN correta
+      await api.post("/api/admin/saques/pagar", {
         transacaoId,
       });
 
