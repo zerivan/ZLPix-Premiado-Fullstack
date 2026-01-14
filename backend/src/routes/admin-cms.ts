@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
+import sanitizeHtml from "sanitize-html";
 
 const router = Router();
 
@@ -59,6 +60,47 @@ const DEFAULT_HTML: Record<string, string> = {
   perfil_info: "",
   carteira_info: "",
 };
+
+/**
+ * =====================================================
+ * FUNÇÃO DE SANITIZAÇÃO (XSS)
+ * =====================================================
+ */
+function sanitizeContent(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: [
+      "p",
+      "br",
+      "strong",
+      "b",
+      "em",
+      "i",
+      "u",
+      "s",
+      "ul",
+      "ol",
+      "li",
+      "a",
+      "blockquote",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "span",
+    ],
+    allowedAttributes: {
+      a: ["href", "target", "rel"],
+      span: ["style"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform("a", {
+        target: "_blank",
+        rel: "noopener noreferrer",
+      }),
+    },
+  });
+}
 
 /**
  * =====================================================
@@ -197,10 +239,13 @@ router.post("/area/save", async (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: "Área inválida" });
     }
 
+    // 🔐 SANITIZAÇÃO XSS (OBRIGATÓRIA)
+    const safeHtml = sanitizeContent(contentHtml || "");
+
     const saved = await prisma.appContent.upsert({
       where: { key },
-      update: { title, contentHtml, type: "content" },
-      create: { key, title, contentHtml, type: "content" },
+      update: { title, contentHtml: safeHtml, type: "content" },
+      create: { key, title, contentHtml: safeHtml, type: "content" },
     });
 
     // limpa cache da página
