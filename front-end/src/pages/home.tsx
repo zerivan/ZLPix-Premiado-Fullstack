@@ -17,16 +17,15 @@ function formatarDataBR(iso: string) {
  * Verifica se já pode virar o sorteio
  * REGRA:
  * - somente QUARTA-FEIRA
- * - somente APÓS 17:00
+ * - somente APÓS 17:00 (horário BR)
  */
 function podeVirarSorteio(): boolean {
   const agora = new Date();
-
-  const diaSemana = agora.getDay(); // 0 = dom, 3 = quarta
+  const diaSemana = agora.getDay(); // 0 dom, 3 quarta
   const hora = agora.getHours();
 
-  if (diaSemana !== 3) return false; // não é quarta
-  if (hora < 17) return false; // antes das 17h
+  if (diaSemana !== 3) return false;
+  if (hora < 17) return false;
 
   return true;
 }
@@ -76,15 +75,17 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 PRÓXIMO SORTEIO (COM REGRA DE QUARTA 17H)
+        // 🔹 FEDERAL — CONTROLE DE VIRADA (QUARTA 17H)
         const federal = await api.get("/api/federal");
-        if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          if (podeVirarSorteio()) {
-            setDataSorteio(
-              formatarDataBR(federal.data.data.proximoSorteio)
-            );
+
+        if (federal.data?.ok && federal.data.data) {
+          const { sorteioAtual, proximoSorteio } = federal.data.data;
+
+          if (podeVirarSorteio() && proximoSorteio) {
+            setDataSorteio(formatarDataBR(proximoSorteio));
+          } else if (sorteioAtual) {
+            setDataSorteio(formatarDataBR(sorteioAtual));
           }
-          // se NÃO pode virar, simplesmente não atualiza
         }
 
         // 🔹 PRÊMIO ATUAL
