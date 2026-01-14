@@ -1,73 +1,249 @@
-import { Router } from "express";
+import express from "express";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 
-const router = Router();
+const router = express.Router();
+
+// fetch nativo
+const fetchFn: typeof fetch = (...args: any) =>
+  (globalThis as any).fetch(...args);
+
+/**
+ * 🔐 Identifica usuário (USER_ID)
+ */
+function getUserId(req: any): number | null {
+  const userId =
+    req.headers["x-user-id"] ||
+    req.query.userId ||
+    req.body?.userId;
+
+  if (!userId) return null;
+  const n = Number(userId);
+  return Number.isNaN(n) ? null : n;
+}
 
 /**
  * =========================
- * POST /api/admin/saques/pagar
+ * POST /wallet/ensure
  * =========================
- * ADMIN marca saque como PAGO
  */
-router.post("/pagar", async (req, res) => {
+router.post("/ensure", async (req, res) => {
   try {
-    const { transacaoId } = req.body;
-
-    if (!transacaoId) {
-      return res.status(400).json({
-        ok: false,
-        error: "transacaoId obrigatório",
-      });
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const saque = await prisma.transacao.findUnique({
-      where: { id: Number(transacaoId) },
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
     });
 
-    if (!saque) {
-      return res.status(404).json({
-        ok: false,
-        error: "Transação não encontrada",
+    if (!wallet) {
+      await prisma.wallet.create({
+        data: {
+          userId,
+          saldo: 0,
+          createdAt: new Date(),
+        },
       });
     }
 
-    // 🔒 Narrowing seguro do metadata (JsonValue)
-    const metadata =
-      typeof saque.metadata === "object" && saque.metadata !== null
-        ? (saque.metadata as any)
-        : null;
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Erro wallet/ensure:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
 
-    if (!metadata || metadata.tipo !== "saque") {
-      return res.status(400).json({
-        ok: false,
-        error: "Transação não é um saque",
+/**
+ * =========================
+ * GET /wallet/saldo
+ * =========================
+ */
+router.get("/saldo", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    return res.json({
+      saldo: wallet ? Number(wallet.saldo) : 0,
+    });
+  } catch (err) {
+    console.error("Erro wallet/saldo:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/transacoes
+ * =========================
+ */
+router.get("/transacoes", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const transacoes = await prisma.transacao.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json(transacoes);
+  } catch (err) {
+    console.error("Erro wallet/transacoes:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * POST /wallet/depositar
+ * =========================
+ */
+router.post("/depositar", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { valor } = req.body;
+
+    if (!userId || !valor || Number(valor) <= 0) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    if (!wallet) {
+      await prisma.wallet.create({
+        data: {
+          userId,
+          saldo: 0,
+          createdAt: new Date(),
+        },
       });
     }
 
-    if (saque.status === "paid") {
-      return res.status(400).json({
-        ok: false,
-        error: "Saque já está pago",
-      });
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true },
+    });
+
+    const tx = await prisma.transacao.create({
+      data: {
+        userId,
+        valor: Number(valor),
+        status: "pending",
+        metadata: { tipo: "deposito" },
+      },
+    });
+
+    const mpToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+
+    if (!mpToken) {
+      return res.status(500).json({ error: "MP token ausente" });
+    }
+
+    const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${mpToken}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": crypto.randomUUID(),
+      },
+      body: JSON.stringify({
+        transaction_amount: Number(valor),
+        description: "Depósito ZLPix",
+        payment_method_id: "pix",
+        payer: {
+          email: user?.email || "cliente@zlpix.com",
+          first_name: user?.name || "Cliente",
+        },
+      }),
+    });
+
+    const mpJson: any = await resp.json();
+
+    if (!resp.ok) {
+      console.error("Erro MP depósito:", mpJson);
+      return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
     await prisma.transacao.update({
-      where: { id: Number(transacaoId) },
+      where: { id: tx.id },
       data: {
-        status: "paid",
+        mpPaymentId: String(mpJson.id),
+        metadata: {
+          tipo: "deposito",
+          mpResponse: mpJson,
+        },
+      },
+    });
+
+    return res.json({
+      paymentId: String(mpJson.id),
+      qr_code_base64:
+        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+      copy_paste:
+        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
+    });
+  } catch (err) {
+    console.error("Erro wallet/depositar:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * POST /wallet/saque
+ * =========================
+ */
+router.post("/saque", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { valor, pixKey } = req.body;
+
+    if (!userId || !valor || Number(valor) <= 0) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    if (!wallet || Number(wallet.saldo) < Number(valor)) {
+      return res.status(400).json({ error: "Saldo insuficiente" });
+    }
+
+    await prisma.transacao.create({
+      data: {
+        userId,
+        valor: Number(valor),
+        status: "pending",
+        metadata: {
+          tipo: "saque",
+          pixKey: pixKey || null,
+        },
       },
     });
 
     return res.json({
       ok: true,
-      message: "Saque marcado como PAGO",
+      message: "Saque solicitado",
     });
   } catch (err) {
-    console.error("❌ Erro admin-saques/pagar:", err);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro interno",
-    });
+    console.error("Erro wallet/saque:", err);
+    return res.status(500).json({ error: "Erro interno" });
   }
 });
 
