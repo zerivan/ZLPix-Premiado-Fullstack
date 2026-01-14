@@ -17,8 +17,11 @@ type Transacao = {
 
 function formatarDataHora(data: string) {
   const d = new Date(data);
-  return d.toLocaleDateString("pt-BR") + " às " +
-    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return (
+    d.toLocaleDateString("pt-BR") +
+    " às " +
+    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+  );
 }
 
 function traduzirStatus(status: string) {
@@ -68,7 +71,8 @@ export default function Carteira() {
       const userId = localStorage.getItem("USER_ID");
       if (!userId) return;
 
-      const res = await api.get("/wallet/transacoes", {
+      // ✅ ROTA CORRETA
+      const res = await api.get("/wallet/historico", {
         headers: { "x-user-id": userId },
       });
 
