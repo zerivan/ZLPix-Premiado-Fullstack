@@ -14,6 +14,24 @@ function formatarDataBR(iso: string) {
 }
 
 /**
+ * Verifica se já pode virar o sorteio
+ * REGRA:
+ * - somente QUARTA-FEIRA
+ * - somente APÓS 17:00
+ */
+function podeVirarSorteio(): boolean {
+  const agora = new Date();
+
+  const diaSemana = agora.getDay(); // 0 = dom, 3 = quarta
+  const hora = agora.getHours();
+
+  if (diaSemana !== 3) return false; // não é quarta
+  if (hora < 17) return false; // antes das 17h
+
+  return true;
+}
+
+/**
  * Garante que o HTML tenha conteúdo visível
  */
 function hasVisibleHtml(html: string | null) {
@@ -58,10 +76,15 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 PRÓXIMO SORTEIO
+        // 🔹 PRÓXIMO SORTEIO (COM REGRA DE QUARTA 17H)
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          setDataSorteio(formatarDataBR(federal.data.data.proximoSorteio));
+          if (podeVirarSorteio()) {
+            setDataSorteio(
+              formatarDataBR(federal.data.data.proximoSorteio)
+            );
+          }
+          // se NÃO pode virar, simplesmente não atualiza
         }
 
         // 🔹 PRÊMIO ATUAL
@@ -140,7 +163,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* BOTÃO */}
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 1.8, repeat: Infinity }}
@@ -151,7 +173,6 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* CMS — TEXTO EXTRA */}
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
             data-cms="home_extra_info"
@@ -161,7 +182,6 @@ export default function Home() {
           />
         )}
 
-        {/* COMO FUNCIONA */}
         <div className="w-full max-w-md space-y-4">
           <button
             onClick={() => setShowInfo(!showInfo)}
