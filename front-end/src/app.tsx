@@ -1,140 +1,101 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-
-type CmsArea = {
-  key: string;
-  title: string;
-};
-
-type CmsPage = {
-  page: string;
-  title: string;
-};
+import React, { useEffect } from "react";
+import AppRoutes from "./routes/index";
+import { initializeApp } from "firebase/app";
+import {
+  getMessaging,
+  getToken,
+  isSupported,
+} from "firebase/messaging";
 
 /**
- * 🔒 MAPA FIXO DO LAYOUT (ESTRUTURA APENAS)
- * ❌ NÃO CONTÉM HTML
+ * ============================
+ * FIREBASE CONFIG (ENV)
+ * ============================
  */
-const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
-  home: [
-    { key: "home_info", title: "Home › Header › Subtítulo" },
-    { key: "home_card_info", title: "Home › Card do Prêmio › Texto Informativo" },
-    { key: "home_extra_info", title: "Home › Seção Extra › Texto" },
-    { key: "home_footer", title: "Home › Rodapé › Como Funciona" },
-  ],
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export default function AdminConteudoControl() {
-  const [pages, setPages] = useState<CmsPage[]>([]);
-  const [pageKey, setPageKey] = useState("");
-  const [areas, setAreas] = useState<CmsArea[]>([]);
-  const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
+// Inicializa Firebase uma única vez
+const firebaseApp = initializeApp(firebaseConfig);
 
-  const [loading, setLoading] = useState(true);
-  const [loadingAreas, setLoadingAreas] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  const BASE_URL = import.meta.env.VITE_API_URL;
-
-  function getHeaders() {
-    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-    if (!token) return null;
-    return { Authorization: `Bearer ${token}` };
-  }
-
-  async function loadPages() {
-    try {
-      const headers = getHeaders();
-      if (!headers) return;
-
-      const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/pages`,
-        { headers }
-      );
-
-      if (res.data?.ok) {
-        setPages(res.data.pages);
-        setPageKey(res.data.pages[0]?.page || "");
-      }
-    } catch {
-      setErro("Erro ao carregar páginas.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadAreas(page: string) {
-    try {
-      setLoadingAreas(true);
-      setActiveArea(null);
-
-      const layoutAreas = CMS_LAYOUT_MAP[page] || [];
-      setAreas(layoutAreas);
-    } catch {
-      setErro("Erro ao carregar áreas.");
-      setAreas([]);
-    } finally {
-      setLoadingAreas(false);
-    }
-  }
-
+export default function App() {
   useEffect(() => {
-    loadPages();
+    // 🔠 Fonte dos títulos (CSS global)
+    const style = document.createElement("style");
+    style.innerHTML = `
+      h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading, inherit);
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 🎨 Aparência PADRÃO (segura)
+    const root = document.documentElement;
+
+    root.style.setProperty("--color-primary", "#4f46e5");
+    root.style.setProperty("--color-secondary", "#6366f1");
+    root.style.setProperty("--color-accent", "#facc15");
+    root.style.setProperty("--color-background", "#ffffff");
+    root.style.setProperty("--font-heading", "Inter");
+
+    document.body.style.fontFamily = "Inter";
+    root.classList.remove("dark");
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
+  /**
+   * ============================
+   * WEB PUSH — ANDROID / DESKTOP
+   * ============================
+   */
   useEffect(() => {
-    if (pageKey) loadAreas(pageKey);
-  }, [pageKey]);
+    async function initPush() {
+      try {
+        // Verifica se o browser suporta Push
+        const supported = await isSupported();
+        if (!supported) return;
 
-  if (loading) return <p>Carregando conteúdo…</p>;
+        // Só pede permissão se ainda não foi decidida
+        if (Notification.permission !== "granted") {
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") return;
+        }
 
-  return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">CMS — Estrutura de Conteúdo</h2>
+        const messaging = getMessaging(firebaseApp);
 
-      {erro && <div className="text-red-600 text-sm">{erro}</div>}
+        const token = await getToken(messaging, {
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        });
 
-      <select
-        className="border p-2 w-full"
-        value={pageKey}
-        onChange={(e) => setPageKey(e.target.value)}
-      >
-        {pages.map((p) => (
-          <option key={p.page} value={p.page}>
-            {p.title}
-          </option>
-        ))}
-      </select>
+        if (!token) return;
 
-      {loadingAreas && (
-        <p className="text-sm text-gray-500">Carregando áreas…</p>
-      )}
+        // Envia token para o backend
+        await fetch(
+          `${import.meta.env.VITE_API_URL}/push/token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          }
+        );
+      } catch (err) {
+        console.warn("Push notification indisponível:", err);
+      }
+    }
 
-      <div className="space-y-2">
-        {areas.map((area) => (
-          <button
-            key={area.key}
-            onClick={() => setActiveArea(area)}
-            className={`block w-full text-left p-2 border rounded ${
-              activeArea?.key === area.key
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100"
-            }`}
-          >
-            {area.title}
-          </button>
-        ))}
-      </div>
+    initPush();
+  }, []);
 
-      {activeArea && (
-        <div className="text-sm text-gray-600 border-t pt-3">
-          Área selecionada: <strong>{activeArea.title}</strong>
-          <br />
-          <span className="italic">
-            (Editor será conectado aqui na próxima etapa)
-          </span>
-        </div>
-      )}
-    </div>
-  );
+  return <AppRoutes />;
 }
