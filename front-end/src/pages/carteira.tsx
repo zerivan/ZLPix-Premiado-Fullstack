@@ -110,7 +110,6 @@ export default function Carteira() {
       );
 
       setStatusSaque("Saque solicitado. Em análise.");
-
       setValorSaque("");
       setPixKey("");
       setMostrarSaque(false);
@@ -125,30 +124,8 @@ export default function Carteira() {
   }
 
   useEffect(() => {
-    let tentativas = 0;
-
-    const interval = setInterval(async () => {
-      tentativas++;
-
-      const novoSaldo = await carregarSaldo();
-
-      if (
-        lastSaldoRef.current !== null &&
-        novoSaldo !== null &&
-        novoSaldo !== lastSaldoRef.current
-      ) {
-        clearInterval(interval);
-      }
-
-      lastSaldoRef.current = novoSaldo;
-
-      if (tentativas >= 7) clearInterval(interval);
-    }, 3000);
-
     carregarSaldo();
     carregarTransacoes();
-
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -188,47 +165,7 @@ export default function Carteira() {
           </motion.button>
         </div>
 
-        {/* HISTÓRICO */}
-        <div className="w-full max-w-md text-left space-y-3">
-          <h3 className="text-lg font-bold text-yellow-300">
-            📜 Histórico da Carteira
-          </h3>
-
-          {transacoes.length === 0 && (
-            <p className="text-sm text-blue-100">
-              Nenhuma movimentação ainda.
-            </p>
-          )}
-
-          {transacoes.map((t) => {
-            const isSaque = t.metadata?.tipo === "saque";
-
-            return (
-              <div
-                key={t.id}
-                className="bg-white/10 rounded-xl p-3 text-sm space-y-1"
-              >
-                <div className="flex justify-between font-bold">
-                  <span>
-                    {isSaque ? "💸 Saque solicitado" : "➕ Depósito via PIX"}
-                  </span>
-                  <span className="text-yellow-300">
-                    R$ {Number(t.valor).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="text-blue-100 text-xs">
-                  {formatarDataHora(t.createdAt)}
-                </div>
-
-                <div className="text-blue-200 text-xs">
-                  Status: {traduzirStatus(t.status)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+        {/* 🔽 FORMULÁRIO DE SAQUE — AGORA LOGO ABAIXO DO BOTÃO */}
         {mostrarSaque && (
           <div className="bg-black/60 p-6 rounded-2xl w-full max-w-md space-y-4">
             <h3 className="text-xl font-bold text-yellow-300">
@@ -272,6 +209,47 @@ export default function Carteira() {
             </div>
           </div>
         )}
+
+        {/* HISTÓRICO */}
+        <div className="w-full max-w-md text-left space-y-3">
+          <h3 className="text-lg font-bold text-yellow-300">
+            📜 Histórico da Carteira
+          </h3>
+
+          {transacoes.length === 0 && (
+            <p className="text-sm text-blue-100">
+              Nenhuma movimentação ainda.
+            </p>
+          )}
+
+          {transacoes.map((t) => {
+            const isSaque = t.metadata?.tipo === "saque";
+
+            return (
+              <div
+                key={t.id}
+                className="bg-white/10 rounded-xl p-3 text-sm space-y-1"
+              >
+                <div className="flex justify-between font-bold">
+                  <span>
+                    {isSaque ? "💸 Saque solicitado" : "➕ Depósito via PIX"}
+                  </span>
+                  <span className="text-yellow-300">
+                    R$ {Number(t.valor).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="text-blue-100 text-xs">
+                  {formatarDataHora(t.createdAt)}
+                </div>
+
+                <div className="text-blue-200 text-xs">
+                  Status: {traduzirStatus(t.status)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </main>
 
       <NavBottom />
