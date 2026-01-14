@@ -21,10 +21,27 @@ export default function AdminSaquesControl() {
     carregarSaques();
   }, []);
 
+  function getAdminHeaders() {
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) return null;
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   async function carregarSaques() {
     try {
-      // 🔐 rota ADMIN (protegida por adminAuth)
-      const res = await api.get("/api/admin/saques");
+      const headers = getAdminHeaders();
+      if (!headers) {
+        console.warn("TOKEN_ZLPIX_ADMIN ausente");
+        setSaques([]);
+        return;
+      }
+
+      const res = await api.get("/api/admin/saques", {
+        headers,
+      });
 
       const todos = res.data || [];
 
@@ -43,12 +60,19 @@ export default function AdminSaquesControl() {
 
   async function marcarComoPago(transacaoId: number) {
     try {
+      const headers = getAdminHeaders();
+      if (!headers) {
+        alert("Token de admin ausente");
+        return;
+      }
+
       setProcessando(transacaoId);
 
-      // 🔐 rota ADMIN correta
-      await api.post("/api/admin/saques/pagar", {
-        transacaoId,
-      });
+      await api.post(
+        "/api/admin/saques/pagar",
+        { transacaoId },
+        { headers }
+      );
 
       await carregarSaques();
     } catch (err) {
