@@ -21,24 +21,14 @@ function formatarDataBR(iso: string) {
  */
 function podeVirarSorteio(): boolean {
   const agora = new Date();
-  const diaSemana = agora.getDay(); // 3 = quarta
+
+  const diaSemana = agora.getDay(); // 0 = dom, 3 = quarta
   const hora = agora.getHours();
 
-  if (diaSemana !== 3) return false;
-  if (hora < 17) return false;
+  if (diaSemana !== 3) return false; // não é quarta
+  if (hora < 17) return false; // antes das 17h
 
   return true;
-}
-
-/**
- * Mensagem dinâmica do sorteio
- */
-function getMensagemSorteio(dataFormatada: string | null) {
-  if (podeVirarSorteio() && dataFormatada) {
-    return `Próximo sorteio: ${dataFormatada}`;
-  }
-
-  return "Sorteio de hoje às 17:00 (horário de Brasília)";
 }
 
 /**
@@ -64,12 +54,21 @@ export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
 
+  // =========================
+  // PREVIEW + CMS MODE
+  // =========================
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
 
+  // =========================
+  // DADOS AUTOMÁTICOS
+  // =========================
   const [premioAtual, setPremioAtual] = useState<string>("R$ 500");
-  const [dataSorteio, setDataSorteio] = useState<string | null>(null);
+  const [dataSorteio, setDataSorteio] = useState<string>("");
 
+  // =========================
+  // CMS — HOME
+  // =========================
   const [homeCardInfoHtml, setHomeCardInfoHtml] = useState<string | null>(null);
   const [homeExtraInfoHtml, setHomeExtraInfoHtml] = useState<string | null>(null);
   const [homeFooterHtml, setHomeFooterHtml] = useState<string | null>(null);
@@ -77,21 +76,24 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 FEDERAL
+        // 🔹 PRÓXIMO SORTEIO (COM REGRA DE QUARTA 17H)
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
-          setDataSorteio(
-            formatarDataBR(federal.data.data.proximoSorteio)
-          );
+          if (podeVirarSorteio()) {
+            setDataSorteio(
+              formatarDataBR(federal.data.data.proximoSorteio)
+            );
+          }
+          // se NÃO pode virar, simplesmente não atualiza
         }
 
-        // 🔹 PRÊMIO
+        // 🔹 PRÊMIO ATUAL
         const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.valor === "number") {
           setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
-        // 🔹 CMS
+        // 🔹 CMS HOME
         const cms = await api.get(
           isPreview
             ? "/api/cms/preview/home?token=preview"
@@ -121,6 +123,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
+      {/* HEADER */}
       <header className="text-center py-7 border-b border-white/10 shadow-md">
         <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
           ZLPIX PREMIADO 💰
@@ -131,6 +134,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
+        {/* CARD DO PRÊMIO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
           <p className="text-yellow-300 text-sm mb-1">
             Prêmio acumulado
@@ -140,14 +144,19 @@ export default function Home() {
             {premioAtual}
           </h2>
 
-          <p className="text-sm text-blue-100 mt-2">
-            <span className="text-yellow-300 font-semibold">
-              {getMensagemSorteio(dataSorteio)}
-            </span>
-          </p>
+          {dataSorteio && (
+            <p className="text-sm text-blue-100 mt-2">
+              Próximo sorteio:{" "}
+              <span className="text-yellow-300 font-semibold">
+                {dataSorteio}
+              </span>
+            </p>
+          )}
 
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
+              data-cms="home_card_info"
+              data-cms-title="Home › Card do Prêmio › Texto Informativo"
               className="mt-4 text-sm text-white/90 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
             />
@@ -166,6 +175,8 @@ export default function Home() {
 
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
+            data-cms="home_extra_info"
+            data-cms-title="Home › Seção Extra › Texto"
             className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
             dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
           />
@@ -182,6 +193,8 @@ export default function Home() {
           <AnimatePresence>
             {showInfo && hasVisibleHtml(homeFooterHtml) && (
               <motion.div
+                data-cms="home_footer"
+                data-cms-title="Home › Rodapé › Como Funciona"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
