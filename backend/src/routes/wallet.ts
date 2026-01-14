@@ -1,4 +1,3 @@
-// backend/src/routes/wallet.ts
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -85,7 +84,7 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/transacoes
  * =========================
- * HISTÓRICO (depósitos e saques do USUÁRIO)
+ * Histórico de depósitos e saques
  */
 router.get("/transacoes", async (req, res) => {
   try {
@@ -117,8 +116,8 @@ router.get("/transacoes", async (req, res) => {
  * =========================
  * POST /wallet/depositar
  * =========================
- * GERA PIX REAL (QR + copia e cola)
- * Crédito só entra no webhook
+ * Gera PIX real (QR + copia e cola)
+ * Crédito entra via webhook
  */
 router.post("/depositar", async (req, res) => {
   try {
@@ -153,9 +152,7 @@ router.post("/depositar", async (req, res) => {
         userId,
         valor: Number(valor),
         status: "pending",
-        metadata: {
-          tipo: "deposito",
-        },
+        metadata: { tipo: "deposito" },
       },
     });
 
@@ -220,7 +217,7 @@ router.post("/depositar", async (req, res) => {
  * =========================
  * POST /wallet/saque
  * =========================
- * Usuário solicita saque (análise manual)
+ * Solicitação de saque (manual)
  */
 router.post("/saque", async (req, res) => {
   try {
