@@ -82,19 +82,26 @@ router.get("/saldo", async (req, res) => {
 
 /**
  * =========================
- * GET /wallet/transacoes
+ * GET /wallet/historico
  * =========================
- * Histórico de depósitos e saques
+ * HISTÓRICO LIMPO DA CARTEIRA
+ * (somente depósitos e saques)
  */
-router.get("/transacoes", async (req, res) => {
+router.get("/historico", async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const transacoes = await prisma.transacao.findMany({
-      where: { userId },
+    const historico = await prisma.transacao.findMany({
+      where: {
+        userId,
+        metadata: {
+          path: ["tipo"],
+          in: ["deposito", "saque"],
+        },
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -105,9 +112,9 @@ router.get("/transacoes", async (req, res) => {
       },
     });
 
-    return res.json(transacoes);
+    return res.json(historico);
   } catch (err) {
-    console.error("Erro wallet/transacoes:", err);
+    console.error("Erro wallet/historico:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
