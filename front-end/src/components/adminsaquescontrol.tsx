@@ -15,6 +15,7 @@ type Saque = {
 export default function AdminSaquesControl() {
   const [saques, setSaques] = useState<Saque[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processando, setProcessando] = useState<number | null>(null);
 
   useEffect(() => {
     carregarSaques();
@@ -45,6 +46,22 @@ export default function AdminSaquesControl() {
     }
   }
 
+  async function marcarComoPago(transacaoId: number) {
+    try {
+      setProcessando(transacaoId);
+
+      await api.post("/wallet/saque/pagar", {
+        transacaoId,
+      });
+
+      await carregarSaques();
+    } catch (err) {
+      alert("Erro ao marcar saque como pago");
+    } finally {
+      setProcessando(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-800">
@@ -52,7 +69,8 @@ export default function AdminSaquesControl() {
       </h2>
 
       <p className="text-sm text-gray-600">
-        Lista de solicitações de saque feitas pelos usuários.
+        Lista de solicitações de saque. Após pagamento manual via PIX, marque
+        como pago.
       </p>
 
       {loading && (
@@ -69,9 +87,9 @@ export default function AdminSaquesControl() {
         {saques.map((s) => (
           <div
             key={s.id}
-            className="border rounded p-3 flex justify-between items-center bg-gray-50"
+            className="border rounded p-3 bg-gray-50 flex justify-between items-center"
           >
-            <div className="text-sm">
+            <div className="text-sm space-y-1">
               <p>
                 <strong>Valor:</strong> R$ {Number(s.valor).toFixed(2)}
               </p>
@@ -81,12 +99,22 @@ export default function AdminSaquesControl() {
               </p>
               <p>
                 <strong>Status:</strong>{" "}
-                {s.status === "pending" ? "Pendente" : s.status}
+                {s.status === "pending" ? "Pendente" : "Pago"}
               </p>
-              <p className="text-gray-500 text-xs">
+              <p className="text-xs text-gray-500">
                 {new Date(s.createdAt).toLocaleString("pt-BR")}
               </p>
             </div>
+
+            {s.status === "pending" && (
+              <button
+                onClick={() => marcarComoPago(s.id)}
+                disabled={processando === s.id}
+                className="px-3 py-2 rounded bg-green-600 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {processando === s.id ? "Processando..." : "Marcar como PAGO"}
+              </button>
+            )}
           </div>
         ))}
       </div>
