@@ -42,6 +42,9 @@ router.get("/", async (_req, res) => {
  * ======================================
  * ADMIN — MARCAR SAQUE COMO PAGO
  * ======================================
+ * - Confirma saque pendente
+ * - Marca transação como PAID
+ * - DESCONTA saldo da wallet do usuário
  */
 router.post("/pagar", async (req, res) => {
   try {
@@ -53,6 +56,7 @@ router.post("/pagar", async (req, res) => {
       });
     }
 
+    // 🔎 Busca saque pendente
     const saque = await prisma.transacao.findFirst({
       where: {
         id: Number(transacaoId),
@@ -70,10 +74,39 @@ router.post("/pagar", async (req, res) => {
       });
     }
 
-    await prisma.transacao.update({
-      where: { id: saque.id },
-      data: { status: "paid" },
+    // 🔎 Busca wallet do usuário
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId: saque.userId },
     });
+
+    if (!wallet) {
+      return res.status(400).json({
+        error: "Wallet do usuário não encontrada",
+      });
+    }
+
+    // 🔐 Segurança: evita saldo negativo
+    if (Number(wallet.saldo) < Number(saque.valor)) {
+      return res.status(400).json({
+        error: "Saldo insuficiente para concluir o saque",
+      });
+    }
+
+    // ✅ Atualizações atômicas
+    await prisma.$transaction([
+      prisma.transacao.update({
+        where: { id: saque.id },
+        data: { status: "paid" },
+      }),
+      prisma.wallet.update({
+        where: { id: wallet.id },
+        data: {
+          saldo: {
+            decrement: Number(saque.valor),
+          },
+        },
+      }),
+    ]);
 
     return res.json({ ok: true });
   } catch (err) {
