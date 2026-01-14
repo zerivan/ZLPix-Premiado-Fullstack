@@ -123,17 +123,29 @@ export default function EditorQuill({
         )}
       </div>
 
-      {/* ================= PREVIEW REAL ================= */}
-      <div className="border rounded overflow-hidden">
-        <div className="bg-gray-800 text-white text-xs px-3 py-2">
-          Preview real da página
+      {/* ================= PREVIEW REAL + DESTAQUE ================= */}
+      <div className="relative border rounded overflow-hidden">
+        {/* BARRA SUPERIOR */}
+        <div className="bg-gray-800 text-white text-xs px-3 py-2 flex justify-between">
+          <span>Preview real da página</span>
+          <span className="text-yellow-300 font-semibold">
+            Área ativa: {areaKey}
+          </span>
         </div>
 
+        {/* IFRAME */}
         <iframe
           key={iframeKey}
           src={`${SITE_URL}/?preview=1`}
           className="w-full h-[80vh] bg-white"
         />
+
+        {/* OVERLAY DE DESTAQUE */}
+        <div className="pointer-events-none absolute inset-0 border-4 border-yellow-400 rounded opacity-80">
+          <div className="absolute top-4 left-4 bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1 rounded shadow">
+            ✏️ Editando: {areaTitle}
+          </div>
+        </div>
       </div>
     </div>
   );
