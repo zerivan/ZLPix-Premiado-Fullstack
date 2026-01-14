@@ -71,7 +71,6 @@ export default function Carteira() {
       const userId = localStorage.getItem("USER_ID");
       if (!userId) return;
 
-      // ✅ ROTA CORRETA
       const res = await api.get("/wallet/historico", {
         headers: { "x-user-id": userId },
       });
@@ -83,10 +82,10 @@ export default function Carteira() {
   }
 
   async function solicitarSaque() {
-    try {
-      setLoadingSaque(true);
-      setStatusSaque(null);
+    setLoadingSaque(true);
+    setStatusSaque(null);
 
+    try {
       const userId = localStorage.getItem("USER_ID");
       if (!userId) {
         setStatusSaque("Usuário não identificado");
@@ -111,9 +110,13 @@ export default function Carteira() {
       );
 
       setStatusSaque("Saque solicitado. Em análise.");
+
       setValorSaque("");
       setPixKey("");
-      carregarTransacoes();
+      setMostrarSaque(false);
+
+      await carregarTransacoes();
+      await carregarSaldo();
     } catch {
       setStatusSaque("Erro ao solicitar saque");
     } finally {
