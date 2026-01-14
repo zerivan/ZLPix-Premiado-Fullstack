@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { api } from "../api/client";
+import axios from "axios";
 
 type Saque = {
   id: number;
@@ -11,6 +11,8 @@ type Saque = {
     pixKey?: string;
   };
 };
+
+const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
 export default function AdminSaquesControl() {
   const [saques, setSaques] = useState<Saque[]>([]);
@@ -39,9 +41,10 @@ export default function AdminSaquesControl() {
         return;
       }
 
-      const res = await api.get("/api/admin/saques", {
-        headers,
-      });
+      const res = await axios.get(
+        `${BASE_URL}/api/admin/saques`,
+        { headers }
+      );
 
       const todos = res.data || [];
 
@@ -68,8 +71,8 @@ export default function AdminSaquesControl() {
 
       setProcessando(transacaoId);
 
-      await api.post(
-        "/api/admin/saques/pagar",
+      await axios.post(
+        `${BASE_URL}/api/admin/saques/pagar`,
         { transacaoId },
         { headers }
       );
@@ -84,9 +87,7 @@ export default function AdminSaquesControl() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-800">
-        💸 Saques
-      </h2>
+      <h2 className="text-xl font-bold text-gray-800">💸 Saques</h2>
 
       <p className="text-sm text-gray-600">
         Lista de solicitações de saque. Após pagamento manual via PIX, marque
@@ -132,7 +133,9 @@ export default function AdminSaquesControl() {
                 disabled={processando === s.id}
                 className="px-3 py-2 rounded bg-green-600 text-white text-sm font-bold disabled:opacity-50"
               >
-                {processando === s.id ? "Processando..." : "Marcar como PAGO"}
+                {processando === s.id
+                  ? "Processando..."
+                  : "Marcar como PAGO"}
               </button>
             )}
           </div>
