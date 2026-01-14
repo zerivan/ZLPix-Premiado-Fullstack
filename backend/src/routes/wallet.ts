@@ -112,13 +112,11 @@ router.post("/depositar", async (req, res) => {
       });
     }
 
-    // busca email real do usuário (se existir)
     const user = await prisma.users.findUnique({
       where: { id: userId },
       select: { email: true, name: true },
     });
 
-    // cria transação de DEPÓSITO
     const tx = await prisma.transacao.create({
       data: {
         userId,
@@ -130,7 +128,6 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
-    // token MP
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
@@ -139,7 +136,6 @@ router.post("/depositar", async (req, res) => {
       return res.status(500).json({ error: "MP token ausente" });
     }
 
-    // cria PIX no Mercado Pago
     const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
@@ -165,7 +161,6 @@ router.post("/depositar", async (req, res) => {
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
-    // salva mpPaymentId
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -177,7 +172,6 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
-    // 🔑 CONTRATO FINAL COM O FRONT
     return res.json({
       paymentId: String(mpJson.id),
       qr_code_base64:
@@ -187,6 +181,52 @@ router.post("/depositar", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro wallet/depositar:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * POST /wallet/saque
+ * =========================
+ * SAQUE MANUAL (PIX feito pelo admin)
+ * NÃO desconta saldo
+ */
+router.post("/saque", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { valor, pixKey } = req.body;
+
+    if (!userId || !valor || Number(valor) <= 0) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    if (!wallet || Number(wallet.saldo) < Number(valor)) {
+      return res.status(400).json({ error: "Saldo insuficiente" });
+    }
+
+    await prisma.transacao.create({
+      data: {
+        userId,
+        valor: Number(valor),
+        status: "pending",
+        metadata: {
+          tipo: "saque",
+          pixKey: pixKey || null,
+        },
+      },
+    });
+
+    return res.json({
+      ok: true,
+      message: "Saque solicitado e enviado para análise",
+    });
+  } catch (err) {
+    console.error("Erro wallet/saque:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
