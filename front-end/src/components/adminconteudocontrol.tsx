@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import EditorQuill from "../editor/EditorQuill";
+import EditorQuill from "../../editor/EditorQuill";
 
 type CmsArea = {
   key: string;
