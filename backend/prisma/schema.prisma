@@ -88,11 +88,9 @@ model password_reset {
   @@map("password_resets")
 }
 
-/**
- * =====================================================
- * APP CONTENT — CMS (ALINHADO COM O BANCO)
- * =====================================================
- */
+// =====================================================
+// APP CONTENT — CMS (ALINHADO COM O BANCO)
+// =====================================================
 model AppContent {
   id          Int      @id @default(autoincrement())
 
@@ -101,8 +99,8 @@ model AppContent {
   slug        String?  @unique
 
   enabled     Boolean  @default(true)
-  isActive    Boolean  @default(true)   // ✅ ADICIONADO
-  version     Int      @default(1)      // ✅ ADICIONADO
+  isActive    Boolean  @default(true)
+  version     Int      @default(1)
 
   title       String
   contentHtml String?
