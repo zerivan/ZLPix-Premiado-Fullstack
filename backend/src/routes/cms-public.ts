@@ -17,7 +17,6 @@ const router = Router();
  * =====================================================
  * 🏆 PRÊMIO ATUAL — PÚBLICO
  * =====================================================
- * Retorna apenas o valor do prêmio atual.
  */
 router.get("/premio", async (_req, res) => {
   try {
@@ -48,7 +47,6 @@ router.get("/premio", async (_req, res) => {
  * =====================================================
  * 🎨 APARÊNCIA — PÚBLICO
  * =====================================================
- * Apenas leitura da aparência global do app.
  */
 router.get("/app-appearance", async (_req, res) => {
   try {
@@ -85,9 +83,9 @@ router.get("/app-appearance", async (_req, res) => {
  * =====================================================
  * 📄 CMS PÚBLICO — HTML POR PÁGINA
  * =====================================================
- * Exemplos:
- * GET /api/cms/public/home
- * GET /api/cms/public/resultado
+ * ✔ FILTRA APENAS CONTEÚDO ATIVO
+ * ✔ NÃO MUDA ROTA
+ * ✔ NÃO MUDA FORMATO
  */
 router.get("/:page", async (req, res) => {
   try {
@@ -98,6 +96,7 @@ router.get("/:page", async (req, res) => {
         key: {
           startsWith: `${page}_`,
         },
+        isActive: true, // ✅ ÚNICA ALTERAÇÃO REAL
       },
       orderBy: {
         key: "asc",
