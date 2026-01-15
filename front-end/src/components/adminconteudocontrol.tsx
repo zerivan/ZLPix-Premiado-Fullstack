@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import EditorQuill from "../editor/editorquill";
 
 type CmsArea = {
   key: string;
@@ -133,21 +132,6 @@ export default function AdminConteudoControl() {
     }
   }
 
-  async function salvarConteudo(html: string) {
-    const headers = getHeaders();
-    if (!headers || !activeArea) return;
-
-    await axios.post(
-      `${BASE_URL}/api/admin/cms/area/save`,
-      {
-        key: activeArea.key,
-        title: activeArea.title,
-        contentHtml: html,
-      },
-      { headers }
-    );
-  }
-
   useEffect(() => {
     loadPages();
   }, []);
@@ -204,15 +188,7 @@ export default function AdminConteudoControl() {
         </div>
       ))}
 
-      {activeArea && (
-        <EditorQuill
-          page={pageKey}
-          areaKey={activeArea.key}
-          areaTitle={activeArea.title}
-          initialHtml={initialHtml}
-          onSave={salvarConteudo}
-        />
-      )}
+      {/* EDITOR REMOVIDO CONFORME DECISÃO ARQUITETURAL */}
     </div>
   );
 }
