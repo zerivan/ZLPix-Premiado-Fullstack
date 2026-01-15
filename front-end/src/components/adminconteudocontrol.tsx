@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import EditorQuill from "../../editor/editorquill";
+import EditorQuill from "../editor/editorquill";
 
 type CmsArea = {
   key: string;
@@ -204,7 +204,6 @@ export default function AdminConteudoControl() {
         </div>
       ))}
 
-      {/* EDITOR INLINE — SOMENTE QUANDO UMA ÁREA ESTIVER ATIVA */}
       {activeArea && (
         <EditorQuill
           page={pageKey}
