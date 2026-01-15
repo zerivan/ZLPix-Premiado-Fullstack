@@ -7,33 +7,75 @@ type CmsArea = {
   title: string;
 };
 
+type CmsFolder = {
+  label: string;
+  areas: CmsArea[];
+};
+
 type CmsPage = {
   page: string;
   title: string;
 };
 
 /**
- * 🔒 MAPA FIXO DO LAYOUT (ESTRUTURA APENAS)
+ * 📁 ORGANIZAÇÃO LÓGICA DO CMS (UI ONLY)
+ * ❌ NÃO ALTERA BACKEND
+ * ❌ NÃO ALTERA BANCO
  */
-const CMS_LAYOUT_MAP: Record<string, CmsArea[]> = {
+const CMS_FOLDERS: Record<string, CmsFolder[]> = {
   home: [
-    { key: "home_info", title: "Home › Header › Subtítulo" },
-    { key: "home_card_info", title: "Home › Card do Prêmio › Texto Informativo" },
-    { key: "home_extra_info", title: "Home › Seção Extra › Texto" },
-    { key: "home_footer", title: "Home › Rodapé › Como Funciona" },
+    {
+      label: "Informações",
+      areas: [
+        { key: "home_info", title: "Header › Texto Informativo" },
+        { key: "home_extra_info", title: "Seção Extra › Texto" },
+        { key: "home_footer", title: "Rodapé › Como Funciona" },
+      ],
+    },
+    {
+      label: "Bilhetes",
+      areas: [
+        {
+          key: "home_card_info",
+          title: "Card do Prêmio › Texto Informativo",
+        },
+      ],
+    },
+  ],
+  resultado: [
+    {
+      label: "Resultados",
+      areas: [{ key: "resultado_info", title: "Resultado › Informações" }],
+    },
+  ],
+  pix: [
+    {
+      label: "PIX",
+      areas: [{ key: "pix_info", title: "PIX › Informações" }],
+    },
+  ],
+  perfil: [
+    {
+      label: "Perfil",
+      areas: [{ key: "perfil_info", title: "Perfil › Informações" }],
+    },
+  ],
+  carteira: [
+    {
+      label: "Carteira",
+      areas: [{ key: "carteira_info", title: "Carteira › Informações" }],
+    },
   ],
 };
 
 export default function AdminConteudoControl() {
   const [pages, setPages] = useState<CmsPage[]>([]);
   const [pageKey, setPageKey] = useState("");
-  const [areas, setAreas] = useState<CmsArea[]>([]);
+  const [folders, setFolders] = useState<CmsFolder[]>([]);
   const [activeArea, setActiveArea] = useState<CmsArea | null>(null);
-
-  const [initialHtml, setInitialHtml] = useState<string>("");
+  const [initialHtml, setInitialHtml] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [loadingAreas, setLoadingAreas] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -65,20 +107,10 @@ export default function AdminConteudoControl() {
     }
   }
 
-  async function loadAreas(page: string) {
-    try {
-      setLoadingAreas(true);
-      setActiveArea(null);
-      setInitialHtml("");
-
-      const layoutAreas = CMS_LAYOUT_MAP[page] || [];
-      setAreas(layoutAreas);
-    } catch {
-      setErro("Erro ao carregar áreas.");
-      setAreas([]);
-    } finally {
-      setLoadingAreas(false);
-    }
+  function loadFolders(page: string) {
+    setActiveArea(null);
+    setInitialHtml("");
+    setFolders(CMS_FOLDERS[page] || []);
   }
 
   async function loadAreaContent(area: CmsArea) {
@@ -121,7 +153,7 @@ export default function AdminConteudoControl() {
   }, []);
 
   useEffect(() => {
-    if (pageKey) loadAreas(pageKey);
+    if (pageKey) loadFolders(pageKey);
   }, [pageKey]);
 
   useEffect(() => {
@@ -132,7 +164,7 @@ export default function AdminConteudoControl() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">CMS — Estrutura de Conteúdo</h2>
+      <h2 className="text-lg font-semibold">CMS — Conteúdo do Site</h2>
 
       {erro && <div className="text-red-600 text-sm">{erro}</div>}
 
@@ -148,25 +180,29 @@ export default function AdminConteudoControl() {
         ))}
       </select>
 
-      {loadingAreas && (
-        <p className="text-sm text-gray-500">Carregando áreas…</p>
-      )}
+      {folders.map((folder) => (
+        <div key={folder.label} className="border rounded">
+          <div className="bg-gray-100 px-3 py-2 font-semibold text-sm">
+            📁 {folder.label}
+          </div>
 
-      <div className="space-y-2">
-        {areas.map((area) => (
-          <button
-            key={area.key}
-            onClick={() => setActiveArea(area)}
-            className={`block w-full text-left p-2 border rounded ${
-              activeArea?.key === area.key
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100"
-            }`}
-          >
-            {area.title}
-          </button>
-        ))}
-      </div>
+          <div className="p-2 space-y-1">
+            {folder.areas.map((area) => (
+              <button
+                key={area.key}
+                onClick={() => setActiveArea(area)}
+                className={`block w-full text-left p-2 rounded border ${
+                  activeArea?.key === area.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white"
+                }`}
+              >
+                {area.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
 
       {activeArea && (
         <EditorQuill
