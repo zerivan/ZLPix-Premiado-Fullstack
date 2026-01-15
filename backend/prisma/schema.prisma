@@ -88,13 +88,21 @@ model password_reset {
   @@map("password_resets")
 }
 
+/**
+ * =====================================================
+ * APP CONTENT — CMS (ALINHADO COM O BANCO)
+ * =====================================================
+ */
 model AppContent {
   id          Int      @id @default(autoincrement())
 
   key         String   @unique
   type        String   @default("text")
   slug        String?  @unique
+
   enabled     Boolean  @default(true)
+  isActive    Boolean  @default(true)   // ✅ ADICIONADO
+  version     Int      @default(1)      // ✅ ADICIONADO
 
   title       String
   contentHtml String?
