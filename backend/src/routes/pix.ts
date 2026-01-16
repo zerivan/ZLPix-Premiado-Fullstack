@@ -175,10 +175,14 @@ router.post("/confirmar-bilhete", async (req, res) => {
       ...bilhetes.map((b: any) =>
         prisma.bilhete.create({
           data: {
-            userId: tx.userId,
             dezenas: b.dezenas,
             valor: b.valor,
-            transacaoId: tx.id,
+            user: {
+              connect: { id: tx.userId },
+            },
+            transacao: {
+              connect: { id: tx.id },
+            },
           },
         })
       ),
