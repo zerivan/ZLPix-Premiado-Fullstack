@@ -33,13 +33,19 @@ export default function MeusBilhetes() {
   const userId = resolveUserId();
 
   // =========================
-  // LOAD BILHETES
+  // LOAD BILHETES (ROTA CORRETA)
   // =========================
   async function loadBilhetes() {
     try {
       if (!userId) return;
-      const res = await axios.get(`${API}/bilhete/listar/${userId}`);
-      setBilhetes(res.data.bilhetes || []);
+
+      const res = await axios.get(`${API}/bilhete/meus`, {
+        headers: {
+          "x-user-id": userId,
+        },
+      });
+
+      setBilhetes(res.data || []);
     } catch (e) {
       console.log("Erro ao carregar bilhetes:", e);
     }
@@ -50,7 +56,7 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
-  // Recarrega quando volta para a aba (corrige “não apareceu”)
+  // Recarrega quando volta para a aba
   useEffect(() => {
     function onFocus() {
       if (document.visibilityState === "visible") {
