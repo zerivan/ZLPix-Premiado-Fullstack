@@ -1,202 +1,175 @@
-import express from "express";
-import crypto from "crypto";
+// src/routes/auth.ts
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 
-const router = express.Router();
+const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-// fetch nativo
-const fetchFn: typeof fetch = (...args: any) =>
-  (globalThis as any).fetch(...args);
-
-// ===============================
-// 🧠 Próximo sorteio (quarta-feira)
-// ===============================
-function getNextWednesday(): Date {
-  const now = new Date();
-  const day = now.getDay(); // 0 dom - 3 qua
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0); // 20h padrão
-  return next;
+// ======================================
+// 🔧 SERIALIZADOR PARA BIGINT DO PRISMA
+// ======================================
+function serialize(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === "bigint") return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serialize);
+  if (typeof obj === "object") {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, serialize(v)])
+    );
+  }
+  return obj;
 }
 
-// =====================================================
-// 🧾 PIX — CRIAR PAGAMENTO DE BILHETES
-// =====================================================
-router.post("/create-bilhete", async (req, res) => {
+// ======================================
+// 🔒 SANITIZAÇÃO (REMOVE passwordHash)
+// ======================================
+function sanitize(obj: any) {
+  if (!obj) return obj;
+  const s = serialize(obj);
+  if (s && typeof s === "object" && "passwordHash" in s) {
+    delete s.passwordHash;
+  }
+  return s;
+}
+
+// ======================================
+// 👤 REGISTER USER
+// ======================================
+router.post("/register", async (req, res) => {
   try {
-    const { userId, amount, description, bilhetes } = req.body;
+    const { name, email, phone, pixKey, password } = req.body;
 
-    if (!userId || !amount || !Array.isArray(bilhetes) || bilhetes.length === 0) {
-      return res.status(400).json({ error: "Payload inválido." });
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Nome, e-mail e senha são obrigatórios.",
+      });
     }
 
-    const uid = Number(userId);
-    const total = Number(amount);
-
-    const user = await prisma.users.findUnique({
-      where: { id: uid },
-      select: { email: true, name: true },
-    });
-
-    if (!user?.email) {
-      return res.status(400).json({ error: "Usuário inválido." });
+    const existing = await prisma.users.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({
+        message: "E-mail já está cadastrado.",
+      });
     }
 
-    const tx = await prisma.transacao.create({
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.users.create({
       data: {
-        userId: uid,
-        valor: total,
-        status: "pending",
-        metadata: {
-          tipo: "bilhete",
-          bilhetes,
-        },
+        name,
+        email,
+        phone,
+        pixKey,
+        passwordHash,
       },
     });
 
-    const mpToken =
-      process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
-
-    if (!mpToken) {
-      return res.status(500).json({ error: "MP token ausente" });
-    }
-
-    const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpToken}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": crypto.randomUUID(),
-      },
-      body: JSON.stringify({
-        transaction_amount: total,
-        description: description || "Bilhetes ZLPix",
-        payment_method_id: "pix",
-        payer: {
-          email: user.email,
-          first_name: user.name || "Cliente",
-        },
-      }),
-    });
-
-    const mpJson: any = await resp.json();
-    if (!resp.ok) {
-      return res.status(502).json(mpJson);
-    }
-
-    await prisma.transacao.update({
-      where: { id: tx.id },
-      data: {
-        mpPaymentId: String(mpJson.id),
-        metadata: {
-          tipo: "bilhete",
-          bilhetes,
-          mpResponse: mpJson,
-        },
-      },
-    });
-
-    return res.json({
-      paymentId: String(mpJson.id),
-      qr_code_base64:
-        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
-      copy_paste:
-        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
+    return res.status(201).json({
+      message: "Usuário cadastrado com sucesso.",
+      user: sanitize(user),
     });
   } catch (err) {
-    console.error("pix/create-bilhete erro:", err);
-    return res.status(500).json({ error: "Erro interno" });
+    console.error("Erro em /auth/register:", err);
+    return res.status(500).json({
+      message: "Erro ao cadastrar usuário.",
+      error: String(err),
+    });
   }
 });
 
-// =====================================================
-// 📌 STATUS DO PAGAMENTO
-// =====================================================
-router.get("/payment-status/:paymentId", async (req, res) => {
+// ======================================
+// 🔑 LOGIN USER
+// ======================================
+router.post("/login", async (req, res) => {
   try {
-    const { paymentId } = req.params;
+    const { email, password } = req.body;
 
-    const tx = await prisma.transacao.findFirst({
-      where: { mpPaymentId: paymentId },
-    });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
+    }
 
-    if (!tx) return res.json({ status: "PENDING" });
-    if (tx.status === "paid") return res.json({ status: "PAID" });
+    const user = await prisma.users.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
 
-    const mpToken =
-      process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
 
-    if (!mpToken) return res.json({ status: "PENDING" });
-
-    const resp = await fetchFn(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      { headers: { Authorization: `Bearer ${mpToken}` } }
+    // 🔥 JWT corrigido para BigInt (id como string)
+    const token = jwt.sign(
+      {
+        id: user.id.toString(),
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
     );
 
-    const mpJson: any = await resp.json();
-
-    if (mpJson?.status === "approved") {
-      return res.json({ status: "PAID" });
-    }
-
-    return res.json({ status: "PENDING" });
+    return res.json({
+      message: "Login realizado com sucesso.",
+      token,
+      user: sanitize(user),
+    });
   } catch (err) {
-    console.error("payment-status erro:", err);
-    return res.status(500).json({ status: "ERROR" });
+    console.error("Erro em /auth/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login.",
+      error: String(err),
+    });
   }
 });
 
-// =====================================================
-// ✅ CONFIRMAR PAGAMENTO E GERAR BILHETES
-// =====================================================
-router.post("/confirmar-bilhete", async (req, res) => {
+// ======================================
+// 🛡 LOGIN ADMIN
+// OBS: tabela admins só tem email + passwordHash
+// ======================================
+router.post("/admin/login", async (req, res) => {
   try {
-    const { paymentId } = req.body;
-    if (!paymentId) {
-      return res.status(400).json({ error: "paymentId obrigatório" });
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    const tx = await prisma.transacao.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-        status: "pending",
-      },
+    const admin = await prisma.admins.findUnique({
+      where: { email },
     });
 
-    if (!tx) return res.json({ ok: true });
-
-    const bilhetes = (tx.metadata as any)?.bilhetes;
-    if (!Array.isArray(bilhetes) || bilhetes.length === 0) {
-      return res.status(400).json({ error: "Bilhetes ausentes" });
+    if (!admin) {
+      return res.status(401).json({ message: "Admin não encontrado." });
     }
 
-    const sorteioData = getNextWednesday();
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Senha incorreta." });
+    }
 
-    await prisma.$transaction([
-      prisma.transacao.update({
-        where: { id: tx.id },
-        data: { status: "paid" },
-      }),
-      ...bilhetes.map((b: any) =>
-        prisma.bilhete.create({
-          data: {
-            userId: tx.userId,
-            transacaoId: tx.id,
-            dezenas: b.dezenas,
-            valor: b.valor,
-            pago: true,
-            sorteioData, // ✅ CAMPO OBRIGATÓRIO
-          },
-        })
-      ),
-    ]);
+    const token = jwt.sign(
+      { email: admin.email, role: "admin" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    return res.json({ ok: true });
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+      admin: sanitize(admin),
+    });
   } catch (err) {
-    console.error("pix/confirmar-bilhete erro:", err);
-    return res.status(500).json({ error: "Erro interno" });
+    console.error("Erro em /auth/admin/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
+      error: String(err),
+    });
   }
 });
 
