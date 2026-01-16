@@ -64,29 +64,24 @@ export default function MeusBilhetes() {
   }, [userId]);
 
   // =========================
-  // HELPERS (REGRA CORRETA)
+  // HELPERS (REGRA FINAL)
   // =========================
   function isPremiado(b: any) {
     return b.status === "PREMIADO" || b.premiado === true;
   }
 
-  /**
-   * Bilhete é válido ATÉ quarta-feira às 17:00
-   */
   function isDentroDoPrazo(b: any) {
     if (!b.sorteioData) return false;
 
-    const data = new Date(b.sorteioData);
-    data.setHours(17, 0, 0, 0); // ⏰ 17:00 em ponto
+    const limite = new Date(b.sorteioData);
+    limite.setHours(17, 0, 0, 0); // quarta-feira às 17h
 
-    return Date.now() < data.getTime();
+    return Date.now() < limite.getTime();
   }
 
   function isVisivel(b: any) {
-    // 🔒 Premiado nunca some
     if (isPremiado(b)) return true;
 
-    // ⏳ Pago + dentro do prazo
     if (
       b.pago === true &&
       (b.status === "ATIVO" ||
@@ -107,6 +102,17 @@ export default function MeusBilhetes() {
     if (filtro === "pendentes") return !b.pago;
     return true;
   });
+
+  function formatarDataHora(dt?: string) {
+    if (!dt) return "-";
+    return new Date(dt).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -158,9 +164,14 @@ export default function MeusBilhetes() {
                     Bilhete #{b.id}
                   </h2>
                   <p className="text-xs text-blue-100">
+                    Criado em: {formatarDataHora(b.createdAt)}
+                  </p>
+                  <p className="text-xs text-blue-100">
                     Sorteio:{" "}
                     {b.sorteioData
-                      ? new Date(b.sorteioData).toLocaleDateString("pt-BR")
+                      ? `${new Date(b.sorteioData).toLocaleDateString(
+                          "pt-BR"
+                        )} às 17:00`
                       : "-"}
                   </p>
                 </div>
