@@ -6,6 +6,7 @@ export default function AdminLogin() {
 
   const API = import.meta.env.VITE_API_URL as string;
 
+  // ✅ E-mail admin correto
   const [email, setEmail] = useState("admin@zlpix.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,8 +18,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      // ✅ ROTA CORRETA DO BACKEND
-      const resposta = await fetch(`${API}/auth/admin`, {
+      const resposta = await fetch(`${API}/auth/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -36,6 +36,7 @@ export default function AdminLogin() {
       localStorage.setItem("TOKEN_ZLPIX_ADMIN", json.token);
       localStorage.setItem("ZLPIX_ADMIN_AUTH", "true");
 
+      // ✅ ROTA ADMIN CORRETA
       navigate("/admin/admindashboard", { replace: true });
     } catch {
       setErro("Erro ao conectar com o servidor.");
@@ -51,6 +52,7 @@ export default function AdminLogin() {
           🔐 Login Administrativo
         </h1>
 
+        {/* EMAIL */}
         <div className="mb-6">
           <label className="text-sm text-blue-100 font-semibold">E-mail</label>
           <input
@@ -62,6 +64,7 @@ export default function AdminLogin() {
           />
         </div>
 
+        {/* SENHA */}
         <div className="mb-8 relative">
           <label className="text-sm text-blue-100 font-semibold">Senha</label>
 
@@ -99,6 +102,13 @@ export default function AdminLogin() {
           Acesso restrito à administração do ZLPix
         </p>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
