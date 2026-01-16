@@ -32,17 +32,12 @@ export default function MeusBilhetes() {
 
   const userId = resolveUserId();
 
-  // =========================
-  // LOAD BILHETES (ROTA CORRETA)
-  // =========================
   async function loadBilhetes() {
     try {
       if (!userId) return;
 
       const res = await axios.get(`${API}/bilhete/meus`, {
-        headers: {
-          "x-user-id": userId,
-        },
+        headers: { "x-user-id": userId },
       });
 
       setBilhetes(res.data || []);
@@ -51,12 +46,10 @@ export default function MeusBilhetes() {
     }
   }
 
-  // Load inicial
   useEffect(() => {
     loadBilhetes();
   }, [userId]);
 
-  // Recarrega quando volta para a aba
   useEffect(() => {
     function onFocus() {
       if (document.visibilityState === "visible") {
@@ -77,26 +70,24 @@ export default function MeusBilhetes() {
     return b.status === "PREMIADO" || b.premiado === true;
   }
 
-  function isAtivoDoSorteioAtual(b: any) {
-    if (!b.sorteioData) return false;
-    return new Date(b.sorteioData).getTime() >= Date.now();
-  }
-
-  // =========================
-  // REGRA FINAL DE VISIBILIDADE
-  // =========================
-  const bilhetesVisiveis = bilhetes.filter((b) => {
+  function isVisivel(b: any) {
     if (isPremiado(b)) return true;
 
+    // ✅ regra correta:
+    // pago + status ativo = visível
     if (
-      (b.status === "ATIVO_ATUAL" || b.status === "ATIVO_PROXIMO") &&
-      isAtivoDoSorteioAtual(b)
+      b.pago === true &&
+      (b.status === "ATIVO" ||
+        b.status === "ATIVO_ATUAL" ||
+        b.status === "ATIVO_PROXIMO")
     ) {
       return true;
     }
 
     return false;
-  });
+  }
+
+  const bilhetesVisiveis = bilhetes.filter(isVisivel);
 
   const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
     if (filtro === "premiados") return isPremiado(b);
@@ -109,7 +100,7 @@ export default function MeusBilhetes() {
       <header className="text-center pt-6 pb-2">
         <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
         <p className="text-sm text-blue-100">
-          Bilhetes válidos para o sorteio atual
+          Bilhetes do sorteio atual
         </p>
       </header>
 
@@ -140,7 +131,7 @@ export default function MeusBilhetes() {
       <main className="px-4 max-w-lg mx-auto space-y-4 pb-10">
         {bilhetesFiltrados.length === 0 ? (
           <p className="text-center text-white/70 mt-10">
-            Nenhum bilhete ativo no momento.
+            Nenhum bilhete disponível no momento.
           </p>
         ) : (
           bilhetesFiltrados.map((b: any) => (
