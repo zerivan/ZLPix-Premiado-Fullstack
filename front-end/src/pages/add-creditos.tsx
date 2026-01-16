@@ -1,5 +1,5 @@
 // src/pages/add-creditos.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
@@ -7,16 +7,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function AddCreditos() {
   const navigate = useNavigate();
-
   const [valor, setValor] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const [qrBase64, setQrBase64] = useState<string | null>(null);
-  const [copyPaste, setCopyPaste] = useState<string | null>(null);
-  const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [status, setStatus] = useState("Aguardando pagamento...");
-
-  const pollingRef = useRef<any>(null);
 
   const valoresRapidos = [10, 20, 50, 100];
 
@@ -39,81 +31,21 @@ export default function AddCreditos() {
     try {
       setLoading(true);
 
-      const res = await api.post(
+      // ✅ ROTA EXCLUSIVA DA CARTEIRA
+      await api.post(
         "/wallet/depositar",
         { valor },
-        {
-          headers: {
-            "x-user-id": userId,
-          },
-        }
+        { headers: { "x-user-id": userId } }
       );
 
-      setQrBase64(res.data?.qr_code_base64 ?? null);
-      setCopyPaste(res.data?.copy_paste ?? null);
-      setPaymentId(res.data?.payment_id ?? null);
-
-      if (!res.data?.qr_code_base64 || !res.data?.payment_id) {
-        throw new Error("PIX inválido");
-      }
+      // ✅ NÃO navega para /pagamento (PIX de bilhete)
+      // ✅ Carteira cuida do próprio fluxo
+      navigate("/carteira", { replace: true });
     } catch (e) {
       console.error("Erro ao gerar PIX:", e);
-      alert("Não foi possível gerar o PIX.");
+      alert("Não foi possível gerar o PIX. Tente novamente.");
     } finally {
       setLoading(false);
-    }
-  }
-
-  // 🔁 Polling de confirmação
-  useEffect(() => {
-    if (!paymentId) return;
-
-    pollingRef.current = setInterval(async () => {
-      try {
-        const res = await api.get(`/pix/payment-status/${paymentId}`);
-
-        if (res.data?.status === "PAID") {
-          clearInterval(pollingRef.current);
-          setStatus("Pagamento confirmado! 🎉");
-
-          setTimeout(() => {
-            navigate("/carteira", { replace: true });
-          }, 1200);
-        }
-      } catch (err) {
-        console.error("Erro polling PIX:", err);
-      }
-    }, 5000);
-
-    return () => clearInterval(pollingRef.current);
-  }, [paymentId, navigate]);
-
-  // ✅ COPIAR PIX — fallback universal (Android / WebView)
-  function copiarCodigo() {
-    if (!copyPaste) return;
-
-    try {
-      const textarea = document.createElement("textarea");
-      textarea.value = copyPaste;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      textarea.style.top = "-9999px";
-
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-
-      const ok = document.execCommand("copy");
-      document.body.removeChild(textarea);
-
-      if (ok) {
-        alert("Código PIX copiado!");
-      } else {
-        alert("Não foi possível copiar o código PIX.");
-      }
-    } catch (err) {
-      console.error("Erro ao copiar PIX:", err);
-      alert("Falha ao copiar o código PIX.");
     }
   }
 
@@ -129,78 +61,41 @@ export default function AddCreditos() {
       </header>
 
       <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8">
-        {!qrBase64 && (
-          <>
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-              {valoresRapidos.map((v) => (
-                <motion.button
-                  key={v}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => selecionarValor(v)}
-                  className={`py-4 rounded-2xl border text-lg font-bold shadow-md ${
-                    valor === v
-                      ? "bg-yellow-400 text-blue-900 border-yellow-300"
-                      : "bg-white/10 text-yellow-300 border-white/20"
-                  }`}
-                >
-                  R$ {v}
-                </motion.button>
-              ))}
-            </div>
-
-            <div className="w-full max-w-md">
-              <input
-                type="number"
-                value={valor ?? ""}
-                onChange={(e) => setValor(Number(e.target.value))}
-                className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white"
-                placeholder="Digite um valor"
-              />
-            </div>
-
+        <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+          {valoresRapidos.map((v) => (
             <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={gerarPix}
-              disabled={loading}
-              className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl"
+              key={v}
+              whileTap={{ scale: 0.93 }}
+              onClick={() => selecionarValor(v)}
+              className={`py-4 rounded-2xl border text-lg font-bold shadow-md ${
+                valor === v
+                  ? "bg-yellow-400 text-blue-900 border-yellow-300"
+                  : "bg-white/10 text-yellow-300 border-white/20"
+              }`}
             >
-              {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
+              R$ {v}
             </motion.button>
-          </>
-        )}
+          ))}
+        </div>
 
-        {qrBase64 && (
-          <div className="bg-white/10 backdrop-blur-xl p-6 rounded-3xl w-full max-w-md text-center space-y-4">
-            <h2 className="text-xl font-bold text-yellow-300">
-              Pague com PIX
-            </h2>
+        <div className="w-full max-w-md">
+          <input
+            type="number"
+            value={valor ?? ""}
+            onChange={(e) => setValor(Number(e.target.value))}
+            className="mt-2 w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white"
+            placeholder="Digite um valor"
+          />
+        </div>
 
-            <p className="text-sm">{status}</p>
-
-            <img
-              src={`data:image/png;base64,${qrBase64}`}
-              alt="QR Code PIX"
-              className="mx-auto w-64 h-64 bg-white p-2 rounded-xl"
-            />
-
-            {copyPaste && (
-              <>
-                <textarea
-                  readOnly
-                  value={copyPaste}
-                  className="w-full p-3 rounded-xl bg-black/30 text-white text-xs"
-                />
-
-                <button
-                  onClick={copiarCodigo}
-                  className="w-full bg-yellow-400 text-blue-900 font-bold py-3 rounded-xl"
-                >
-                  📋 Copiar código PIX
-                </button>
-              </>
-            )}
-          </div>
-        )}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={gerarPix}
+          disabled={loading}
+          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl"
+        >
+          {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
+        </motion.button>
       </main>
 
       <NavBottom />
