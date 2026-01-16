@@ -64,22 +64,35 @@ export default function MeusBilhetes() {
   }, [userId]);
 
   // =========================
-  // HELPERS
+  // HELPERS (REGRA CORRETA)
   // =========================
   function isPremiado(b: any) {
     return b.status === "PREMIADO" || b.premiado === true;
   }
 
+  /**
+   * Bilhete é válido ATÉ quarta-feira às 17:00
+   */
+  function isDentroDoPrazo(b: any) {
+    if (!b.sorteioData) return false;
+
+    const data = new Date(b.sorteioData);
+    data.setHours(17, 0, 0, 0); // ⏰ 17:00 em ponto
+
+    return Date.now() < data.getTime();
+  }
+
   function isVisivel(b: any) {
+    // 🔒 Premiado nunca some
     if (isPremiado(b)) return true;
 
-    // ✅ regra correta:
-    // pago + status ativo = visível
+    // ⏳ Pago + dentro do prazo
     if (
       b.pago === true &&
       (b.status === "ATIVO" ||
         b.status === "ATIVO_ATUAL" ||
-        b.status === "ATIVO_PROXIMO")
+        b.status === "ATIVO_PROXIMO") &&
+      isDentroDoPrazo(b)
     ) {
       return true;
     }
@@ -100,7 +113,7 @@ export default function MeusBilhetes() {
       <header className="text-center pt-6 pb-2">
         <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
         <p className="text-sm text-blue-100">
-          Bilhetes do sorteio atual
+          Bilhetes válidos até quarta-feira às 17h
         </p>
       </header>
 
