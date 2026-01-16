@@ -4,7 +4,22 @@ import { prisma } from "../lib/prisma";
 const router = express.Router();
 
 /**
+ * =====================================================
+ * 🔧 UTIL — calcula quarta-feira às 17h do sorteio
+ * =====================================================
+ */
+function calcularValidade(sorteioData: Date): Date {
+  const d = new Date(sorteioData);
+
+  // força quarta-feira
+  d.setHours(17, 0, 0, 0);
+  return d;
+}
+
+/**
+ * =====================================================
  * ❌ CRIAÇÃO DIRETA DE BILHETE BLOQUEADA
+ * =====================================================
  */
 router.post("/criar", async (_req, res) => {
   return res.status(400).json({
@@ -14,9 +29,9 @@ router.post("/criar", async (_req, res) => {
 });
 
 /**
- * ============================
+ * =====================================================
  * ADMIN — BILHETES DO SORTEIO ATUAL
- * ============================
+ * =====================================================
  */
 router.get("/admin/sorteio-atual", async (_req, res) => {
   try {
@@ -63,10 +78,10 @@ router.get("/admin/sorteio-atual", async (_req, res) => {
 });
 
 /**
- * ============================
+ * =====================================================
  * LISTAR BILHETES — APP (ROTA PRINCIPAL)
- * ============================
  * Header: x-user-id
+ * =====================================================
  */
 router.get("/meus", async (req, res) => {
   try {
@@ -76,12 +91,37 @@ router.get("/meus", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
+    const agora = new Date();
+
     const bilhetes = await prisma.bilhete.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
-    return res.json(bilhetes);
+    const normalizados = bilhetes.map((b) => {
+      const validoAte = b.sorteioData
+        ? calcularValidade(new Date(b.sorteioData))
+        : null;
+
+      let status = b.status;
+
+      // 🔥 regra FINAL: passou das 17h → VENCIDO
+      if (
+        validoAte &&
+        agora.getTime() > validoAte.getTime() &&
+        status !== "PREMIADO"
+      ) {
+        status = "VENCIDO";
+      }
+
+      return {
+        ...b,
+        status,
+        validoAte,
+      };
+    });
+
+    return res.json(normalizados);
   } catch (err) {
     console.error("Erro listar bilhetes:", err);
     return res.status(500).json({ error: "Erro interno" });
@@ -89,9 +129,9 @@ router.get("/meus", async (req, res) => {
 });
 
 /**
- * ============================
+ * =====================================================
  * LISTAR BILHETES — DEBUG
- * ============================
+ * =====================================================
  */
 router.get("/listar/:userId", async (req, res) => {
   const userId = Number(req.params.userId);
