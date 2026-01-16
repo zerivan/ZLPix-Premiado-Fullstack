@@ -17,13 +17,9 @@ export default function MeusBilhetes() {
       if (!stored) return null;
 
       const parsed = JSON.parse(stored);
+      if (parsed?.id) return String(parsed.id);
+      if (parsed?.user?.id) return String(parsed.user.id);
 
-      if (parsed && (parsed.id || parsed.userId || parsed._id)) {
-        return String(parsed.id ?? parsed.userId ?? parsed._id);
-      }
-      if (parsed.user && (parsed.user.id || parsed.user.userId)) {
-        return String(parsed.user.id ?? parsed.user.userId);
-      }
       return null;
     } catch {
       return null;
@@ -41,30 +37,15 @@ export default function MeusBilhetes() {
       });
 
       setBilhetes(res.data || []);
-    } catch (e) {
-      console.log("Erro ao carregar bilhetes:", e);
-    }
+    } catch {}
   }
 
   useEffect(() => {
     loadBilhetes();
   }, [userId]);
 
-  useEffect(() => {
-    function onFocus() {
-      if (document.visibilityState === "visible") {
-        loadBilhetes();
-      }
-    }
-
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      document.removeEventListener("visibilitychange", onFocus);
-    };
-  }, [userId]);
-
   // =========================
-  // HELPERS (REGRA FINAL)
+  // HELPERS
   // =========================
   function isPremiado(b: any) {
     return b.status === "PREMIADO" || b.premiado === true;
@@ -72,47 +53,23 @@ export default function MeusBilhetes() {
 
   function isDentroDoPrazo(b: any) {
     if (!b.sorteioData) return false;
-
-    const limite = new Date(b.sorteioData);
-    limite.setHours(17, 0, 0, 0); // quarta-feira às 17h
-
-    return Date.now() < limite.getTime();
+    const d = new Date(b.sorteioData);
+    d.setHours(17, 0, 0, 0);
+    return Date.now() < d.getTime();
   }
 
   function isVisivel(b: any) {
     if (isPremiado(b)) return true;
-
-    if (
-      b.pago === true &&
-      (b.status === "ATIVO" ||
-        b.status === "ATIVO_ATUAL" ||
-        b.status === "ATIVO_PROXIMO") &&
-      isDentroDoPrazo(b)
-    ) {
-      return true;
-    }
-
+    if (b.pago && isDentroDoPrazo(b)) return true;
     return false;
   }
 
   const bilhetesVisiveis = bilhetes.filter(isVisivel);
-
   const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
     if (filtro === "premiados") return isPremiado(b);
     if (filtro === "pendentes") return !b.pago;
     return true;
   });
-
-  function formatarDataHora(dt?: string) {
-    if (!dt) return "-";
-    return new Date(dt).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -123,56 +80,45 @@ export default function MeusBilhetes() {
         </p>
       </header>
 
-      <div className="flex justify-center gap-3 mt-4 mb-5">
-        {["todos", "premiados", "pendentes"].map((tipo) => (
-          <button
-            key={tipo}
-            onClick={() => setFiltro(tipo)}
-            className={`px-4 py-2 rounded-full font-semibold text-sm transition ${
-              filtro === tipo
-                ? tipo === "premiados"
-                  ? "bg-blue-500 text-white"
-                  : tipo === "pendentes"
-                  ? "bg-green-500 text-white"
-                  : "bg-yellow-400 text-blue-900"
-                : "bg-white/10 text-white hover:bg-white/20"
-            }`}
+      <main className="px-4 max-w-lg mx-auto space-y-4 pb-10 mt-6">
+        {bilhetesFiltrados.map((b: any) => (
+          <div
+            key={b.id}
+            className="relative overflow-hidden bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
           >
-            {tipo === "todos"
-              ? "Todos"
-              : tipo === "premiados"
-              ? "Premiados"
-              : "Pendentes"}
-          </button>
-        ))}
-      </div>
+            {/* 🟡 MARCA D'ÁGUA */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-white/5 text-4xl font-extrabold rotate-[-20deg] select-none">
+                ZLPIX PREMIADO
+              </span>
+            </div>
 
-      <main className="px-4 max-w-lg mx-auto space-y-4 pb-10">
-        {bilhetesFiltrados.length === 0 ? (
-          <p className="text-center text-white/70 mt-10">
-            Nenhum bilhete disponível no momento.
-          </p>
-        ) : (
-          bilhetesFiltrados.map((b: any) => (
-            <div
-              key={b.id}
-              className="bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
-            >
+            {/* 🔲 QR ILUSTRATIVO */}
+            <div className="absolute top-4 right-4 w-14 h-14 border-2 border-white/30 rounded-md grid grid-cols-3 grid-rows-3 gap-[2px] p-1 opacity-40">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`${
+                    i % 2 === 0 ? "bg-white/60" : "bg-transparent"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* CONTEÚDO */}
+            <div className="relative">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h2 className="font-bold text-lg text-yellow-300">
                     Bilhete #{b.id}
                   </h2>
                   <p className="text-xs text-blue-100">
-                    Criado em: {formatarDataHora(b.createdAt)}
+                    Criado em:{" "}
+                    {new Date(b.createdAt).toLocaleString("pt-BR")}
                   </p>
                   <p className="text-xs text-blue-100">
                     Sorteio:{" "}
-                    {b.sorteioData
-                      ? `${new Date(b.sorteioData).toLocaleDateString(
-                          "pt-BR"
-                        )} às 17:00`
-                      : "-"}
+                    {new Date(b.sorteioData).toLocaleString("pt-BR")}
                   </p>
                 </div>
 
@@ -180,38 +126,30 @@ export default function MeusBilhetes() {
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     isPremiado(b)
                       ? "bg-blue-500 text-white"
-                      : b.pago
-                      ? "bg-green-500 text-white"
-                      : "bg-yellow-400 text-blue-900"
+                      : "bg-green-500 text-white"
                   }`}
                 >
-                  {isPremiado(b)
-                    ? "Premiado"
-                    : b.pago
-                    ? "Pago"
-                    : "Pendente"}
+                  {isPremiado(b) ? "Premiado" : "Pago"}
                 </span>
               </div>
 
               <div className="flex gap-2 mb-3">
-                {(b.dezenas ? b.dezenas.split(",") : []).map(
-                  (n: string, i: number) => (
-                    <span
-                      key={i}
-                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
-                    >
-                      {n}
-                    </span>
-                  )
-                )}
+                {b.dezenas.split(",").map((n: string, i: number) => (
+                  <span
+                    key={i}
+                    className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
+                  >
+                    {n}
+                  </span>
+                ))}
               </div>
 
               <p className="text-sm text-green-400 font-semibold">
                 R$ {Number(b.valor).toFixed(2)}
               </p>
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </main>
 
       <NavBottom />
