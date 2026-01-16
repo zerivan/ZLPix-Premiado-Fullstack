@@ -77,43 +77,4 @@ router.get("/listar/:userId", async (req, res) => {
   res.json({ bilhetes });
 });
 
-/**
- * ============================
- * PAGAR COM SALDO
- * ============================
- */
-router.post("/pagar-com-saldo", async (req, res) => {
-  const { userId, dezenas, valorTotal } = req.body;
-  const valor = Number(valorTotal) || 2;
-
-  const wallet = await prisma.wallet.findFirst({ where: { userId } });
-  if (!wallet || Number(wallet.saldo) < valor) {
-    return res.status(400).json({ error: "Saldo insuficiente." });
-  }
-
-  const now = new Date();
-  const sorteioData = now;
-
-  const dezenasStr = dezenas.join(",");
-
-  const bilhete = await prisma.$transaction(async (tx) => {
-    await tx.wallet.update({
-      where: { id: wallet.id },
-      data: { saldo: { decrement: valor } },
-    });
-
-    return tx.bilhete.create({
-      data: {
-        userId,
-        dezenas: dezenasStr,
-        valor,
-        pago: true,
-        sorteioData,
-      },
-    });
-  });
-
-  res.json({ ok: true, bilheteId: bilhete.id });
-});
-
 export default router;
