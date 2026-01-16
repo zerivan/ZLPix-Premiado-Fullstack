@@ -44,9 +44,6 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
-  // =========================
-  // HELPERS
-  // =========================
   function isPremiado(b: any) {
     return b.status === "PREMIADO" || b.premiado === true;
   }
@@ -64,12 +61,7 @@ export default function MeusBilhetes() {
     return false;
   }
 
-  const bilhetesVisiveis = bilhetes.filter(isVisivel);
-  const bilhetesFiltrados = bilhetesVisiveis.filter((b) => {
-    if (filtro === "premiados") return isPremiado(b);
-    if (filtro === "pendentes") return !b.pago;
-    return true;
-  });
+  const bilhetesFiltrados = bilhetes.filter(isVisivel);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -86,41 +78,50 @@ export default function MeusBilhetes() {
             key={b.id}
             className="relative overflow-hidden bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
           >
-            {/* 🟡 MARCA D'ÁGUA */}
+            {/* 🔒 MARCA D’ÁGUA DE FUNDO */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-white/5 text-4xl font-extrabold rotate-[-20deg] select-none">
+              <span className="text-white/5 text-6xl font-extrabold tracking-widest rotate-[-25deg] select-none">
                 ZLPIX PREMIADO
               </span>
             </div>
 
-            {/* 🔲 QR ILUSTRATIVO */}
-            <div className="absolute top-4 right-4 w-14 h-14 border-2 border-white/30 rounded-md grid grid-cols-3 grid-rows-3 gap-[2px] p-1 opacity-40">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`${
-                    i % 2 === 0 ? "bg-white/60" : "bg-transparent"
-                  }`}
-                />
-              ))}
+            {/* 🏷️ TIMBRE SUPERIOR */}
+            <div className="relative mb-3 text-center">
+              <span className="text-yellow-300 text-lg font-extrabold tracking-wide">
+                ZLPIX PREMIADO
+              </span>
             </div>
 
             {/* CONTEÚDO */}
             <div className="relative">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h2 className="font-bold text-lg text-yellow-300">
-                    Bilhete #{b.id}
-                  </h2>
-                  <p className="text-xs text-blue-100">
-                    Criado em:{" "}
-                    {new Date(b.createdAt).toLocaleString("pt-BR")}
-                  </p>
-                  <p className="text-xs text-blue-100">
-                    Sorteio:{" "}
-                    {new Date(b.sorteioData).toLocaleString("pt-BR")}
-                  </p>
-                </div>
+              <div className="mb-2">
+                <h2 className="font-bold text-lg text-yellow-300">
+                  Bilhete #{b.id}
+                </h2>
+                <p className="text-xs text-blue-100">
+                  Criado em: {new Date(b.createdAt).toLocaleString("pt-BR")}
+                </p>
+                <p className="text-xs text-blue-100">
+                  Sorteio: {new Date(b.sorteioData).toLocaleString("pt-BR")}
+                </p>
+              </div>
+
+              <div className="flex gap-2 mb-4">
+                {b.dezenas.split(",").map((n: string, i: number) => (
+                  <span
+                    key={i}
+                    className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
+                  >
+                    {n}
+                  </span>
+                ))}
+              </div>
+
+              {/* RODAPÉ — VALOR + STATUS ALINHADOS */}
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-sm text-green-400 font-semibold">
+                  R$ {Number(b.valor).toFixed(2)}
+                </p>
 
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -132,21 +133,6 @@ export default function MeusBilhetes() {
                   {isPremiado(b) ? "Premiado" : "Pago"}
                 </span>
               </div>
-
-              <div className="flex gap-2 mb-3">
-                {b.dezenas.split(",").map((n: string, i: number) => (
-                  <span
-                    key={i}
-                    className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
-                  >
-                    {n}
-                  </span>
-                ))}
-              </div>
-
-              <p className="text-sm text-green-400 font-semibold">
-                R$ {Number(b.valor).toFixed(2)}
-              </p>
             </div>
           </div>
         ))}
