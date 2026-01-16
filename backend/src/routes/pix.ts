@@ -1,4 +1,3 @@
-// backend/src/routes/pix.ts
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -10,9 +9,9 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 // =====================================================
-// 🧾 PIX — PAGAMENTO DE BILHETES (COM SALDO OU PIX)
+// 🧾 PIX — PAGAMENTO DE BILHETES (PURO, SEM CARTEIRA)
 // =====================================================
-router.post("/create-bilhete", async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const { userId, amount, description, bilhetes } = req.body;
 
@@ -28,66 +27,27 @@ router.post("/create-bilhete", async (req, res) => {
     const uid = Number(userId);
     const total = Number(amount);
 
-    // Usuário
+    if (!uid || Number.isNaN(uid)) {
+      return res.status(400).json({ error: "userId inválido." });
+    }
+
     const user = await prisma.users.findUnique({
       where: { id: uid },
       select: { email: true, name: true },
     });
+
     if (!user?.email) {
       return res.status(400).json({ error: "Usuário inválido." });
     }
 
-    // Carteira
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId: uid },
-    });
-
-    // ============================
-    // 💳 PAGAMENTO COM SALDO
-    // ============================
-    if (wallet && Number(wallet.saldo) >= total) {
-      // debita saldo
-      await prisma.wallet.update({
-        where: { id: wallet.id },
-        data: {
-          saldo: {
-            decrement: total,
-          },
-        },
-      });
-
-      // cria transação como PAGA
-      const tx = await prisma.transacao.create({
-        data: {
-          userId: uid,
-          valor: total,
-          status: "paid",
-          metadata: {
-            type: "BILHETE",
-            source: "WALLET",
-            bilhetes,
-          },
-        },
-      });
-
-      return res.json({
-        paid: true,
-        method: "wallet",
-        transacaoId: tx.id,
-      });
-    }
-
-    // ============================
-    // 🧾 SEM SALDO → PIX
-    // ============================
+    // cria transação PENDENTE (bilhete)
     const tx = await prisma.transacao.create({
       data: {
         userId: uid,
         valor: total,
         status: "pending",
         metadata: {
-          type: "BILHETE",
-          source: "PIX",
+          tipo: "bilhete",
           bilhetes,
         },
       },
@@ -120,7 +80,9 @@ router.post("/create-bilhete", async (req, res) => {
     });
 
     const mpJson: any = await resp.json();
+
     if (!resp.ok) {
+      console.error("Erro Mercado Pago:", mpJson);
       return res.status(502).json(mpJson);
     }
 
@@ -129,8 +91,7 @@ router.post("/create-bilhete", async (req, res) => {
       data: {
         mpPaymentId: String(mpJson.id),
         metadata: {
-          type: "BILHETE",
-          source: "PIX",
+          tipo: "bilhete",
           bilhetes,
           mpResponse: mpJson,
         },
@@ -138,7 +99,6 @@ router.post("/create-bilhete", async (req, res) => {
     });
 
     return res.json({
-      paid: false,
       payment_id: String(mpJson.id),
       qr_code_base64:
         mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
@@ -146,13 +106,13 @@ router.post("/create-bilhete", async (req, res) => {
         mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
     });
   } catch (err) {
-    console.error("pix/create-bilhete erro:", err);
+    console.error("pix/create erro:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
 // =====================================================
-// 💰 PIX — DEPÓSITO NA CARTEIRA
+// 💰 PIX — DEPÓSITO NA CARTEIRA (ISOLADO)
 // =====================================================
 router.post("/create-deposito", async (req, res) => {
   try {
@@ -165,10 +125,15 @@ router.post("/create-deposito", async (req, res) => {
     const uid = Number(userId);
     const total = Number(amount);
 
+    if (!uid || Number.isNaN(uid)) {
+      return res.status(400).json({ error: "userId inválido." });
+    }
+
     const user = await prisma.users.findUnique({
       where: { id: uid },
       select: { email: true, name: true },
     });
+
     if (!user?.email) {
       return res.status(400).json({ error: "Usuário inválido." });
     }
@@ -179,7 +144,7 @@ router.post("/create-deposito", async (req, res) => {
         valor: total,
         status: "pending",
         metadata: {
-          type: "DEPOSITO",
+          tipo: "deposito",
         },
       },
     });
@@ -187,6 +152,10 @@ router.post("/create-deposito", async (req, res) => {
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
+
+    if (!mpToken) {
+      return res.status(500).json({ error: "MP token ausente" });
+    }
 
     const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
       method: "POST",
@@ -207,14 +176,18 @@ router.post("/create-deposito", async (req, res) => {
     });
 
     const mpJson: any = await resp.json();
-    if (!resp.ok) return res.status(502).json(mpJson);
+
+    if (!resp.ok) {
+      console.error("Erro MP depósito:", mpJson);
+      return res.status(502).json(mpJson);
+    }
 
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
         mpPaymentId: String(mpJson.id),
         metadata: {
-          type: "DEPOSITO",
+          tipo: "deposito",
           mpResponse: mpJson,
         },
       },
