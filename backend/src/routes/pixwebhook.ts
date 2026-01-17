@@ -1,4 +1,3 @@
-// backend/src/routes/pixwebhook.ts
 import express, { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -23,17 +22,9 @@ function getNextWednesday(): Date {
 }
 
 /**
- * Decide data do sorteio conforme regra das 17h
+ * Regra das 17h
  */
 function definirSorteio(): Date {
-  const agora = new Date();
-  const dia = agora.getDay(); // quarta = 3
-  const hora = agora.getHours();
-
-  if (dia === 3 && hora >= 17) {
-    return getNextWednesday();
-  }
-
   return getNextWednesday();
 }
 
@@ -75,9 +66,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.resource?.id ||
       payload?.id ||
       payload?.payment_id ||
-      payload?.topicData?.id ||
-      payload?.data?.object?.id ||
-      payload?.data?.payment?.id ||
       null;
 
     if (!paymentId) return res.status(200).send("ok");
@@ -91,11 +79,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     const transacao = await prisma.transacao.findFirst({
       where: {
-        OR: [
-          { mpPaymentId: String(paymentId) },
-          { mpPaymentId: String(payload?.resource) },
-          { mpPaymentId: String(payload?.id) },
-        ],
+        mpPaymentId: String(paymentId),
       },
     });
 
@@ -108,69 +92,97 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
-    // =========================================
-    // 💰 DEPÓSITO EM CARTEIRA
-    // =========================================
-    if (metadata["tipo"] === "deposito") {
-      await prisma.wallet.updateMany({
-        where: { userId: transacao.userId },
-        data: {
-          saldo: {
-            increment: Number(transacao.valor),
+    /**
+     * =========================================
+     * 💰 DEPÓSITO DE CARTEIRA (ISOLADO)
+     * =========================================
+     */
+    if (
+      metadata["tipo"] === "deposito" &&
+      metadata["origem"] === "wallet"
+    ) {
+      await prisma.$transaction([
+        prisma.wallet.updateMany({
+          where: { userId: transacao.userId },
+          data: {
+            saldo: {
+              increment: Number(transacao.valor),
+            },
           },
-        },
-      });
+        }),
+        prisma.transacao.update({
+          where: { id: transacao.id },
+          data: { status: "paid" },
+        }),
+      ]);
 
-      await prisma.transacao.update({
-        where: { id: transacao.id },
-        data: { status: "paid" },
+      return res.status(200).send("ok");
+    }
+
+    /**
+     * =========================================
+     * 🎟️ CRIAÇÃO DE BILHETES (EXCLUSIVO)
+     * =========================================
+     */
+    if (
+      metadata["tipo"] === "bilhete" &&
+      metadata["origem"] === "aposta"
+    ) {
+      const bilhetesRaw = Array.isArray(metadata["bilhetes"])
+        ? metadata["bilhetes"]
+        : [];
+
+      const sorteioData = definirSorteio();
+
+      await prisma.$transaction(async (db) => {
+        await db.transacao.update({
+          where: { id: transacao.id },
+          data: { status: "paid" },
+        });
+
+        for (const item of bilhetesRaw) {
+          let dezenas = "";
+          let valor =
+            Number(transacao.valor) /
+            Math.max(bilhetesRaw.length, 1);
+
+          if (typeof item === "string") {
+            dezenas = item;
+          } else if (typeof item === "object" && item !== null) {
+            dezenas = String((item as any).dezenas ?? "");
+            if ((item as any).valor !== undefined) {
+              valor = Number((item as any).valor);
+            }
+          }
+
+          if (!dezenas) continue;
+
+          await db.bilhete.create({
+            data: {
+              userId: transacao.userId,
+              transacaoId: transacao.id,
+              dezenas,
+              valor,
+              pago: true,
+              sorteioData,
+              status: "ATIVO",
+            },
+          });
+        }
       });
 
       return res.status(200).send("ok");
     }
 
-    // =========================================
-    // 🎟️ CRIAÇÃO DE BILHETES (FONTE ÚNICA)
-    // =========================================
-    const bilhetesRaw = Array.isArray(metadata["bilhetes"])
-      ? metadata["bilhetes"]
-      : [];
-
-    const sorteioData = definirSorteio();
-
-    await prisma.$transaction(async (db) => {
-      await db.transacao.update({
-        where: { id: transacao.id },
-        data: { status: "paid" },
-      });
-
-      for (const item of bilhetesRaw) {
-        let dezenas = "";
-        let valor = Number(transacao.valor) / Math.max(bilhetesRaw.length, 1);
-
-        if (typeof item === "string") {
-          dezenas = item;
-        } else if (typeof item === "object" && item !== null) {
-          const obj = item as Record<string, any>;
-          dezenas = String(obj.dezenas ?? "");
-          if (obj.valor !== undefined) {
-            valor = Number(obj.valor);
-          }
-        }
-
-        if (!dezenas) continue;
-
-        await db.bilhete.create({
-          data: {
-            userId: transacao.userId,
-            transacaoId: transacao.id,
-            dezenas,
-            valor,
-            pago: true,
-            sorteioData,
-          },
-        });
-      }
+    /**
+     * =========================================
+     * ❌ PIX DESCONHECIDO / LEGADO
+     * =========================================
+     * Apenas marca como pago e ignora
+     */
+    await prisma.transacao.update({
+      where: { id: transacao.id },
+      data: { status: "paid" },
     });
 
     return res.status(200).send("ok");
