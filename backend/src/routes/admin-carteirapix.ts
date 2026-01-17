@@ -34,7 +34,7 @@ router.post("/pix", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    // 1️⃣ cria transação PENDENTE (tipo depósito)
+    // 1️⃣ cria transação PENDENTE (DEPÓSITO EXCLUSIVO DA CARTEIRA)
     const tx = await prisma.transacao.create({
       data: {
         userId: uid,
@@ -42,6 +42,7 @@ router.post("/pix", async (req, res) => {
         status: "pending",
         metadata: {
           tipo: "deposito",
+          origem: "wallet", // 🔒 BLINDAGEM DEFINITIVA
         },
       },
     });
@@ -83,12 +84,14 @@ router.post("/pix", async (req, res) => {
       return res.status(502).json(mpJson);
     }
 
+    // 2️⃣ atualiza transação com retorno do MP (mantendo blindagem)
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
         mpPaymentId: String(mpJson.id),
         metadata: {
           tipo: "deposito",
+          origem: "wallet", // 🔒 BLINDAGEM MANTIDA
           mpResponse: mpJson,
         },
       },
