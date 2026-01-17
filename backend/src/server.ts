@@ -1,5 +1,6 @@
 // src/server.ts
 import { seedAppContentPages } from "./seed/appcontent.seed";
+import { prisma } from "./lib/prisma";
 
 import "dotenv/config";
 import express from "express";
@@ -11,7 +12,7 @@ import federalRoutes from "./routes/federal";
 import pixRoutes from "./routes/pix";
 import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
-import walletRoutes from "./routes/wallet"; // ✅ RESTAURADO
+import walletRoutes from "./routes/wallet";
 
 // 🆕 PUSH NOTIFICATIONS
 import pushRoutes from "./routes/push";
@@ -23,7 +24,7 @@ import adminRelatoriosRoutes from "./routes/admin-relatorios";
 import adminCmsRoutes from "./routes/admin-cms";
 import adminApuracaoRoutes from "./routes/admin-apuracao";
 import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
-import adminSaquesRoutes from "./routes/admin-saques"; // ✅ NOVO
+import adminSaquesRoutes from "./routes/admin-saques";
 
 // ✅ IA CHATGPT DO PAINEL ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
@@ -78,7 +79,7 @@ app.use("/api/federal", federalRoutes);
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
-app.use("/wallet", walletRoutes); // ✅ HOME / CARTEIRA (USUÁRIO)
+app.use("/wallet", walletRoutes);
 
 // ============================
 // PUSH NOTIFICATIONS (APP)
@@ -127,6 +128,53 @@ if (process.env.RUN_SEED === "true") {
     console.error("❌ Erro ao executar seed AppContent:", err);
   });
 }
+
+// ============================
+// 🧹 LIMPEZA AUTOMÁTICA DO HISTÓRICO DA CARTEIRA
+// - Remove depósitos e saques com mais de 40 dias
+// - NÃO remove bilhetes
+// - NÃO altera saldo
+// ============================
+async function limparHistoricoCarteira() {
+  try {
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 40);
+
+    const result = await prisma.transacao.deleteMany({
+      where: {
+        createdAt: { lt: limite },
+        OR: [
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "deposito",
+            },
+          },
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "saque",
+            },
+          },
+        ],
+      },
+    });
+
+    if (result.count > 0) {
+      console.log(
+        `🧹 Histórico da carteira limpo: ${result.count} registros removidos`
+      );
+    }
+  } catch (err) {
+    console.error("❌ Erro ao limpar histórico da carteira:", err);
+  }
+}
+
+// executa ao subir o servidor
+limparHistoricoCarteira();
+
+// executa automaticamente a cada 24h
+setInterval(limparHistoricoCarteira, 24 * 60 * 60 * 1000);
 
 // START
 app.listen(PORT, "0.0.0.0", () => {
