@@ -1,4 +1,3 @@
-// src/pages/carteira.tsx
 import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
@@ -119,15 +118,22 @@ export default function Carteira() {
     }
   }
 
-  // ✅ DOWNLOAD DO HISTÓRICO (CORREÇÃO REAL)
   function baixarHistorico() {
-    const userId = localStorage.getItem("USER_ID");
-    if (!userId) return;
-
     const API_URL = import.meta.env.VITE_API_URL;
-    const url = `${API_URL}/wallet/historico/download?userId=${userId}`;
+    window.open(`${API_URL}/wallet/historico/download`, "_blank");
+  }
 
-    window.open(url, "_blank");
+  // 🧹 LIMPA HISTÓRICO (FRONT-END ONLY)
+  function limparHistorico() {
+    if (!transacoes.length) return;
+
+    const ok = confirm(
+      "Isso irá limpar o histórico exibido na tela.\nO saldo não será alterado.\nDeseja continuar?"
+    );
+
+    if (!ok) return;
+
+    setTransacoes([]);
   }
 
   useEffect(() => {
@@ -227,16 +233,25 @@ export default function Carteira() {
             Recomendamos baixar seus registros.
           </p>
 
-          <button
-            onClick={baixarHistorico}
-            className="w-full py-2 rounded bg-white/20 text-white text-sm font-semibold"
-          >
-            ⬇️ Baixar histórico (CSV)
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={baixarHistorico}
+              className="flex-1 py-2 rounded bg-white/20 text-white text-sm font-semibold"
+            >
+              ⬇️ Baixar histórico
+            </button>
+
+            <button
+              onClick={limparHistorico}
+              className="flex-1 py-2 rounded bg-red-500/70 text-white text-sm font-semibold"
+            >
+              🧹 Limpar histórico
+            </button>
+          </div>
 
           {transacoes.length === 0 && (
             <p className="text-sm text-blue-100">
-              Nenhuma movimentação ainda.
+              Nenhuma movimentação para exibir.
             </p>
           )}
 
