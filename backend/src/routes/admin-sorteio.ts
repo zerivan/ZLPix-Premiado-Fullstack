@@ -1,6 +1,7 @@
+// backend/src/routes/admin-sorteio.ts
 import { Router } from "express";
-import { processarSorteio } from "../services/sorteio-processor";
 import { prisma } from "../lib/prisma";
+import { processarSorteio } from "../services/sorteio-processor";
 
 const router = Router();
 
@@ -8,32 +9,40 @@ const router = Router();
  * ======================================
  * POST /api/admin/sorteio/processar
  * ======================================
- * 🔒 DISPARO MANUAL (ADMIN)
- * ⚠️ USO CONTROLADO (TESTE / EMERGÊNCIA)
+ * 🔒 Disparo manual do sorteio (ADMIN)
+ * - Varre bilhetes ATIVOS
+ * - Respeita data do sorteio
+ * - Se não houver sorteio válido, retorna feedback claro
  */
 router.post("/processar", async (_req, res) => {
   try {
     const agora = new Date();
 
-    const bilhete = await prisma.bilhete.findFirst({
+    // 🔍 Busca bilhetes ATIVOS cujo sorteio já venceu
+    const bilheteElegivel = await prisma.bilhete.findFirst({
       where: {
         status: "ATIVO",
         sorteioData: { lte: agora },
       },
     });
 
-    if (!bilhete) {
+    // 🚫 Nenhum sorteio válido no momento
+    if (!bilheteElegivel) {
       return res.json({
-        ok: false,
-        message: "Nenhum sorteio pendente encontrado",
+        ok: true,
+        status: "NO_DRAW",
+        message:
+          "Nenhum sorteio válido para a data atual. O sistema verificou os bilhetes e não encontrou sorteio elegível.",
       });
     }
 
-    const sorteioData = bilhete.sorteioData;
+    const sorteioData = bilheteElegivel.sorteioData;
 
-    const dezenasFake = ["12", "45", "98"];
+    // ⚠️ Resultado ainda será oficial no futuro
+    // Aqui usamos placeholder apenas para validação do fluxo
+    const dezenasFake = ["00", "11", "22"];
 
-    const premioAgg = await prisma.bilhete.aggregate({
+    const premioTotal = await prisma.bilhete.aggregate({
       where: {
         status: "ATIVO",
         sorteioData,
@@ -43,19 +52,18 @@ router.post("/processar", async (_req, res) => {
       },
     });
 
-    const premioTotal = Number(premioAgg._sum.valor || 0);
-
     await processarSorteio(sorteioData, {
       dezenas: dezenasFake,
-      premioTotal,
+      premioTotal: Number(premioTotal._sum.valor || 0),
     });
 
     return res.json({
       ok: true,
-      message: "Sorteio processado manualmente com sucesso",
+      status: "DRAW_PROCESSED",
+      message: "Sorteio processado com sucesso",
     });
   } catch (err) {
-    console.error("❌ Erro admin sorteio:", err);
+    console.error("❌ Erro ao processar sorteio:", err);
     return res.status(500).json({
       ok: false,
       error: "Erro interno ao processar sorteio",
