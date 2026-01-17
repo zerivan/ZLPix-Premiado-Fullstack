@@ -1,3 +1,4 @@
+// src/pages/carteira.tsx
 import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
@@ -34,13 +35,6 @@ export default function Carteira() {
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // === SAQUE ===
-  const [mostrarSaque, setMostrarSaque] = useState(false);
-  const [valorSaque, setValorSaque] = useState("");
-  const [pixKey, setPixKey] = useState("");
-  const [statusSaque, setStatusSaque] = useState<string | null>(null);
-  const [loadingSaque, setLoadingSaque] = useState(false);
-
   // === HISTÓRICO ===
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
@@ -62,13 +56,6 @@ export default function Carteira() {
   }
 
   async function carregarTransacoes() {
-    // 🔒 Se usuário limpou o histórico, não carrega novamente
-    const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
-    if (hidden === "true") {
-      setTransacoes([]);
-      return;
-    }
-
     try {
       const userId = localStorage.getItem("USER_ID");
       if (!userId) return;
@@ -77,51 +64,17 @@ export default function Carteira() {
         headers: { "x-user-id": userId },
       });
 
-      setTransacoes(res.data || []);
+      const lista = res.data || [];
+
+      // 🔓 SE EXISTE NOVA TRANSAÇÃO, REATIVA HISTÓRICO
+      if (lista.length > 0) {
+        localStorage.removeItem("WALLET_HIST_HIDDEN");
+      }
+
+      const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
+      setTransacoes(hidden === "true" ? [] : lista);
     } catch {
       setTransacoes([]);
-    }
-  }
-
-  async function solicitarSaque() {
-    setLoadingSaque(true);
-    setStatusSaque(null);
-
-    try {
-      const userId = localStorage.getItem("USER_ID");
-      if (!userId) {
-        setStatusSaque("Usuário não identificado");
-        return;
-      }
-
-      const valor = Number(valorSaque);
-      if (!valor || valor <= 0) {
-        setStatusSaque("Valor inválido");
-        return;
-      }
-
-      if (valor > saldo) {
-        setStatusSaque("Saldo insuficiente");
-        return;
-      }
-
-      await api.post(
-        "/wallet/saque",
-        { valor, pixKey },
-        { headers: { "x-user-id": userId } }
-      );
-
-      setStatusSaque("Saque solicitado. Em análise.");
-      setValorSaque("");
-      setPixKey("");
-      setMostrarSaque(false);
-
-      await carregarSaldo();
-      await carregarTransacoes();
-    } catch {
-      setStatusSaque("Erro ao solicitar saque");
-    } finally {
-      setLoadingSaque(false);
     }
   }
 
@@ -130,7 +83,6 @@ export default function Carteira() {
     window.open(`${API_URL}/wallet/historico/download`, "_blank");
   }
 
-  // 🧹 LIMPAR HISTÓRICO (PERSISTENTE)
   function limparHistorico() {
     if (!transacoes.length) return;
 
@@ -176,14 +128,6 @@ export default function Carteira() {
           >
             ➕ ADICIONAR CRÉDITOS
           </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-yellow-400 text-blue-900 font-extrabold"
-            onClick={() => setMostrarSaque(true)}
-          >
-            💸 SACAR CRÉDITOS
-          </motion.button>
         </div>
 
         {/* HISTÓRICO */}
@@ -191,11 +135,6 @@ export default function Carteira() {
           <h3 className="text-lg font-bold text-yellow-300">
             📜 Histórico da Carteira
           </h3>
-
-          <p className="text-xs text-blue-100">
-            O histórico da carteira fica disponível por até <b>40 dias</b>.
-            Recomendamos baixar seus registros.
-          </p>
 
           <div className="flex gap-2">
             <button
