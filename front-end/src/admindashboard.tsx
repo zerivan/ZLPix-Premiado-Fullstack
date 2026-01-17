@@ -10,6 +10,7 @@ import {
   FileText,
   Brain,
   Banknote,
+  PlayCircle,
 } from "lucide-react";
 
 // IMPORTS DE CONTROLE (SEM EDITOR)
@@ -52,6 +53,16 @@ export default function AdminDashboard() {
   function handleLogout() {
     localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
     navigate("/admin", { replace: true });
+  }
+
+  /**
+   * 🔘 BOTÃO DE DISPARO (SEM LÓGICA AINDA)
+   * Aqui será ligado o processamento automático do sorteio
+   */
+  function handleProcessarSorteio() {
+    alert(
+      "Disparo de sorteio ainda não configurado.\nEsta função será conectada ao backend."
+    );
   }
 
   const tabs: { id: TabId; label: string; icon: any }[] = [
@@ -98,16 +109,27 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between">
+      <header className="bg-indigo-600 text-white px-4 py-4 flex justify-between items-center">
         <h1 className="font-bold">Painel Administrativo</h1>
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 px-3 py-2 rounded flex items-center gap-2"
-        >
-          <LogOut size={16} />
-          Sair
-        </button>
+        <div className="flex gap-3">
+          {/* 🔘 BOTÃO DE DISPARO DO SORTEIO */}
+          <button
+            onClick={handleProcessarSorteio}
+            className="bg-green-500 px-3 py-2 rounded flex items-center gap-2"
+          >
+            <PlayCircle size={16} />
+            Processar Sorteio
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 px-3 py-2 rounded flex items-center gap-2"
+          >
+            <LogOut size={16} />
+            Sair
+          </button>
+        </div>
       </header>
 
       <nav className="bg-white border-b px-3 py-2 flex gap-2 overflow-x-auto">
