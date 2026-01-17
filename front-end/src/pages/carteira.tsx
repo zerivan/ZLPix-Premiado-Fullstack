@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+// src/pages/carteira.tsx
+import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
@@ -118,12 +119,13 @@ export default function Carteira() {
     }
   }
 
+  // ✅ DOWNLOAD DO HISTÓRICO (CORREÇÃO REAL)
   function baixarHistorico() {
     const userId = localStorage.getItem("USER_ID");
     if (!userId) return;
 
     const API_URL = import.meta.env.VITE_API_URL;
-    const url = `${API_URL}/wallet/historico/download`;
+    const url = `${API_URL}/wallet/historico/download?userId=${userId}`;
 
     window.open(url, "_blank");
   }
@@ -247,9 +249,7 @@ export default function Carteira() {
                 className="bg-white/10 rounded-xl p-3 text-sm"
               >
                 <div className="flex justify-between font-bold">
-                  <span>
-                    {isSaque ? "💸 Saque" : "➕ Depósito"}
-                  </span>
+                  <span>{isSaque ? "💸 Saque" : "➕ Depósito"}</span>
                   <span className="text-yellow-300">
                     R$ {Number(t.valor).toFixed(2)}
                   </span>
