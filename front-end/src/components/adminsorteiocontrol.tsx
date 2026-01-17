@@ -35,13 +35,14 @@ export default function AdminSorteioControl() {
         }
       );
 
-      // ✅ MOSTRA EXATAMENTE O QUE O BACKEND RESPONDER
-      if (res.data?.status === "NO_DRAW") {
-        setStatus(`ℹ️ ${res.data.message}`);
-      } else if (res.data?.status === "DRAW_PROCESSED") {
-        setStatus("✅ Sorteio processado com sucesso.");
-      } else if (res.data?.message) {
-        setStatus(res.data.message);
+      // 🔥 AQUI ESTAVA O ERRO
+      // Agora usamos a resposta REAL do backend
+      if (res.data?.message) {
+        setStatus(
+          res.data.status === "NO_DRAW"
+            ? `ℹ️ ${res.data.message}`
+            : `✅ ${res.data.message}`
+        );
       } else {
         setStatus("⚠️ Resposta inesperada do servidor.");
       }
