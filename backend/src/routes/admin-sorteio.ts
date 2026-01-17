@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { processarSorteio } from "../services/sorteio-processor";
+import { prisma } from "../lib/prisma";
 
 const router = Router();
 
@@ -7,51 +8,54 @@ const router = Router();
  * ======================================
  * POST /api/admin/sorteio/processar
  * ======================================
- * 🔒 DISPARO OFICIAL DO SORTEIO (ADMIN)
- *
- * Espera no body:
- * {
- *   sorteioData: "2026-01-24T20:00:00.000Z",
- *   dezenas: ["12", "45", "98"],
- *   premioTotal: 1000
- * }
+ * 🔒 DISPARO MANUAL (ADMIN)
+ * ⚠️ USO CONTROLADO (TESTE / EMERGÊNCIA)
  */
-router.post("/processar", async (req, res) => {
+router.post("/processar", async (_req, res) => {
   try {
-    const { sorteioData, dezenas, premioTotal } = req.body || {};
+    const agora = new Date();
 
-    // 🔐 VALIDAÇÕES BÁSICAS
-    if (
-      !sorteioData ||
-      !Array.isArray(dezenas) ||
-      dezenas.length === 0 ||
-      !premioTotal ||
-      Number(premioTotal) <= 0
-    ) {
-      return res.status(400).json({
+    const bilhete = await prisma.bilhete.findFirst({
+      where: {
+        status: "ATIVO",
+        sorteioData: { lte: agora },
+      },
+    });
+
+    if (!bilhete) {
+      return res.json({
         ok: false,
-        error: "Dados do sorteio inválidos",
+        message: "Nenhum sorteio pendente encontrado",
       });
     }
 
-    console.log("🎯 Sorteio disparado pelo ADMIN:", {
-      sorteioData,
-      dezenas,
-      premioTotal,
+    const sorteioData = bilhete.sorteioData;
+
+    const dezenasFake = ["12", "45", "98"];
+
+    const premioAgg = await prisma.bilhete.aggregate({
+      where: {
+        status: "ATIVO",
+        sorteioData,
+      },
+      _sum: {
+        valor: true,
+      },
     });
 
-    // 🚀 PROCESSAMENTO REAL
-    await processarSorteio(new Date(sorteioData), {
-      dezenas,
-      premioTotal: Number(premioTotal),
+    const premioTotal = Number(premioAgg._sum.valor || 0);
+
+    await processarSorteio(sorteioData, {
+      dezenas: dezenasFake,
+      premioTotal,
     });
 
     return res.json({
       ok: true,
-      message: "Sorteio processado com sucesso",
+      message: "Sorteio processado manualmente com sucesso",
     });
   } catch (err) {
-    console.error("❌ Erro ao processar sorteio:", err);
+    console.error("❌ Erro admin sorteio:", err);
     return res.status(500).json({
       ok: false,
       error: "Erro interno ao processar sorteio",
