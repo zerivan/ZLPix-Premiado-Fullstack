@@ -84,6 +84,7 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/historico
  * =========================
+ * Últimos 40 dias
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -92,9 +93,13 @@ router.get("/historico", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 40);
+
     const historico = await prisma.transacao.findMany({
       where: {
         userId,
+        createdAt: { gte: limite },
         OR: [
           { metadata: { path: ["tipo"], equals: "deposito" } },
           { metadata: { path: ["tipo"], equals: "saque" } },
@@ -113,6 +118,68 @@ router.get("/historico", async (req, res) => {
     return res.json(historico);
   } catch (err) {
     console.error("Erro wallet/historico:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/historico/download
+ * =========================
+ * 📥 Download CSV (40 dias)
+ */
+router.get("/historico/download", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 40);
+
+    const transacoes = await prisma.transacao.findMany({
+      where: {
+        userId,
+        createdAt: { gte: limite },
+        OR: [
+          { metadata: { path: ["tipo"], equals: "deposito" } },
+          { metadata: { path: ["tipo"], equals: "saque" } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        createdAt: true,
+        valor: true,
+        status: true,
+        metadata: true,
+      },
+    });
+
+    let csv = "Data,Tipo,Valor,Status,Chave PIX\n";
+
+    for (const t of transacoes) {
+      const meta: any = t.metadata || {};
+      const tipo = meta.tipo === "saque" ? "Saque" : "Depósito";
+      const pixKey = meta.pixKey ? `"${meta.pixKey}"` : "";
+
+      csv +=
+        `"${new Date(t.createdAt).toLocaleString("pt-BR")}",` +
+        `"${tipo}",` +
+        `"${Number(t.valor).toFixed(2)}",` +
+        `"${t.status}",` +
+        `${pixKey}\n`;
+    }
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=historico-carteira-zlpix.csv"
+    );
+
+    return res.send(csv);
+  } catch (err) {
+    console.error("Erro download histórico:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -236,7 +303,6 @@ router.post("/saque", async (req, res) => {
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
-    // 🚫 BLOQUEIA SAQUE DUPLICADO (PENDING)
     const saquePendente = await prisma.transacao.findFirst({
       where: {
         userId,
