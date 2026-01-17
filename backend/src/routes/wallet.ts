@@ -84,7 +84,7 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/historico
  * =========================
- * Últimos 40 dias
+ * Últimos 40 dias — APENAS CARTEIRA
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -100,10 +100,10 @@ router.get("/historico", async (req, res) => {
       where: {
         userId,
         createdAt: { gte: limite },
-        OR: [
-          { metadata: { path: ["tipo"], equals: "deposito" } },
-          { metadata: { path: ["tipo"], equals: "saque" } },
-        ],
+        metadata: {
+          path: ["origem"],
+          equals: "wallet", // ✅ FILTRO CORRETO
+        },
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -142,10 +142,10 @@ router.get("/historico/download", async (req, res) => {
       where: {
         userId,
         createdAt: { gte: limite },
-        OR: [
-          { metadata: { path: ["tipo"], equals: "deposito" } },
-          { metadata: { path: ["tipo"], equals: "saque" } },
-        ],
+        metadata: {
+          path: ["origem"],
+          equals: "wallet", // ✅ MESMO FILTRO
+        },
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -187,7 +187,6 @@ router.get("/historico/download", async (req, res) => {
 /**
  * =========================
  * POST /wallet/depositar
- * PIX EXCLUSIVO DA CARTEIRA
  * =========================
  */
 router.post("/depositar", async (req, res) => {
