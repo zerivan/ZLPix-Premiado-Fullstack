@@ -1,4 +1,3 @@
-// backend/src/services/sorteio-processor.ts
 import { prisma } from "../lib/prisma";
 
 /**
@@ -11,11 +10,12 @@ import { prisma } from "../lib/prisma";
  * - Divide prêmio
  * - Credita carteira
  * - Atualiza status dos bilhetes
+ * - REGISTRA auditoria completa
  */
 
 type ResultadoOficial = {
-  dezenas: string[]; // dezenas sorteadas (ex: ["12","45","98"])
-  premioTotal: number; // valor total do prêmio
+  dezenas: string[]; // ex: ["12","45","98"]
+  premioTotal: number;
 };
 
 export async function processarSorteio(
@@ -56,7 +56,11 @@ export async function processarSorteio(
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
-      data: { status: "NAO_PREMIADO" },
+      data: {
+        status: "NAO_PREMIADO",
+        resultadoFederal: resultado.dezenas.join(","),
+        apuradoEm: new Date(),
+      },
     });
 
     console.log("Sorteio sem ganhadores. Prêmio acumulado.");
@@ -68,6 +72,9 @@ export async function processarSorteio(
   // ============================
   const valorPorGanhador =
     resultado.premioTotal / ganhadores.length;
+
+  const resultadoStr = resultado.dezenas.join(",");
+  const agora = new Date();
 
   // ============================
   // 5️⃣ PROCESSAR GANHADORES
@@ -95,15 +102,19 @@ export async function processarSorteio(
             origem: "sorteio",
             bilheteId: bilhete.id,
             sorteioData,
+            resultado: resultadoStr,
           },
         },
       }),
 
-      // 🏆 MARCAR BILHETE COMO PREMIADO
+      // 🏆 MARCAR BILHETE COMO PREMIADO (COM AUDITORIA)
       prisma.bilhete.update({
         where: { id: bilhete.id },
         data: {
           status: "PREMIADO",
+          premioValor: valorPorGanhador,
+          resultadoFederal: resultadoStr,
+          apuradoEm: agora,
         },
       }),
     ]);
@@ -120,7 +131,11 @@ export async function processarSorteio(
       status: "ATIVO",
       id: { notIn: idsGanhadores },
     },
-    data: { status: "NAO_PREMIADO" },
+    data: {
+      status: "NAO_PREMIADO",
+      resultadoFederal: resultadoStr,
+      apuradoEm: agora,
+    },
   });
 
   console.log(
