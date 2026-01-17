@@ -84,8 +84,6 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/historico
  * =========================
- * HISTÓRICO LIMPO DA CARTEIRA
- * (somente depósitos e saques)
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -98,18 +96,8 @@ router.get("/historico", async (req, res) => {
       where: {
         userId,
         OR: [
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "deposito",
-            },
-          },
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "saque",
-            },
-          },
+          { metadata: { path: ["tipo"], equals: "deposito" } },
+          { metadata: { path: ["tipo"], equals: "saque" } },
         ],
       },
       orderBy: { createdAt: "desc" },
@@ -132,6 +120,7 @@ router.get("/historico", async (req, res) => {
 /**
  * =========================
  * POST /wallet/depositar
+ * PIX EXCLUSIVO DA CARTEIRA
  * =========================
  */
 router.post("/depositar", async (req, res) => {
@@ -143,31 +132,25 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
-
-    if (!wallet) {
-      await prisma.wallet.create({
-        data: {
-          userId,
-          saldo: 0,
-          createdAt: new Date(),
-        },
-      });
-    }
-
     const user = await prisma.users.findUnique({
       where: { id: userId },
       select: { email: true, name: true },
     });
 
+    if (!user?.email) {
+      return res.status(400).json({ error: "Usuário inválido" });
+    }
+
+    // 🔒 Transação EXCLUSIVA da carteira
     const tx = await prisma.transacao.create({
       data: {
         userId,
         valor: Number(valor),
         status: "pending",
-        metadata: { tipo: "deposito" },
+        metadata: {
+          tipo: "deposito",
+          origem: "wallet", // 🔥 blindagem total
+        },
       },
     });
 
@@ -179,23 +162,26 @@ router.post("/depositar", async (req, res) => {
       return res.status(500).json({ error: "MP token ausente" });
     }
 
-    const resp = await fetchFn("https://api.mercadopago.com/v1/payments", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpToken}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": crypto.randomUUID(),
-      },
-      body: JSON.stringify({
-        transaction_amount: Number(valor),
-        description: "Depósito ZLPix",
-        payment_method_id: "pix",
-        payer: {
-          email: user?.email || "cliente@zlpix.com",
-          first_name: user?.name || "Cliente",
+    const resp = await fetchFn(
+      "https://api.mercadopago.com/v1/payments",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${mpToken}`,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": crypto.randomUUID(),
         },
-      }),
-    });
+        body: JSON.stringify({
+          transaction_amount: Number(valor),
+          description: "Depósito na Carteira ZLPix",
+          payment_method_id: "pix",
+          payer: {
+            email: user.email,
+            first_name: user.name || "Cliente",
+          },
+        }),
+      }
+    );
 
     const mpJson: any = await resp.json();
 
@@ -210,6 +196,7 @@ router.post("/depositar", async (req, res) => {
         mpPaymentId: String(mpJson.id),
         metadata: {
           tipo: "deposito",
+          origem: "wallet",
           mpResponse: mpJson,
         },
       },
@@ -257,6 +244,7 @@ router.post("/saque", async (req, res) => {
         status: "pending",
         metadata: {
           tipo: "saque",
+          origem: "wallet",
           pixKey: pixKey || null,
         },
       },
