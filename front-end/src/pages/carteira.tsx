@@ -1,253 +1,128 @@
-import React, { useEffect, useState } from "react";
-import NavBottom from "../components/navbottom";
-import { motion } from "framer-motion";
-import { api } from "../api/client";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-type Transacao = {
-  id: number;
-  valor: number;
-  status: string;
-  createdAt: string;
-  metadata?: {
-    tipo?: "deposito" | "saque";
-  };
-};
-
-function formatarDataHora(data: string) {
-  const d = new Date(data);
-  return (
-    d.toLocaleDateString("pt-BR") +
-    " às " +
-    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-  );
-}
-
-function traduzirStatus(status: string) {
-  if (status === "pending") return "Em análise";
-  if (status === "paid") return "Pago";
-  return status;
-}
-
-export default function Carteira() {
+export default function PixCarteira() {
+  const { state } = useLocation() as any;
   const navigate = useNavigate();
-  const [saldo, setSaldo] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  // === SAQUE ===
-  const [mostrarSaque, setMostrarSaque] = useState(false);
-  const [valorSaque, setValorSaque] = useState("");
-  const [pixKey, setPixKey] = useState("");
-  const [statusSaque, setStatusSaque] = useState<string | null>(null);
-  const [loadingSaque, setLoadingSaque] = useState(false);
+  const API = import.meta.env.VITE_API_URL as string;
 
-  // === HISTÓRICO ===
-  const [transacoes, setTransacoes] = useState<Transacao[]>([]);
+  const paymentId: string = state?.paymentId ?? "";
+  const qr_code_base64: string = state?.qr_code_base64 ?? "";
+  const copy_paste: string = state?.copy_paste ?? "";
+  const amount: number = state?.amount ?? 0;
 
-  async function carregarSaldo() {
+  const [status, setStatus] = useState("Aguardando pagamento...");
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ======================
+  // 📋 Copiar PIX
+  // ======================
+  async function copiarPix() {
     try {
-      const userId = localStorage.getItem("USER_ID");
-      if (!userId) return;
-
-      const res = await api.get("/wallet/saldo", {
-        headers: { "x-user-id": userId },
-      });
-
-      setSaldo(Number(res.data?.saldo ?? 0));
+      await navigator.clipboard.writeText(copy_paste);
+      alert("Código PIX copiado!");
     } catch {
-      setSaldo(0);
-    } finally {
-      setLoading(false);
+      alert("Não foi possível copiar o código PIX.");
     }
   }
 
-  async function carregarTransacoes() {
-    // 🔒 Se usuário limpou o histórico, não carrega novamente
-    const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
-    if (hidden === "true") {
-      setTransacoes([]);
-      return;
-    }
-
-    try {
-      const userId = localStorage.getItem("USER_ID");
-      if (!userId) return;
-
-      const res = await api.get("/wallet/historico", {
-        headers: { "x-user-id": userId },
-      });
-
-      setTransacoes(res.data || []);
-    } catch {
-      setTransacoes([]);
-    }
-  }
-
-  async function solicitarSaque() {
-    setLoadingSaque(true);
-    setStatusSaque(null);
-
-    try {
-      const userId = localStorage.getItem("USER_ID");
-      if (!userId) {
-        setStatusSaque("Usuário não identificado");
-        return;
-      }
-
-      const valor = Number(valorSaque);
-      if (!valor || valor <= 0) {
-        setStatusSaque("Valor inválido");
-        return;
-      }
-
-      if (valor > saldo) {
-        setStatusSaque("Saldo insuficiente");
-        return;
-      }
-
-      await api.post(
-        "/wallet/saque",
-        { valor, pixKey },
-        { headers: { "x-user-id": userId } }
-      );
-
-      setStatusSaque("Saque solicitado. Em análise.");
-      setValorSaque("");
-      setPixKey("");
-      setMostrarSaque(false);
-
-      await carregarSaldo();
-      await carregarTransacoes();
-    } catch {
-      setStatusSaque("Erro ao solicitar saque");
-    } finally {
-      setLoadingSaque(false);
-    }
-  }
-
-  function baixarHistorico() {
-    const API_URL = import.meta.env.VITE_API_URL;
-    window.open(`${API_URL}/wallet/historico/download`, "_blank");
-  }
-
-  // 🧹 LIMPAR HISTÓRICO (PERSISTENTE)
-  function limparHistorico() {
-    if (!transacoes.length) return;
-
-    const ok = confirm(
-      "Isso irá ocultar o histórico da carteira.\nO saldo não será alterado.\nDeseja continuar?"
-    );
-
-    if (!ok) return;
-
-    localStorage.setItem("WALLET_HIST_HIDDEN", "true");
-    setTransacoes([]);
-  }
-
+  // ======================
+  // 🔄 Polling do pagamento
+  // ======================
   useEffect(() => {
-    carregarSaldo();
-    carregarTransacoes();
-  }, []);
+    if (!paymentId) return;
 
+    pollingRef.current = setInterval(async () => {
+      try {
+        const resp = await axios.get(
+          `${API}/pix/payment-status/${paymentId}`
+        );
+
+        const paymentStatus =
+          typeof resp.data?.status === "string"
+            ? resp.data.status.toLowerCase()
+            : "";
+
+        if (paymentStatus === "paid") {
+          setStatus("Pagamento confirmado! 🎉");
+
+          // 🧠 MUITO IMPORTANTE:
+          // Se houve depósito, o histórico deve voltar a aparecer
+          localStorage.removeItem("WALLET_HIST_HIDDEN");
+
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+          }
+
+          // 🔥 Volta para carteira e força reload
+          setTimeout(() => {
+            navigate("/carteira", { replace: true });
+            window.location.reload();
+          }, 1200);
+        }
+      } catch {
+        // erro de rede não trava
+      }
+    }, 4000);
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [paymentId, API, navigate]);
+
+  // ======================
+  // UI
+  // ======================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-      <header className="text-center py-6 border-b border-white/10 shadow-md">
-        <h1 className="text-2xl font-extrabold text-yellow-300">
-          💰 Minha Carteira
-        </h1>
-        <p className="text-blue-100 text-sm mt-1">
-          Deposite, saque e acompanhe seu saldo
-        </p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col items-center p-6">
+      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">
+        💰 Depósito via PIX
+      </h1>
 
-      <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8">
-        <div className="bg-white/10 p-6 rounded-3xl border border-yellow-300/20 shadow-xl w-full max-w-md text-center">
-          <p className="text-blue-100 text-sm">Saldo disponível</p>
-          <h2 className="text-5xl font-extrabold text-yellow-300 mt-2">
-            {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
-          </h2>
+      <p className="mb-4 text-sm text-white/80">{status}</p>
+
+      <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-4">
+        <div className="text-sm text-blue-100">
+          Valor do depósito
         </div>
 
-        <div className="w-full max-w-md space-y-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-green-400 text-blue-900 font-extrabold"
-            onClick={() => navigate("/add-creditos")}
-          >
-            ➕ ADICIONAR CRÉDITOS
-          </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-yellow-400 text-blue-900 font-extrabold"
-            onClick={() => setMostrarSaque(true)}
-          >
-            💸 SACAR CRÉDITOS
-          </motion.button>
+        <div className="text-2xl font-extrabold text-yellow-300">
+          R$ {amount.toFixed(2)}
         </div>
 
-        {/* HISTÓRICO */}
-        <div className="w-full max-w-md space-y-3 text-left">
-          <h3 className="text-lg font-bold text-yellow-300">
-            📜 Histórico da Carteira
-          </h3>
+        {qr_code_base64 && (
+          <img
+            src={`data:image/png;base64,${qr_code_base64}`}
+            alt="QR Code PIX"
+            className="mx-auto w-56 h-56 rounded-xl bg-white p-2"
+          />
+        )}
 
-          <p className="text-xs text-blue-100">
-            O histórico da carteira fica disponível por até <b>40 dias</b>.
-            Recomendamos baixar seus registros.
-          </p>
-
-          <div className="flex gap-2">
-            <button
-              onClick={baixarHistorico}
-              className="flex-1 py-2 rounded bg-white/20 text-white text-sm font-semibold"
-            >
-              ⬇️ Baixar histórico
-            </button>
-
-            <button
-              onClick={limparHistorico}
-              className="flex-1 py-2 rounded bg-red-500/70 text-white text-sm font-semibold"
-            >
-              🧹 Limpar histórico
-            </button>
-          </div>
-
-          {transacoes.length === 0 && (
-            <p className="text-sm text-blue-100">
-              Nenhuma movimentação para exibir.
+        {copy_paste && (
+          <>
+            <p className="text-xs break-all bg-black/30 p-3 rounded-xl">
+              {copy_paste}
             </p>
-          )}
 
-          {transacoes.map((t) => {
-            const isSaque = t.metadata?.tipo === "saque";
+            <button
+              onClick={copiarPix}
+              className="w-full bg-yellow-400 text-blue-900 font-bold py-3 rounded-xl"
+            >
+              📋 Copiar código PIX
+            </button>
+          </>
+        )}
+      </div>
 
-            return (
-              <div
-                key={t.id}
-                className="bg-white/10 rounded-xl p-3 text-sm"
-              >
-                <div className="flex justify-between font-bold">
-                  <span>{isSaque ? "💸 Saque" : "➕ Depósito"}</span>
-                  <span className="text-yellow-300">
-                    R$ {Number(t.valor).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="text-blue-100 text-xs">
-                  {formatarDataHora(t.createdAt)}
-                </div>
-
-                <div className="text-blue-200 text-xs">
-                  Status: {traduzirStatus(t.status)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </main>
-
-      <NavBottom />
+      <p className="mt-4 text-xs text-white/70 text-center">
+        Após o pagamento, o saldo será creditado automaticamente
+        <br />
+        e você será redirecionado para sua carteira.
+      </p>
     </div>
   );
 }
