@@ -4,21 +4,71 @@ import { processarSorteio } from "../services/sorteio-processor";
 
 /**
  * ============================================
- * ⏰ CRON AUTOMÁTICO DE SORTEIO (SEGURO)
+ * ⏰ CRON AUTOMÁTICO DE SORTEIO (OFICIAL)
  * ============================================
- * - Roda automaticamente
+ * - Busca resultado REAL da Loteria Federal
  * - Executa UMA ÚNICA VEZ por sorteio
  * - Protegido contra duplicação
  */
 
+/**
+ * 🔢 BUSCA RESULTADO DA LOTERIA FEDERAL
+ * Fonte pública (Caixa / agregadores oficiais)
+ */
 async function buscarResultadoFederal(): Promise<string[]> {
-  /**
-   * ⚠️ SIMULAÇÃO CONTROLADA
-   * Futuro:
-   * - API Loteria Federal
-   * - ou input via admin
-   */
-  return ["12", "45", "98"];
+  try {
+    /**
+     * ⚠️ Endpoint público mais estável (agregador)
+     * Não exige token
+     */
+    const resp = await fetch(
+      "https://loteriascaixa-api.herokuapp.com/api/federal/latest"
+    );
+
+    if (!resp.ok) {
+      throw new Error("Falha ao buscar resultado federal");
+    }
+
+    const json: any = await resp.json();
+
+    /**
+     * Estrutura típica:
+     * json.premios = [{ bilhete: "12345" }, ...]
+     */
+    if (!json?.premios || !Array.isArray(json.premios)) {
+      throw new Error("Formato inesperado do resultado");
+    }
+
+    /**
+     * 🔎 Extrai dezenas finais (ex: últimas 2 ou 3)
+     * Ajuste conforme sua regra oficial
+     */
+    const dezenas = json.premios
+      .map((p: any) =>
+        String(p.bilhete).slice(-2) // 🔥 dezenas finais
+      )
+      .filter(Boolean);
+
+    if (!dezenas.length) {
+      throw new Error("Nenhuma dezena válida encontrada");
+    }
+
+    console.log("🎯 Resultado Federal obtido:", dezenas);
+
+    return dezenas;
+  } catch (err) {
+    console.error(
+      "⚠️ Erro ao buscar resultado federal. Usando fallback seguro.",
+      err
+    );
+
+    /**
+     * 🔒 FALLBACK CONTROLADO
+     * Evita travar o sistema
+     * NÃO paga prêmio incorreto
+     */
+    return [];
+  }
 }
 
 cron.schedule("*/10 * * * *", async () => {
@@ -26,9 +76,7 @@ cron.schedule("*/10 * * * *", async () => {
     const agora = new Date();
 
     /**
-     * 🔒 PASSO 1 — TENTAR “TRAVAR” UM SORTEIO
-     * Atualiza UM bilhete ATIVO → PROCESSANDO
-     * Se não atualizar ninguém, outro processo já pegou
+     * 🔒 PASSO 1 — TRAVA DE SORTEIO
      */
     const lock = await prisma.bilhete.updateMany({
       where: {
@@ -41,12 +89,10 @@ cron.schedule("*/10 * * * *", async () => {
       take: 1,
     });
 
-    if (lock.count === 0) {
-      return;
-    }
+    if (lock.count === 0) return;
 
     /**
-     * 🔍 PASSO 2 — IDENTIFICAR QUAL SORTEIO FOI TRAVADO
+     * 🔍 IDENTIFICA SORTEIO
      */
     const bilhete = await prisma.bilhete.findFirst({
       where: {
@@ -56,18 +102,24 @@ cron.schedule("*/10 * * * *", async () => {
       orderBy: { sorteioData: "asc" },
     });
 
-    if (!bilhete) {
-      return;
-    }
+    if (!bilhete) return;
 
     const sorteioData = bilhete.sorteioData;
 
     console.log("⏳ Executando sorteio automático:", sorteioData);
 
     /**
-     * 🔢 RESULTADO OFICIAL
+     * 🔢 RESULTADO REAL
      */
     const dezenas = await buscarResultadoFederal();
+
+    /**
+     * ⚠️ Se não houver resultado válido, aborta
+     */
+    if (!dezenas.length) {
+      console.warn("🚫 Sorteio abortado: resultado federal indisponível");
+      return;
+    }
 
     /**
      * 💰 SOMA DO PRÊMIO
@@ -83,7 +135,7 @@ cron.schedule("*/10 * * * *", async () => {
     });
 
     /**
-     * 🎯 PROCESSAMENTO PRINCIPAL
+     * 🎯 PROCESSA SORTEIO
      */
     await processarSorteio(sorteioData, {
       dezenas,
