@@ -1,3 +1,4 @@
+// src/pages/add-creditos.tsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
@@ -16,6 +17,8 @@ export default function AddCreditos() {
   }
 
   async function gerarPix() {
+    if (loading) return;
+
     if (!valor || valor <= 0) {
       alert("Digite um valor válido.");
       return;
@@ -37,18 +40,25 @@ export default function AddCreditos() {
         { headers: { "x-user-id": userId } }
       );
 
-      // 👉 REDIRECIONA PARA TELA DEDICADA DE PAGAMENTO
+      const { paymentId, qr_code_base64, copy_paste } = res.data || {};
+
+      // 🔐 Blindagem
+      if (!paymentId) {
+        throw new Error("paymentId não retornado pelo backend");
+      }
+
+      // 👉 REDIRECIONA PARA TELA DE PAGAMENTO DA CARTEIRA
       navigate("/pix-carteira", {
         state: {
-          paymentId: res.data?.paymentId,
-          qr_code_base64: res.data?.qr_code_base64,
-          copy_paste: res.data?.copy_paste,
+          paymentId,
+          qr_code_base64,
+          copy_paste,
           amount: valor,
         },
         replace: true,
       });
-    } catch (e) {
-      console.error("Erro ao gerar PIX:", e);
+    } catch (err) {
+      console.error("Erro ao gerar PIX:", err);
       alert("Não foi possível gerar o PIX. Tente novamente.");
     } finally {
       setLoading(false);
@@ -98,7 +108,7 @@ export default function AddCreditos() {
           whileTap={{ scale: 0.95 }}
           onClick={gerarPix}
           disabled={loading}
-          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl"
+          className="w-full max-w-md py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-xl disabled:opacity-60"
         >
           {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
         </motion.button>
