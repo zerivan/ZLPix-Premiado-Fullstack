@@ -84,6 +84,7 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/historico
  * =========================
+ * ⏱️ Retorna SOMENTE os últimos 40 dias
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -92,9 +93,16 @@ router.get("/historico", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
+    // 📆 Limite de 40 dias
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 40);
+
     const historico = await prisma.transacao.findMany({
       where: {
         userId,
+        createdAt: {
+          gte: limite,
+        },
         OR: [
           { metadata: { path: ["tipo"], equals: "deposito" } },
           { metadata: { path: ["tipo"], equals: "saque" } },
@@ -120,7 +128,6 @@ router.get("/historico", async (req, res) => {
 /**
  * =========================
  * POST /wallet/depositar
- * PIX EXCLUSIVO DA CARTEIRA
  * =========================
  */
 router.post("/depositar", async (req, res) => {
@@ -141,7 +148,6 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    // 🔒 Transação EXCLUSIVA da carteira
     const tx = await prisma.transacao.create({
       data: {
         userId,
@@ -149,7 +155,7 @@ router.post("/depositar", async (req, res) => {
         status: "pending",
         metadata: {
           tipo: "deposito",
-          origem: "wallet", // 🔥 blindagem total
+          origem: "wallet",
         },
       },
     });
@@ -186,7 +192,6 @@ router.post("/depositar", async (req, res) => {
     const mpJson: any = await resp.json();
 
     if (!resp.ok) {
-      console.error("Erro MP depósito:", mpJson);
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
