@@ -10,7 +10,7 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 // ===============================
-// CRIAR PIX
+// CRIAR PIX — APENAS APOSTA
 // ===============================
 router.post("/create", async (req, res) => {
   try {
@@ -34,13 +34,17 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido." });
     }
 
-    // 1️⃣ cria transação pendente
+    // 1️⃣ cria transação pendente — BLINDADA
     const tx = await prisma.transacao.create({
       data: {
         userId: uid,
         valor: Number(amount),
         status: "pending",
-        metadata: { bilhetes },
+        metadata: {
+          tipo: "bilhete",        // 🔒 explícito
+          origem: "aposta",       // 🔒 explícito
+          bilhetes,               // dezenas selecionadas
+        },
       },
     });
 
@@ -88,7 +92,9 @@ router.post("/create", async (req, res) => {
       data: {
         mpPaymentId: paymentId,
         metadata: {
-          ...(tx.metadata as object),
+          tipo: "bilhete",
+          origem: "aposta",
+          bilhetes,
           mpResponse: mpJson,
         },
       },
@@ -108,14 +114,13 @@ router.post("/create", async (req, res) => {
 });
 
 // =====================================================
-// STATUS DO PAGAMENTO (CORRIGIDO)
+// STATUS DO PAGAMENTO (APENAS CONSULTA)
 // =====================================================
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
     if (!paymentId) return res.json({ status: "INVALID" });
 
-    // 1️⃣ tenta banco
     const tx = await prisma.transacao.findFirst({
       where: { mpPaymentId: paymentId },
     });
@@ -124,7 +129,6 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       return res.json({ status: "PAID" });
     }
 
-    // 2️⃣ consulta Mercado Pago
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
@@ -146,7 +150,6 @@ router.get("/payment-status/:paymentId", async (req, res) => {
     const mpJson: any = await resp.json();
 
     if (mpJson?.status === "approved" && tx) {
-      // 🔥 PONTO CRÍTICO: ATUALIZA O BACKEND
       await prisma.transacao.update({
         where: { id: tx.id },
         data: { status: "paid" },
