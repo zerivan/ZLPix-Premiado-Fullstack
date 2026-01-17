@@ -84,7 +84,6 @@ router.get("/saldo", async (req, res) => {
  * =========================
  * GET /wallet/historico
  * =========================
- * 🔒 Retorna apenas os ÚLTIMOS 40 DIAS
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -93,13 +92,9 @@ router.get("/historico", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const limite = new Date();
-    limite.setDate(limite.getDate() - 40);
-
     const historico = await prisma.transacao.findMany({
       where: {
         userId,
-        createdAt: { gte: limite },
         OR: [
           { metadata: { path: ["tipo"], equals: "deposito" } },
           { metadata: { path: ["tipo"], equals: "saque" } },
@@ -124,69 +119,8 @@ router.get("/historico", async (req, res) => {
 
 /**
  * =========================
- * GET /wallet/historico/download
- * =========================
- * 📥 Download CSV — últimos 40 dias
- */
-router.get("/historico/download", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Usuário não identificado" });
-    }
-
-    const limite = new Date();
-    limite.setDate(limite.getDate() - 40);
-
-    const transacoes = await prisma.transacao.findMany({
-      where: {
-        userId,
-        createdAt: { gte: limite },
-        OR: [
-          { metadata: { path: ["tipo"], equals: "deposito" } },
-          { metadata: { path: ["tipo"], equals: "saque" } },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        createdAt: true,
-        valor: true,
-        status: true,
-        metadata: true,
-      },
-    });
-
-    let csv = "Data,Tipo,Valor,Status,Chave PIX\n";
-
-    for (const t of transacoes) {
-      const meta: any = t.metadata || {};
-      const tipo = meta.tipo === "saque" ? "Saque" : "Depósito";
-      const pixKey = meta.pixKey ? `"${meta.pixKey}"` : "";
-
-      csv +=
-        `"${new Date(t.createdAt).toLocaleString("pt-BR")}",` +
-        `"${tipo}",` +
-        `"${Number(t.valor).toFixed(2)}",` +
-        `"${t.status}",` +
-        `${pixKey}\n`;
-    }
-
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=historico-carteira-zlpix.csv"
-    );
-
-    return res.send(csv);
-  } catch (err) {
-    console.error("Erro download histórico:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * =========================
  * POST /wallet/depositar
+ * PIX EXCLUSIVO DA CARTEIRA
  * =========================
  */
 router.post("/depositar", async (req, res) => {
@@ -251,6 +185,7 @@ router.post("/depositar", async (req, res) => {
     const mpJson: any = await resp.json();
 
     if (!resp.ok) {
+      console.error("Erro MP depósito:", mpJson);
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
@@ -299,6 +234,24 @@ router.post("/saque", async (req, res) => {
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
       return res.status(400).json({ error: "Saldo insuficiente" });
+    }
+
+    // 🚫 BLOQUEIA SAQUE DUPLICADO (PENDING)
+    const saquePendente = await prisma.transacao.findFirst({
+      where: {
+        userId,
+        status: "pending",
+        metadata: {
+          path: ["tipo"],
+          equals: "saque",
+        },
+      },
+    });
+
+    if (saquePendente) {
+      return res.status(400).json({
+        error: "Você já possui um saque em análise",
+      });
     }
 
     await prisma.transacao.create({
