@@ -1,10 +1,10 @@
-// src/server.ts
-import { seedAppContentPages } from "./seed/appcontent.seed";
-import { prisma } from "./lib/prisma";
-
+// backend/src/server.ts
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+
+// 🔥 IMPORTA O CRON DO SORTEIO (AUTO-EXECUÇÃO)
+import "./jobs/sorteio-cron";
 
 // ROTAS DO SITE
 import authRoutes from "./routes/auth";
@@ -14,10 +14,10 @@ import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
 import walletRoutes from "./routes/wallet";
 
-// 🆕 PUSH NOTIFICATIONS
+// PUSH
 import pushRoutes from "./routes/push";
 
-// ROTAS ADMIN (BANCO DE DADOS)
+// ROTAS ADMIN
 import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
 import adminRelatoriosRoutes from "./routes/admin-relatorios";
@@ -25,14 +25,13 @@ import adminCmsRoutes from "./routes/admin-cms";
 import adminApuracaoRoutes from "./routes/admin-apuracao";
 import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
 import adminSaquesRoutes from "./routes/admin-saques";
+import adminSorteioRoutes from "./routes/admin-sorteio"; // ✅ DISPARO MANUAL
 
-// ✅ IA CHATGPT DO PAINEL ADMIN
+// IA ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
 
-// 🆕 CMS PÚBLICO (APP / CLIENTE)
+// CMS
 import cmsPublicRoutes from "./routes/cms-public";
-
-// 🆕 CMS PREVIEW (IFRAME)
 import cmsPreviewRoutes from "./routes/cms-preview";
 
 // Middleware ADMIN
@@ -42,7 +41,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 // ============================
-// ✅ CORS — CORREÇÃO DEFINITIVA
+// CORS
 // ============================
 app.use(
   cors({
@@ -58,12 +57,12 @@ app.use(
   })
 );
 
-// 🔥 RESPONDE PREFLIGHT (CRÍTICO)
 app.options("*", cors());
-
 app.use(express.json());
 
+// ============================
 // HEALTHCHECK
+// ============================
 app.get("/", (_req, res) => {
   res.json({
     status: "ok",
@@ -72,7 +71,7 @@ app.get("/", (_req, res) => {
 });
 
 // ============================
-// ROTAS DO SITE (APP)
+// ROTAS APP
 // ============================
 app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
@@ -80,40 +79,25 @@ app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
-
-// ============================
-// PUSH NOTIFICATIONS (APP)
-// ============================
 app.use("/push", pushRoutes);
 
-// ============================
-// CMS PÚBLICO (APP / CLIENTE)
-// ============================
+// CMS público
 app.use("/api/cms/public", cmsPublicRoutes);
-
-// ============================
-// CMS PREVIEW (IFRAME)
-// ============================
 app.use("/api/cms", cmsPreviewRoutes);
 
 // ============================
-// ROTAS ADMIN (PROTEGIDAS)
+// ROTAS ADMIN
 // ============================
 app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
 app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
 app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes);
-app.use(
-  "/api/admin/configuracoes",
-  adminAuth,
-  adminConfiguracoesRoutes
-);
-
-// 🆕 SAQUES (ADMIN)
+app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
+app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
-// ✅ CHATGPT REAL DO PAINEL ADMIN
+// IA ADMIN
 app.use(
   "/api/admin/ia/chat",
   adminAuth,
@@ -121,62 +105,8 @@ app.use(
 );
 
 // ============================
-// SEED AUTOMÁTICO (PRODUÇÃO)
-// ============================
-if (process.env.RUN_SEED === "true") {
-  seedAppContentPages().catch((err) => {
-    console.error("❌ Erro ao executar seed AppContent:", err);
-  });
-}
-
-// ============================
-// 🧹 LIMPEZA AUTOMÁTICA DO HISTÓRICO DA CARTEIRA
-// - Remove depósitos e saques com mais de 40 dias
-// - NÃO remove bilhetes
-// - NÃO altera saldo
-// ============================
-async function limparHistoricoCarteira() {
-  try {
-    const limite = new Date();
-    limite.setDate(limite.getDate() - 40);
-
-    const result = await prisma.transacao.deleteMany({
-      where: {
-        createdAt: { lt: limite },
-        OR: [
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "deposito",
-            },
-          },
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "saque",
-            },
-          },
-        ],
-      },
-    });
-
-    if (result.count > 0) {
-      console.log(
-        `🧹 Histórico da carteira limpo: ${result.count} registros removidos`
-      );
-    }
-  } catch (err) {
-    console.error("❌ Erro ao limpar histórico da carteira:", err);
-  }
-}
-
-// executa ao subir o servidor
-limparHistoricoCarteira();
-
-// executa automaticamente a cada 24h
-setInterval(limparHistoricoCarteira, 24 * 60 * 60 * 1000);
-
 // START
+// ============================
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
