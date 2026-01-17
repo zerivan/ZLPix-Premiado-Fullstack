@@ -11,7 +11,7 @@ import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import Carteira from "../pages/carteira";
 import AddCreditos from "../pages/add-creditos";
-import PixCarteira from "../pages/pix-carteira"; // ✅ IMPORTADO
+import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
@@ -132,15 +132,8 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 💰 PIX DA CARTEIRA (CORREÇÃO CRÍTICA) */}
-      <Route
-        path="/pix-carteira"
-        element={
-          <PrivateRoute>
-            <PixCarteira />
-          </PrivateRoute>
-        }
-      />
+      {/* 💰 PIX DA CARTEIRA (SEM PRIVATE ROUTE) */}
+      <Route path="/pix-carteira" element={<PixCarteira />} />
 
       <Route
         path="/revisao"
