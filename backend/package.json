@@ -6,7 +6,6 @@
     "dev": "PRISMA_CLIENT_ENGINE_TYPE=wasm ts-node src/server.ts",
     "build": "PRISMA_CLIENT_ENGINE_TYPE=wasm npx prisma generate && tsc -p tsconfig.json",
     "start": "node dist/server.js",
-
     "push:test": "curl -X POST http://localhost:4000/push/send -H \"Content-Type: application/json\" -d '{\"userId\":1,\"title\":\"Teste ZLPix\",\"body\":\"Push funcionando 🎉\",\"url\":\"/meus-bilhetes\"}'"
   },
   "dependencies": {
@@ -20,7 +19,8 @@
     "openai": "^4.0.0",
     "firebase-admin": "^12.0.0",
     "nodemailer": "^6.9.8",
-    "sanitize-html": "^2.12.1"
+    "sanitize-html": "^2.12.1",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "2.4.2",
@@ -29,6 +29,7 @@
     "@types/jsonwebtoken": "9.0.6",
     "@types/node": "20.11.19",
     "@types/nodemailer": "^6.4.14",
+    "@types/node-cron": "^3.0.11",
     "prisma": "5.15.0",
     "ts-node": "10.9.2",
     "typescript": "5.6.3"
