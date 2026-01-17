@@ -1,14 +1,17 @@
-// src/pages/add-creditos.tsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
-import { useNavigate } from "react-router-dom";
 
 export default function AddCreditos() {
-  const navigate = useNavigate();
   const [valor, setValor] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 🔑 PIX GERADO
+  const [pixData, setPixData] = useState<{
+    qr_code_base64?: string;
+    copy_paste?: string;
+  } | null>(null);
 
   const valoresRapidos = [10, 20, 50, 100];
 
@@ -30,17 +33,16 @@ export default function AddCreditos() {
 
     try {
       setLoading(true);
+      setPixData(null);
 
-      // ✅ ROTA EXCLUSIVA DA CARTEIRA
-      await api.post(
+      // ✅ PIX EXCLUSIVO DA CARTEIRA
+      const res = await api.post(
         "/wallet/depositar",
         { valor },
         { headers: { "x-user-id": userId } }
       );
 
-      // ✅ NÃO navega para /pagamento (PIX de bilhete)
-      // ✅ Carteira cuida do próprio fluxo
-      navigate("/carteira", { replace: true });
+      setPixData(res.data);
     } catch (e) {
       console.error("Erro ao gerar PIX:", e);
       alert("Não foi possível gerar o PIX. Tente novamente.");
@@ -96,6 +98,37 @@ export default function AddCreditos() {
         >
           {loading ? "Gerando PIX..." : "⚡ GERAR PIX"}
         </motion.button>
+
+        {/* ===================== */}
+        {/* 🔲 PIX GERADO */}
+        {/* ===================== */}
+        {pixData && (
+          <div className="bg-black/50 p-6 rounded-2xl w-full max-w-md space-y-4 text-center">
+            <h3 className="text-lg font-bold text-yellow-300">
+              Pague com PIX
+            </h3>
+
+            {pixData.qr_code_base64 && (
+              <img
+                src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                alt="QR Code PIX"
+                className="mx-auto w-48 h-48 bg-white p-2 rounded"
+              />
+            )}
+
+            {pixData.copy_paste && (
+              <textarea
+                readOnly
+                value={pixData.copy_paste}
+                className="w-full p-2 rounded text-xs text-black"
+              />
+            )}
+
+            <p className="text-xs text-blue-100">
+              Após o pagamento, o saldo será liberado automaticamente.
+            </p>
+          </div>
+        )}
       </main>
 
       <NavBottom />
