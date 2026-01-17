@@ -4,56 +4,87 @@ import { processarSorteio } from "../services/sorteio-processor";
 
 /**
  * ============================================
- * ⏰ CRON AUTOMÁTICO DE SORTEIO
+ * ⏰ CRON AUTOMÁTICO DE SORTEIO (SEGURO)
  * ============================================
  * - Roda automaticamente
- * - Não depende de admin
- * - Executa sorteio apenas UMA vez
+ * - Executa UMA ÚNICA VEZ por sorteio
+ * - Protegido contra duplicação
  */
 
 async function buscarResultadoFederal(): Promise<string[]> {
   /**
    * ⚠️ SIMULAÇÃO CONTROLADA
-   * Aqui futuramente entra:
-   * - API da Loteria Federal
-   * - ou inserção manual no admin
+   * Futuro:
+   * - API Loteria Federal
+   * - ou input via admin
    */
-  return ["12", "45", "98"]; // placeholder seguro
+  return ["12", "45", "98"];
 }
 
 cron.schedule("*/10 * * * *", async () => {
   try {
     const agora = new Date();
 
-    // 🔍 Busca sorteios ATIVOS que já passaram da data
-    const bilhetesPendentes = await prisma.bilhete.findMany({
+    /**
+     * 🔒 PASSO 1 — TENTAR “TRAVAR” UM SORTEIO
+     * Atualiza UM bilhete ATIVO → PROCESSANDO
+     * Se não atualizar ninguém, outro processo já pegou
+     */
+    const lock = await prisma.bilhete.updateMany({
       where: {
         status: "ATIVO",
         sorteioData: { lte: agora },
       },
+      data: {
+        status: "PROCESSANDO",
+      },
       take: 1,
     });
 
-    if (!bilhetesPendentes.length) {
+    if (lock.count === 0) {
       return;
     }
 
-    const sorteioData = bilhetesPendentes[0].sorteioData;
+    /**
+     * 🔍 PASSO 2 — IDENTIFICAR QUAL SORTEIO FOI TRAVADO
+     */
+    const bilhete = await prisma.bilhete.findFirst({
+      where: {
+        status: "PROCESSANDO",
+        sorteioData: { lte: agora },
+      },
+      orderBy: { sorteioData: "asc" },
+    });
+
+    if (!bilhete) {
+      return;
+    }
+
+    const sorteioData = bilhete.sorteioData;
 
     console.log("⏳ Executando sorteio automático:", sorteioData);
 
+    /**
+     * 🔢 RESULTADO OFICIAL
+     */
     const dezenas = await buscarResultadoFederal();
 
+    /**
+     * 💰 SOMA DO PRÊMIO
+     */
     const premioTotal = await prisma.bilhete.aggregate({
       where: {
-        status: "ATIVO",
         sorteioData,
+        status: { in: ["ATIVO", "PROCESSANDO"] },
       },
       _sum: {
         valor: true,
       },
     });
 
+    /**
+     * 🎯 PROCESSAMENTO PRINCIPAL
+     */
     await processarSorteio(sorteioData, {
       dezenas,
       premioTotal: Number(premioTotal._sum.valor || 0),
