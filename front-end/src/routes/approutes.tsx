@@ -10,7 +10,8 @@ import MeusBilhetes from "../pages/meusbilhetes";
 import Resultado from "../pages/resultado";
 import Perfil from "../pages/perfil";
 import Carteira from "../pages/carteira";
-import AddCreditos from "../pages/add-creditos"; // ✅ IMPORTADO
+import AddCreditos from "../pages/add-creditos";
+import PixCarteira from "../pages/pix-carteira"; // ✅ IMPORTADO
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 
@@ -43,7 +44,9 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
     setReady(true);
   }, []);
 
-  if (!ready) return <div className="p-6">Verificando login...</div>;
+  if (!ready) {
+    return <div className="p-6">Verificando login...</div>;
+  }
 
   return isUserLoggedIn() ? children : <Navigate to="/login" replace />;
 }
@@ -73,6 +76,7 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/aposta"
         element={
@@ -81,6 +85,7 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/meus-bilhetes"
         element={
@@ -89,6 +94,7 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/resultado"
         element={
@@ -97,6 +103,7 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/perfil"
         element={
@@ -105,6 +112,7 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       <Route
         path="/carteira"
         element={
@@ -114,12 +122,22 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ✅ ADD CRÉDITOS (ROTA QUE FALTAVA) */}
+      {/* ➕ ADD CRÉDITOS */}
       <Route
         path="/add-creditos"
         element={
           <PrivateRoute>
             <AddCreditos />
+          </PrivateRoute>
+        }
+      />
+
+      {/* 💰 PIX DA CARTEIRA (CORREÇÃO CRÍTICA) */}
+      <Route
+        path="/pix-carteira"
+        element={
+          <PrivateRoute>
+            <PixCarteira />
           </PrivateRoute>
         }
       />
@@ -132,6 +150,8 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
+
+      {/* PIX DOS BILHETES */}
       <Route
         path="/pagamento"
         element={
