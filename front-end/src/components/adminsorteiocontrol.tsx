@@ -25,7 +25,7 @@ export default function AdminSorteioControl() {
 
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
-      await axios.post(
+      const res = await axios.post(
         "/api/admin/sorteio/processar",
         {},
         {
@@ -35,7 +35,16 @@ export default function AdminSorteioControl() {
         }
       );
 
-      setStatus("✅ Sorteio processado com sucesso.");
+      // ✅ MOSTRA EXATAMENTE O QUE O BACKEND RESPONDER
+      if (res.data?.status === "NO_DRAW") {
+        setStatus(`ℹ️ ${res.data.message}`);
+      } else if (res.data?.status === "DRAW_PROCESSED") {
+        setStatus("✅ Sorteio processado com sucesso.");
+      } else if (res.data?.message) {
+        setStatus(res.data.message);
+      } else {
+        setStatus("⚠️ Resposta inesperada do servidor.");
+      }
     } catch (err) {
       console.error(err);
       setStatus("❌ Erro ao processar o sorteio.");
