@@ -1,3 +1,4 @@
+// src/pages/pix-carteira.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -15,6 +16,13 @@ export default function PixCarteira() {
 
   const [status, setStatus] = useState("Aguardando pagamento...");
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🔐 Blindagem: se entrar sem PIX válido, volta pra carteira
+  useEffect(() => {
+    if (!paymentId) {
+      navigate("/carteira", { replace: true });
+    }
+  }, [paymentId, navigate]);
 
   // ======================
   // 📋 Copiar PIX
@@ -58,7 +66,7 @@ export default function PixCarteira() {
           }, 1200);
         }
       } catch {
-        // erro de rede não trava
+        // erro de rede não trava a UI
       }
     }, 4000);
 
