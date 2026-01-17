@@ -1,9 +1,7 @@
-// src/pages/carteira.tsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
-import { useNavigate } from "react-router-dom";
 
 type Transacao = {
   id: number;
@@ -31,10 +29,14 @@ function traduzirStatus(status: string) {
 }
 
 export default function Carteira() {
-  const navigate = useNavigate();
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
-  const lastSaldoRef = useRef<number | null>(null);
+
+  // === DEPÓSITO ===
+  const [mostrarDeposito, setMostrarDeposito] = useState(false);
+  const [valorDeposito, setValorDeposito] = useState("");
+  const [pixData, setPixData] = useState<any>(null);
+  const [loadingDeposito, setLoadingDeposito] = useState(false);
 
   // === SAQUE ===
   const [mostrarSaque, setMostrarSaque] = useState(false);
@@ -49,18 +51,15 @@ export default function Carteira() {
   async function carregarSaldo() {
     try {
       const userId = localStorage.getItem("USER_ID");
-      if (!userId) return null;
+      if (!userId) return;
 
       const res = await api.get("/wallet/saldo", {
         headers: { "x-user-id": userId },
       });
 
-      const valor = Number(res.data?.saldo ?? 0);
-      setSaldo(valor);
-      return valor;
+      setSaldo(Number(res.data?.saldo ?? 0));
     } catch {
       setSaldo(0);
-      return null;
     } finally {
       setLoading(false);
     }
@@ -81,16 +80,40 @@ export default function Carteira() {
     }
   }
 
+  async function solicitarDeposito() {
+    try {
+      setLoadingDeposito(true);
+      setPixData(null);
+
+      const userId = localStorage.getItem("USER_ID");
+      if (!userId) return;
+
+      const valor = Number(valorDeposito);
+      if (!valor || valor <= 0) return;
+
+      const res = await api.post(
+        "/wallet/depositar",
+        { valor },
+        { headers: { "x-user-id": userId } }
+      );
+
+      setPixData(res.data);
+      setValorDeposito("");
+      await carregarTransacoes();
+    } catch {
+      alert("Erro ao gerar PIX");
+    } finally {
+      setLoadingDeposito(false);
+    }
+  }
+
   async function solicitarSaque() {
     setLoadingSaque(true);
     setStatusSaque(null);
 
     try {
       const userId = localStorage.getItem("USER_ID");
-      if (!userId) {
-        setStatusSaque("Usuário não identificado");
-        return;
-      }
+      if (!userId) return;
 
       const valor = Number(valorSaque);
       if (!valor || valor <= 0) {
@@ -129,49 +152,68 @@ export default function Carteira() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white font-display flex flex-col pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
       <header className="text-center py-6 border-b border-white/10 shadow-md">
-        <h1 className="text-2xl font-extrabold text-yellow-300 drop-shadow">
-          💰 Minha Carteira
-        </h1>
+        <h1 className="text-2xl font-extrabold text-yellow-300">💰 Minha Carteira</h1>
         <p className="text-blue-100 text-sm mt-1">
-          Adicione créditos, saque e veja seu saldo
+          Deposite, saque e acompanhe seu saldo
         </p>
       </header>
 
-      <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8 text-center">
-        <div className="bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-yellow-300/20 shadow-xl w-full max-w-md">
-          <p className="text-blue-100 text-sm">Seu saldo disponível</p>
-          <h2 className="text-5xl font-extrabold text-yellow-300 mt-2 drop-shadow">
+      <main className="flex-1 px-6 pt-8 space-y-8 max-w-md mx-auto w-full">
+        <div className="bg-white/10 p-6 rounded-3xl border border-yellow-300/20 text-center">
+          <p className="text-blue-100 text-sm">Saldo disponível</p>
+          <h2 className="text-5xl font-extrabold text-yellow-300 mt-2">
             {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
           </h2>
         </div>
 
-        <div className="w-full max-w-md space-y-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg shadow-lg"
-            onClick={() => navigate("/add-creditos")}
-          >
-            ➕ ADICIONAR CRÉDITOS
-          </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-green-400 to-green-500 text-blue-900 font-extrabold text-lg"
+          onClick={() => setMostrarDeposito(!mostrarDeposito)}
+        >
+          ➕ ADICIONAR CRÉDITOS
+        </motion.button>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 font-extrabold text-lg shadow-lg"
-            onClick={() => setMostrarSaque(true)}
-          >
-            💸 SACAR CRÉDITOS
-          </motion.button>
-        </div>
+        {mostrarDeposito && (
+          <div className="bg-black/60 p-5 rounded-2xl space-y-3">
+            <input
+              type="number"
+              placeholder="Valor do depósito"
+              value={valorDeposito}
+              onChange={(e) => setValorDeposito(e.target.value)}
+              className="w-full p-3 rounded text-black"
+            />
 
-        {/* 🔽 FORMULÁRIO DE SAQUE — AGORA LOGO ABAIXO DO BOTÃO */}
+            <button
+              className="w-full py-3 bg-green-400 text-blue-900 font-bold rounded"
+              onClick={solicitarDeposito}
+              disabled={loadingDeposito}
+            >
+              Gerar PIX
+            </button>
+
+            {pixData?.copy_paste && (
+              <textarea
+                readOnly
+                value={pixData.copy_paste}
+                className="w-full p-2 rounded text-xs text-black"
+              />
+            )}
+          </div>
+        )}
+
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 font-extrabold text-lg"
+          onClick={() => setMostrarSaque(!mostrarSaque)}
+        >
+          💸 SACAR CRÉDITOS
+        </motion.button>
+
         {mostrarSaque && (
-          <div className="bg-black/60 p-6 rounded-2xl w-full max-w-md space-y-4">
-            <h3 className="text-xl font-bold text-yellow-300">
-              Solicitar Saque
-            </h3>
-
+          <div className="bg-black/60 p-5 rounded-2xl space-y-3">
             <input
               type="number"
               placeholder="Valor do saque"
@@ -179,7 +221,6 @@ export default function Carteira() {
               onChange={(e) => setValorSaque(e.target.value)}
               className="w-full p-3 rounded text-black"
             />
-
             <input
               type="text"
               placeholder="Chave PIX"
@@ -192,63 +233,39 @@ export default function Carteira() {
               <p className="text-sm text-yellow-200">{statusSaque}</p>
             )}
 
-            <div className="flex gap-3">
-              <button
-                className="flex-1 py-3 rounded bg-gray-500"
-                onClick={() => setMostrarSaque(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="flex-1 py-3 rounded bg-yellow-400 text-blue-900 font-bold"
-                disabled={loadingSaque}
-                onClick={solicitarSaque}
-              >
-                Confirmar
-              </button>
-            </div>
+            <button
+              className="w-full py-3 bg-yellow-400 text-blue-900 font-bold rounded"
+              onClick={solicitarSaque}
+              disabled={loadingSaque}
+            >
+              Confirmar Saque
+            </button>
           </div>
         )}
 
-        {/* HISTÓRICO */}
-        <div className="w-full max-w-md text-left space-y-3">
+        <div className="space-y-3">
           <h3 className="text-lg font-bold text-yellow-300">
-            📜 Histórico da Carteira
+            📜 Histórico
           </h3>
 
-          {transacoes.length === 0 && (
-            <p className="text-sm text-blue-100">
-              Nenhuma movimentação ainda.
-            </p>
-          )}
-
-          {transacoes.map((t) => {
-            const isSaque = t.metadata?.tipo === "saque";
-
-            return (
-              <div
-                key={t.id}
-                className="bg-white/10 rounded-xl p-3 text-sm space-y-1"
-              >
-                <div className="flex justify-between font-bold">
-                  <span>
-                    {isSaque ? "💸 Saque solicitado" : "➕ Depósito via PIX"}
-                  </span>
-                  <span className="text-yellow-300">
-                    R$ {Number(t.valor).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="text-blue-100 text-xs">
-                  {formatarDataHora(t.createdAt)}
-                </div>
-
-                <div className="text-blue-200 text-xs">
-                  Status: {traduzirStatus(t.status)}
-                </div>
+          {transacoes.map((t) => (
+            <div key={t.id} className="bg-white/10 p-3 rounded-xl text-sm">
+              <div className="flex justify-between font-bold">
+                <span>
+                  {t.metadata?.tipo === "saque" ? "💸 Saque" : "➕ Depósito"}
+                </span>
+                <span className="text-yellow-300">
+                  R$ {Number(t.valor).toFixed(2)}
+                </span>
               </div>
-            );
-          })}
+              <div className="text-xs text-blue-100">
+                {formatarDataHora(t.createdAt)}
+              </div>
+              <div className="text-xs text-blue-200">
+                Status: {traduzirStatus(t.status)}
+              </div>
+            </div>
+          ))}
         </div>
       </main>
 
