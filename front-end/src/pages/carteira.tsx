@@ -1,4 +1,3 @@
-// src/pages/carteira.tsx
 import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
@@ -35,7 +34,14 @@ export default function Carteira() {
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // === HISTÓRICO ===
+  // ===== SAQUE =====
+  const [mostrarSaque, setMostrarSaque] = useState(false);
+  const [valorSaque, setValorSaque] = useState("");
+  const [pixKey, setPixKey] = useState("");
+  const [loadingSaque, setLoadingSaque] = useState(false);
+  const [erroSaque, setErroSaque] = useState<string | null>(null);
+
+  // ===== HISTÓRICO =====
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
   async function carregarSaldo() {
@@ -48,50 +54,74 @@ export default function Carteira() {
       });
 
       setSaldo(Number(res.data?.saldo ?? 0));
-    } catch {
-      setSaldo(0);
     } finally {
       setLoading(false);
     }
   }
 
   async function carregarTransacoes() {
+    const userId = localStorage.getItem("USER_ID");
+    if (!userId) return;
+
+    const res = await api.get("/wallet/historico", {
+      headers: { "x-user-id": userId },
+    });
+
+    const lista = res.data || [];
+
+    if (lista.length > 0) {
+      localStorage.removeItem("WALLET_HIST_HIDDEN");
+    }
+
+    const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
+    setTransacoes(hidden === "true" ? [] : lista);
+  }
+
+  async function solicitarSaque() {
+    setErroSaque(null);
+
+    const valor = Number(valorSaque);
+    if (!valor || valor <= 0) {
+      setErroSaque("Valor inválido");
+      return;
+    }
+
+    if (valor > saldo) {
+      setErroSaque("Saldo insuficiente");
+      return;
+    }
+
+    const userId = localStorage.getItem("USER_ID");
+    if (!userId) {
+      setErroSaque("Usuário não identificado");
+      return;
+    }
+
     try {
-      const userId = localStorage.getItem("USER_ID");
-      if (!userId) return;
+      setLoadingSaque(true);
 
-      const res = await api.get("/wallet/historico", {
-        headers: { "x-user-id": userId },
-      });
+      await api.post(
+        "/wallet/saque",
+        { valor, pixKey },
+        { headers: { "x-user-id": userId } }
+      );
 
-      const lista = res.data || [];
+      setMostrarSaque(false);
+      setValorSaque("");
+      setPixKey("");
 
-      // 🔓 SE EXISTE NOVA TRANSAÇÃO, REATIVA HISTÓRICO
-      if (lista.length > 0) {
-        localStorage.removeItem("WALLET_HIST_HIDDEN");
-      }
-
-      const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
-      setTransacoes(hidden === "true" ? [] : lista);
-    } catch {
-      setTransacoes([]);
+      await carregarSaldo();
+      await carregarTransacoes();
+    } catch (err: any) {
+      setErroSaque(
+        err?.response?.data?.error || "Erro ao solicitar saque"
+      );
+    } finally {
+      setLoadingSaque(false);
     }
   }
 
-  function baixarHistorico() {
-    const API_URL = import.meta.env.VITE_API_URL;
-    window.open(`${API_URL}/wallet/historico/download`, "_blank");
-  }
-
   function limparHistorico() {
-    if (!transacoes.length) return;
-
-    const ok = confirm(
-      "Isso irá ocultar o histórico da carteira.\nO saldo não será alterado.\nDeseja continuar?"
-    );
-
-    if (!ok) return;
-
     localStorage.setItem("WALLET_HIST_HIDDEN", "true");
     setTransacoes([]);
   }
@@ -103,87 +133,100 @@ export default function Carteira() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-      <header className="text-center py-6 border-b border-white/10 shadow-md">
+      <header className="text-center py-6 border-b border-white/10">
         <h1 className="text-2xl font-extrabold text-yellow-300">
           💰 Minha Carteira
         </h1>
-        <p className="text-blue-100 text-sm mt-1">
-          Deposite, saque e acompanhe seu saldo
-        </p>
       </header>
 
-      <main className="flex-1 flex flex-col items-center px-6 pt-8 space-y-8">
-        <div className="bg-white/10 p-6 rounded-3xl border border-yellow-300/20 shadow-xl w-full max-w-md text-center">
-          <p className="text-blue-100 text-sm">Saldo disponível</p>
-          <h2 className="text-5xl font-extrabold text-yellow-300 mt-2">
+      <main className="flex-1 px-6 pt-8 space-y-6">
+        <div className="bg-white/10 p-6 rounded-3xl text-center">
+          <p className="text-sm">Saldo disponível</p>
+          <h2 className="text-4xl font-extrabold text-yellow-300">
             {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
           </h2>
         </div>
 
-        <div className="w-full max-w-md space-y-4">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            className="w-full py-4 rounded-2xl bg-green-400 text-blue-900 font-extrabold"
-            onClick={() => navigate("/add-creditos")}
-          >
-            ➕ ADICIONAR CRÉDITOS
-          </motion.button>
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="w-full py-4 rounded-2xl bg-green-400 text-blue-900 font-bold"
+          onClick={() => navigate("/add-creditos")}
+        >
+          ➕ ADICIONAR CRÉDITOS
+        </motion.button>
 
-        {/* HISTÓRICO */}
-        <div className="w-full max-w-md space-y-3 text-left">
-          <h3 className="text-lg font-bold text-yellow-300">
-            📜 Histórico da Carteira
-          </h3>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="w-full py-4 rounded-2xl bg-yellow-400 text-blue-900 font-bold"
+          onClick={() => setMostrarSaque(true)}
+        >
+          💸 SACAR CRÉDITOS
+        </motion.button>
 
-          <div className="flex gap-2">
-            <button
-              onClick={baixarHistorico}
-              className="flex-1 py-2 rounded bg-white/20 text-white text-sm font-semibold"
-            >
-              ⬇️ Baixar histórico
-            </button>
+        {mostrarSaque && (
+          <div className="bg-black/70 p-6 rounded-xl space-y-3">
+            <input
+              type="number"
+              placeholder="Valor do saque"
+              value={valorSaque}
+              onChange={(e) => setValorSaque(e.target.value)}
+              className="w-full p-3 rounded text-black"
+            />
+            <input
+              type="text"
+              placeholder="Chave PIX"
+              value={pixKey}
+              onChange={(e) => setPixKey(e.target.value)}
+              className="w-full p-3 rounded text-black"
+            />
 
-            <button
-              onClick={limparHistorico}
-              className="flex-1 py-2 rounded bg-red-500/70 text-white text-sm font-semibold"
-            >
-              🧹 Limpar histórico
-            </button>
-          </div>
+            {erroSaque && (
+              <p className="text-sm text-red-300">{erroSaque}</p>
+            )}
 
-          {transacoes.length === 0 && (
-            <p className="text-sm text-blue-100">
-              Nenhuma movimentação para exibir.
-            </p>
-          )}
-
-          {transacoes.map((t) => {
-            const isSaque = t.metadata?.tipo === "saque";
-
-            return (
-              <div
-                key={t.id}
-                className="bg-white/10 rounded-xl p-3 text-sm"
+            <div className="flex gap-2">
+              <button
+                className="flex-1 py-2 bg-gray-500 rounded"
+                onClick={() => setMostrarSaque(false)}
               >
-                <div className="flex justify-between font-bold">
-                  <span>{isSaque ? "💸 Saque" : "➕ Depósito"}</span>
-                  <span className="text-yellow-300">
-                    R$ {Number(t.valor).toFixed(2)}
-                  </span>
-                </div>
+                Cancelar
+              </button>
+              <button
+                className="flex-1 py-2 bg-yellow-400 text-blue-900 font-bold rounded"
+                onClick={solicitarSaque}
+                disabled={loadingSaque}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        )}
 
-                <div className="text-blue-100 text-xs">
-                  {formatarDataHora(t.createdAt)}
-                </div>
+        <h3 className="text-lg font-bold text-yellow-300">
+          📜 Histórico
+        </h3>
 
-                <div className="text-blue-200 text-xs">
-                  Status: {traduzirStatus(t.status)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <button
+          onClick={limparHistorico}
+          className="w-full py-2 bg-red-500/70 rounded"
+        >
+          🧹 Limpar histórico
+        </button>
+
+        {transacoes.map((t) => (
+          <div key={t.id} className="bg-white/10 p-3 rounded">
+            <div className="flex justify-between font-bold">
+              <span>
+                {t.metadata?.tipo === "saque" ? "💸 Saque" : "➕ Depósito"}
+              </span>
+              <span>R$ {Number(t.valor).toFixed(2)}</span>
+            </div>
+            <div className="text-xs">{formatarDataHora(t.createdAt)}</div>
+            <div className="text-xs">
+              Status: {traduzirStatus(t.status)}
+            </div>
+          </div>
+        ))}
       </main>
 
       <NavBottom />
