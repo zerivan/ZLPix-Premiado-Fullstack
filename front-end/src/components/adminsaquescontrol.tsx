@@ -12,7 +12,7 @@ type Saque = {
   };
 };
 
-const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function AdminSaquesControl() {
   const [saques, setSaques] = useState<Saque[]>([]);
@@ -46,13 +46,8 @@ export default function AdminSaquesControl() {
         { headers }
       );
 
-      const todos = res.data || [];
-
-      const somenteSaques = todos.filter(
-        (t: Saque) => t.metadata?.tipo === "saque"
-      );
-
-      setSaques(somenteSaques);
+      // 🔒 backend já retorna apenas SAQUES
+      setSaques(res.data || []);
     } catch (err) {
       console.error("Erro ao carregar saques:", err);
       setSaques([]);
