@@ -14,27 +14,60 @@ router.post("/processar", async (req, res) => {
   try {
     const { sorteioData, dezenas, premioTotal } = req.body;
 
-    if (!sorteioData || !Array.isArray(dezenas) || !premioTotal) {
+    // =========================
+    // VALIDAÇÕES DEFENSIVAS
+    // =========================
+    if (!sorteioData) {
       return res.status(400).json({
-        ok: false,
-        error: "Dados inválidos para processar sorteio",
+        success: false,
+        reason: "Data do sorteio não informada",
       });
     }
 
-    await processarSorteio(new Date(sorteioData), {
+    if (!Array.isArray(dezenas) || dezenas.length === 0) {
+      return res.status(400).json({
+        success: false,
+        reason: "Dezenas inválidas ou vazias",
+      });
+    }
+
+    const premio = Number(premioTotal);
+    if (!premio || premio <= 0) {
+      return res.status(400).json({
+        success: false,
+        reason: "Prêmio total inválido",
+      });
+    }
+
+    // =========================
+    // PROCESSAMENTO REAL
+    // =========================
+    const resultado = await processarSorteio(new Date(sorteioData), {
       dezenas,
-      premioTotal: Number(premioTotal),
+      premioTotal: premio,
     });
 
+    /**
+     * IMPORTANTE:
+     * Se o service não lançar erro mas abortar logicamente,
+     * consideramos falha controlada.
+     */
+    if (resultado === false) {
+      return res.status(400).json({
+        success: false,
+        reason: "Sorteio não pôde ser processado (estado inválido)",
+      });
+    }
+
     return res.json({
-      ok: true,
+      success: true,
       message: "Sorteio processado com sucesso",
     });
   } catch (err) {
     console.error("Erro ao processar sorteio:", err);
     return res.status(500).json({
-      ok: false,
-      error: "Erro interno ao processar sorteio",
+      success: false,
+      reason: "Erro interno ao processar sorteio",
     });
   }
 });
