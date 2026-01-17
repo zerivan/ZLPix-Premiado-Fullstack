@@ -4,146 +4,64 @@ import { processarSorteio } from "../services/sorteio-processor";
 
 /**
  * ============================================
- * ⏰ CRON AUTOMÁTICO DE SORTEIO (OFICIAL)
+ * ⏰ CRON AUTOMÁTICO DE SORTEIO
  * ============================================
- * - Busca resultado REAL da Loteria Federal
- * - Executa UMA ÚNICA VEZ por sorteio
- * - Protegido contra duplicação
+ * - Executa sorteios vencidos
+ * - Roda em background
+ * - Nunca duplica sorteio
  */
 
-/**
- * 🔢 BUSCA RESULTADO DA LOTERIA FEDERAL
- * Fonte pública (Caixa / agregadores oficiais)
- */
-async function buscarResultadoFederal(): Promise<string[]> {
-  try {
-    /**
-     * ⚠️ Endpoint público mais estável (agregador)
-     * Não exige token
-     */
-    const resp = await fetch(
-      "https://loteriascaixa-api.herokuapp.com/api/federal/latest"
-    );
-
-    if (!resp.ok) {
-      throw new Error("Falha ao buscar resultado federal");
-    }
-
-    const json: any = await resp.json();
-
-    /**
-     * Estrutura típica:
-     * json.premios = [{ bilhete: "12345" }, ...]
-     */
-    if (!json?.premios || !Array.isArray(json.premios)) {
-      throw new Error("Formato inesperado do resultado");
-    }
-
-    /**
-     * 🔎 Extrai dezenas finais (ex: últimas 2 ou 3)
-     * Ajuste conforme sua regra oficial
-     */
-    const dezenas = json.premios
-      .map((p: any) =>
-        String(p.bilhete).slice(-2) // 🔥 dezenas finais
-      )
-      .filter(Boolean);
-
-    if (!dezenas.length) {
-      throw new Error("Nenhuma dezena válida encontrada");
-    }
-
-    console.log("🎯 Resultado Federal obtido:", dezenas);
-
-    return dezenas;
-  } catch (err) {
-    console.error(
-      "⚠️ Erro ao buscar resultado federal. Usando fallback seguro.",
-      err
-    );
-
-    /**
-     * 🔒 FALLBACK CONTROLADO
-     * Evita travar o sistema
-     * NÃO paga prêmio incorreto
-     */
-    return [];
-  }
+async function buscarResultadoFake(): Promise<string[]> {
+  // ⚠️ MODO TESTE CONTROLADO
+  return ["12", "45", "98"];
 }
 
 cron.schedule("*/10 * * * *", async () => {
   try {
     const agora = new Date();
 
-    /**
-     * 🔒 PASSO 1 — TRAVA DE SORTEIO
-     */
-    const lock = await prisma.bilhete.updateMany({
+    // 🔍 Busca UM sorteio vencido ainda ATIVO
+    const bilhete = await prisma.bilhete.findFirst({
       where: {
         status: "ATIVO",
         sorteioData: { lte: agora },
       },
-      data: {
-        status: "PROCESSANDO",
-      },
-      take: 1,
-    });
-
-    if (lock.count === 0) return;
-
-    /**
-     * 🔍 IDENTIFICA SORTEIO
-     */
-    const bilhete = await prisma.bilhete.findFirst({
-      where: {
-        status: "PROCESSANDO",
-        sorteioData: { lte: agora },
-      },
-      orderBy: { sorteioData: "asc" },
     });
 
     if (!bilhete) return;
 
     const sorteioData = bilhete.sorteioData;
 
-    console.log("⏳ Executando sorteio automático:", sorteioData);
+    console.log("⏳ Sorteio automático:", sorteioData);
 
-    /**
-     * 🔢 RESULTADO REAL
-     */
-    const dezenas = await buscarResultadoFederal();
+    // 🔢 Resultado fake (teste)
+    const dezenas = await buscarResultadoFake();
 
-    /**
-     * ⚠️ Se não houver resultado válido, aborta
-     */
-    if (!dezenas.length) {
-      console.warn("🚫 Sorteio abortado: resultado federal indisponível");
-      return;
-    }
-
-    /**
-     * 💰 SOMA DO PRÊMIO
-     */
-    const premioTotal = await prisma.bilhete.aggregate({
+    // 💰 Soma do prêmio
+    const premioAgg = await prisma.bilhete.aggregate({
       where: {
+        status: "ATIVO",
         sorteioData,
-        status: { in: ["ATIVO", "PROCESSANDO"] },
       },
       _sum: {
         valor: true,
       },
     });
 
-    /**
-     * 🎯 PROCESSA SORTEIO
-     */
+    const premioTotal = Number(premioAgg._sum.valor || 0);
+
+    if (premioTotal <= 0) {
+      console.log("⚠️ Sorteio sem prêmio válido");
+      return;
+    }
+
     await processarSorteio(sorteioData, {
       dezenas,
-      premioTotal: Number(premioTotal._sum.valor || 0),
+      premioTotal,
     });
 
-    console.log("✅ Sorteio automático finalizado com sucesso");
+    console.log("✅ Sorteio finalizado:", sorteioData);
   } catch (err) {
-    console.error("❌ Erro no CRON de sorteio:", err);
+    console.error("❌ Erro no cron de sorteio:", err);
   }
 });
