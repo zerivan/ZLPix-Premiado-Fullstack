@@ -42,23 +42,12 @@ router.post("/processar", async (req, res) => {
     // =========================
     // PROCESSAMENTO REAL
     // =========================
-    const resultado = await processarSorteio(new Date(sorteioData), {
+    await processarSorteio(new Date(sorteioData), {
       dezenas,
       premioTotal: premio,
     });
 
-    /**
-     * IMPORTANTE:
-     * Se o service não lançar erro mas abortar logicamente,
-     * consideramos falha controlada.
-     */
-    if (resultado === false) {
-      return res.status(400).json({
-        success: false,
-        reason: "Sorteio não pôde ser processado (estado inválido)",
-      });
-    }
-
+    // Se chegou aqui, o service não lançou erro
     return res.json({
       success: true,
       message: "Sorteio processado com sucesso",
