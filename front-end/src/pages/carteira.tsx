@@ -62,6 +62,13 @@ export default function Carteira() {
   }
 
   async function carregarTransacoes() {
+    // 🔒 Se usuário limpou o histórico, não carrega novamente
+    const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
+    if (hidden === "true") {
+      setTransacoes([]);
+      return;
+    }
+
     try {
       const userId = localStorage.getItem("USER_ID");
       if (!userId) return;
@@ -109,8 +116,8 @@ export default function Carteira() {
       setPixKey("");
       setMostrarSaque(false);
 
-      await carregarTransacoes();
       await carregarSaldo();
+      await carregarTransacoes();
     } catch {
       setStatusSaque("Erro ao solicitar saque");
     } finally {
@@ -123,16 +130,17 @@ export default function Carteira() {
     window.open(`${API_URL}/wallet/historico/download`, "_blank");
   }
 
-  // 🧹 LIMPA HISTÓRICO (FRONT-END ONLY)
+  // 🧹 LIMPAR HISTÓRICO (PERSISTENTE)
   function limparHistorico() {
     if (!transacoes.length) return;
 
     const ok = confirm(
-      "Isso irá limpar o histórico exibido na tela.\nO saldo não será alterado.\nDeseja continuar?"
+      "Isso irá ocultar o histórico da carteira.\nO saldo não será alterado.\nDeseja continuar?"
     );
 
     if (!ok) return;
 
+    localStorage.setItem("WALLET_HIST_HIDDEN", "true");
     setTransacoes([]);
   }
 
@@ -177,50 +185,6 @@ export default function Carteira() {
             💸 SACAR CRÉDITOS
           </motion.button>
         </div>
-
-        {mostrarSaque && (
-          <div className="bg-black/60 p-6 rounded-2xl w-full max-w-md space-y-4">
-            <h3 className="text-xl font-bold text-yellow-300">
-              Solicitar Saque
-            </h3>
-
-            <input
-              type="number"
-              placeholder="Valor do saque"
-              value={valorSaque}
-              onChange={(e) => setValorSaque(e.target.value)}
-              className="w-full p-3 rounded text-black"
-            />
-
-            <input
-              type="text"
-              placeholder="Chave PIX"
-              value={pixKey}
-              onChange={(e) => setPixKey(e.target.value)}
-              className="w-full p-3 rounded text-black"
-            />
-
-            {statusSaque && (
-              <p className="text-sm text-yellow-200">{statusSaque}</p>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                className="flex-1 py-3 rounded bg-gray-500"
-                onClick={() => setMostrarSaque(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="flex-1 py-3 rounded bg-yellow-400 text-blue-900 font-bold"
-                disabled={loadingSaque}
-                onClick={solicitarSaque}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* HISTÓRICO */}
         <div className="w-full max-w-md space-y-3 text-left">
