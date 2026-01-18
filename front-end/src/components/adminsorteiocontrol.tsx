@@ -24,14 +24,27 @@ export default function AdminSorteioControl() {
       setStatus(null);
 
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+      if (!token) {
+        setStatus("❌ Token admin ausente.");
+        return;
+      }
+
+      /**
+       * 🔥 RESULTADO FEDERAL (TESTE CONTROLADO)
+       * 5 números (1º ao 5º), como a apuração espera.
+       * Ajuste para bater com o bilhete que você quer premiar.
+       */
+      const premiosFederal = [
+        "71900",
+        "90310",
+        "31071",
+        "00000",
+        "11111",
+      ];
 
       const res = await axios.post(
-        "/admin/sorteio/processar",
-        {
-          sorteioData: new Date().toISOString(),
-          dezenas: ["00"],
-          premioTotal: 1,
-        },
+        "/api/admin/apurar",
+        { premiosFederal },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -39,19 +52,16 @@ export default function AdminSorteioControl() {
         }
       );
 
-      // ✅ LEITURA DEFENSIVA (NUNCA undefined)
-      if (res.data?.ok === true) {
-        setStatus(`✅ ${res.data.message || "Sorteio processado com sucesso"}`);
+      if (res.data?.ok) {
+        setStatus("✅ Apuração executada com sucesso.");
       } else {
-        const msg =
-          res.data?.error ||
-          res.data?.message ||
-          "Sorteio não pôde ser processado";
-        setStatus(`⚠️ ${msg}`);
+        setStatus(
+          `⚠️ ${res.data?.error || "Resposta inesperada do servidor."}`
+        );
       }
     } catch (err) {
       console.error(err);
-      setStatus("❌ Erro ao processar o sorteio.");
+      setStatus("❌ Erro ao executar a apuração.");
     } finally {
       setLoading(false);
     }
@@ -60,15 +70,14 @@ export default function AdminSorteioControl() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold text-red-600">
-        🎯 Processar Sorteio
+        🎯 Apurar Sorteio (ADMIN)
       </h2>
 
       <p className="text-sm text-gray-600">
-        Esta ação irá executar automaticamente:
-        <br />• Apuração dos bilhetes
-        <br />• Identificação de ganhadores
-        <br />• Divisão do prêmio
-        <br />• Crédito nas carteiras
+        Esta ação executa a APURAÇÃO REAL:
+        <br />• Cruza bilhetes
+        <br />• Marca premiados
+        <br />• Credita carteiras
       </p>
 
       <button
@@ -76,14 +85,10 @@ export default function AdminSorteioControl() {
         disabled={loading}
         className="bg-red-600 text-white px-4 py-2 rounded font-bold disabled:opacity-60"
       >
-        {loading ? "Processando..." : "🔴 DISPARAR SORTEIO"}
+        {loading ? "Processando..." : "🔴 DISPARAR APURAÇÃO"}
       </button>
 
-      {status && (
-        <div className="text-sm font-semibold">
-          {status}
-        </div>
-      )}
+      {status && <div className="text-sm font-semibold">{status}</div>}
     </div>
   );
 }
