@@ -1,19 +1,47 @@
+// backend/src/jobs/sorteio-cron.ts
 import cron from "node-cron";
 import { prisma } from "../lib/prisma";
 import { processarSorteio } from "../services/sorteio-processor";
 
+type FederalResponse = {
+  ok: boolean;
+  data?: {
+    premios: string[]; // 1º ao 5º prêmio (milhar)
+  };
+};
+
 /**
  * ============================================
- * ⏰ CRON AUTOMÁTICO DE SORTEIO
+ * ⏰ CRON AUTOMÁTICO DE SORTEIO (OFICIAL)
  * ============================================
  * - Executa sorteios vencidos
- * - Roda em background
+ * - Busca resultado REAL da Federal
+ * - Usa Federal como única fonte de verdade
  * - Nunca duplica sorteio
  */
 
-async function buscarResultadoFake(): Promise<string[]> {
-  // ⚠️ MODO TESTE CONTROLADO
-  return ["12", "45", "98"];
+async function buscarResultadoFederal(): Promise<string[] | null> {
+  try {
+    const resp = await fetch(
+      `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
+    );
+
+    const json = (await resp.json()) as FederalResponse;
+
+    if (!json.ok || !Array.isArray(json.data?.premios)) return null;
+    if (json.data.premios.length !== 5) return null;
+
+    const dezenas: string[] = [];
+
+    for (const num of json.data.premios) {
+      dezenas.push(num.slice(0, 2)); // frente
+      dezenas.push(num.slice(-2));   // fundo
+    }
+
+    return dezenas;
+  } catch {
+    return null;
+  }
 }
 
 cron.schedule("*/10 * * * *", async () => {
@@ -32,12 +60,17 @@ cron.schedule("*/10 * * * *", async () => {
 
     const sorteioData = bilhete.sorteioData;
 
-    console.log("⏳ Sorteio automático:", sorteioData);
+    console.log("⏳ Sorteio automático (Federal):", sorteioData);
 
-    // 🔢 Resultado fake (teste)
-    const dezenas = await buscarResultadoFake();
+    // 🔢 Resultado REAL da Federal
+    const dezenas = await buscarResultadoFederal();
 
-    // 💰 Soma do prêmio
+    if (!dezenas || dezenas.length !== 10) {
+      console.log("⚠️ Resultado da Federal indisponível ou inválido");
+      return;
+    }
+
+    // 💰 Soma do prêmio do sorteio
     const premioAgg = await prisma.bilhete.aggregate({
       where: {
         status: "ATIVO",
@@ -60,7 +93,7 @@ cron.schedule("*/10 * * * *", async () => {
       premioTotal,
     });
 
-    console.log("✅ Sorteio finalizado:", sorteioData);
+    console.log("✅ Sorteio Federal processado:", sorteioData);
   } catch (err) {
     console.error("❌ Erro no cron de sorteio:", err);
   }
