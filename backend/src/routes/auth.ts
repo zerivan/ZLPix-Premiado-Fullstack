@@ -39,13 +39,18 @@ function sanitize(obj: any) {
 // ======================================
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, phone, pixKey, password } = req.body;
+    let { name, email, phone, pixKey, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
         message: "Nome, e-mail e senha são obrigatórios.",
       });
     }
+
+    name = String(name).trim();
+    email = String(email).trim().toLowerCase();
+    phone = phone ? String(phone).trim() : null;
+    pixKey = pixKey ? String(pixKey).trim() : null;
 
     const existing = await prisma.users.findUnique({ where: { email } });
     if (existing) {
@@ -92,7 +97,10 @@ router.post("/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
-    const user = await prisma.users.findUnique({ where: { email } });
+    const user = await prisma.users.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
@@ -102,7 +110,6 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    // 🔥 JWT corrigido para BigInt (id como string)
     const token = jwt.sign(
       {
         id: user.id.toString(),
@@ -128,7 +135,6 @@ router.post("/login", async (req, res) => {
 
 // ======================================
 // 🛡 LOGIN ADMIN
-// OBS: tabela admins só tem email + passwordHash
 // ======================================
 router.post("/admin/login", async (req, res) => {
   try {
