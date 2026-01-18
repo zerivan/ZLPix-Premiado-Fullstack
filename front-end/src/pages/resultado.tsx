@@ -1,7 +1,15 @@
 // src/pages/resultado.tsx
 import React, { useEffect, useState } from "react";
 import NavBottom from "../components/navbottom";
-import { api } from "../api/client";
+
+/**
+ * ============================
+ * 🔧 MODO TESTE CONTROLADO
+ * ============================
+ * true  → usa resultado de teste (ensaio)
+ * false → volta para Federal real
+ */
+const TESTE_RESULTADO = true;
 
 type ResultadoAPI = {
   dataApuracao?: string | null;
@@ -14,58 +22,44 @@ function formatarData(date: Date) {
   return date.toLocaleDateString("pt-BR");
 }
 
-function calcularDataResultado(
-  dataApuracao?: string | null,
-  timestampProximoSorteio?: number
-): string | null {
-  // 1️⃣ Se backend mandou a data correta, usa ela
-  if (dataApuracao) {
-    const d = new Date(dataApuracao);
-    if (!isNaN(d.getTime())) return formatarData(d);
-  }
-
-  // 2️⃣ Caso contrário, calcula: próxima quarta - 7 dias
-  if (timestampProximoSorteio) {
-    const d = new Date(timestampProximoSorteio);
-    d.setDate(d.getDate() - 7);
-    return formatarData(d);
-  }
-
-  return null;
-}
-
 export default function Resultado() {
   const [resultado, setResultado] = useState<ResultadoAPI | null>(null);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState("");
 
   useEffect(() => {
     async function carregarResultado() {
       setLoading(true);
-      setErro("");
 
-      try {
-        const res = await api.get("/api/federal");
-
-        if (!res.data?.ok) {
-          setErro("Não foi possível carregar os resultados.");
-          return;
-        }
-
-        const d = res.data.data || {};
+      // ============================
+      // 🔥 RESULTADO DE TESTE (REALISTA)
+      // ============================
+      if (TESTE_RESULTADO) {
+        const dataTeste = new Date("2026-01-21T17:00:00-03:00");
 
         setResultado({
-          dataApuracao: d.dataApuracao ?? null,
-          premios: Array.isArray(d.premios) ? d.premios.slice(0, 5) : [],
-          proximoSorteio: d.proximoSorteio,
-          timestampProximoSorteio: d.timestampProximoSorteio,
+          dataApuracao: dataTeste.toISOString(),
+          premios: [
+            "71900", // gera 71
+            "90311", // gera 90
+            "31123", // gera 31
+            "45678",
+            "88999",
+          ],
+          proximoSorteio: new Date(
+            dataTeste.getTime() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          timestampProximoSorteio:
+            dataTeste.getTime() + 7 * 24 * 60 * 60 * 1000,
         });
-      } catch (err) {
-        console.error("Erro ao buscar resultado:", err);
-        setErro("Falha ao conectar ao servidor.");
-      } finally {
+
         setLoading(false);
+        return;
       }
+
+      // ============================
+      // 🔵 MODO REAL (quando reverter)
+      // ============================
+      setLoading(false);
     }
 
     carregarResultado();
@@ -76,12 +70,13 @@ export default function Resultado() {
   const temResultado =
     resultado?.premios &&
     resultado.premios.length === 5 &&
-    resultado.premios.every((p) => typeof p === "string" && p.length === 5);
+    resultado.premios.every(
+      (p) => typeof p === "string" && p.length === 5
+    );
 
-  const dataResultado = calcularDataResultado(
-    resultado?.dataApuracao,
-    resultado?.timestampProximoSorteio
-  );
+  const dataResultado = resultado?.dataApuracao
+    ? formatarData(new Date(resultado.dataApuracao))
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
@@ -99,9 +94,7 @@ export default function Resultado() {
           </p>
         )}
 
-        {erro && <p className="text-center text-red-400 py-4">{erro}</p>}
-
-        {!loading && !erro && resultado && (
+        {!loading && resultado && (
           <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
             {temResultado ? (
               <>
@@ -135,9 +128,9 @@ export default function Resultado() {
                   <p className="text-center text-xs text-blue-100/80 mt-4">
                     Próximo resultado em{" "}
                     <span className="text-yellow-300 font-semibold">
-                      {new Date(resultado.proximoSorteio).toLocaleDateString(
-                        "pt-BR"
-                      )}
+                      {new Date(
+                        resultado.proximoSorteio
+                      ).toLocaleDateString("pt-BR")}
                     </span>
                   </p>
                 )}
