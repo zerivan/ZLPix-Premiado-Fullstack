@@ -1,10 +1,11 @@
+// backend/src/services/sorteio-processor.ts
 import { prisma } from "../lib/prisma";
 
 /**
  * ============================
  * 🎯 PROCESSADOR DE SORTEIO
  * ============================
- * MOTOR FUNCIONAL (SEM TRAVAS)
+ * MOTOR FUNCIONAL (CORRIGIDO)
  */
 
 type ResultadoOficial = {
@@ -44,19 +45,26 @@ export async function processarSorteio(
   }
 
   // ============================
-  // 2️⃣ IDENTIFICAR GANHADORES
+  // 2️⃣ IDENTIFICAR GANHADORES (REGRA CORRETA)
   // ============================
+  const dezenasValidas = resultado.dezenas.map((d) => d.trim());
+
   const ganhadores = bilhetes.filter((b) => {
     const dezenasBilhete = b.dezenas
       .split(",")
-      .map((d) => d.trim());
+      .map((d) => d.trim())
+      .filter(Boolean);
 
-    return dezenasBilhete.some((d) =>
-      resultado.dezenas.includes(d)
+    // Regra: bilhete DEVE ter exatamente 3 dezenas
+    if (dezenasBilhete.length !== 3) return false;
+
+    // Regra: as 3 dezenas DEVEM estar contidas no resultado
+    return dezenasBilhete.every((d) =>
+      dezenasValidas.includes(d)
     );
   });
 
-  const resultadoStr = resultado.dezenas.join(",");
+  const resultadoStr = dezenasValidas.join(",");
   const agora = new Date();
 
   // ============================
