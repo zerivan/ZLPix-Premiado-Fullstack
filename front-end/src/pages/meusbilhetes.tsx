@@ -3,10 +3,10 @@ import NavBottom from "../components/navbottom";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
+const DIAS_PERMANENCIA = 7;
 
 export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
-  const [filtro, setFiltro] = useState("todos");
 
   function resolveUserId(): string | null {
     try {
@@ -48,51 +48,102 @@ export default function MeusBilhetes() {
     return b.status === "PREMIADO" || b.premiado === true;
   }
 
-  function isDentroDoPrazo(b: any) {
-    if (!b.sorteioData) return false;
+  function venceuEm(b: any): Date | null {
+    if (!b.sorteioData) return null;
     const d = new Date(b.sorteioData);
     d.setHours(17, 0, 0, 0);
-    return Date.now() < d.getTime();
+    return d;
+  }
+
+  function dentroDaPermanencia(b: any) {
+    const vencimento = venceuEm(b);
+    if (!vencimento) return false;
+
+    const limite = new Date(vencimento);
+    limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
+
+    return Date.now() <= limite.getTime();
   }
 
   function isVisivel(b: any) {
-    if (isPremiado(b)) return true;
-    if (b.pago && isDentroDoPrazo(b)) return true;
+    const vencimento = venceuEm(b);
+
+    // ainda ativo
+    if (b.pago && vencimento && Date.now() < vencimento.getTime()) {
+      return true;
+    }
+
+    // venceu → fica 7 dias (premiado ou não)
+    if (vencimento && dentroDaPermanencia(b)) {
+      return true;
+    }
+
     return false;
   }
 
-  const bilhetesFiltrados = bilhetes.filter(isVisivel);
+  const bilhetesVisiveis = bilhetes.filter(isVisivel);
+
+  function baixarHistorico() {
+    if (!bilhetes.length) return;
+
+    const linhas = [
+      ["ID", "Criado em", "Sorteio", "Dezenas", "Valor", "Status"],
+      ...bilhetes.map((b) => [
+        b.id,
+        new Date(b.createdAt).toLocaleString("pt-BR"),
+        new Date(b.sorteioData).toLocaleString("pt-BR"),
+        b.dezenas,
+        Number(b.valor).toFixed(2),
+        b.status,
+      ]),
+    ];
+
+    const csv = linhas.map((l) => l.join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "meus-bilhetes-historico.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center pt-6 pb-2">
         <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
         <p className="text-sm text-blue-100">
-          Bilhetes válidos até quarta-feira às 17h
+          Bilhetes ativos e vencidos recentes
         </p>
+
+        <button
+          onClick={baixarHistorico}
+          className="mt-3 text-xs bg-yellow-400 text-blue-900 px-3 py-1 rounded-full font-semibold"
+        >
+          ⬇️ Baixar histórico
+        </button>
       </header>
 
       <main className="px-4 max-w-lg mx-auto space-y-4 pb-10 mt-6">
-        {bilhetesFiltrados.map((b: any) => (
+        {bilhetesVisiveis.map((b: any) => (
           <div
             key={b.id}
             className="relative overflow-hidden bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
           >
-            {/* 🔒 MARCA D’ÁGUA DE FUNDO */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <span className="text-white/5 text-6xl font-extrabold tracking-widest rotate-[-25deg] select-none">
                 ZLPIX PREMIADO
               </span>
             </div>
 
-            {/* 🏷️ TIMBRE SUPERIOR */}
             <div className="relative mb-3 text-center">
               <span className="text-yellow-300 text-lg font-extrabold tracking-wide">
                 ZLPIX PREMIADO
               </span>
             </div>
 
-            {/* CONTEÚDO */}
             <div className="relative">
               <div className="mb-2">
                 <h2 className="font-bold text-lg text-yellow-300">
@@ -117,7 +168,6 @@ export default function MeusBilhetes() {
                 ))}
               </div>
 
-              {/* RODAPÉ — VALOR + STATUS ALINHADOS */}
               <div className="flex justify-between items-center mt-2">
                 <p className="text-sm text-green-400 font-semibold">
                   R$ {Number(b.valor).toFixed(2)}
