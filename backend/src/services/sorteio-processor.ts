@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
  * ============================
  * 🎯 PROCESSADOR DE SORTEIO
  * ============================
+ * MOTOR FUNCIONAL (SEM TRAVAS)
  */
 
 type ResultadoOficial = {
@@ -15,18 +16,31 @@ export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
+  const inicioDia = new Date(sorteioData);
+  inicioDia.setHours(0, 0, 0, 0);
+
+  const fimDia = new Date(sorteioData);
+  fimDia.setHours(23, 59, 59, 999);
+
   // ============================
-  // 1️⃣ BUSCAR BILHETES ATIVOS
+  // 1️⃣ BUSCAR BILHETES ATIVOS DO DIA
   // ============================
   const bilhetes = await prisma.bilhete.findMany({
     where: {
       status: "ATIVO",
-      sorteioData,
+      sorteioData: {
+        gte: inicioDia,
+        lte: fimDia,
+      },
     },
   });
 
   if (!bilhetes.length) {
-    throw new Error("Nenhum bilhete ativo para este sorteio");
+    console.log("⚠️ Nenhum bilhete ativo encontrado para o sorteio.");
+    return {
+      ok: false,
+      message: "Nenhum bilhete para processar",
+    };
   }
 
   // ============================
@@ -42,30 +56,34 @@ export async function processarSorteio(
     );
   });
 
+  const resultadoStr = resultado.dezenas.join(",");
+  const agora = new Date();
+
   // ============================
-  // 3️⃣ SE NÃO HOUVER GANHADOR
+  // 3️⃣ SEM GANHADORES → MARCA NÃO PREMIADOS
   // ============================
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
       data: {
         status: "NAO_PREMIADO",
-        resultadoFederal: resultado.dezenas.join(","),
-        apuradoEm: new Date(),
+        resultadoFederal: resultadoStr.slice(0, 20),
+        apuradoEm: agora,
       },
     });
 
-    throw new Error("Sorteio processado sem ganhadores (prêmio acumulado)");
+    console.log("ℹ️ Sorteio processado sem ganhadores.");
+    return {
+      ok: true,
+      message: "Sorteio sem ganhadores",
+    };
   }
 
   // ============================
-  // 4️⃣ CALCULAR DIVISÃO DO PRÊMIO
+  // 4️⃣ CALCULAR PRÊMIO
   // ============================
   const valorPorGanhador =
     resultado.premioTotal / ganhadores.length;
-
-  const resultadoStr = resultado.dezenas.join(",");
-  const agora = new Date();
 
   // ============================
   // 5️⃣ PROCESSAR GANHADORES
@@ -90,8 +108,6 @@ export async function processarSorteio(
             tipo: "premio",
             origem: "sorteio",
             bilheteId: bilhete.id,
-            sorteioData,
-            resultado: resultadoStr,
           },
         },
       }),
@@ -101,7 +117,7 @@ export async function processarSorteio(
         data: {
           status: "PREMIADO",
           premioValor: valorPorGanhador,
-          resultadoFederal: resultadoStr,
+          resultadoFederal: resultadoStr.slice(0, 20),
           apuradoEm: agora,
         },
       }),
@@ -109,20 +125,29 @@ export async function processarSorteio(
   }
 
   // ============================
-  // 6️⃣ MARCAR NÃO PREMIADOS
+  // 6️⃣ MARCAR DEMAIS COMO NÃO PREMIADOS
   // ============================
   const idsGanhadores = ganhadores.map((b) => b.id);
 
   await prisma.bilhete.updateMany({
     where: {
-      sorteioData,
-      status: "ATIVO",
+      id: { in: bilhetes.map((b) => b.id) },
       id: { notIn: idsGanhadores },
     },
     data: {
       status: "NAO_PREMIADO",
-      resultadoFederal: resultadoStr,
+      resultadoFederal: resultadoStr.slice(0, 20),
       apuradoEm: agora,
     },
   });
+
+  console.log(
+    `✅ Sorteio finalizado. Ganhadores: ${ganhadores.length}`
+  );
+
+  return {
+    ok: true,
+    ganhadores: ganhadores.length,
+    valorPorGanhador,
+  };
 }
