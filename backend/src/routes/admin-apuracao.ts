@@ -1,7 +1,6 @@
+// backend/src/routes/admin-apuracao.ts
 import { Router } from "express";
-import { prisma } from "../lib/prisma";
-import admin from "firebase-admin";
-import nodemailer from "nodemailer";
+import { processarSorteio } from "../services/sorteio-processor";
 
 const router = Router();
 
@@ -14,184 +13,96 @@ type FederalResponse = {
   ok: boolean;
   data?: {
     dataApuracao: string;
-    premios: string[];
-    proximoSorteio?: string;
-    timestampProximoSorteio?: number;
+    premios: string[]; // 1º ao 5º prêmio (milhar)
   };
 };
 
 /**
- * ============================
- * FIREBASE ADMIN (BACKEND)
- * ============================
- */
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
-
-/**
- * ============================
- * EMAIL — CONFIGURAÇÃO SMTP
- * ============================
- */
-const mailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-/**
  * =====================================================
- * ADMIN — APURAR SORTEIO
+ * ADMIN — APURAR SORTEIO (MANUAL / BACKUP)
  * =====================================================
+ * - NÃO calcula ganhadores
+ * - NÃO aplica regra
+ * - NÃO mexe em bilhetes diretamente
+ * - Apenas:
+ *   1) busca resultado REAL da Federal
+ *   2) monta dezenas válidas
+ *   3) chama o motor oficial (processarSorteio)
  */
 router.post("/apurar", async (req, res) => {
   try {
-    let { premiosFederal } = req.body;
+    const { sorteioData, premioTotal } = req.body;
 
-    /**
-     * 🔥 SE NÃO VEIO RESULTADO → BUSCA NA FEDERAL
-     */
-    if (!Array.isArray(premiosFederal)) {
-      const resp = await fetch(
-        `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
-      );
+    if (!sorteioData) {
+      return res.status(400).json({
+        ok: false,
+        error: "sorteioData é obrigatória",
+      });
+    }
 
-      const json = (await resp.json()) as FederalResponse;
+    const premio = Number(premioTotal);
+    if (!premio || premio <= 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "premioTotal inválido",
+      });
+    }
 
-      if (!json.ok || !Array.isArray(json.data?.premios)) {
-        return res
-          .status(400)
-          .json({ error: "Não foi possível obter resultado da Federal." });
+    // 🔎 Busca resultado REAL da Federal
+    const resp = await fetch(
+      `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
+    );
+
+    const json = (await resp.json()) as FederalResponse;
+
+    if (!json.ok || !Array.isArray(json.data?.premios)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Não foi possível obter resultado da Federal",
+      });
+    }
+
+    if (json.data.premios.length !== 5) {
+      return res.status(400).json({
+        ok: false,
+        error: "Resultado da Federal inválido",
+      });
+    }
+
+    // 🎯 Monta dezenas válidas (frente e fundo)
+    const dezenas: string[] = [];
+    for (const num of json.data.premios) {
+      dezenas.push(num.slice(0, 2));
+      dezenas.push(num.slice(-2));
+    }
+
+    if (dezenas.length !== 10) {
+      return res.status(400).json({
+        ok: false,
+        error: "Dezenas da Federal inválidas",
+      });
+    }
+
+    // 🚀 Chama o MOTOR OFICIAL
+    const resultado = await processarSorteio(
+      new Date(sorteioData),
+      {
+        dezenas,
+        premioTotal: premio,
       }
-
-      premiosFederal = json.data.premios;
-    }
-
-    if (!Array.isArray(premiosFederal) || premiosFederal.length !== 5) {
-      return res.status(400).json({ error: "Resultado da Federal inválido." });
-    }
-
-    /**
-     * ============================
-     * MONTA DEZENAS PREMIADAS
-     * ============================
-     */
-    const dezenasPremiadas: string[] = [];
-    premiosFederal.forEach((num: string) => {
-      dezenasPremiadas.push(num.slice(0, 2));
-      dezenasPremiadas.push(num.slice(-2));
-    });
-
-    /**
-     * ============================
-     * BUSCA BILHETES VÁLIDOS
-     * ============================
-     */
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        pago: true,
-        status: "ATIVO_ATUAL",
-      },
-    });
-
-    const ganhadores = bilhetes.filter((b) => {
-      const dezenasBilhete = b.dezenas.split(",");
-      const acertos = dezenasBilhete.filter((d) =>
-        dezenasPremiadas.includes(d)
-      );
-      return acertos.length >= 3;
-    });
-
-    /**
-     * ============================
-     * PRÊMIO ATUAL
-     * ============================
-     */
-    const PREMIO_BASE = 500;
-    let premioAtual = PREMIO_BASE;
-
-    const premioRow = await prisma.appContent.findUnique({
-      where: { key: "premio_atual" },
-    });
-
-    if (premioRow) {
-      premioAtual = Number(premioRow.contentHtml);
-    }
-
-    /**
-     * ============================
-     * SEM GANHADORES → ACUMULA
-     * ============================
-     */
-    if (ganhadores.length === 0) {
-      premioAtual += PREMIO_BASE;
-
-      await prisma.appContent.upsert({
-        where: { key: "premio_atual" },
-        update: { contentHtml: String(premioAtual) },
-        create: {
-          key: "premio_atual",
-          title: "Prêmio Atual",
-          contentHtml: String(premioAtual),
-        },
-      });
-
-      return res.json({
-        ok: true,
-        mensagem: "Nenhum ganhador. Prêmio acumulado.",
-        premioAtual,
-      });
-    }
-
-    /**
-     * ============================
-     * DISTRIBUI PRÊMIO
-     * ============================
-     */
-    const valorPorBilhete = premioAtual / ganhadores.length;
-
-    for (const b of ganhadores) {
-      await prisma.bilhete.update({
-        where: { id: b.id },
-        data: {
-          status: "PREMIADO",
-          premioValor: valorPorBilhete,
-          resultadoFederal: premiosFederal.join(","),
-          apuradoEm: new Date(),
-        },
-      });
-    }
-
-    await prisma.appContent.upsert({
-      where: { key: "premio_atual" },
-      update: { contentHtml: String(PREMIO_BASE) },
-      create: {
-        key: "premio_atual",
-        title: "Prêmio Atual",
-        contentHtml: String(PREMIO_BASE),
-      },
-    });
+    );
 
     return res.json({
       ok: true,
-      ganhadores: ganhadores.length,
-      valorPorBilhete,
-      proximoPremio: PREMIO_BASE,
+      origem: "manual",
+      resultado,
     });
   } catch (error) {
-    console.error("Erro apuração:", error);
-    return res.status(500).json({ error: "Erro ao apurar sorteio." });
+    console.error("Erro apuração manual:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao apurar sorteio manualmente",
+    });
   }
 });
 
