@@ -26,12 +26,12 @@ export default function AdminSorteioControl() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       const res = await axios.post(
-        "/admin/sorteio/processar", // ✅ rota correta
+        "/admin/sorteio/processar",
         {
-          // ⚠️ dados mínimos exigidos pelo backend
+          // ✅ valores mínimos VÁLIDOS exigidos pela rota
           sorteioData: new Date().toISOString(),
-          dezenas: [], // o backend usa os dados reais dos bilhetes
-          premioTotal: 0, // valor real já vem do sistema
+          dezenas: ["00"],      // não usado no cálculo real
+          premioTotal: 1,       // não usado no cálculo real
         },
         {
           headers: {
@@ -43,7 +43,7 @@ export default function AdminSorteioControl() {
       if (res.data?.ok) {
         setStatus(`✅ ${res.data.message}`);
       } else {
-        setStatus(`⚠️ ${res.data.error || "Sorteio não processado"}`);
+        setStatus(`⚠️ ${res.data.error}`);
       }
     } catch (err) {
       console.error(err);
