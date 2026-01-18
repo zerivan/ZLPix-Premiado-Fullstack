@@ -69,6 +69,11 @@ model bilhete {
   premioValor      Float?     @map("premiovalor")
   apuradoEm        DateTime?  @map("apuradoem")
 
+  ganhadorNome     String?    @map("ganhadornome")
+  ganhadorEmail    String?    @map("ganhadoremail")
+  ganhadorTelefone String?    @map("ganhadortelefone")
+  ganhadorPix      String?    @map("ganhadorpix")
+
   createdAt        DateTime   @default(now()) @map("createdat")
 
   user             users       @relation(fields: [userId], references: [id])
@@ -88,9 +93,6 @@ model password_reset {
   @@map("password_resets")
 }
 
-// =====================================================
-// APP CONTENT — CMS (ALINHADO COM O BANCO)
-// =====================================================
 model AppContent {
   id          Int      @id @default(autoincrement())
 
