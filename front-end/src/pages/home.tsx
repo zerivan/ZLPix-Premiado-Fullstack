@@ -16,29 +16,23 @@ function formatarDataBR(iso: string) {
 /**
  * REGRA OFICIAL:
  * - Sorteio só vira depois das 17h da quarta-feira
- * - Se a API adiantar, corrigimos no front
  */
 function ajustarDataSorteio(iso: string) {
   const agora = new Date();
-  const diaSemana = agora.getDay(); // 3 = quarta
+  const diaSemana = agora.getDay();
   const hora = agora.getHours();
 
   const dataApi = new Date(iso);
 
-  // ❌ Quarta-feira ANTES das 17h → ainda é o sorteio atual
   if (diaSemana === 3 && hora < 17) {
     const corrigida = new Date(dataApi);
     corrigida.setDate(corrigida.getDate() - 7);
     return formatarDataBR(corrigida.toISOString());
   }
 
-  // ✅ Fora disso, usa normalmente
   return formatarDataBR(iso);
 }
 
-/**
- * Garante que o HTML tenha conteúdo visível
- */
 function hasVisibleHtml(html: string | null) {
   if (!html) return false;
 
@@ -49,6 +43,29 @@ function hasVisibleHtml(html: string | null) {
 
   return text.length > 0;
 }
+
+/**
+ * 🔒 FALLBACK FIXO — NUNCA SOME
+ */
+const COMO_FUNCIONA_FALLBACK = `
+<h3 class="text-yellow-300 font-bold text-lg">🎯 Como funciona o jogo</h3>
+<p>
+Você escolhe até <strong>3 dezenas</strong> entre <strong>00 e 99</strong>.
+Cada bilhete concorre automaticamente no próximo sorteio da
+<strong>Loteria Federal</strong>.
+</p>
+<p>
+Se suas dezenas coincidirem com as dezenas premiadas do
+<strong>1º ao 5º prêmio</strong>, você ganha!
+</p>
+<p>
+O prêmio é <strong>dividido automaticamente</strong> entre os ganhadores
+e o valor cai direto na sua carteira 💰
+</p>
+<p class="text-xs text-white/70">
+Sorteios toda quarta-feira às 17h.
+</p>
+`;
 
 type CmsArea = {
   key: string;
@@ -72,7 +89,6 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 🔹 PRÓXIMO SORTEIO (corrigido pela regra)
         const federal = await api.get("/api/federal");
         if (federal.data?.ok && federal.data.data?.proximoSorteio) {
           setDataSorteio(
@@ -80,13 +96,11 @@ export default function Home() {
           );
         }
 
-        // 🔹 PRÊMIO ATUAL
         const premio = await api.get("/api/cms/public/premio");
         if (premio.data?.ok && typeof premio.data.valor === "number") {
           setPremioAtual(`R$ ${premio.data.valor}`);
         }
 
-        // 🔹 CMS HOME
         const cms = await api.get(
           isPreview
             ? "/api/cms/preview/home?token=preview"
@@ -106,9 +120,7 @@ export default function Home() {
             areas.find((a) => a.key === "home_footer")?.contentHtml || null
           );
         }
-      } catch {
-        // Home nunca quebra
-      }
+      } catch {}
     }
 
     loadData();
@@ -117,7 +129,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
       <header className="text-center py-7 border-b border-white/10 shadow-md">
-        <h1 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg">
+        <h1 className="text-3xl font-extrabold text-yellow-300">
           ZLPIX PREMIADO 💰
         </h1>
         <p className="text-sm text-blue-100 mt-1">
@@ -126,12 +138,9 @@ export default function Home() {
       </header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-yellow-400/30 w-full max-w-md">
+        <div className="bg-white/10 rounded-2xl p-6 shadow-lg w-full max-w-md">
           <p className="text-yellow-300 text-sm mb-1">Prêmio acumulado</p>
-
-          <h2 className="text-4xl font-extrabold drop-shadow-sm">
-            {premioAtual}
-          </h2>
+          <h2 className="text-4xl font-extrabold">{premioAtual}</h2>
 
           {dataSorteio && (
             <p className="text-sm text-blue-100 mt-2">
@@ -144,7 +153,7 @@ export default function Home() {
 
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
-              className="mt-4 text-sm text-white/90 leading-relaxed"
+              className="mt-4 text-sm text-white/90"
               dangerouslySetInnerHTML={{ __html: homeCardInfoHtml! }}
             />
           )}
@@ -162,7 +171,7 @@ export default function Home() {
 
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
-            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-5 text-sm text-white/90 shadow-inner w-full max-w-md leading-relaxed"
+            className="bg-white/10 rounded-xl p-5 text-sm text-white/90 w-full max-w-md"
             dangerouslySetInnerHTML={{ __html: homeExtraInfoHtml! }}
           />
         )}
@@ -170,20 +179,24 @@ export default function Home() {
         <div className="w-full max-w-md space-y-4">
           <button
             onClick={() => setShowInfo(!showInfo)}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full shadow-md"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full"
           >
             {showInfo ? "Fechar explicação" : "Como funciona o jogo 🎯"}
           </button>
 
           <AnimatePresence>
-            {showInfo && hasVisibleHtml(homeFooterHtml) && (
+            {showInfo && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
-                className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg space-y-4 w-full"
-                dangerouslySetInnerHTML={{ __html: homeFooterHtml! }}
+                className="bg-white/10 rounded-2xl p-5 shadow-lg space-y-4 w-full"
+                dangerouslySetInnerHTML={{
+                  __html: hasVisibleHtml(homeFooterHtml)
+                    ? homeFooterHtml!
+                    : COMO_FUNCIONA_FALLBACK,
+                }}
               />
             )}
           </AnimatePresence>
