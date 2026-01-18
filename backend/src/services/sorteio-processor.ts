@@ -64,7 +64,9 @@ export async function processarSorteio(
   // ============================
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
-      where: { id: { in: bilhetes.map((b) => b.id) } },
+      where: {
+        id: { in: bilhetes.map((b) => b.id) },
+      },
       data: {
         status: "NAO_PREMIADO",
         resultadoFederal: resultadoStr.slice(0, 20),
@@ -131,8 +133,10 @@ export async function processarSorteio(
 
   await prisma.bilhete.updateMany({
     where: {
-      id: { in: bilhetes.map((b) => b.id) },
-      id: { notIn: idsGanhadores },
+      id: {
+        in: bilhetes.map((b) => b.id),
+        notIn: idsGanhadores,
+      },
     },
     data: {
       status: "NAO_PREMIADO",
