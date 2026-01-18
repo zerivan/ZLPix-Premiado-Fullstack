@@ -4,13 +4,9 @@ import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
-// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
-/**
- * 🔐 Identifica usuário (USER_ID)
- */
 function getUserId(req: any): number | null {
   const userId =
     req.headers["x-user-id"] ||
@@ -22,11 +18,6 @@ function getUserId(req: any): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-/**
- * =========================
- * POST /wallet/ensure
- * =========================
- */
 router.post("/ensure", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -34,32 +25,20 @@ router.post("/ensure", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     if (!wallet) {
       await prisma.wallet.create({
-        data: {
-          userId,
-          saldo: 0,
-          createdAt: new Date(),
-        },
+        data: { userId, saldo: 0, createdAt: new Date() },
       });
     }
 
     return res.json({ ok: true });
-  } catch (err) {
-    console.error("Erro wallet/ensure:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
-/**
- * =========================
- * GET /wallet/saldo
- * =========================
- */
 router.get("/saldo", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -67,25 +46,16 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     return res.json({
       saldo: wallet ? Number(wallet.saldo) : 0,
     });
-  } catch (err) {
-    console.error("Erro wallet/saldo:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
-/**
- * =========================
- * GET /wallet/historico
- * =========================
- * Últimos 40 dias — APENAS CARTEIRA
- */
 router.get("/historico", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -100,10 +70,10 @@ router.get("/historico", async (req, res) => {
       where: {
         userId,
         createdAt: { gte: limite },
-        metadata: {
-          path: ["origem"],
-          equals: "wallet", // ✅ FILTRO CORRETO
-        },
+        OR: [
+          { metadata: { path: ["origem"], equals: "wallet" } },
+          { metadata: { path: ["origem"], equals: "sorteio" } },
+        ],
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -116,18 +86,11 @@ router.get("/historico", async (req, res) => {
     });
 
     return res.json(historico);
-  } catch (err) {
-    console.error("Erro wallet/historico:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
-/**
- * =========================
- * GET /wallet/historico/download
- * =========================
- * 📥 Download CSV (40 dias)
- */
 router.get("/historico/download", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -142,10 +105,10 @@ router.get("/historico/download", async (req, res) => {
       where: {
         userId,
         createdAt: { gte: limite },
-        metadata: {
-          path: ["origem"],
-          equals: "wallet", // ✅ MESMO FILTRO
-        },
+        OR: [
+          { metadata: { path: ["origem"], equals: "wallet" } },
+          { metadata: { path: ["origem"], equals: "sorteio" } },
+        ],
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -156,19 +119,22 @@ router.get("/historico/download", async (req, res) => {
       },
     });
 
-    let csv = "Data,Tipo,Valor,Status,Chave PIX\n";
+    let csv = "Data,Tipo,Valor,Status\n";
 
     for (const t of transacoes) {
       const meta: any = t.metadata || {};
-      const tipo = meta.tipo === "saque" ? "Saque" : "Depósito";
-      const pixKey = meta.pixKey ? `"${meta.pixKey}"` : "";
+      const tipo =
+        meta.tipo === "premio"
+          ? "Prêmio"
+          : meta.tipo === "saque"
+          ? "Saque"
+          : "Depósito";
 
       csv +=
         `"${new Date(t.createdAt).toLocaleString("pt-BR")}",` +
         `"${tipo}",` +
         `"${Number(t.valor).toFixed(2)}",` +
-        `"${t.status}",` +
-        `${pixKey}\n`;
+        `"${t.status}"\n`;
     }
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
@@ -178,17 +144,11 @@ router.get("/historico/download", async (req, res) => {
     );
 
     return res.send(csv);
-  } catch (err) {
-    console.error("Erro download histórico:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
-/**
- * =========================
- * POST /wallet/depositar
- * =========================
- */
 router.post("/depositar", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -203,29 +163,18 @@ router.post("/depositar", async (req, res) => {
       select: { email: true, name: true },
     });
 
-    if (!user?.email) {
-      return res.status(400).json({ error: "Usuário inválido" });
-    }
-
     const tx = await prisma.transacao.create({
       data: {
         userId,
         valor: Number(valor),
         status: "pending",
-        metadata: {
-          tipo: "deposito",
-          origem: "wallet",
-        },
+        metadata: { tipo: "deposito", origem: "wallet" },
       },
     });
 
     const mpToken =
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
-
-    if (!mpToken) {
-      return res.status(500).json({ error: "MP token ausente" });
-    }
 
     const resp = await fetchFn(
       "https://api.mercadopago.com/v1/payments",
@@ -241,19 +190,14 @@ router.post("/depositar", async (req, res) => {
           description: "Depósito na Carteira ZLPix",
           payment_method_id: "pix",
           payer: {
-            email: user.email,
-            first_name: user.name || "Cliente",
+            email: user?.email || "cliente@zlpix.com",
+            first_name: user?.name || "Cliente",
           },
         }),
       }
     );
 
     const mpJson: any = await resp.json();
-
-    if (!resp.ok) {
-      console.error("Erro MP depósito:", mpJson);
-      return res.status(502).json({ error: "Erro ao gerar PIX" });
-    }
 
     await prisma.transacao.update({
       where: { id: tx.id },
@@ -274,29 +218,17 @@ router.post("/depositar", async (req, res) => {
       copy_paste:
         mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
     });
-  } catch (err) {
-    console.error("Erro wallet/depositar:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
-/**
- * =========================
- * POST /wallet/saque
- * =========================
- */
 router.post("/saque", async (req, res) => {
   try {
     const userId = getUserId(req);
     const { valor, pixKey } = req.body;
 
-    if (!userId || !valor || Number(valor) <= 0) {
-      return res.status(400).json({ error: "Dados inválidos" });
-    }
-
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId },
-    });
+    const wallet = await prisma.wallet.findFirst({ where: { userId } });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
       return res.status(400).json({ error: "Saldo insuficiente" });
@@ -336,8 +268,7 @@ router.post("/saque", async (req, res) => {
       ok: true,
       message: "Saque solicitado e enviado para análise",
     });
-  } catch (err) {
-    console.error("Erro wallet/saque:", err);
+  } catch {
     return res.status(500).json({ error: "Erro interno" });
   }
 });
