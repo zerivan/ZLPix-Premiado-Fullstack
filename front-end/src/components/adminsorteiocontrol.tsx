@@ -28,10 +28,9 @@ export default function AdminSorteioControl() {
       const res = await axios.post(
         "/admin/sorteio/processar",
         {
-          // ✅ valores mínimos VÁLIDOS exigidos pela rota
           sorteioData: new Date().toISOString(),
-          dezenas: ["00"],      // não usado no cálculo real
-          premioTotal: 1,       // não usado no cálculo real
+          dezenas: ["00"],
+          premioTotal: 1,
         },
         {
           headers: {
@@ -40,10 +39,15 @@ export default function AdminSorteioControl() {
         }
       );
 
-      if (res.data?.ok) {
-        setStatus(`✅ ${res.data.message}`);
+      // ✅ LEITURA DEFENSIVA (NUNCA undefined)
+      if (res.data?.ok === true) {
+        setStatus(`✅ ${res.data.message || "Sorteio processado com sucesso"}`);
       } else {
-        setStatus(`⚠️ ${res.data.error}`);
+        const msg =
+          res.data?.error ||
+          res.data?.message ||
+          "Sorteio não pôde ser processado";
+        setStatus(`⚠️ ${msg}`);
       }
     } catch (err) {
       console.error(err);
