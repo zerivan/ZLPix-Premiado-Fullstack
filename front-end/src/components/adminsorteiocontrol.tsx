@@ -29,11 +29,7 @@ export default function AdminSorteioControl() {
         return;
       }
 
-      /**
-       * 🔥 RESULTADO FEDERAL (TESTE CONTROLADO)
-       * 5 números (1º ao 5º), como a apuração espera.
-       * Ajuste para bater com o bilhete que você quer premiar.
-       */
+      // 🔥 Resultado Federal (teste controlado)
       const premiosFederal = [
         "71900",
         "90310",
@@ -43,7 +39,7 @@ export default function AdminSorteioControl() {
       ];
 
       const res = await axios.post(
-        "/api/admin/apurar",
+        "/api/admin/apuracao/apurar",
         { premiosFederal },
         {
           headers: {
