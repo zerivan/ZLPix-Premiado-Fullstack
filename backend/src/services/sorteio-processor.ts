@@ -4,17 +4,10 @@ import { prisma } from "../lib/prisma";
  * ============================
  * 🎯 PROCESSADOR DE SORTEIO
  * ============================
- * Executa TODA a lógica automática:
- * - Analisa bilhetes ATIVOS
- * - Identifica ganhadores
- * - Divide prêmio
- * - Credita carteira
- * - Atualiza status dos bilhetes
- * - REGISTRA auditoria completa
  */
 
 type ResultadoOficial = {
-  dezenas: string[]; // ex: ["12","45","98"]
+  dezenas: string[];
   premioTotal: number;
 };
 
@@ -33,8 +26,7 @@ export async function processarSorteio(
   });
 
   if (!bilhetes.length) {
-    console.log("Nenhum bilhete ativo para o sorteio:", sorteioData);
-    return;
+    throw new Error("Nenhum bilhete ativo para este sorteio");
   }
 
   // ============================
@@ -63,8 +55,7 @@ export async function processarSorteio(
       },
     });
 
-    console.log("Sorteio sem ganhadores. Prêmio acumulado.");
-    return;
+    throw new Error("Sorteio processado sem ganhadores (prêmio acumulado)");
   }
 
   // ============================
@@ -81,7 +72,6 @@ export async function processarSorteio(
   // ============================
   for (const bilhete of ganhadores) {
     await prisma.$transaction([
-      // 💰 CREDITAR CARTEIRA
       prisma.wallet.updateMany({
         where: { userId: bilhete.userId },
         data: {
@@ -91,7 +81,6 @@ export async function processarSorteio(
         },
       }),
 
-      // 🧾 REGISTRAR TRANSAÇÃO DE PRÊMIO
       prisma.transacao.create({
         data: {
           userId: bilhete.userId,
@@ -107,7 +96,6 @@ export async function processarSorteio(
         },
       }),
 
-      // 🏆 MARCAR BILHETE COMO PREMIADO (COM AUDITORIA)
       prisma.bilhete.update({
         where: { id: bilhete.id },
         data: {
@@ -137,8 +125,4 @@ export async function processarSorteio(
       apuradoEm: agora,
     },
   });
-
-  console.log(
-    `Sorteio processado com sucesso. Ganhadores: ${ganhadores.length}`
-  );
 }
