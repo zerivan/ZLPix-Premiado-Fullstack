@@ -26,8 +26,13 @@ export default function AdminSorteioControl() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       const res = await axios.post(
-        "/api/admin/sorteio/processar",
-        {},
+        "/admin/sorteio/processar", // ✅ rota correta
+        {
+          // ⚠️ dados mínimos exigidos pelo backend
+          sorteioData: new Date().toISOString(),
+          dezenas: [], // o backend usa os dados reais dos bilhetes
+          premioTotal: 0, // valor real já vem do sistema
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -35,16 +40,10 @@ export default function AdminSorteioControl() {
         }
       );
 
-      // 🔥 AQUI ESTAVA O ERRO
-      // Agora usamos a resposta REAL do backend
-      if (res.data?.message) {
-        setStatus(
-          res.data.status === "NO_DRAW"
-            ? `ℹ️ ${res.data.message}`
-            : `✅ ${res.data.message}`
-        );
+      if (res.data?.ok) {
+        setStatus(`✅ ${res.data.message}`);
       } else {
-        setStatus("⚠️ Resposta inesperada do servidor.");
+        setStatus(`⚠️ ${res.data.error || "Sorteio não processado"}`);
       }
     } catch (err) {
       console.error(err);
