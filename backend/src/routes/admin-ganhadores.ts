@@ -26,6 +26,9 @@ router.get("/", async (_req, res) => {
           select: {
             id: true,
             name: true,
+            email: true,
+            phone: true,
+            pixKey: true,
           },
         },
         transacao: {
@@ -40,6 +43,9 @@ router.get("/", async (_req, res) => {
     const ganhadores = bilhetesPremiados.map((b) => ({
       userId: b.user.id,
       nome: b.user.name,
+      email: b.user.email,
+      telefone: b.user.phone,
+      pixKey: b.user.pixKey,
       dezenas: b.dezenas,
       premio: Number(b.premioValor || 0),
       resultadoFederal: b.resultadoFederal,
