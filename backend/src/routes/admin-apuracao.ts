@@ -52,23 +52,12 @@ async function enviarEmailBilhetePremiado(params: {
 
   const html = `
     <p>🎉 <strong>PARABÉNS ${params.nome || ""}!</strong></p>
-
     <p>Seu bilhete foi <strong>PREMIADO</strong> no ZLPix 🎟️</p>
-
     <p>
       <strong>Bilhete:</strong> #${params.bilheteId}<br/>
       <strong>Prêmio:</strong> R$ ${params.premio.toFixed(2)}
     </p>
-
-    <p>
-      👉 <a href="${link}">Ver meus bilhetes</a>
-    </p>
-
-    <p>
-      O valor do prêmio será processado conforme as regras do sorteio.<br/>
-      Obrigado por participar 🍀
-    </p>
-
+    <p>👉 <a href="${link}">Ver meus bilhetes</a></p>
     <p>ZLPix Premiado</p>
   `;
 
@@ -109,9 +98,7 @@ async function enviarPushBilhetePremiado(
           2
         )}`,
       },
-      data: {
-        url: "/meus-bilhetes",
-      },
+      data: { url: "/meus-bilhetes" },
     });
   } catch (e) {
     console.error("Erro ao enviar push premiado:", e);
@@ -126,33 +113,38 @@ async function enviarPushBilhetePremiado(
 const PREMIO_BASE = 500;
 
 /**
- * Próxima quarta-feira às 20h
- */
-function proximaQuarta(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0);
-  return next;
-}
-
-/**
  * =====================================================
  * ADMIN — APURAR SORTEIO
  * =====================================================
  */
 router.post("/apurar", async (req, res) => {
   try {
-    const { premiosFederal } = req.body;
+    let { premiosFederal } = req.body;
+
+    /**
+     * 🔥 SE NÃO VEIO RESULTADO → BUSCA NA FEDERAL
+     */
+    if (!Array.isArray(premiosFederal)) {
+      const resp = await fetch(
+        `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
+      );
+      const json = await resp.json();
+
+      if (!json?.ok || !Array.isArray(json.data?.premios)) {
+        return res
+          .status(400)
+          .json({ error: "Não foi possível obter resultado da Federal." });
+      }
+
+      premiosFederal = json.data.premios;
+    }
 
     if (!Array.isArray(premiosFederal) || premiosFederal.length !== 5) {
       return res.status(400).json({ error: "Resultado da Federal inválido." });
     }
 
     const dezenasPremiadas: string[] = [];
-    premiosFederal.forEach((num) => {
+    premiosFederal.forEach((num: string) => {
       dezenasPremiadas.push(num.slice(0, 2));
       dezenasPremiadas.push(num.slice(-2));
     });
@@ -207,14 +199,12 @@ router.post("/apurar", async (req, res) => {
         },
       });
 
-      // 🔔 Push
       await enviarPushBilhetePremiado(
         b.userId,
         b.id,
         valorPorBilhete
       );
 
-      // 📧 Email
       const user = await prisma.users.findUnique({
         where: { id: b.userId },
         select: { email: true, name: true },
