@@ -25,7 +25,7 @@ import adminCmsRoutes from "./routes/admin-cms";
 import adminApuracaoRoutes from "./routes/admin-apuracao";
 import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
 import adminSaquesRoutes from "./routes/admin-saques";
-import adminSorteioRoutes from "./routes/admin-sorteio"; // ✅ DISPARO MANUAL
+import adminSorteioRoutes from "./routes/admin-sorteio";
 
 // IA ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
@@ -74,7 +74,11 @@ app.get("/", (_req, res) => {
 // ROTAS APP
 // ============================
 app.use("/auth", authRoutes);
+
+// 🔥 FEDERAL — DUPLA ROTA (CORREÇÃO DEFINITIVA)
 app.use("/api/federal", federalRoutes);
+app.use("/federal", federalRoutes);
+
 app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/bilhete", bilheteRoutes);
