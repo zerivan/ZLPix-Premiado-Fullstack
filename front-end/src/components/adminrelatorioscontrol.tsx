@@ -3,15 +3,15 @@ import axios from "axios";
 
 type Relatorio = {
   totalUsuarios: number;
-  totalBilhetes: number;
+  totalBilhetesPagos: number;
   totalTransacoes: number;
-  totalArrecadado: number;
-  totalPago: number;
+  arrecadadoBilhetes: number;
+  totalPremiosPagos: number;
   ultimaTransacao?: {
     valor: number;
     createdAt: string;
     status: string;
-  };
+  } | null;
 };
 
 export default function AdminRelatoriosControl() {
@@ -35,7 +35,7 @@ export default function AdminRelatoriosControl() {
         }
       );
 
-      if (res.data?.ok) {
+      if (res.data?.ok && res.data.data) {
         setData(res.data.data);
       } else {
         setErro("Resposta inválida do servidor.");
@@ -64,7 +64,13 @@ export default function AdminRelatoriosControl() {
     return <div className="text-sm text-red-600">{erro}</div>;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="text-sm text-gray-500">
+        Nenhum dado disponível no momento.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -77,8 +83,8 @@ export default function AdminRelatoriosControl() {
         </div>
 
         <div className="border rounded p-3">
-          <strong>Apostas</strong>
-          <div>{data.totalBilhetes}</div>
+          <strong>Apostas pagas</strong>
+          <div>{data.totalBilhetesPagos}</div>
         </div>
 
         <div className="border rounded p-3">
@@ -87,13 +93,13 @@ export default function AdminRelatoriosControl() {
         </div>
 
         <div className="border rounded p-3">
-          <strong>Total arrecadado</strong>
-          <div>R$ {data.totalArrecadado.toFixed(2)}</div>
+          <strong>Arrecadado (bilhetes)</strong>
+          <div>R$ {data.arrecadadoBilhetes.toFixed(2)}</div>
         </div>
 
         <div className="border rounded p-3">
-          <strong>Total pago</strong>
-          <div>R$ {data.totalPago.toFixed(2)}</div>
+          <strong>Prêmios pagos</strong>
+          <div>R$ {data.totalPremiosPagos.toFixed(2)}</div>
         </div>
       </div>
 
