@@ -13,27 +13,68 @@ router.get("/", async (_req, res) => {
   try {
     const [
       totalUsuarios,
-      totalBilhetes,
+      totalBilhetesPagos,
       totalTransacoes,
-      transacoesConfirmadas,
+      transacoesBilhetes,
+      transacoesPremios,
+      transacoesDepositos,
+      transacoesSaques,
       ultimaTransacao,
     ] = await Promise.all([
       prisma.users.count(),
 
-      prisma.bilhete.count(),
+      // 🎟️ apenas bilhetes pagos
+      prisma.bilhete.count({
+        where: { pago: true },
+      }),
 
       prisma.transacao.count(),
 
-      // 💰 dinheiro efetivo (não pending)
+      // 💰 arrecadação real (compra de bilhetes)
       prisma.transacao.findMany({
         where: {
-          status: {
-            not: "pending",
+          status: "paid",
+          metadata: {
+            path: ["tipo"],
+            equals: "bilhete",
           },
         },
-        select: {
-          valor: true,
+        select: { valor: true },
+      }),
+
+      // 🏆 prêmios pagos
+      prisma.transacao.findMany({
+        where: {
+          status: "paid",
+          metadata: {
+            path: ["tipo"],
+            equals: "premio",
+          },
         },
+        select: { valor: true },
+      }),
+
+      // 💼 depósitos em carteira
+      prisma.transacao.findMany({
+        where: {
+          status: "paid",
+          metadata: {
+            path: ["tipo"],
+            equals: "deposito",
+          },
+        },
+        select: { valor: true },
+      }),
+
+      // 📤 saques solicitados
+      prisma.transacao.findMany({
+        where: {
+          metadata: {
+            path: ["tipo"],
+            equals: "saque",
+          },
+        },
+        select: { valor: true, status: true },
       }),
 
       prisma.transacao.findFirst({
@@ -42,22 +83,29 @@ router.get("/", async (_req, res) => {
           valor: true,
           status: true,
           createdAt: true,
+          metadata: true,
         },
       }),
     ]);
 
-    const totalArrecadado = transacoesConfirmadas.reduce((acc, t) => {
-      return acc + (Number(t.valor) || 0);
-    }, 0);
+    const soma = (arr: { valor: any }[]) =>
+      arr.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
 
     return res.json({
       ok: true,
       data: {
         totalUsuarios,
-        totalBilhetes,
+        totalBilhetesPagos,
         totalTransacoes,
-        totalArrecadado,
-        totalPago: totalArrecadado, // diagnóstico (por enquanto)
+
+        arrecadadoBilhetes: soma(transacoesBilhetes),
+        totalPremiosPagos: soma(transacoesPremios),
+        totalDepositosCarteira: soma(transacoesDepositos),
+
+        totalSaquesSolicitados: soma(
+          transacoesSaques.filter((s) => s.status === "pending")
+        ),
+
         ultimaTransacao: ultimaTransacao
           ? {
               ...ultimaTransacao,
