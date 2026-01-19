@@ -2,8 +2,45 @@ import { prisma } from "../lib/prisma";
 
 type ResultadoOficial = {
   dezenas: string[];
-  premioTotal: number;
+  premioTotal?: number;
 };
+
+const PREMIO_BASE = 500;
+
+async function obterPremioAtual(): Promise<number> {
+  const row = await prisma.appContent.findUnique({
+    where: { key: "premio_atual" },
+  });
+
+  if (!row || !row.contentHtml) {
+    await prisma.appContent.upsert({
+      where: { key: "premio_atual" },
+      update: { contentHtml: String(PREMIO_BASE) },
+      create: {
+        key: "premio_atual",
+        title: "Prêmio Atual",
+        contentHtml: String(PREMIO_BASE),
+      },
+    });
+
+    return PREMIO_BASE;
+  }
+
+  const valor = Number(row.contentHtml);
+  return isNaN(valor) || valor <= 0 ? PREMIO_BASE : valor;
+}
+
+async function atualizarPremio(valor: number) {
+  await prisma.appContent.upsert({
+    where: { key: "premio_atual" },
+    update: { contentHtml: String(valor) },
+    create: {
+      key: "premio_atual",
+      title: "Prêmio Atual",
+      contentHtml: String(valor),
+    },
+  });
+}
 
 export async function processarSorteio(
   sorteioData: Date,
@@ -26,10 +63,7 @@ export async function processarSorteio(
   });
 
   if (!bilhetes.length) {
-    return {
-      ok: false,
-      message: "Nenhum bilhete para processar",
-    };
+    return { ok: false, message: "Nenhum bilhete para processar" };
   }
 
   const dezenasValidas = resultado.dezenas.map((d) => d.trim());
@@ -50,11 +84,11 @@ export async function processarSorteio(
   const resultadoStr = dezenasValidas.join(",");
   const agora = new Date();
 
+  const premioAtual = await obterPremioAtual();
+
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
-      where: {
-        id: { in: bilhetes.map((b) => b.id) },
-      },
+      where: { id: { in: bilhetes.map((b) => b.id) } },
       data: {
         status: "NAO_PREMIADO",
         resultadoFederal: resultadoStr.slice(0, 20),
@@ -62,14 +96,16 @@ export async function processarSorteio(
       },
     });
 
+    await atualizarPremio(premioAtual + PREMIO_BASE);
+
     return {
       ok: true,
       message: "Sorteio sem ganhadores",
+      premioAtual: premioAtual + PREMIO_BASE,
     };
   }
 
-  const valorPorGanhador =
-    resultado.premioTotal / ganhadores.length;
+  const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
     const user = await prisma.users.findUnique({
@@ -86,9 +122,7 @@ export async function processarSorteio(
       prisma.wallet.updateMany({
         where: { userId: bilhete.userId },
         data: {
-          saldo: {
-            increment: valorPorGanhador,
-          },
+          saldo: { increment: valorPorGanhador },
         },
       }),
 
@@ -137,9 +171,12 @@ export async function processarSorteio(
     },
   });
 
+  await atualizarPremio(PREMIO_BASE);
+
   return {
     ok: true,
     ganhadores: ganhadores.length,
     valorPorGanhador,
+    premioResetadoPara: PREMIO_BASE,
   };
 }
