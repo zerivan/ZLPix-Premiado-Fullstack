@@ -45,42 +45,6 @@ router.get("/premio", async (_req, res) => {
 
 /**
  * =====================================================
- * 🎨 APARÊNCIA — PÚBLICO
- * =====================================================
- */
-router.get("/app-appearance", async (_req, res) => {
-  try {
-    const content = await prisma.appContent.findUnique({
-      where: { key: "app_appearance" },
-    });
-
-    const DEFAULT_APPEARANCE = {
-      primaryColor: "#4f46e5",
-      secondaryColor: "#6366f1",
-      accentColor: "#f59e0b",
-      backgroundColor: "#ffffff",
-      themeMode: "light",
-      fontPrimary: "Inter",
-      fontHeading: "Inter",
-    };
-
-    let data = DEFAULT_APPEARANCE;
-
-    if (content?.contentHtml) {
-      try {
-        data = JSON.parse(content.contentHtml);
-      } catch {}
-    }
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    console.error("Erro aparência pública:", error);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
  * 📄 CMS PÚBLICO — HTML POR PÁGINA
  * =====================================================
  * ✔ FILTRA APENAS CONTEÚDO ATIVO
@@ -96,7 +60,7 @@ router.get("/:page", async (req, res) => {
         key: {
           startsWith: `${page}_`,
         },
-        isActive: true, // ✅ ÚNICA ALTERAÇÃO REAL
+        isActive: true,
       },
       orderBy: {
         key: "asc",
