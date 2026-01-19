@@ -64,10 +64,7 @@ export default function AdminAparenciaControl() {
   function getAuthHeaders() {
     const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
     if (!token) return null;
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return { Authorization: `Bearer ${token}` };
   }
 
   function applyPreview(data: AppAppearance) {
@@ -94,23 +91,18 @@ export default function AdminAparenciaControl() {
       : root.classList.remove("dark");
   }
 
+  /**
+   * ============================
+   * LOAD — ROTA PÚBLICA
+   * ============================
+   */
   async function loadAppearance() {
     setLoading(true);
     setStatus(null);
 
-    const headers = getAuthHeaders();
-    if (!headers) {
-      setAppearance(DEFAULT_APPEARANCE);
-      applyPreview(DEFAULT_APPEARANCE);
-      setStatus("Token de administrador ausente.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/admin/cms/app-appearance`,
-        { headers }
+        `${BASE_URL}/api/cms/public/app-appearance`
       );
 
       if (res.data?.ok && res.data.data) {
@@ -135,6 +127,11 @@ export default function AdminAparenciaControl() {
     }
   }
 
+  /**
+   * ============================
+   * SAVE — ROTA ADMIN
+   * ============================
+   */
   async function saveAppearance() {
     if (!appearance) return;
 
@@ -149,10 +146,11 @@ export default function AdminAparenciaControl() {
 
     try {
       await axios.post(
-        `${BASE_URL}/api/admin/cms/app-appearance`,
+        `${BASE_URL}/api/admin/appearance`,
         appearance,
         { headers }
       );
+
       setStatus("Aparência salva com sucesso.");
     } catch {
       setStatus("Erro ao salvar aparência.");
@@ -208,65 +206,4 @@ export default function AdminAparenciaControl() {
       ))}
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Modo de Tema</label>
-        <select
-          className="border p-2 w-full"
-          value={appearance.themeMode}
-          onChange={(e) => {
-            const v = {
-              ...appearance,
-              themeMode: e.target.value as "light" | "dark",
-            };
-            setAppearance(v);
-            applyPreview(v);
-          }}
-        >
-          <option value="light">Claro</option>
-          <option value="dark">Escuro</option>
-        </select>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Fonte principal</label>
-        <select
-          className="border p-2 w-full"
-          value={appearance.fontPrimary}
-          onChange={(e) => {
-            const v = { ...appearance, fontPrimary: e.target.value };
-            setAppearance(v);
-            applyPreview(v);
-          }}
-        >
-          {GOOGLE_FONTS.map((f) => (
-            <option key={f}>{f}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Fonte dos títulos</label>
-        <select
-          className="border p-2 w-full"
-          value={appearance.fontHeading}
-          onChange={(e) => {
-            const v = { ...appearance, fontHeading: e.target.value };
-            setAppearance(v);
-            applyPreview(v);
-          }}
-        >
-          {GOOGLE_FONTS.map((f) => (
-            <option key={f}>{f}</option>
-          ))}
-        </select>
-      </div>
-
-      <button
-        onClick={saveAppearance}
-        disabled={loading}
-        className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
-      >
-        {loading ? "Salvando..." : "Salvar Aparência"}
-      </button>
-    </div>
-  );
-}
+        <label className="text-sm font-medium">Modo de Tema</
