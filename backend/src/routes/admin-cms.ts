@@ -104,6 +104,93 @@ function sanitizeContent(html: string): string {
 
 /**
  * =====================================================
+ * 🎨 APARÊNCIA DO APP (ADMIN)
+ * =====================================================
+ * GET  /api/admin/cms/app-appearance
+ * POST /api/admin/cms/app-appearance
+ */
+
+const DEFAULT_APPEARANCE = {
+  primaryColor: "#4f46e5",
+  secondaryColor: "#6366f1",
+  accentColor: "#f59e0b",
+  backgroundColor: "#ffffff",
+
+  textColor: "#111827",
+  textSecondaryColor: "#6b7280",
+
+  buttonColor: "#4f46e5",
+  buttonTextColor: "#ffffff",
+  buttonHoverColor: "#4338ca",
+
+  borderColor: "#e5e7eb",
+
+  themeMode: "light",
+  fontPrimary: "Inter",
+  fontHeading: "Inter",
+};
+
+router.get("/app-appearance", async (_req: Request, res: Response) => {
+  try {
+    const record = await prisma.appContent.findUnique({
+      where: { key: "app_appearance" },
+    });
+
+    let data = DEFAULT_APPEARANCE;
+
+    if (record?.contentHtml) {
+      try {
+        data = JSON.parse(record.contentHtml);
+      } catch {
+        console.error("JSON inválido em app_appearance, usando padrão");
+      }
+    }
+
+    return res.json({ ok: true, data });
+  } catch (error) {
+    console.error("Erro ao carregar aparência (admin):", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao carregar aparência",
+    });
+  }
+});
+
+router.post("/app-appearance", async (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+
+    const payload = {
+      ...DEFAULT_APPEARANCE,
+      ...body,
+      themeMode: body.themeMode === "dark" ? "dark" : "light",
+    };
+
+    await prisma.appContent.upsert({
+      where: { key: "app_appearance" },
+      update: {
+        title: "Aparência do Aplicativo",
+        contentHtml: JSON.stringify(payload),
+      },
+      create: {
+        key: "app_appearance",
+        title: "Aparência do Aplicativo",
+        contentHtml: JSON.stringify(payload),
+      },
+    });
+
+    return res.json({ ok: true, data: payload });
+  } catch (error) {
+    console.error("Erro ao salvar aparência (admin):", error);
+    return res.status(500).json({
+      ok: false,
+      error: "Erro ao salvar aparência",
+    });
+  }
+});
+
+/**
+ * =====================================================
  * CMS — LISTAR TODAS AS ÁREAS
  * =====================================================
  */
@@ -239,7 +326,6 @@ router.post("/area/save", async (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: "Área inválida" });
     }
 
-    // 🔐 SANITIZAÇÃO XSS (OBRIGATÓRIA)
     const safeHtml = sanitizeContent(contentHtml || "");
 
     const saved = await prisma.appContent.upsert({
@@ -248,7 +334,6 @@ router.post("/area/save", async (req: Request, res: Response) => {
       create: { key, title, contentHtml: safeHtml, type: "content" },
     });
 
-    // limpa cache da página
     Object.keys(cmsCache.areas).forEach((k) => {
       if (k.includes("home") || k.includes(key)) delete cmsCache.areas[k];
     });
