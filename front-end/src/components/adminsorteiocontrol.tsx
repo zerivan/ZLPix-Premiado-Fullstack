@@ -5,6 +5,8 @@ export default function AdminSorteioControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
+
   async function dispararSorteio() {
     const ok = confirm(
       "⚠️ ATENÇÃO!\n\n" +
@@ -29,7 +31,7 @@ export default function AdminSorteioControl() {
         return;
       }
 
-      // 🔥 Resultado Federal (teste controlado)
+      // 🔥 Resultado Federal (teste controlado / modo manual)
       const premiosFederal = [
         "71900",
         "90310",
@@ -38,9 +40,16 @@ export default function AdminSorteioControl() {
         "11111",
       ];
 
+      // ⚠️ DADOS OBRIGATÓRIOS PARA A ROTA
+      const payload = {
+        sorteioData: new Date().toISOString(),
+        premioTotal: 1000, // ajuste conforme o prêmio real do sorteio
+        premiosFederal,
+      };
+
       const res = await axios.post(
-        "/api/admin/apuracao/apurar",
-        { premiosFederal },
+        `${BASE_URL}/api/admin/apuracao/apurar`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
