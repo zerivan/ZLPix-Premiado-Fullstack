@@ -29,7 +29,7 @@ const QUILL_MODULES = {
     ["bold", "italic", "underline", "strike"],
     [{ color: [] }, { background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
+    [{ list: "ordered" }, { list: "bullet"] }],
     ["link"],
     ["clean"],
   ],
@@ -57,7 +57,24 @@ export default function EditorQuill({
 
   const SITE_URL = window.location.origin;
 
-  /* 🔄 Atualiza conteúdo ao trocar área */
+  /* =========================
+     🔤 CARREGA FONTES (EDITOR ISOLADO)
+  ========================= */
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap";
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
+  /* =========================
+     🔄 Atualiza conteúdo ao trocar área
+  ========================= */
   useEffect(() => {
     setHtml(initialHtml || "");
     setDirty(false);
@@ -109,12 +126,20 @@ export default function EditorQuill({
           </button>
         </div>
 
-        <ReactQuill
-          theme="snow"
-          value={html}
-          onChange={handleChange}
-          modules={QUILL_MODULES}
-        />
+        {/* 👇 FONTE FORÇADA NO QUILL */}
+        <div
+          style={{
+            fontFamily:
+              "'Inter','Poppins','Montserrat','Roboto','Oswald',system-ui",
+          }}
+        >
+          <ReactQuill
+            theme="snow"
+            value={html}
+            onChange={handleChange}
+            modules={QUILL_MODULES}
+          />
+        </div>
 
         {dirty && (
           <p className="text-xs text-yellow-600">
@@ -123,9 +148,8 @@ export default function EditorQuill({
         )}
       </div>
 
-      {/* ================= PREVIEW REAL + DESTAQUE ================= */}
+      {/* ================= PREVIEW REAL ================= */}
       <div className="relative border rounded overflow-hidden">
-        {/* BARRA SUPERIOR */}
         <div className="bg-gray-800 text-white text-xs px-3 py-2 flex justify-between">
           <span>Preview real da página</span>
           <span className="text-yellow-300 font-semibold">
@@ -133,14 +157,12 @@ export default function EditorQuill({
           </span>
         </div>
 
-        {/* IFRAME */}
         <iframe
           key={iframeKey}
           src={`${SITE_URL}/?preview=1`}
           className="w-full h-[80vh] bg-white"
         />
 
-        {/* OVERLAY DE DESTAQUE */}
         <div className="pointer-events-none absolute inset-0 border-4 border-yellow-400 rounded opacity-80">
           <div className="absolute top-4 left-4 bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1 rounded shadow">
             ✏️ Editando: {areaTitle}
