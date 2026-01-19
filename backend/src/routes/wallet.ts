@@ -1,6 +1,7 @@
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
+import { notify } from "../services/notify";
 
 const router = express.Router();
 
@@ -262,6 +263,13 @@ router.post("/saque", async (req, res) => {
           pixKey: pixKey || null,
         },
       },
+    });
+
+    // 🔔 NOTIFICAÇÃO — SAQUE SOLICITADO
+    await notify({
+      type: "SAQUE_SOLICITADO",
+      userId: String(userId),
+      valor: Number(valor),
     });
 
     return res.json({
