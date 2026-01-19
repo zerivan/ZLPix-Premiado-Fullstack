@@ -1,7 +1,6 @@
-// src/routes/push.ts
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import admin from "firebase-admin";
+import * as admin from "firebase-admin";
 
 const router = Router();
 
@@ -56,7 +55,6 @@ router.post("/token", async (req, res) => {
  * ============================
  * PUSH — ENVIAR NOTIFICAÇÃO
  * ============================
- * USO INTERNO / ADMIN / TESTE
  */
 router.post("/send", async (req, res) => {
   try {
