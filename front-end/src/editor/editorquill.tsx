@@ -20,16 +20,16 @@ Font.whitelist = [
 Quill.register(Font, true);
 
 /* =========================
-   TOOLBAR PADRÃO
+   TOOLBAR PADRÃO (CORRIGIDO)
 ========================= */
 const QUILL_MODULES = {
   toolbar: [
-    [{ font: Font.whitelist }],
+    [{ font: ["inter", "poppins", "montserrat", "bebas", "oswald", "roboto"] }],
     [{ size: ["small", false, "large", "huge"] }],
     ["bold", "italic", "underline", "strike"],
     [{ color: [] }, { background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet"] }],
+    [{ list: "ordered" }, { list: "bullet" }],
     ["link"],
     ["clean"],
   ],
@@ -92,8 +92,6 @@ export default function EditorQuill({
       setSaving(true);
       await onSave(html);
       setDirty(false);
-
-      // 🔄 Atualiza preview real após salvar
       setIframeKey((k) => k + 1);
     } finally {
       setSaving(false);
