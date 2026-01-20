@@ -56,10 +56,7 @@ export async function processarSorteio(
   const bilhetes = await prisma.bilhete.findMany({
     where: {
       status: "ATIVO",
-      sorteioData: {
-        gte: inicioDia,
-        lte: fimDia,
-      },
+      sorteioData: { gte: inicioDia, lte: fimDia },
     },
   });
 
@@ -79,16 +76,15 @@ export async function processarSorteio(
       .map((d) => d.trim())
       .filter(Boolean);
 
-    if (dezenasBilhete.length !== 3) return false;
-
-    return dezenasBilhete.every((d) =>
-      dezenasValidas.includes(d)
+    return (
+      dezenasBilhete.length === 3 &&
+      dezenasBilhete.every((d) => dezenasValidas.includes(d))
     );
   });
 
-  // =========================
+  // =========================================
   // ❌ SEM GANHADORES
-  // =========================
+  // =========================================
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
@@ -101,11 +97,13 @@ export async function processarSorteio(
 
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
-    // 🔔 NOTIFICA TODOS OS PARTICIPANTES
-    for (const b of bilhetes) {
+    // 🔔 PUSH — TODOS PERDERAM
+    const users = [...new Set(bilhetes.map((b) => b.userId))];
+
+    for (const userId of users) {
       await notify({
         type: "SORTEIO_REALIZADO",
-        userId: String(b.userId),
+        userId: String(userId),
         ganhou: false,
       });
     }
@@ -113,15 +111,13 @@ export async function processarSorteio(
     return {
       ok: true,
       message: "Sorteio sem ganhadores",
-      premioAtual: premioAtual + PREMIO_BASE,
     };
   }
 
-  // =========================
+  // =========================================
   // 🏆 COM GANHADORES
-  // =========================
+  // =========================================
   const valorPorGanhador = premioAtual / ganhadores.length;
-  const idsGanhadores = ganhadores.map((b) => b.id);
 
   for (const bilhete of ganhadores) {
     await prisma.$transaction([
@@ -156,7 +152,7 @@ export async function processarSorteio(
       }),
     ]);
 
-    // 🔔 NOTIFICA GANHADOR
+    // 🔔 PUSH — GANHADOR
     await notify({
       type: "SORTEIO_REALIZADO",
       userId: String(bilhete.userId),
@@ -165,7 +161,8 @@ export async function processarSorteio(
     });
   }
 
-  // ❌ NÃO PREMIADOS
+  const idsGanhadores = ganhadores.map((b) => b.id);
+
   await prisma.bilhete.updateMany({
     where: {
       id: {
@@ -180,15 +177,21 @@ export async function processarSorteio(
     },
   });
 
-  // 🔔 NOTIFICA NÃO GANHADORES
-  for (const b of bilhetes) {
-    if (!idsGanhadores.includes(b.id)) {
-      await notify({
-        type: "SORTEIO_REALIZADO",
-        userId: String(b.userId),
-        ganhou: false,
-      });
-    }
+  // 🔔 PUSH — NÃO GANHADORES
+  const perdedores = bilhetes.filter(
+    (b) => !idsGanhadores.includes(b.id)
+  );
+
+  const usersPerdedores = [
+    ...new Set(perdedores.map((b) => b.userId)),
+  ];
+
+  for (const userId of usersPerdedores) {
+    await notify({
+      type: "SORTEIO_REALIZADO",
+      userId: String(userId),
+      ganhou: false,
+    });
   }
 
   await atualizarPremio(PREMIO_BASE);
@@ -197,6 +200,5 @@ export async function processarSorteio(
     ok: true,
     ganhadores: ganhadores.length,
     valorPorGanhador,
-    premioResetadoPara: PREMIO_BASE,
   };
 }
