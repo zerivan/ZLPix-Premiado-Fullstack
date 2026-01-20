@@ -86,6 +86,11 @@ export async function processarSorteio(
 
   const premioAtual = await obterPremioAtual();
 
+  /**
+   * =====================================================
+   * ❌ SEM GANHADORES
+   * =====================================================
+   */
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
@@ -105,6 +110,11 @@ export async function processarSorteio(
     };
   }
 
+  /**
+   * =====================================================
+   * 🏆 COM GANHADORES
+   * =====================================================
+   */
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
@@ -117,6 +127,21 @@ export async function processarSorteio(
         pixKey: true,
       },
     });
+
+    // ✅ GARANTE QUE A CARTEIRA EXISTE
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId: bilhete.userId },
+    });
+
+    if (!wallet) {
+      await prisma.wallet.create({
+        data: {
+          userId: bilhete.userId,
+          saldo: 0,
+          createdAt: new Date(),
+        },
+      });
+    }
 
     await prisma.$transaction([
       prisma.wallet.updateMany({
