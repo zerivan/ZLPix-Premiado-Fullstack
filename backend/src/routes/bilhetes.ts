@@ -1,151 +1,98 @@
-import express from "express";
+import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import { notify } from "../services/notify";
 
-const router = express.Router();
-
-/**
- * =====================================================
- * 🔧 UTIL — calcula quarta-feira às 17h do sorteio
- * =====================================================
- */
-function calcularValidade(sorteioData: Date): Date {
-  const d = new Date(sorteioData);
-
-  // força quarta-feira
-  d.setHours(17, 0, 0, 0);
-  return d;
-}
+const router = Router();
 
 /**
- * =====================================================
- * ❌ CRIAÇÃO DIRETA DE BILHETE BLOQUEADA
- * =====================================================
+ * ============================
+ * LISTAR BILHETES DO USUÁRIO
+ * ============================
  */
-router.post("/criar", async (_req, res) => {
-  return res.status(400).json({
-    error:
-      "Criação direta de bilhete desativada. Utilize o fluxo de pagamento PIX.",
-  });
-});
-
-/**
- * =====================================================
- * ADMIN — BILHETES DO SORTEIO ATUAL
- * =====================================================
- */
-router.get("/admin/sorteio-atual", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const agora = new Date();
-
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        pago: true,
-        status: "ATIVO_ATUAL",
-        sorteioData: {
-          gt: agora,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        transacao: {
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return res.json({
-      ok: true,
-      total: bilhetes.length,
-      bilhetes,
-    });
-  } catch (e) {
-    console.error("Erro ao listar bilhetes do sorteio:", e);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * LISTAR BILHETES — APP (ROTA PRINCIPAL)
- * Header: x-user-id
- * =====================================================
- */
-router.get("/meus", async (req, res) => {
-  try {
-    const userId = Number(req.headers["x-user-id"]);
+    const userId =
+      Number(req.headers["x-user-id"]) ||
+      Number(req.query.userId);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const agora = new Date();
-
     const bilhetes = await prisma.bilhete.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
     });
 
-    const normalizados = bilhetes.map((b) => {
-      const validoAte = b.sorteioData
-        ? calcularValidade(new Date(b.sorteioData))
-        : null;
-
-      let status = b.status;
-
-      // 🔥 regra FINAL: passou das 17h → VENCIDO
-      if (
-        validoAte &&
-        agora.getTime() > validoAte.getTime() &&
-        status !== "PREMIADO"
-      ) {
-        status = "VENCIDO";
-      }
-
-      return {
-        ...b,
-        status,
-        validoAte,
-      };
-    });
-
-    return res.json(normalizados);
-  } catch (err) {
-    console.error("Erro listar bilhetes:", err);
+    return res.json(bilhetes);
+  } catch (error) {
+    console.error("Erro ao listar bilhetes:", error);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
 
 /**
- * =====================================================
- * LISTAR BILHETES — DEBUG
- * =====================================================
+ * ============================
+ * DETALHE DE UM BILHETE
+ * ============================
  */
-router.get("/listar/:userId", async (req, res) => {
-  const userId = Number(req.params.userId);
-
+router.get("/:id", async (req, res) => {
   try {
-    const bilhetes = await prisma.bilhete.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
+    const userId =
+      Number(req.headers["x-user-id"]) ||
+      Number(req.query.userId);
+
+    const id = Number(req.params.id);
+
+    if (!userId || !id) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const bilhete = await prisma.bilhete.findFirst({
+      where: {
+        id,
+        userId,
+      },
     });
 
-    return res.json({ bilhetes });
-  } catch (e) {
-    console.error("Erro ao listar bilhetes:", e);
-    return res.status(500).json({ error: "erro interno" });
+    if (!bilhete) {
+      return res.status(404).json({ error: "Bilhete não encontrado" });
+    }
+
+    return res.json(bilhete);
+  } catch (error) {
+    console.error("Erro ao buscar bilhete:", error);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * ============================
+ * NOTIFICAÇÃO (BACKUP)
+ * ============================
+ * Caso algum bilhete antigo exista sem notificação
+ */
+router.post("/notify/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const bilhete = await prisma.bilhete.findUnique({
+      where: { id },
+    });
+
+    if (!bilhete) {
+      return res.status(404).json({ error: "Bilhete não encontrado" });
+    }
+
+    await notify({
+      type: "BILHETE_CRIADO",
+      userId: String(bilhete.userId),
+      codigo: String(bilhete.id),
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Erro notify bilhete:", error);
+    return res.status(500).json({ error: "Erro interno" });
   }
 });
 
