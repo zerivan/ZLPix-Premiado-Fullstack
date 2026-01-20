@@ -23,7 +23,6 @@ export default function Revisao() {
     return null;
   }
 
-  // 🔐 RESOLUÇÃO SEGURA DO USER ID (NUMÉRICO)
   function resolveUserId(): number | null {
     try {
       if (state.userId !== undefined && state.userId !== null) {
@@ -71,7 +70,7 @@ export default function Revisao() {
   async function prosseguir() {
     try {
       const payload = {
-        userId, // ✅ agora SEMPRE numérico
+        userId,
         amount: Number(total.toFixed(2)),
         description: "Pagamento de bilhetes ZLPix",
         bilhetes: tickets.map((t) => ({
@@ -81,11 +80,11 @@ export default function Revisao() {
       };
 
       const resp = await fetch(
-        import.meta.env.VITE_API_URL + "/pix/create",
+        import.meta.env.VITE_API_URL + "/wallet/depositar",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ userId, valor: payload.amount }),
         }
       );
 
@@ -94,10 +93,11 @@ export default function Revisao() {
         throw new Error(json?.error || "Erro ao iniciar pagamento");
       }
 
+      // ✅ CORREÇÃO AQUI: paymentId (camelCase)
       navigate("/pagamento", {
         state: {
           userId,
-          paymentId: json.payment_id,
+          paymentId: json.paymentId,
           qr_code_base64: json.qr_code_base64,
           copy_paste: json.copy_paste,
           bilhetes: payload.bilhetes,
@@ -116,7 +116,6 @@ export default function Revisao() {
           🧾 Revisão do Pedido
         </h2>
 
-        {/* LISTA DE BILHETES */}
         <div className="space-y-3 mb-4 max-h-56 overflow-auto">
           {tickets.map((t) => (
             <div
@@ -141,7 +140,6 @@ export default function Revisao() {
           ))}
         </div>
 
-        {/* RESUMO */}
         <div className="bg-blue-900/60 border border-blue-800/40 rounded-lg p-3 text-sm mb-5">
           <div className="flex justify-between">
             <span>Quantidade</span>
@@ -153,7 +151,6 @@ export default function Revisao() {
           </div>
         </div>
 
-        {/* BOTÕES */}
         <div className="flex gap-3">
           <button
             onClick={() => navigate(-1)}
