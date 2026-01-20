@@ -26,7 +26,6 @@ const firebaseApp = initializeApp(firebaseConfig);
 
 export default function App() {
   useEffect(() => {
-    // 🔠 Fonte dos títulos (CSS global)
     const style = document.createElement("style");
     style.innerHTML = `
       h1, h2, h3, h4, h5, h6 {
@@ -35,7 +34,6 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
-    // 🎨 Aparência PADRÃO (segura)
     const root = document.documentElement;
 
     root.style.setProperty("--color-primary", "#4f46e5");
@@ -76,11 +74,11 @@ export default function App() {
 
         if (!token) return;
 
-        // 🔑 USER_ID (obrigatório para o backend)
         const userId = localStorage.getItem("USER_ID");
         if (!userId) return;
 
-        await fetch(`${import.meta.env.VITE_API_URL}/push/token`, {
+        // ✅ ENDPOINT CORRETO
+        await fetch(`${import.meta.env.VITE_API_URL}/push/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
