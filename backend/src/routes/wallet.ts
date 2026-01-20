@@ -1,4 +1,3 @@
-// backend/src/routes/wallet.ts
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -17,6 +16,10 @@ function getUserId(req: any): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+/**
+ * POST /wallet/saque
+ * (já existente — mantido)
+ */
 router.post("/saque", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -64,7 +67,7 @@ router.post("/saque", async (req, res) => {
       },
     });
 
-    // 🔔 DISPARO DE NOTIFICAÇÃO (ESTAVA FALTANDO)
+    // 🔔 DISPARO DE NOTIFICAÇÃO
     await notify({
       type: "SAQUE_SOLICITADO",
       userId: String(userId),
@@ -77,6 +80,55 @@ router.post("/saque", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro saque:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/payment-status/:paymentId
+ * Usado pelo polling da página PIX (fluxo CARTEIRA)
+ * Valida metadata.tipo === "deposito"
+ * =========================
+ */
+router.get("/payment-status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    if (!paymentId) {
+      return res.status(400).json({ error: "paymentId ausente" });
+    }
+
+    const transacao = await prisma.transacao.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+      },
+      select: {
+        status: true,
+        metadata: true,
+      },
+    });
+
+    if (!transacao) {
+      // comportamento compatível com frontend (polling continua)
+      return res.json({ status: "pending" });
+    }
+
+    const tipo =
+      transacao.metadata && typeof transacao.metadata === "object"
+        ? (transacao.metadata as any).tipo
+        : undefined;
+
+    // Garante que esse endpoint responde apenas para depósitos de carteira
+    if (tipo !== "deposito") {
+      return res.status(404).json({
+        error:
+          "Pagamento encontrado, mas não pertence ao fluxo de carteira. Use o endpoint de bilhete se aplicável.",
+      });
+    }
+
+    return res.json({ status: transacao.status });
+  } catch (err) {
+    console.error("Erro wallet/payment-status:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
