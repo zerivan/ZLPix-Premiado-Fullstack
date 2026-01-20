@@ -43,6 +43,23 @@ async function atualizarPremio(valor: number) {
   });
 }
 
+// 🔐 GARANTE QUE A CARTEIRA EXISTE
+async function garantirCarteira(userId: number) {
+  const wallet = await prisma.wallet.findFirst({
+    where: { userId },
+  });
+
+  if (!wallet) {
+    await prisma.wallet.create({
+      data: {
+        userId,
+        saldo: 0,
+        createdAt: new Date(),
+      },
+    });
+  }
+}
+
 export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
@@ -82,9 +99,7 @@ export async function processarSorteio(
     );
   });
 
-  // =========================================
   // ❌ SEM GANHADORES
-  // =========================================
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
@@ -97,9 +112,7 @@ export async function processarSorteio(
 
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
-    // 🔔 PUSH — TODOS PERDERAM
     const users = [...new Set(bilhetes.map((b) => b.userId))];
-
     for (const userId of users) {
       await notify({
         type: "SORTEIO_REALIZADO",
@@ -108,20 +121,18 @@ export async function processarSorteio(
       });
     }
 
-    return {
-      ok: true,
-      message: "Sorteio sem ganhadores",
-    };
+    return { ok: true };
   }
 
-  // =========================================
   // 🏆 COM GANHADORES
-  // =========================================
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
+    // 🔐 GARANTE CARTEIRA
+    await garantirCarteira(bilhete.userId);
+
     await prisma.$transaction([
-      prisma.wallet.updateMany({
+      prisma.wallet.update({
         where: { userId: bilhete.userId },
         data: {
           saldo: { increment: valorPorGanhador },
@@ -152,7 +163,6 @@ export async function processarSorteio(
       }),
     ]);
 
-    // 🔔 PUSH — GANHADOR
     await notify({
       type: "SORTEIO_REALIZADO",
       userId: String(bilhete.userId),
@@ -177,7 +187,6 @@ export async function processarSorteio(
     },
   });
 
-  // 🔔 PUSH — NÃO GANHADORES
   const perdedores = bilhetes.filter(
     (b) => !idsGanhadores.includes(b.id)
   );
