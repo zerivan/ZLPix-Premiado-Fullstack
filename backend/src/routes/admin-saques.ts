@@ -1,118 +1,72 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import { notify } from "../services/notify";
 
 const router = Router();
 
 /**
  * ======================================
- * ADMIN — LISTAR SAQUES
+ * ADMIN — CONFIRMAR SAQUE (PAGAMENTO)
  * ======================================
- * Retorna TODOS os saques (pending / paid)
  */
-router.get("/", async (_req, res) => {
+router.post("/pagar/:id", async (req, res) => {
   try {
-    const saques = await prisma.transacao.findMany({
-      where: {
-        metadata: {
-          path: ["tipo"],
-          equals: "saque",
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        userId: true,
-        valor: true,
-        status: true,
-        createdAt: true,
-        metadata: true,
-      },
-    });
+    const saqueId = Number(req.params.id);
 
-    return res.json(saques);
-  } catch (err) {
-    console.error("Erro admin-saques/listar:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * ======================================
- * ADMIN — MARCAR SAQUE COMO PAGO
- * ======================================
- * - Confirma saque pendente
- * - Marca transação como PAID
- * - DESCONTA saldo da wallet do usuário
- */
-router.post("/pagar", async (req, res) => {
-  try {
-    const { transacaoId } = req.body;
-
-    if (!transacaoId) {
-      return res.status(400).json({
-        error: "transacaoId obrigatório",
-      });
-    }
-
-    // 🔎 Busca saque pendente
-    const saque = await prisma.transacao.findFirst({
-      where: {
-        id: Number(transacaoId),
-        status: "pending",
-        metadata: {
-          path: ["tipo"],
-          equals: "saque",
-        },
-      },
+    const saque = await prisma.transacao.findUnique({
+      where: { id: saqueId },
     });
 
     if (!saque) {
-      return res.status(404).json({
-        error: "Saque não encontrado ou já processado",
-      });
+      return res.status(404).json({ error: "Saque não encontrado" });
     }
 
-    // 🔎 Busca wallet do usuário
-    const wallet = await prisma.wallet.findFirst({
-      where: { userId: saque.userId },
-    });
-
-    if (!wallet) {
+    if (saque.status === "paid") {
       return res.status(400).json({
-        error: "Wallet do usuário não encontrada",
+        error: "Saque já foi pago",
       });
     }
 
-    // 🔐 Segurança: evita saldo negativo
-    if (Number(wallet.saldo) < Number(saque.valor)) {
+    // 🔒 Garante que é saque
+    const meta: any = saque.metadata || {};
+    if (meta.tipo !== "saque") {
       return res.status(400).json({
-        error: "Saldo insuficiente para concluir o saque",
+        error: "Transação não é saque",
       });
     }
 
-    // ✅ Atualizações atômicas
     await prisma.$transaction([
-      prisma.transacao.update({
-        where: { id: saque.id },
-        data: { status: "paid" },
-      }),
-      prisma.wallet.update({
-        where: { id: wallet.id },
+      prisma.wallet.updateMany({
+        where: { userId: saque.userId },
         data: {
           saldo: {
             decrement: Number(saque.valor),
           },
         },
       }),
+      prisma.transacao.update({
+        where: { id: saque.id },
+        data: {
+          status: "paid",
+        },
+      }),
     ]);
 
-    return res.json({ ok: true });
+    // 🔔 NOTIFICAÇÃO — SAQUE PAGO
+    await notify({
+      type: "SAQUE_PAGO",
+      userId: String(saque.userId),
+      valor: Number(saque.valor),
+    });
+
+    return res.json({
+      ok: true,
+      message: "Saque pago com sucesso",
+    });
   } catch (err) {
-    console.error("Erro admin-saques/pagar:", err);
+    console.error("Erro ao pagar saque:", err);
     return res.status(500).json({
-      error: "Erro interno",
+      error: "Erro interno ao pagar saque",
     });
   }
 });
