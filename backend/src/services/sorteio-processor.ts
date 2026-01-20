@@ -68,6 +68,10 @@ export async function processarSorteio(
   }
 
   const dezenasValidas = resultado.dezenas.map((d) => d.trim());
+  const resultadoStr = dezenasValidas.join(",");
+  const agora = new Date();
+
+  const premioAtual = await obterPremioAtual();
 
   const ganhadores = bilhetes.filter((b) => {
     const dezenasBilhete = b.dezenas
@@ -82,16 +86,9 @@ export async function processarSorteio(
     );
   });
 
-  const resultadoStr = dezenasValidas.join(",");
-  const agora = new Date();
-
-  const premioAtual = await obterPremioAtual();
-
-  /**
-   * ======================================
-   * ❌ SEM GANHADORES
-   * ======================================
-   */
+  // =========================
+  // ❌ SEM GANHADORES
+  // =========================
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
@@ -120,12 +117,11 @@ export async function processarSorteio(
     };
   }
 
-  /**
-   * ======================================
-   * 🏆 COM GANHADORES
-   * ======================================
-   */
+  // =========================
+  // 🏆 COM GANHADORES
+  // =========================
   const valorPorGanhador = premioAtual / ganhadores.length;
+  const idsGanhadores = ganhadores.map((b) => b.id);
 
   for (const bilhete of ganhadores) {
     await prisma.$transaction([
@@ -169,15 +165,13 @@ export async function processarSorteio(
     });
   }
 
-  const idsGanhadores = ganhadores.map((b) => b.id);
-
-  const perdedores = bilhetes.filter(
-    (b) => !idsGanhadores.includes(b.id)
-  );
-
+  // ❌ NÃO PREMIADOS
   await prisma.bilhete.updateMany({
     where: {
-      id: { in: perdedores.map((b) => b.id) },
+      id: {
+        in: bilhetes.map((b) => b.id),
+        notIn: idsGanhadores,
+      },
     },
     data: {
       status: "NAO_PREMIADO",
@@ -186,13 +180,15 @@ export async function processarSorteio(
     },
   });
 
-  // 🔔 NOTIFICA PERDEDORES
-  for (const b of perdedores) {
-    await notify({
-      type: "SORTEIO_REALIZADO",
-      userId: String(b.userId),
-      ganhou: false,
-    });
+  // 🔔 NOTIFICA NÃO GANHADORES
+  for (const b of bilhetes) {
+    if (!idsGanhadores.includes(b.id)) {
+      await notify({
+        type: "SORTEIO_REALIZADO",
+        userId: String(b.userId),
+        ganhou: false,
+      });
+    }
   }
 
   await atualizarPremio(PREMIO_BASE);
