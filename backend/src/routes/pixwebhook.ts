@@ -91,9 +91,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
-     * =========================================
      * 💰 DEPÓSITO DE CARTEIRA
-     * =========================================
      */
     if (
       metadata["tipo"] === "deposito" &&
@@ -114,20 +112,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }),
       ]);
 
-      // 🔔 NOTIFICA PIX PAGO
-      await notify({
-        type: "PIX_PAGO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
-      });
-
       return res.status(200).send("ok");
     }
 
     /**
-     * =========================================
      * 🎟️ CRIAÇÃO DE BILHETES
-     * =========================================
      */
     if (
       metadata["tipo"] === "bilhete" &&
@@ -162,7 +151,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
           if (!dezenas) continue;
 
-          await db.bilhete.create({
+          const bilhete = await db.bilhete.create({
             data: {
               userId: transacao.userId,
               transacaoId: transacao.id,
@@ -173,23 +162,21 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-        }
-      });
 
-      // 🔔 NOTIFICA PIX PAGO (COMPRA DE BILHETE)
-      await notify({
-        type: "PIX_PAGO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
+          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
+          await notify({
+            type: "BILHETE_CRIADO",
+            userId: String(transacao.userId),
+            codigo: bilhete.id.toString(),
+          });
+        }
       });
 
       return res.status(200).send("ok");
     }
 
     /**
-     * =========================================
-     * ❌ PIX LEGADO
-     * =========================================
+     * PIX LEGADO
      */
     await prisma.transacao.update({
       where: { id: transacao.id },
