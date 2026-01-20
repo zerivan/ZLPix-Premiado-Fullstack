@@ -1,5 +1,3 @@
-// backend/src/services/sorteio-processor.ts
-
 import { prisma } from "../lib/prisma";
 import { notify } from "./notify";
 
@@ -9,20 +7,6 @@ type ResultadoOficial = {
 };
 
 const PREMIO_BASE = 500;
-
-async function garantirCarteira(userId: number) {
-  const wallet = await prisma.wallet.findFirst({ where: { userId } });
-
-  if (!wallet) {
-    await prisma.wallet.create({
-      data: {
-        userId,
-        saldo: 0,
-        createdAt: new Date(),
-      },
-    });
-  }
-}
 
 async function obterPremioAtual(): Promise<number> {
   const row = await prisma.appContent.findUnique({
@@ -84,8 +68,6 @@ export async function processarSorteio(
   }
 
   const dezenasValidas = resultado.dezenas.map((d) => d.trim());
-  const premioAtual = await obterPremioAtual();
-  const agora = new Date();
 
   const ganhadores = bilhetes.filter((b) => {
     const dezenasBilhete = b.dezenas
@@ -93,33 +75,45 @@ export async function processarSorteio(
       .map((d) => d.trim())
       .filter(Boolean);
 
-    return dezenasBilhete.length === 3 &&
-      dezenasBilhete.every((d) => dezenasValidas.includes(d));
+    if (dezenasBilhete.length !== 3) return false;
+
+    return dezenasBilhete.every((d) =>
+      dezenasValidas.includes(d)
+    );
   });
+
+  const resultadoStr = dezenasValidas.join(",");
+  const agora = new Date();
+
+  const premioAtual = await obterPremioAtual();
 
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
       data: {
         status: "NAO_PREMIADO",
-        resultadoFederal: dezenasValidas.join(",").slice(0, 20),
+        resultadoFederal: resultadoStr.slice(0, 20),
         apuradoEm: agora,
       },
     });
 
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
-    return { ok: true, message: "Sorteio sem ganhadores" };
+    return {
+      ok: true,
+      message: "Sorteio sem ganhadores",
+      premioAtual: premioAtual + PREMIO_BASE,
+    };
   }
 
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
-    await garantirCarteira(bilhete.userId);
+    const userId = bilhete.userId;
 
     await prisma.$transaction([
       prisma.wallet.updateMany({
-        where: { userId: bilhete.userId },
+        where: { userId },
         data: {
           saldo: { increment: valorPorGanhador },
         },
@@ -127,7 +121,7 @@ export async function processarSorteio(
 
       prisma.transacao.create({
         data: {
-          userId: bilhete.userId,
+          userId,
           valor: valorPorGanhador,
           status: "paid",
           metadata: {
@@ -143,26 +137,42 @@ export async function processarSorteio(
         data: {
           status: "PREMIADO",
           premioValor: valorPorGanhador,
-          resultadoFederal: dezenasValidas.join(",").slice(0, 20),
+          resultadoFederal: resultadoStr.slice(0, 20),
           apuradoEm: agora,
         },
       }),
     ]);
 
-    // 🔔 NOTIFICAÇÃO DO PRÊMIO
+    // 🔔 NOTIFICAÇÕES — PRÊMIO
     await notify({
-      type: "SORTEIO_REALIZADO",
-      userId: String(bilhete.userId),
-      ganhou: true,
+      type: "CARTEIRA_CREDITO",
+      userId: String(userId),
       valor: valorPorGanhador,
     });
 
     await notify({
-      type: "CARTEIRA_CREDITO",
-      userId: String(bilhete.userId),
+      type: "SORTEIO_REALIZADO",
+      userId: String(userId),
+      ganhou: true,
       valor: valorPorGanhador,
     });
   }
+
+  const idsGanhadores = ganhadores.map((b) => b.id);
+
+  await prisma.bilhete.updateMany({
+    where: {
+      id: {
+        in: bilhetes.map((b) => b.id),
+        notIn: idsGanhadores,
+      },
+    },
+    data: {
+      status: "NAO_PREMIADO",
+      resultadoFederal: resultadoStr.slice(0, 20),
+      apuradoEm: agora,
+    },
+  });
 
   await atualizarPremio(PREMIO_BASE);
 
@@ -170,5 +180,6 @@ export async function processarSorteio(
     ok: true,
     ganhadores: ganhadores.length,
     valorPorGanhador,
+    premioResetadoPara: PREMIO_BASE,
   };
 }
