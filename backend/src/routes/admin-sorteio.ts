@@ -12,20 +12,12 @@ type FederalResponse = {
 
 router.post("/processar", async (req, res) => {
   try {
-    const { sorteioData, premioTotal } = req.body;
+    const { sorteioData } = req.body;
 
     if (!sorteioData) {
       return res.status(400).json({
         success: false,
         reason: "Data do sorteio não informada",
-      });
-    }
-
-    const premio = Number(premioTotal);
-    if (!premio || premio <= 0) {
-      return res.status(400).json({
-        success: false,
-        reason: "Prêmio total inválido",
       });
     }
 
@@ -55,14 +47,14 @@ router.post("/processar", async (req, res) => {
       dezenas.push(num.slice(-2));
     }
 
-    await processarSorteio(new Date(sorteioData), {
-      dezenas,
-      premioTotal: premio,
-    });
+    await processarSorteio(
+      new Date(sorteioData),
+      { dezenas }
+    );
 
     return res.json({
       success: true,
-      message: "Sorteio processado com sucesso (manual)",
+      message: "Sorteio processado com sucesso",
     });
   } catch (err) {
     console.error("Erro ao processar sorteio manual:", err);
