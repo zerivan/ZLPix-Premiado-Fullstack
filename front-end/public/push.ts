@@ -1,26 +1,26 @@
 // frontend/src/services/push.ts
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { firebaseApp } from "../lib/firebase";
 import axios from "axios";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBTJanXweYDNFHvYvW7EP6fUbyUMcDz3Ig",
-  authDomain: "zlpix-premiado.firebaseapp.com",
-  projectId: "zlpix-premiado",
-  storageBucket: "zlpix-premiado.firebasestorage.app",
-  messagingSenderId: "530368618940",
-  appId: "1:530368618940:web:bfbb8dd5d343eb1526cbb9",
-};
-
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const messaging = getMessaging(firebaseApp);
 
 const BASE_URL =
-  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
   "https://zlpix-premiado-fullstack.onrender.com";
 
+/**
+ * =====================================================
+ * REGISTRA PUSH PARA USUÁRIO LOGADO
+ * =====================================================
+ */
 export async function registerPush(userId: number) {
   try {
+    if (!("Notification" in window)) {
+      console.warn("🔕 Navegador não suporta notificações");
+      return;
+    }
+
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       console.warn("🔕 Permissão de notificação negada");
@@ -32,7 +32,7 @@ export async function registerPush(userId: number) {
     });
 
     if (!token) {
-      console.warn("❌ Token de push não gerado");
+      console.warn("⚠️ Token FCM não gerado");
       return;
     }
 
@@ -41,8 +41,27 @@ export async function registerPush(userId: number) {
       userId,
     });
 
-    console.log("✅ Push registrado com sucesso", token);
+    console.log("📲 Push registrado com sucesso", token);
   } catch (err) {
-    console.error("❌ Erro ao registrar push", err);
+    console.error("❌ Erro ao registrar push:", err);
   }
+}
+
+/**
+ * =====================================================
+ * ESCUTA PUSH EM FOREGROUND
+ * =====================================================
+ */
+export function listenForegroundPush() {
+  onMessage(messaging, (payload) => {
+    console.log("📩 Push em foreground:", payload);
+
+    const title =
+      payload.notification?.title || "ZLPix Premiado";
+
+    const body =
+      payload.notification?.body || "Você recebeu uma notificação";
+
+    new Notification(title, { body });
+  });
 }
