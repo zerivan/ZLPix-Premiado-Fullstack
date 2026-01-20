@@ -1,4 +1,4 @@
-// src/pages/pixpagamento.tsx
+// frontend/src/pages/pixpagamento.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -12,7 +12,10 @@ export default function PixPagamento() {
   const { state } = useLocation() as any;
   const navigate = useNavigate();
 
-  const API = (import.meta.env.VITE_API_URL as string) || "";
+  // ✅ CORREÇÃO AQUI — backend real
+  const API =
+    import.meta.env.VITE_BACKEND_URL ||
+    "https://zlpix-premiado-fullstack.onrender.com";
 
   const bilhetes: Bilhete[] = state?.bilhetes ?? [];
   const amount: number = state?.amount ?? 0;
@@ -43,7 +46,7 @@ export default function PixPagamento() {
   }
 
   // ======================
-  // 📌 Polling do pagamento (FINAL)
+  // 📌 Polling do pagamento
   // ======================
   useEffect(() => {
     if (!paymentId) return;
@@ -71,7 +74,7 @@ export default function PixPagamento() {
           }, 1200);
         }
       } catch {
-        // se der erro de rede, não trava a UI
+        // erro silencioso para não travar UI
       }
     }, 4000);
 
