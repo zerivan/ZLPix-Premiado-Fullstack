@@ -10,66 +10,84 @@ const router = Router();
  * ============================
  */
 router.get("/", async (_req, res) => {
-  try {
-    const saques = await prisma.transacao.findMany({
-      where: {
-        metadata: {
-          path: ["tipo"],
-          equals: "saque",
-        },
-        status: "pending",
+  const saques = await prisma.transacao.findMany({
+    where: {
+      status: "pending",
+      metadata: {
+        path: ["tipo"],
+        equals: "saque",
       },
-      orderBy: { createdAt: "asc" },
-    });
+    },
+    orderBy: { createdAt: "asc" },
+  });
 
-    return res.json({ ok: true, data: saques });
-  } catch {
-    return res.status(500).json({ ok: false });
-  }
+  res.json(saques);
 });
 
 /**
  * ============================
  * CONFIRMAR PAGAMENTO DO SAQUE
  * ============================
+ * ADMIN confirma que pagou o PIX
  */
-router.post("/pagar/:id", async (req, res) => {
-  try {
-    const id = Number(req.params.id);
+router.post("/:id/pagar", async (req, res) => {
+  const id = Number(req.params.id);
 
-    const saque = await prisma.transacao.findUnique({
-      where: { id },
-    });
+  const saque = await prisma.transacao.findUnique({
+    where: { id },
+  });
 
-    if (!saque) {
-      return res.status(404).json({ error: "Saque não encontrado" });
-    }
-
-    if (saque.status === "paid") {
-      return res.json({ ok: true, message: "Saque já estava pago" });
-    }
-
-    // Marca como pago
-    await prisma.transacao.update({
-      where: { id },
-      data: { status: "paid" },
-    });
-
-    // 🔔 NOTIFICAÇÃO — SAQUE PAGO
-    await notify({
-      type: "SAQUE_PAGO",
-      userId: String(saque.userId),
-      valor: Number(saque.valor),
-    });
-
-    return res.json({
-      ok: true,
-      message: "Saque pago com sucesso",
-    });
-  } catch (error) {
-    console.error("Erro ao pagar saque:", error);
-    return res.status(500).json({ error: "Erro interno" });
+  if (!saque) {
+    return res.status(404).json({ error: "Saque não encontrado" });
   }
+
+  if (saque.status === "paid") {
+    return res.json({ ok: true });
+  }
+
+  // 🔐 GARANTE CARTEIRA
+  const wallet = await prisma.wallet.findFirst({
+    where: { userId: saque.userId },
+  });
+
+  if (!wallet || Number(wallet.saldo) < Number(saque.valor)) {
+    return res.status(400).json({
+      error: "Saldo insuficiente para concluir saque",
+    });
+  }
+
+  await prisma.$transaction([
+    // 💳 DEBITA CARTEIRA
+    prisma.wallet.update({
+      where: { userId: saque.userId },
+      data: {
+        saldo: {
+          decrement: Number(saque.valor),
+        },
+      },
+    }),
+
+    // 📄 MARCA SAQUE COMO PAGO
+    prisma.transacao.update({
+      where: { id: saque.id },
+      data: {
+        status: "paid",
+        metadata: {
+          ...(saque.metadata as any),
+          pagoEm: new Date().toISOString(),
+        },
+      },
+    }),
+  ]);
+
+  // 🔔 NOTIFICA USUÁRIO
+  await notify({
+    type: "SAQUE_PAGO",
+    userId: String(saque.userId),
+    valor: Number(saque.valor),
+  });
+
+  return res.json({ ok: true });
 });
 
 export default router;
