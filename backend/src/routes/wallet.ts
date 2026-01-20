@@ -1,3 +1,4 @@
+// backend/src/routes/wallet.ts
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -5,6 +6,7 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
+// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
@@ -19,6 +21,28 @@ function getUserId(req: any): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+// 🔐 GARANTE CARTEIRA
+async function garantirCarteira(userId: number) {
+  const wallet = await prisma.wallet.findFirst({
+    where: { userId },
+  });
+
+  if (!wallet) {
+    await prisma.wallet.create({
+      data: {
+        userId,
+        saldo: 0,
+        createdAt: new Date(),
+      },
+    });
+  }
+}
+
+/**
+ * ============================
+ * GARANTIR CARTEIRA
+ * ============================
+ */
 router.post("/ensure", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -26,13 +50,7 @@ router.post("/ensure", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
-
-    if (!wallet) {
-      await prisma.wallet.create({
-        data: { userId, saldo: 0, createdAt: new Date() },
-      });
-    }
+    await garantirCarteira(userId);
 
     return res.json({ ok: true });
   } catch {
@@ -40,6 +58,11 @@ router.post("/ensure", async (req, res) => {
   }
 });
 
+/**
+ * ============================
+ * SALDO
+ * ============================
+ */
 router.get("/saldo", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -47,7 +70,11 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
+    await garantirCarteira(userId);
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     return res.json({
       saldo: wallet ? Number(wallet.saldo) : 0,
@@ -57,6 +84,11 @@ router.get("/saldo", async (req, res) => {
   }
 });
 
+/**
+ * ============================
+ * HISTÓRICO
+ * ============================
+ */
 router.get("/historico", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -92,64 +124,11 @@ router.get("/historico", async (req, res) => {
   }
 });
 
-router.get("/historico/download", async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Usuário não identificado" });
-    }
-
-    const limite = new Date();
-    limite.setDate(limite.getDate() - 40);
-
-    const transacoes = await prisma.transacao.findMany({
-      where: {
-        userId,
-        createdAt: { gte: limite },
-        OR: [
-          { metadata: { path: ["origem"], equals: "wallet" } },
-          { metadata: { path: ["origem"], equals: "sorteio" } },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        createdAt: true,
-        valor: true,
-        status: true,
-        metadata: true,
-      },
-    });
-
-    let csv = "Data,Tipo,Valor,Status\n";
-
-    for (const t of transacoes) {
-      const meta: any = t.metadata || {};
-      const tipo =
-        meta.tipo === "premio"
-          ? "Prêmio"
-          : meta.tipo === "saque"
-          ? "Saque"
-          : "Depósito";
-
-      csv +=
-        `"${new Date(t.createdAt).toLocaleString("pt-BR")}",` +
-        `"${tipo}",` +
-        `"${Number(t.valor).toFixed(2)}",` +
-        `"${t.status}"\n`;
-    }
-
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=historico-carteira-zlpix.csv"
-    );
-
-    return res.send(csv);
-  } catch {
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
+/**
+ * ============================
+ * DEPOSITAR (PIX)
+ * ============================
+ */
 router.post("/depositar", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -158,6 +137,8 @@ router.post("/depositar", async (req, res) => {
     if (!userId || !valor || Number(valor) <= 0) {
       return res.status(400).json({ error: "Dados inválidos" });
     }
+
+    await garantirCarteira(userId);
 
     const user = await prisma.users.findUnique({
       where: { id: userId },
@@ -169,7 +150,10 @@ router.post("/depositar", async (req, res) => {
         userId,
         valor: Number(valor),
         status: "pending",
-        metadata: { tipo: "deposito", origem: "wallet" },
+        metadata: {
+          tipo: "deposito",
+          origem: "wallet",
+        },
       },
     });
 
@@ -224,12 +208,25 @@ router.post("/depositar", async (req, res) => {
   }
 });
 
+/**
+ * ============================
+ * SAQUE (DEBITA SALDO)
+ * ============================
+ */
 router.post("/saque", async (req, res) => {
   try {
     const userId = getUserId(req);
     const { valor, pixKey } = req.body;
 
-    const wallet = await prisma.wallet.findFirst({ where: { userId } });
+    if (!userId || !valor || Number(valor) <= 0) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    await garantirCarteira(userId);
+
+    const wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
       return res.status(400).json({ error: "Saldo insuficiente" });
@@ -252,20 +249,30 @@ router.post("/saque", async (req, res) => {
       });
     }
 
-    await prisma.transacao.create({
-      data: {
-        userId,
-        valor: Number(valor),
-        status: "pending",
-        metadata: {
-          tipo: "saque",
-          origem: "wallet",
-          pixKey: pixKey || null,
+    // 🔥 TRANSAÇÃO ATÔMICA
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId },
+        data: {
+          saldo: { decrement: Number(valor) },
         },
-      },
-    });
+      }),
 
-    // 🔔 NOTIFICAÇÃO — SAQUE SOLICITADO
+      prisma.transacao.create({
+        data: {
+          userId,
+          valor: Number(valor),
+          status: "pending",
+          metadata: {
+            tipo: "saque",
+            origem: "wallet",
+            pixKey: pixKey || null,
+          },
+        },
+      }),
+    ]);
+
+    // 🔔 NOTIFICAÇÃO
     await notify({
       type: "SAQUE_SOLICITADO",
       userId: String(userId),
@@ -276,7 +283,8 @@ router.post("/saque", async (req, res) => {
       ok: true,
       message: "Saque solicitado e enviado para análise",
     });
-  } catch {
+  } catch (err) {
+    console.error("Erro saque:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
