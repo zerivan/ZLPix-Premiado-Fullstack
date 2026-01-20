@@ -93,7 +93,6 @@ router.get("/historico", async (req, res) => {
       return res.status(401).json({ error: "Usuário não identificado" });
     }
 
-    // 📆 Limite de 40 dias
     const limite = new Date();
     limite.setDate(limite.getDate() - 40);
 
@@ -261,6 +260,36 @@ router.post("/saque", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro wallet/saque:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/payment-status/:paymentId
+ * =========================
+ * Usado pelo polling da página PIX
+ */
+router.get("/payment-status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    const transacao = await prisma.transacao.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (!transacao) {
+      return res.json({ status: "pending" });
+    }
+
+    return res.json({ status: transacao.status });
+  } catch (err) {
+    console.error("Erro wallet/payment-status:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
