@@ -57,8 +57,8 @@ router.post("/:id/pagar", async (req, res) => {
   }
 
   await prisma.$transaction([
-    // 💳 DEBITA CARTEIRA
-    prisma.wallet.update({
+    // 💳 DEBITA CARTEIRA (CORREÇÃO AQUI)
+    prisma.wallet.updateMany({
       where: { userId: saque.userId },
       data: {
         saldo: {
