@@ -1,88 +1,110 @@
-import axios from "axios";
+import * as admin from "firebase-admin";
+import { prisma } from "../lib/prisma";
 
 /**
  * =====================================================
- * NOTIFY — SERVIÇO CENTRAL DE NOTIFICAÇÕES
+ * NOTIFY — SERVIÇO CENTRAL DE NOTIFICAÇÕES (DIRETO)
  * =====================================================
- * ✔ ÚNICO ponto de disparo de push
- * ✔ Nenhuma lógica de evento fora daqui
- * ✔ Backend → Firebase → Service Worker
+ * ✔ SEM HTTP
+ * ✔ SEM axios
+ * ✔ SEM BASE_URL
+ * ✔ DISPARO DIRETO VIA FIREBASE ADMIN
  */
 
+/**
+ * ============================
+ * FIREBASE ADMIN INIT (SAFE)
+ * ============================
+ */
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
+
+/**
+ * ============================
+ * TIPOS DE EVENTO
+ * ============================
+ */
 export type NotifyEvent =
-  | {
-      type: "BILHETE_CRIADO";
-      userId: string;
-      codigo: string;
-    }
-  | {
-      type: "PIX_PAGO";
-      userId: string;
-      valor: number;
-    }
-  | {
-      type: "PIX_PENDENTE";
-      userId: string;
-      valor: number;
-    }
-  | {
-      type: "CARTEIRA_CREDITO";
-      userId: string;
-      valor: number;
-    }
-  | {
-      type: "CARTEIRA_DEBITO";
-      userId: string;
-      valor: number;
-    }
-  | {
-      type: "SAQUE_SOLICITADO";
-      userId: string;
-      valor: number;
-    }
-  | {
-      type: "SAQUE_PAGO";
-      userId: string;
-      valor: number;
-    }
+  | { type: "BILHETE_CRIADO"; userId: string; codigo: string }
+  | { type: "PIX_PAGO"; userId: string; valor: number }
+  | { type: "PIX_PENDENTE"; userId: string; valor: number }
+  | { type: "CARTEIRA_CREDITO"; userId: string; valor: number }
+  | { type: "CARTEIRA_DEBITO"; userId: string; valor: number }
+  | { type: "SAQUE_SOLICITADO"; userId: string; valor: number }
+  | { type: "SAQUE_PAGO"; userId: string; valor: number }
   | {
       type: "SORTEIO_REALIZADO";
       userId: string;
       ganhou: boolean;
       valor?: number;
     }
-  | {
-      type: "AVISO_SISTEMA";
-      userId: string;
-      mensagem: string;
-      url?: string;
-    };
+  | { type: "AVISO_SISTEMA"; userId: string; mensagem: string; url?: string };
 
-const BASE_URL =
-  process.env.BACKEND_URL || "http://localhost:4000";
-
+/**
+ * ============================
+ * FUNÇÃO PRINCIPAL
+ * ============================
+ */
 export async function notify(event: NotifyEvent) {
   try {
     const payload = montarMensagem(event);
-
     if (!payload) return;
 
-    await axios.post(`${BASE_URL}/push/send`, payload);
+    const tokens = await prisma.pushToken.findMany({
+      where: { userId: Number(payload.userId) },
+      select: { token: true },
+    });
 
-    console.log(
-      "📲 PUSH ENVIADO:",
-      event.type,
-      payload.userId
-    );
+    if (!tokens.length) {
+      console.log(
+        "🔕 Usuário sem tokens push:",
+        payload.userId
+      );
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: {
+        url: payload.url || "/",
+      },
+      tokens: tokens.map((t) => t.token),
+    };
+
+    const response = await admin
+      .messaging()
+      .sendEachForMulticast(message);
+
+    console.log("📲 PUSH ENVIADO:", {
+      type: event.type,
+      userId: payload.userId,
+      success: response.successCount,
+      failure: response.failureCount,
+    });
   } catch (error) {
     console.error(
-      "❌ Erro ao disparar notificação:",
+      "❌ ERRO AO DISPARAR PUSH:",
       event,
       error
     );
   }
 }
 
+/**
+ * ============================
+ * MONTADOR DE MENSAGEM
+ * ============================
+ */
 function montarMensagem(event: NotifyEvent) {
   switch (event.type) {
     case "BILHETE_CRIADO":
@@ -129,7 +151,7 @@ function montarMensagem(event: NotifyEvent) {
       return {
         userId: event.userId,
         title: "🏦 Saque solicitado",
-        body: `Saque de R$ ${event.valor.toFixed(2)} em processamento`,
+        body: `Saque de R$ ${event.valor.toFixed(2)} em análise`,
         url: "/carteira",
       };
 
