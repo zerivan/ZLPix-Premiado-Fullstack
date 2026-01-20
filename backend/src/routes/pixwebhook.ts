@@ -76,7 +76,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     const transacao = await prisma.transacao.findFirst({
-      where: { mpPaymentId: String(paymentId) },
+      where: {
+        mpPaymentId: String(paymentId),
+      },
     });
 
     if (!transacao || transacao.status === "paid") {
@@ -89,7 +91,43 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
+     * =========================================
+     * 💰 DEPÓSITO DE CARTEIRA
+     * =========================================
+     */
+    if (
+      metadata["tipo"] === "deposito" &&
+      metadata["origem"] === "wallet"
+    ) {
+      await prisma.$transaction([
+        prisma.wallet.updateMany({
+          where: { userId: transacao.userId },
+          data: {
+            saldo: {
+              increment: Number(transacao.valor),
+            },
+          },
+        }),
+        prisma.transacao.update({
+          where: { id: transacao.id },
+          data: { status: "paid" },
+        }),
+      ]);
+
+      // 🔔 NOTIFICA PIX PAGO
+      await notify({
+        type: "PIX_PAGO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
+      });
+
+      return res.status(200).send("ok");
+    }
+
+    /**
+     * =========================================
      * 🎟️ CRIAÇÃO DE BILHETES
+     * =========================================
      */
     if (
       metadata["tipo"] === "bilhete" &&
@@ -124,7 +162,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
           if (!dezenas) continue;
 
-          const bilhete = await db.bilhete.create({
+          await db.bilhete.create({
             data: {
               userId: transacao.userId,
               transacaoId: transacao.id,
@@ -135,19 +173,24 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-
-          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
-          await notify({
-            type: "BILHETE_CRIADO",
-            userId: String(transacao.userId),
-            codigo: dezenas,
-          });
         }
+      });
+
+      // 🔔 NOTIFICA PIX PAGO (COMPRA DE BILHETE)
+      await notify({
+        type: "PIX_PAGO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
       });
 
       return res.status(200).send("ok");
     }
 
+    /**
+     * =========================================
+     * ❌ PIX LEGADO
+     * =========================================
+     */
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
