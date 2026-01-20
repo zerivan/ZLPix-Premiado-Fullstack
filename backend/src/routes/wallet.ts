@@ -5,6 +5,10 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
+// fetch nativo (compat)
+const fetchFn: typeof fetch = (...args: any) =>
+  (globalThis as any).fetch(...args);
+
 function getUserId(req: any): number | null {
   const userId =
     req.headers["x-user-id"] ||
@@ -17,8 +21,112 @@ function getUserId(req: any): number | null {
 }
 
 /**
+ * =========================
+ * POST /wallet/depositar
+ * Fluxo: cria transacao (pending) → chama MercadoPago → retorna paymentId/QR
+ * Retorna paymentId (camelCase) para o frontend — corresponde ao polling em /wallet/payment-status/:paymentId
+ * =========================
+ */
+router.post("/depositar", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { valor } = req.body;
+
+    if (!userId || !valor || Number(valor) <= 0) {
+      return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { id: Number(userId) },
+      select: { email: true, name: true },
+    });
+
+    if (!user?.email) {
+      return res.status(400).json({ error: "Usuário inválido" });
+    }
+
+    // 1️⃣ cria transação PENDENTE (DEPÓSITO — carteira)
+    const tx = await prisma.transacao.create({
+      data: {
+        userId: Number(userId),
+        valor: Number(valor),
+        status: "pending",
+        metadata: {
+          tipo: "deposito",
+          origem: "wallet",
+        },
+      },
+    });
+
+    const mpToken =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env.MP_ACCESS_TOKEN_TEST;
+
+    const mpBase =
+      process.env.MP_BASE_URL || "https://api.mercadopago.com";
+
+    if (!mpToken) {
+      return res.status(500).json({ error: "Token Mercado Pago ausente" });
+    }
+
+    const body = {
+      transaction_amount: Number(valor),
+      description: "Depósito na Carteira ZLPix",
+      payment_method_id: "pix",
+      payer: {
+        email: user.email,
+        first_name: user.name || "Cliente",
+      },
+    };
+
+    const resp = await fetchFn(`${mpBase}/v1/payments`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${mpToken}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": crypto.randomUUID(),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const mpJson: any = await resp.json().catch(() => null);
+
+    if (!resp.ok || !mpJson) {
+      console.error("Erro MercadoPago /payments:", mpJson || "sem json");
+      return res.status(502).json({ error: "Erro ao gerar PIX" });
+    }
+
+    // 2️⃣ atualiza transação com retorno do MP
+    await prisma.transacao.update({
+      where: { id: tx.id },
+      data: {
+        mpPaymentId: String(mpJson.id),
+        metadata: {
+          tipo: "deposito",
+          origem: "wallet",
+          mpResponse: mpJson,
+        },
+      },
+    });
+
+    return res.json({
+      paymentId: String(mpJson.id),
+      qr_code_base64:
+        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+      copy_paste:
+        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
+    });
+  } catch (err) {
+    console.error("Erro wallet/depositar:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
  * POST /wallet/saque
- * (já existente — mantido)
+ * (mantido)
+ * =========================
  */
 router.post("/saque", async (req, res) => {
   try {
@@ -87,7 +195,7 @@ router.post("/saque", async (req, res) => {
 /**
  * =========================
  * GET /wallet/payment-status/:paymentId
- * Usado pelo polling da página PIX (fluxo CARTEIRA)
+ * Polling do frontend (fluxo CARTEIRA)
  * Valida metadata.tipo === "deposito"
  * =========================
  */
@@ -109,7 +217,6 @@ router.get("/payment-status/:paymentId", async (req, res) => {
     });
 
     if (!transacao) {
-      // comportamento compatível com frontend (polling continua)
       return res.json({ status: "pending" });
     }
 
@@ -118,7 +225,6 @@ router.get("/payment-status/:paymentId", async (req, res) => {
         ? (transacao.metadata as any).tipo
         : undefined;
 
-    // Garante que esse endpoint responde apenas para depósitos de carteira
     if (tipo !== "deposito") {
       return res.status(404).json({
         error:
