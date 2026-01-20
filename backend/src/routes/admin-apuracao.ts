@@ -23,23 +23,17 @@ type FederalResponse = {
  * Regra híbrida:
  * - Se vier `premiosFederal` → modo MANUAL
  * - Se NÃO vier → busca resultado REAL da Federal
+ *
+ * ⚠️ Prêmio é controlado exclusivamente pelo CMS (premio_atual)
  */
 router.post("/apurar", async (req, res) => {
   try {
-    const { sorteioData, premioTotal, premiosFederal } = req.body;
+    const { sorteioData, premiosFederal } = req.body;
 
     if (!sorteioData) {
       return res.status(400).json({
         ok: false,
         error: "sorteioData é obrigatória",
-      });
-    }
-
-    const premio = Number(premioTotal);
-    if (!premio || premio <= 0) {
-      return res.status(400).json({
-        ok: false,
-        error: "premioTotal inválido",
       });
     }
 
@@ -106,10 +100,7 @@ router.post("/apurar", async (req, res) => {
      */
     const resultado = await processarSorteio(
       new Date(sorteioData),
-      {
-        dezenas,
-        premioTotal: premio,
-      }
+      { dezenas }
     );
 
     return res.json({
