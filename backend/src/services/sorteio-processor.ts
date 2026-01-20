@@ -151,7 +151,8 @@ export async function processarSorteio(
     await garantirCarteira(bilhete.userId);
 
     await prisma.$transaction([
-      prisma.wallet.update({
+      // ✅ CORREÇÃO AQUI
+      prisma.wallet.updateMany({
         where: { userId: bilhete.userId },
         data: {
           saldo: { increment: valorPorGanhador },
