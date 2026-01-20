@@ -1,4 +1,3 @@
-// backend/src/services/notify.ts
 import { prisma } from "../lib/prisma";
 import * as admin from "firebase-admin";
 
@@ -53,18 +52,33 @@ export async function notify(event: NotifyEvent) {
       return;
     }
 
-    const message = {
+    const message: admin.messaging.MulticastMessage = {
       notification: {
         title: payload.title,
         body: payload.body,
       },
       data: {
-        url: payload.url || "/",
+        url: String(payload.url || "/"),
       },
       tokens: tokens.map((t) => t.token),
     };
 
     const res = await admin.messaging().sendEachForMulticast(message);
+
+    // 🔥 REMOVE TOKENS INVÁLIDOS
+    const invalidTokens: string[] = [];
+    res.responses.forEach((r, idx) => {
+      if (!r.success) {
+        invalidTokens.push(tokens[idx].token);
+      }
+    });
+
+    if (invalidTokens.length) {
+      await prisma.pushToken.deleteMany({
+        where: { token: { in: invalidTokens } },
+      });
+      console.log("🧹 Tokens inválidos removidos:", invalidTokens.length);
+    }
 
     console.log(
       "📲 PUSH:",
