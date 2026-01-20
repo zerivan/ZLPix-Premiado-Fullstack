@@ -5,12 +5,11 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
-// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 /**
- * Próxima quarta-feira (data do sorteio)
+ * Próxima quarta-feira
  */
 function getNextWednesday(): Date {
   const now = new Date();
@@ -27,7 +26,7 @@ function definirSorteio(): Date {
 }
 
 /**
- * Busca info do Mercado Pago
+ * Busca info Mercado Pago
  */
 async function fetchMpPayment(paymentId: string) {
   const token =
@@ -76,9 +75,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     const transacao = await prisma.transacao.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-      },
+      where: { mpPaymentId: String(paymentId) },
     });
 
     if (!transacao || transacao.status === "paid") {
@@ -91,7 +88,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
+     * =========================================
      * 💰 DEPÓSITO DE CARTEIRA
+     * =========================================
      */
     if (
       metadata["tipo"] === "deposito" &&
@@ -101,9 +100,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         prisma.wallet.updateMany({
           where: { userId: transacao.userId },
           data: {
-            saldo: {
-              increment: Number(transacao.valor),
-            },
+            saldo: { increment: Number(transacao.valor) },
           },
         }),
         prisma.transacao.update({
@@ -112,11 +109,20 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }),
       ]);
 
+      // 🔔 NOTIFICAÇÃO — CARTEIRA CREDITADA
+      await notify({
+        type: "CARTEIRA_CREDITO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
+      });
+
       return res.status(200).send("ok");
     }
 
     /**
+     * =========================================
      * 🎟️ CRIAÇÃO DE BILHETES
+     * =========================================
      */
     if (
       metadata["tipo"] === "bilhete" &&
@@ -151,7 +157,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
           if (!dezenas) continue;
 
-          const bilhete = await db.bilhete.create({
+          await db.bilhete.create({
             data: {
               userId: transacao.userId,
               transacaoId: transacao.id,
@@ -162,22 +168,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-
-          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
-          await notify({
-            type: "BILHETE_CRIADO",
-            userId: String(transacao.userId),
-            codigo: bilhete.id.toString(),
-          });
         }
       });
 
       return res.status(200).send("ok");
     }
 
-    /**
-     * PIX LEGADO
-     */
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
