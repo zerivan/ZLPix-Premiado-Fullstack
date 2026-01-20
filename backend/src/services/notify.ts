@@ -1,9 +1,10 @@
-import * as admin from "firebase-admin";
+// backend/src/services/notify.ts
 import { prisma } from "../lib/prisma";
+import * as admin from "firebase-admin";
 
 /**
  * ============================
- * FIREBASE ADMIN INIT
+ * FIREBASE ADMIN INIT (SAFE)
  * ============================
  */
 if (!admin.apps.length) {
@@ -24,51 +25,107 @@ if (!admin.apps.length) {
 export type NotifyEvent =
   | { type: "BILHETE_CRIADO"; userId: string; codigo: string }
   | { type: "PIX_PAGO"; userId: string; valor: number }
+  | { type: "PIX_PENDENTE"; userId: string; valor: number }
   | { type: "CARTEIRA_CREDITO"; userId: string; valor: number }
+  | { type: "CARTEIRA_DEBITO"; userId: string; valor: number }
   | { type: "SAQUE_SOLICITADO"; userId: string; valor: number }
   | { type: "SAQUE_PAGO"; userId: string; valor: number }
-  | { type: "SORTEIO_REALIZADO"; userId: string; ganhou: boolean; valor?: number };
+  | { type: "SORTEIO_REALIZADO"; userId: string; ganhou: boolean; valor?: number }
+  | { type: "AVISO_SISTEMA"; userId: string; mensagem: string; url?: string };
 
 /**
  * ============================
- * DISPARO CENTRAL
+ * DISPARADOR CENTRAL
  * ============================
  */
 export async function notify(event: NotifyEvent) {
-  const payload = montarMensagem(event);
-  if (!payload) return;
+  try {
+    const payload = montarMensagem(event);
+    if (!payload) return;
 
-  const tokens = await prisma.pushToken.findMany({
-    where: { userId: Number(payload.userId) },
-    select: { token: true },
-  });
+    const tokens = await prisma.pushToken.findMany({
+      where: { userId: Number(payload.userId) },
+      select: { token: true },
+    });
 
-  if (!tokens.length) {
-    console.log("🔕 Usuário sem tokens:", payload.userId);
-    return;
+    if (!tokens.length) {
+      console.log("🔕 Usuário sem push token:", payload.userId);
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: {
+        url: payload.url || "/",
+      },
+      tokens: tokens.map((t) => t.token),
+    };
+
+    const res = await admin.messaging().sendEachForMulticast(message);
+
+    console.log(
+      "📲 PUSH:",
+      event.type,
+      "✔",
+      res.successCount,
+      "✖",
+      res.failureCount
+    );
+  } catch (err) {
+    console.error("❌ Erro PUSH:", event.type, err);
   }
-
-  await admin.messaging().sendEachForMulticast({
-    tokens: tokens.map((t) => t.token),
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
-    data: {
-      url: payload.url || "/",
-    },
-  });
-
-  console.log("📲 PUSH:", event.type, payload.userId);
 }
 
 /**
  * ============================
- * MENSAGENS
+ * MONTADOR DE MENSAGEM
  * ============================
  */
 function montarMensagem(event: NotifyEvent) {
   switch (event.type) {
+    case "BILHETE_CRIADO":
+      return {
+        userId: event.userId,
+        title: "🎟️ Bilhete criado",
+        body: `Seu bilhete ${event.codigo} foi gerado com sucesso`,
+        url: "/meus-bilhetes",
+      };
+
+    case "PIX_PAGO":
+      return {
+        userId: event.userId,
+        title: "💰 PIX confirmado",
+        body: `Pagamento de R$ ${event.valor.toFixed(2)} aprovado`,
+        url: "/carteira",
+      };
+
+    case "PIX_PENDENTE":
+      return {
+        userId: event.userId,
+        title: "⏳ PIX pendente",
+        body: `Aguardando PIX de R$ ${event.valor.toFixed(2)}`,
+        url: "/carteira",
+      };
+
+    case "CARTEIRA_CREDITO":
+      return {
+        userId: event.userId,
+        title: "💳 Carteira creditada",
+        body: `Entrou R$ ${event.valor.toFixed(2)} na sua carteira`,
+        url: "/carteira",
+      };
+
+    case "CARTEIRA_DEBITO":
+      return {
+        userId: event.userId,
+        title: "💳 Carteira debitada",
+        body: `Saiu R$ ${event.valor.toFixed(2)} da sua carteira`,
+        url: "/carteira",
+      };
+
     case "SAQUE_SOLICITADO":
       return {
         userId: event.userId,
@@ -77,11 +134,11 @@ function montarMensagem(event: NotifyEvent) {
         url: "/carteira",
       };
 
-    case "CARTEIRA_CREDITO":
+    case "SAQUE_PAGO":
       return {
         userId: event.userId,
-        title: "💰 Carteira creditada",
-        body: `Você recebeu R$ ${event.valor.toFixed(2)}`,
+        title: "✅ Saque pago",
+        body: `Seu saque de R$ ${event.valor.toFixed(2)} foi realizado`,
         url: "/carteira",
       };
 
@@ -91,8 +148,16 @@ function montarMensagem(event: NotifyEvent) {
         title: "🏆 Sorteio realizado",
         body: event.ganhou
           ? `Parabéns! Você ganhou R$ ${event.valor?.toFixed(2)}`
-          : "O sorteio foi realizado. Confira o resultado.",
+          : "O sorteio foi realizado. Confira o resultado!",
         url: "/resultado",
+      };
+
+    case "AVISO_SISTEMA":
+      return {
+        userId: event.userId,
+        title: "📢 Aviso do sistema",
+        body: event.mensagem,
+        url: event.url || "/",
       };
 
     default:
