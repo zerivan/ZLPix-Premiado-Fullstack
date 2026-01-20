@@ -6,6 +6,35 @@ const router = Router();
 
 /**
  * ============================
+ * LISTAR BILHETES DO USUÁRIO (MEUS)
+ * ============================
+ * Compatibilidade com o front-end
+ * GET /bilhete/meus
+ */
+router.get("/meus", async (req, res) => {
+  try {
+    const userId =
+      Number(req.headers["x-user-id"]) ||
+      Number(req.query.userId);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não identificado" });
+    }
+
+    const bilhetes = await prisma.bilhete.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json(bilhetes);
+  } catch (error) {
+    console.error("Erro ao listar meus bilhetes:", error);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * ============================
  * LISTAR BILHETES DO USUÁRIO
  * ============================
  */
