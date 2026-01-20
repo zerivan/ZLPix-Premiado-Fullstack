@@ -142,13 +142,14 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-        }
-      });
 
-      await notify({
-        type: "PIX_PAGO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
+          // 🔔 NOTIFICA BILHETE CRIADO (PRODUTO)
+          await notify({
+            type: "BILHETE_CRIADO",
+            userId: String(transacao.userId),
+            codigo: dezenas,
+          });
+        }
       });
 
       return res.status(200).send("ok");
