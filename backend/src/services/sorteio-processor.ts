@@ -87,6 +87,11 @@ export async function processarSorteio(
 
   const premioAtual = await obterPremioAtual();
 
+  /**
+   * ======================================
+   * ❌ SEM GANHADORES
+   * ======================================
+   */
   if (!ganhadores.length) {
     await prisma.bilhete.updateMany({
       where: { id: { in: bilhetes.map((b) => b.id) } },
@@ -99,6 +104,15 @@ export async function processarSorteio(
 
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
+    // 🔔 NOTIFICA TODOS OS PARTICIPANTES
+    for (const b of bilhetes) {
+      await notify({
+        type: "SORTEIO_REALIZADO",
+        userId: String(b.userId),
+        ganhou: false,
+      });
+    }
+
     return {
       ok: true,
       message: "Sorteio sem ganhadores",
@@ -106,14 +120,17 @@ export async function processarSorteio(
     };
   }
 
+  /**
+   * ======================================
+   * 🏆 COM GANHADORES
+   * ======================================
+   */
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
-    const userId = bilhete.userId;
-
     await prisma.$transaction([
       prisma.wallet.updateMany({
-        where: { userId },
+        where: { userId: bilhete.userId },
         data: {
           saldo: { increment: valorPorGanhador },
         },
@@ -121,7 +138,7 @@ export async function processarSorteio(
 
       prisma.transacao.create({
         data: {
-          userId,
+          userId: bilhete.userId,
           valor: valorPorGanhador,
           status: "paid",
           metadata: {
@@ -143,16 +160,10 @@ export async function processarSorteio(
       }),
     ]);
 
-    // 🔔 NOTIFICAÇÕES — PRÊMIO
-    await notify({
-      type: "CARTEIRA_CREDITO",
-      userId: String(userId),
-      valor: valorPorGanhador,
-    });
-
+    // 🔔 NOTIFICA GANHADOR
     await notify({
       type: "SORTEIO_REALIZADO",
-      userId: String(userId),
+      userId: String(bilhete.userId),
       ganhou: true,
       valor: valorPorGanhador,
     });
@@ -160,12 +171,13 @@ export async function processarSorteio(
 
   const idsGanhadores = ganhadores.map((b) => b.id);
 
+  const perdedores = bilhetes.filter(
+    (b) => !idsGanhadores.includes(b.id)
+  );
+
   await prisma.bilhete.updateMany({
     where: {
-      id: {
-        in: bilhetes.map((b) => b.id),
-        notIn: idsGanhadores,
-      },
+      id: { in: perdedores.map((b) => b.id) },
     },
     data: {
       status: "NAO_PREMIADO",
@@ -173,6 +185,15 @@ export async function processarSorteio(
       apuradoEm: agora,
     },
   });
+
+  // 🔔 NOTIFICA PERDEDORES
+  for (const b of perdedores) {
+    await notify({
+      type: "SORTEIO_REALIZADO",
+      userId: String(b.userId),
+      ganhou: false,
+    });
+  }
 
   await atualizarPremio(PREMIO_BASE);
 
