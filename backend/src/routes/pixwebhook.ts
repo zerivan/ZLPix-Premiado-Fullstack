@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
+import { notify } from "../services/notify";
 
 const router = express.Router();
 
@@ -168,6 +169,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
+
+          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
+          await notify({
+            type: "BILHETE_CRIADO",
+            userId: String(transacao.userId),
+            codigo: dezenas,
+          });
         }
       });
 
@@ -178,7 +186,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
      * =========================================
      * ❌ PIX DESCONHECIDO / LEGADO
      * =========================================
-     * Apenas marca como pago e ignora
      */
     await prisma.transacao.update({
       where: { id: transacao.id },
