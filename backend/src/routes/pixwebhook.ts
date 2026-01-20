@@ -9,9 +9,6 @@ const router = express.Router();
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
-/**
- * Próxima quarta-feira (data do sorteio)
- */
 function getNextWednesday(): Date {
   const now = new Date();
   const day = now.getDay();
@@ -22,16 +19,10 @@ function getNextWednesday(): Date {
   return next;
 }
 
-/**
- * Regra das 17h
- */
 function definirSorteio(): Date {
   return getNextWednesday();
 }
 
-/**
- * Busca info do Mercado Pago
- */
 async function fetchMpPayment(paymentId: string) {
   const token =
     process.env.MP_ACCESS_TOKEN ||
@@ -79,9 +70,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     const transacao = await prisma.transacao.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-      },
+      where: { mpPaymentId: String(paymentId) },
     });
 
     if (!transacao || transacao.status === "paid") {
@@ -95,7 +84,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     /**
      * =========================================
-     * 💰 DEPÓSITO DE CARTEIRA (ISOLADO)
+     * 💰 DEPÓSITO NA CARTEIRA
      * =========================================
      */
     if (
@@ -106,9 +95,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         prisma.wallet.updateMany({
           where: { userId: transacao.userId },
           data: {
-            saldo: {
-              increment: Number(transacao.valor),
-            },
+            saldo: { increment: Number(transacao.valor) },
           },
         }),
         prisma.transacao.update({
@@ -117,12 +104,25 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }),
       ]);
 
+      // 🔔 NOTIFICAÇÕES — PIX DEPÓSITO
+      await notify({
+        type: "PIX_PAGO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
+      });
+
+      await notify({
+        type: "CARTEIRA_CREDITO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
+      });
+
       return res.status(200).send("ok");
     }
 
     /**
      * =========================================
-     * 🎟️ CRIAÇÃO DE BILHETES (EXCLUSIVO)
+     * 🎟️ PIX DE APOSTA — CRIA BILHETES
      * =========================================
      */
     if (
@@ -169,14 +169,14 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-
-          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
-          await notify({
-            type: "BILHETE_CRIADO",
-            userId: String(transacao.userId),
-            codigo: dezenas,
-          });
         }
+      });
+
+      // 🔔 NOTIFICAÇÃO — PIX APROVADO (APOSTA)
+      await notify({
+        type: "PIX_PAGO",
+        userId: String(transacao.userId),
+        valor: Number(transacao.valor),
       });
 
       return res.status(200).send("ok");
@@ -184,7 +184,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     /**
      * =========================================
-     * ❌ PIX DESCONHECIDO / LEGADO
+     * LEGADO
      * =========================================
      */
     await prisma.transacao.update({
