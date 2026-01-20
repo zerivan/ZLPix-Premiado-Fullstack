@@ -25,9 +25,6 @@ function definirSorteio(): Date {
   return getNextWednesday();
 }
 
-/**
- * Busca info Mercado Pago
- */
 async function fetchMpPayment(paymentId: string) {
   const token =
     process.env.MP_ACCESS_TOKEN ||
@@ -109,7 +106,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }),
       ]);
 
-      // 🔔 NOTIFICAÇÃO — CARTEIRA CREDITADA
       await notify({
         type: "CARTEIRA_CREDITO",
         userId: String(transacao.userId),
@@ -133,6 +129,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : [];
 
       const sorteioData = definirSorteio();
+      let primeiroCodigo = "";
 
       await prisma.$transaction(async (db) => {
         await db.transacao.update({
@@ -156,6 +153,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           }
 
           if (!dezenas) continue;
+          if (!primeiroCodigo) primeiroCodigo = dezenas;
 
           await db.bilhete.create({
             data: {
@@ -169,6 +167,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
         }
+      });
+
+      // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
+      await notify({
+        type: "BILHETE_CRIADO",
+        userId: String(transacao.userId),
+        codigo: primeiroCodigo || "—",
       });
 
       return res.status(200).send("ok");
