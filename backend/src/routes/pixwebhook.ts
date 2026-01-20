@@ -5,13 +5,22 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
-// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 /**
- * Busca info do Mercado Pago
+ * Próxima quarta-feira (data do sorteio)
  */
+function getNextWednesday(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = (3 - day + 7) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(20, 0, 0, 0);
+  return next;
+}
+
 async function fetchMpPayment(paymentId: string) {
   const token =
     process.env.MP_ACCESS_TOKEN ||
@@ -38,11 +47,6 @@ async function fetchMpPayment(paymentId: string) {
   }
 }
 
-/**
- * ============================
- * PIX WEBHOOK
- * ============================
- */
 router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
     const payload: any = req.body || {};
@@ -51,28 +55,21 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.data?.id ||
       payload?.resource?.id ||
       payload?.id ||
-      payload?.payment_id ||
-      null;
+      payload?.payment_id;
 
-    if (!paymentId) {
-      return res.status(200).send("ok");
-    }
+    if (!paymentId) return res.status(200).send("ok");
 
     const mpInfo: any = await fetchMpPayment(String(paymentId));
     const mpStatus = mpInfo?.status || payload?.data?.status;
 
-    // ⚠️ Só continua se aprovado
     if (mpStatus !== "approved") {
       return res.status(200).send("ok");
     }
 
     const transacao = await prisma.transacao.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-      },
+      where: { mpPaymentId: String(paymentId) },
     });
 
-    // 🔁 Idempotência
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
@@ -83,31 +80,20 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
-     * =========================================
-     * 💰 DEPÓSITO NA CARTEIRA
-     * =========================================
+     * 💰 DEPÓSITO DE CARTEIRA
      */
-    if (
-      metadata["tipo"] === "deposito" &&
-      metadata["origem"] === "wallet"
-    ) {
+    if (metadata["tipo"] === "deposito" && metadata["origem"] === "wallet") {
       await prisma.$transaction([
-        prisma.wallet.update({
+        prisma.wallet.updateMany({
           where: { userId: transacao.userId },
-          data: {
-            saldo: {
-              increment: Number(transacao.valor),
-            },
-          },
+          data: { saldo: { increment: Number(transacao.valor) } },
         }),
-
         prisma.transacao.update({
           where: { id: transacao.id },
           data: { status: "paid" },
         }),
       ]);
 
-      // 🔔 NOTIFICAÇÃO
       await notify({
         type: "CARTEIRA_CREDITO",
         userId: String(transacao.userId),
@@ -118,17 +104,14 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     /**
-     * =========================================
-     * 🎟️ PAGAMENTO DE BILHETES
-     * =========================================
+     * 🎟️ BILHETES
      */
-    if (
-      metadata["tipo"] === "bilhete" &&
-      metadata["origem"] === "aposta"
-    ) {
+    if (metadata["tipo"] === "bilhete" && metadata["origem"] === "aposta") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
         : [];
+
+      const sorteioData = getNextWednesday();
 
       await prisma.$transaction(async (db) => {
         await db.transacao.update({
@@ -137,10 +120,14 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         });
 
         for (const item of bilhetesRaw) {
-          const dezenas =
-            typeof item === "string"
-              ? item
-              : String((item as any)?.dezenas ?? "");
+          let dezenas = "";
+          let valor =
+            Number(transacao.valor) /
+            Math.max(bilhetesRaw.length, 1);
+
+          if (typeof item === "string") dezenas = item;
+          else if (typeof item === "object" && item !== null)
+            dezenas = String((item as any).dezenas ?? "");
 
           if (!dezenas) continue;
 
@@ -149,18 +136,15 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               userId: transacao.userId,
               transacaoId: transacao.id,
               dezenas,
-              valor:
-                Number(transacao.valor) /
-                Math.max(bilhetesRaw.length, 1),
+              valor,
               pago: true,
-              sorteioData: new Date(),
+              sorteioData,
               status: "ATIVO",
             },
           });
         }
       });
 
-      // 🔔 NOTIFICAÇÃO
       await notify({
         type: "PIX_PAGO",
         userId: String(transacao.userId),
@@ -170,11 +154,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    /**
-     * =========================================
-     * PIX LEGADO / DESCONHECIDO
-     * =========================================
-     */
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
@@ -182,7 +161,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     return res.status(200).send("ok");
   } catch (err) {
-    console.error("PIX webhook erro:", err);
+    console.error("pixWebhook erro:", err);
     return res.status(200).send("ok");
   }
 });
