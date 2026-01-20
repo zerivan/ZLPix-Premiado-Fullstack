@@ -36,7 +36,8 @@ export async function registerPush(userId: number) {
       return;
     }
 
-    await axios.post(`${BASE_URL}/push/token`, {
+    // ✅ ENDPOINT CORRETO
+    await axios.post(`${BASE_URL}/push/register`, {
       token,
       userId,
     });
