@@ -17,7 +17,7 @@ type FederalResponse = {
  * - Executa sorteios vencidos
  * - Busca resultado REAL da Federal
  * - Usa Federal como única fonte de verdade
- * - Nunca duplica sorteio
+ * - Prêmio é controlado pelo CMS (premio_atual)
  */
 
 async function buscarResultadoFederal(): Promise<string[] | null> {
@@ -35,7 +35,7 @@ async function buscarResultadoFederal(): Promise<string[] | null> {
 
     for (const num of json.data.premios) {
       dezenas.push(num.slice(0, 2)); // frente
-      dezenas.push(num.slice(-2));   // fundo
+      dezenas.push(num.slice(-2));  // fundo
     }
 
     return dezenas;
@@ -70,28 +70,9 @@ cron.schedule("*/10 * * * *", async () => {
       return;
     }
 
-    // 💰 Soma do prêmio do sorteio
-    const premioAgg = await prisma.bilhete.aggregate({
-      where: {
-        status: "ATIVO",
-        sorteioData,
-      },
-      _sum: {
-        valor: true,
-      },
-    });
-
-    const premioTotal = Number(premioAgg._sum.valor || 0);
-
-    if (premioTotal <= 0) {
-      console.log("⚠️ Sorteio sem prêmio válido");
-      return;
-    }
-
-    await processarSorteio(sorteioData, {
-      dezenas,
-      premioTotal,
-    });
+    // ✅ PROCESSA SORTEIO
+    // 💰 Prêmio é obtido INTERNAMENTE via CMS (premio_atual)
+    await processarSorteio(sorteioData, { dezenas });
 
     console.log("✅ Sorteio Federal processado:", sorteioData);
   } catch (err) {
