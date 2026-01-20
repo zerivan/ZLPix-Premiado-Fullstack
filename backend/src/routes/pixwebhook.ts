@@ -9,6 +9,9 @@ const router = express.Router();
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
+/**
+ * Próxima quarta-feira (data do sorteio)
+ */
 function getNextWednesday(): Date {
   const now = new Date();
   const day = now.getDay();
@@ -23,6 +26,9 @@ function definirSorteio(): Date {
   return getNextWednesday();
 }
 
+/**
+ * Busca info do Mercado Pago
+ */
 async function fetchMpPayment(paymentId: string) {
   const token =
     process.env.MP_ACCESS_TOKEN ||
@@ -83,47 +89,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
-     * =========================================
-     * 💰 DEPÓSITO NA CARTEIRA
-     * =========================================
-     */
-    if (
-      metadata["tipo"] === "deposito" &&
-      metadata["origem"] === "wallet"
-    ) {
-      await prisma.$transaction([
-        prisma.wallet.updateMany({
-          where: { userId: transacao.userId },
-          data: {
-            saldo: { increment: Number(transacao.valor) },
-          },
-        }),
-        prisma.transacao.update({
-          where: { id: transacao.id },
-          data: { status: "paid" },
-        }),
-      ]);
-
-      // 🔔 NOTIFICAÇÕES — PIX DEPÓSITO
-      await notify({
-        type: "PIX_PAGO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
-      });
-
-      await notify({
-        type: "CARTEIRA_CREDITO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
-      });
-
-      return res.status(200).send("ok");
-    }
-
-    /**
-     * =========================================
-     * 🎟️ PIX DE APOSTA — CRIA BILHETES
-     * =========================================
+     * 🎟️ CRIAÇÃO DE BILHETES
      */
     if (
       metadata["tipo"] === "bilhete" &&
@@ -158,7 +124,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
           if (!dezenas) continue;
 
-          await db.bilhete.create({
+          const bilhete = await db.bilhete.create({
             data: {
               userId: transacao.userId,
               transacaoId: transacao.id,
@@ -169,24 +135,19 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
               status: "ATIVO",
             },
           });
-        }
-      });
 
-      // 🔔 NOTIFICAÇÃO — PIX APROVADO (APOSTA)
-      await notify({
-        type: "PIX_PAGO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
+          // 🔔 NOTIFICAÇÃO — BILHETE CRIADO
+          await notify({
+            type: "BILHETE_CRIADO",
+            userId: String(transacao.userId),
+            codigo: dezenas,
+          });
+        }
       });
 
       return res.status(200).send("ok");
     }
 
-    /**
-     * =========================================
-     * LEGADO
-     * =========================================
-     */
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
