@@ -5,6 +5,7 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
+// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
@@ -57,12 +58,20 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.id ||
       payload?.payment_id;
 
-    if (!paymentId) return res.status(200).send("ok");
+    if (!paymentId) {
+      return res.status(200).send("ok");
+    }
 
+    // 🔎 Busca info no MP (quando possível)
     const mpInfo: any = await fetchMpPayment(String(paymentId));
-    const mpStatus = mpInfo?.status;
 
-    // ✅ CORREÇÃO CRÍTICA
+    // ✅ CORREÇÃO REAL:
+    // aceita status vindo do MP OU do payload
+    const mpStatus =
+      mpInfo?.status ||
+      payload?.data?.status ||
+      payload?.status;
+
     if (mpStatus !== "approved" && mpStatus !== "paid") {
       return res.status(200).send("ok");
     }
@@ -71,6 +80,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
+    // idempotência
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
@@ -81,7 +91,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : {};
 
     /**
+     * =========================
      * 💰 DEPÓSITO DE CARTEIRA
+     * =========================
      */
     if (metadata["tipo"] === "deposito") {
       await prisma.$transaction([
@@ -105,7 +117,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     /**
+     * =========================
      * 🎟️ BILHETES
+     * =========================
      */
     if (metadata["tipo"] === "bilhete") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
@@ -155,6 +169,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
+    // fallback de segurança
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
