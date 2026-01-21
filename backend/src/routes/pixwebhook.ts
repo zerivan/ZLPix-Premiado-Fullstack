@@ -5,6 +5,7 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
+// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
@@ -70,6 +71,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
+    // já processada ou inexistente
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
@@ -105,7 +107,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     /**
      * 🎟️ BILHETES
-     * ✅ CORREÇÃO: valida SOMENTE metadata.tipo === "bilhete"
+     * CORREÇÃO: valida SOMENTE metadata.tipo === "bilhete"
      */
     if (metadata["tipo"] === "bilhete") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
@@ -122,7 +124,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
-          let valor =
+          const valor =
             Number(transacao.valor) /
             Math.max(bilhetesRaw.length, 1);
 
@@ -144,7 +146,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
 
-          // 🔔 NOTIFICA BILHETE CRIADO
           await notify({
             type: "BILHETE_CRIADO",
             userId: String(transacao.userId),
