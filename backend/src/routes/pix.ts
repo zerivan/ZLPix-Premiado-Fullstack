@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 
 const router = express.Router();
+
 // fetch nativo (compat)
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
@@ -10,10 +11,7 @@ const fetchFn: typeof fetch = (...args: any) =>
 /**
  * =========================
  * POST /pix/create
- * Fluxo: criação de PIX exclusivo para pagamento de BILHETES
- * - Cria transacao (pending) com metadata.tipo = "bilhete"
- * - Chama Mercado Pago /v1/payments
- * - Retorna paymentId, qr_code_base64, copy_paste
+ * Criação de PIX para pagamento de BILHETES
  * =========================
  */
 router.post("/create", async (req, res) => {
@@ -33,7 +31,6 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    // 1️⃣ cria transação PENDENTE (apostas / bilhetes)
     const tx = await prisma.transacao.create({
       data: {
         userId: Number(userId),
@@ -42,18 +39,14 @@ router.post("/create", async (req, res) => {
         metadata: {
           tipo: "bilhete",
           origem: "aposta",
-          bilhetes, // salva dados dos bilhetes para processamento no webhook
+          bilhetes,
           description: description || "Pagamento de bilhetes ZLPix",
         },
       },
     });
 
-    const mpToken =
-      process.env.MP_ACCESS_TOKEN ||
-      process.env.MP_ACCESS_TOKEN_TEST;
-
-    const mpBase =
-      process.env.MP_BASE_URL || "https://api.mercadopago.com";
+    const mpToken = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
+    const mpBase  = process.env.MP_BASE_URL || "https://api.mercadopago.com";
 
     if (!mpToken) {
       return res.status(500).json({ error: "Token Mercado Pago ausente" });
@@ -87,7 +80,6 @@ router.post("/create", async (req, res) => {
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
-    // 2️⃣ atualiza transacao com retorno do MP
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -103,10 +95,8 @@ router.post("/create", async (req, res) => {
 
     return res.json({
       paymentId: String(mpJson.id),
-      qr_code_base64:
-        mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
-      copy_paste:
-        mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
+      qr_code_base64: mpJson.point_of_interaction?.transaction_data?.qr_code_base64 ?? null,
+      copy_paste:    mpJson.point_of_interaction?.transaction_data?.qr_code ?? null,
     });
   } catch (err) {
     console.error("Erro pix/create:", err);
@@ -117,8 +107,7 @@ router.post("/create", async (req, res) => {
 /**
  * =========================
  * GET /pix/payment-status/:paymentId
- * Polling do frontend (fluxo BILHETE)
- * Valida metadata.tipo === "bilhete"
+ * Verificação de status de pagamento de bilhete
  * =========================
  */
 router.get("/payment-status/:paymentId", async (req, res) => {
@@ -149,8 +138,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
 
     if (tipo !== "bilhete") {
       return res.status(404).json({
-        error:
-          "Pagamento encontrado, mas não pertence ao fluxo de bilhete. Use o endpoint de carteira se aplicável.",
+        error: "Pagamento encontrado, mas não pertence ao fluxo de bilhete. Use o endpoint de carteira se aplicável.",
       });
     }
 
@@ -161,7 +149,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
   }
 });
 
-// Opcional: Healthcheck da rota pix
+// Opcional: Healthcheck
 router.get("/__ping_pix", (req, res) => {
   res.json({ ping: true, rota: "pix" });
 });
