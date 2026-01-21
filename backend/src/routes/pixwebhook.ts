@@ -82,7 +82,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     /**
      * 💰 DEPÓSITO DE CARTEIRA
      */
-    if (metadata["tipo"] === "deposito" && metadata["origem"] === "wallet") {
+    if (metadata["tipo"] === "deposito") {
       await prisma.$transaction([
         prisma.wallet.updateMany({
           where: { userId: transacao.userId },
@@ -105,8 +105,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     /**
      * 🎟️ BILHETES
+     * ✅ CORREÇÃO: valida SOMENTE metadata.tipo === "bilhete"
      */
-    if (metadata["tipo"] === "bilhete" && metadata["origem"] === "aposta") {
+    if (metadata["tipo"] === "bilhete") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
         : [];
@@ -143,7 +144,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
 
-          // 🔔 NOTIFICA BILHETE CRIADO (PRODUTO)
+          // 🔔 NOTIFICA BILHETE CRIADO
           await notify({
             type: "BILHETE_CRIADO",
             userId: String(transacao.userId),
@@ -155,6 +156,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
+    // fallback seguro
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
