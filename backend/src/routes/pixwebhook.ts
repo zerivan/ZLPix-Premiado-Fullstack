@@ -5,7 +5,6 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
-// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
@@ -61,9 +60,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     if (!paymentId) return res.status(200).send("ok");
 
     const mpInfo: any = await fetchMpPayment(String(paymentId));
-    const mpStatus = mpInfo?.status || payload?.data?.status;
+    const mpStatus = mpInfo?.status;
 
-    if (mpStatus !== "approved") {
+    // ✅ CORREÇÃO CRÍTICA
+    if (mpStatus !== "approved" && mpStatus !== "paid") {
       return res.status(200).send("ok");
     }
 
@@ -71,7 +71,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
-    // já processada ou inexistente
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
@@ -107,7 +106,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     /**
      * 🎟️ BILHETES
-     * CORREÇÃO: valida SOMENTE metadata.tipo === "bilhete"
      */
     if (metadata["tipo"] === "bilhete") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
@@ -157,7 +155,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // fallback seguro
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
