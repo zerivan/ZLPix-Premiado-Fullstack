@@ -79,8 +79,8 @@ app.use("/auth", authRoutes);
 app.use("/api/federal", federalRoutes);
 app.use("/federal", federalRoutes);
 
-app.use("/pix", pixRoutes);
 app.use("/pix/webhook", pixWebhookRoutes);
+app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/push", pushRoutes);
