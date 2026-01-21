@@ -5,13 +5,9 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
-// fetch nativo
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
-/**
- * Próxima quarta-feira (data do sorteio)
- */
 function getNextWednesday(): Date {
   const now = new Date();
   const day = now.getDay();
@@ -23,15 +19,9 @@ function getNextWednesday(): Date {
 }
 
 async function fetchMpPayment(paymentId: string) {
-  const token =
-    process.env.MP_ACCESS_TOKEN ||
-    process.env.MP_ACCESS_TOKEN_TEST;
-
-  const base =
-    process.env.MP_BASE_URL || "https://api.mercadopago.com";
-
+  const token = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
+  const base  = process.env.MP_BASE_URL || "https://api.mercadopago.com";
   if (!token) return null;
-
   try {
     const resp = await fetchFn(
       `${base}/v1/payments/${encodeURIComponent(paymentId)}`,
@@ -40,7 +30,6 @@ async function fetchMpPayment(paymentId: string) {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
-
     if (!resp.ok) return null;
     return await resp.json();
   } catch {
@@ -62,11 +51,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔎 Busca info no MP (quando possível)
+    // Busca info no MP (quando possível)
     const mpInfo: any = await fetchMpPayment(String(paymentId));
 
-    // ✅ CORREÇÃO REAL:
-    // aceita status vindo do MP OU do payload
+    // Aceita status vindo do MP OU do payload
     const mpStatus =
       mpInfo?.status ||
       payload?.data?.status ||
@@ -80,7 +68,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
-    // idempotência
     if (!transacao || transacao.status === "paid") {
       return res.status(200).send("ok");
     }
@@ -90,11 +77,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
-    /**
-     * =========================
-     * 💰 DEPÓSITO DE CARTEIRA
-     * =========================
-     */
+    // DEPÓSITO DE CARTEIRA
     if (metadata["tipo"] === "deposito") {
       await prisma.$transaction([
         prisma.wallet.updateMany({
@@ -106,21 +89,15 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           data: { status: "paid" },
         }),
       ]);
-
       await notify({
         type: "CARTEIRA_CREDITO",
         userId: String(transacao.userId),
         valor: Number(transacao.valor),
       });
-
       return res.status(200).send("ok");
     }
 
-    /**
-     * =========================
-     * 🎟️ BILHETES
-     * =========================
-     */
+    // BILHETES
     if (metadata["tipo"] === "bilhete") {
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
@@ -169,7 +146,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // fallback de segurança
     await prisma.transacao.update({
       where: { id: transacao.id },
       data: { status: "paid" },
@@ -180,6 +156,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     console.error("pixWebhook erro:", err);
     return res.status(200).send("ok");
   }
+});
+
+// Opcional: Healthcheck
+router.get("/__ping_pixwebhook", (req, res) => {
+  res.json({ ping: true, rota: "pixwebhook" });
 });
 
 export default router;
