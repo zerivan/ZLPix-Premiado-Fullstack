@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 
 const router = express.Router();
-
 // fetch nativo (compat)
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
@@ -68,7 +67,6 @@ router.post("/create", async (req, res) => {
         email: user.email,
         first_name: user.name || "Cliente",
       },
-      // opcional: external_reference para ajudar identificação
       external_reference: `bilhete_tx_${tx.id}`,
     };
 
@@ -161,6 +159,11 @@ router.get("/payment-status/:paymentId", async (req, res) => {
     console.error("Erro pix/payment-status:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
+});
+
+// Opcional: Healthcheck da rota pix
+router.get("/__ping_pix", (req, res) => {
+  res.json({ ping: true, rota: "pix" });
 });
 
 export default router;
