@@ -80,11 +80,11 @@ export default function Revisao() {
       };
 
       const resp = await fetch(
-        import.meta.env.VITE_API_URL + "/wallet/depositar",
+        import.meta.env.VITE_API_URL + "/pix/create",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, valor: payload.amount }),
+          body: JSON.stringify(payload),
         }
       );
 
