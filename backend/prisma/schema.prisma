@@ -21,6 +21,7 @@ model users {
   wallets        wallet[]
   passwordResets password_reset[]
   pushTokens     PushToken[]
+  transacoesCarteira transacao_carteira[]
 }
 
 model wallet {
@@ -52,6 +53,20 @@ model transacao {
 
   user         users      @relation(fields: [userId], references: [id])
   bilhetes     bilhete[]  @relation("tb_rel")
+}
+
+model transacao_carteira {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  valor     Float
+  tipo      String
+  status    String   @default("pending")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("createdat")
+
+  user users @relation(fields: [userId], references: [id])
+
+  @@map("transacao_carteira")
 }
 
 model bilhete {
@@ -95,7 +110,6 @@ model password_reset {
 
 model AppContent {
   id          Int      @id @default(autoincrement())
-
   key         String   @unique
   type        String   @default("text")
   slug        String?  @unique
