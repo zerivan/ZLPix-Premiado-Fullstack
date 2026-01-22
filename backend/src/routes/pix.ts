@@ -38,7 +38,6 @@ router.post("/create", async (req, res) => {
         tipo: "BILHETE",
         status: "pending",
         metadata: {
-          tipo: "bilhete",
           origem: "aposta",
           bilhetes,
           description: description || "Pagamento de bilhetes ZLPix",
@@ -86,7 +85,6 @@ router.post("/create", async (req, res) => {
       data: {
         mpPaymentId: String(mpJson.id),
         metadata: {
-          tipo: "bilhete",
           origem: "aposta",
           bilhetes,
           mpResponse: mpJson,
@@ -124,7 +122,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       },
       select: {
         status: true,
-        metadata: true,
+        tipo: true,
       },
     });
 
@@ -132,12 +130,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
       return res.json({ status: "pending" });
     }
 
-    const tipo =
-      transacao.metadata && typeof transacao.metadata === "object"
-        ? (transacao.metadata as any).tipo
-        : undefined;
-
-    if (tipo !== "bilhete") {
+    if (transacao.tipo !== "BILHETE") {
       return res.status(404).json({
         error: "Pagamento encontrado, mas não pertence ao fluxo de bilhete. Use o endpoint de carteira se aplicável.",
       });
