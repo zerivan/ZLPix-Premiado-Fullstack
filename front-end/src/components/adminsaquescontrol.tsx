@@ -46,7 +46,6 @@ export default function AdminSaquesControl() {
         { headers }
       );
 
-      // 🔒 backend já retorna apenas SAQUES
       setSaques(res.data || []);
     } catch (err) {
       console.error("Erro ao carregar saques:", err);
@@ -67,8 +66,8 @@ export default function AdminSaquesControl() {
       setProcessando(transacaoId);
 
       await axios.post(
-        `${BASE_URL}/api/admin/saques/pagar`,
-        { transacaoId },
+        `${BASE_URL}/api/admin/saques/${transacaoId}/pagar`,
+        {},
         { headers }
       );
 
