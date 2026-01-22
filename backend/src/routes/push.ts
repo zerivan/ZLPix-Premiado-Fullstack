@@ -30,6 +30,7 @@ router.post("/token", async (req, res) => {
     const { token, userId } = req.body;
 
     if (!token || !userId) {
+      console.log("⚠️ POST /push/token - Token ou userId ausente");
       return res.status(400).json({
         error: "Token ou userId ausente.",
       });
@@ -44,9 +45,10 @@ router.post("/token", async (req, res) => {
       },
     });
 
+    console.log("✅ Push token salvo para userId:", userId);
     return res.json({ ok: true });
   } catch (error) {
-    console.error("Erro ao salvar push token:", error);
+    console.error("❌ Erro ao salvar push token:", error);
     return res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -61,6 +63,7 @@ router.post("/send", async (req, res) => {
     const { userId, title, body, url } = req.body;
 
     if (!userId || !title || !body) {
+      console.log("⚠️ POST /push/send - Dados ausentes:", { userId, title: !!title, body: !!body });
       return res.status(400).json({
         error: "userId, title e body são obrigatórios.",
       });
@@ -71,7 +74,10 @@ router.post("/send", async (req, res) => {
       select: { token: true },
     });
 
+    console.log("📲 POST /push/send - Tokens encontrados para userId", userId, ":", tokens.length);
+
     if (!tokens.length) {
+      console.log("🔕 POST /push/send - Usuário sem tokens registrados:", userId);
       return res.json({
         ok: false,
         message: "Usuário não possui tokens registrados.",
@@ -93,13 +99,20 @@ router.post("/send", async (req, res) => {
       .messaging()
       .sendEachForMulticast(message);
 
+    console.log(
+      "✅ POST /push/send - Notificações enviadas. Sucesso:",
+      response.successCount,
+      "Falha:",
+      response.failureCount
+    );
+
     return res.json({
       ok: true,
       successCount: response.successCount,
       failureCount: response.failureCount,
     });
   } catch (error) {
-    console.error("Erro ao enviar push:", error);
+    console.error("❌ Erro ao enviar push:", error);
     return res.status(500).json({ error: "Erro ao enviar push." });
   }
 });
