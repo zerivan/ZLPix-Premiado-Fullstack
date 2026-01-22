@@ -48,75 +48,67 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.payment_id;
 
     if (!paymentId) {
-      console.log("⚠️ Webhook recebido sem paymentId");
       return res.status(200).send("ok");
     }
 
-    console.log(`📥 Webhook recebido: paymentId: ${paymentId}`);
-
-    // Busca info no MP (quando possível)
     const mpInfo: any = await fetchMpPayment(String(paymentId));
-
-    // Aceita status vindo do MP OU do payload
     const mpStatus =
       mpInfo?.status ||
       payload?.data?.status ||
       payload?.status;
 
-    console.log(`📋 Status do pagamento: ${mpStatus}`);
-
     if (mpStatus !== "approved" && mpStatus !== "paid") {
-      console.log(`⏸️ Pagamento não aprovado (status: ${mpStatus}), ignorando webhook`);
       return res.status(200).send("ok");
     }
 
+    // 🔹 PRIMEIRO: TENTAR ENCONTRAR EM transacao_carteira
+    const transacaoCarteira = await prisma.transacao_carteira.findFirst({
+      where: {
+        metadata: {
+          path: ["mpResponse", "id"],
+          equals: Number(paymentId),
+        },
+      },
+    });
+
+    if (transacaoCarteira && transacaoCarteira.status !== "paid") {
+
+      await prisma.$transaction([
+        prisma.wallet.updateMany({
+          where: { userId: transacaoCarteira.userId },
+          data: { saldo: { increment: Number(transacaoCarteira.valor) } },
+        }),
+        prisma.transacao_carteira.update({
+          where: { id: transacaoCarteira.id },
+          data: { status: "paid" },
+        }),
+      ]);
+
+      await notify({
+        type: "CARTEIRA_CREDITO",
+        userId: String(transacaoCarteira.userId),
+        valor: Number(transacaoCarteira.valor),
+      });
+
+      return res.status(200).send("ok");
+    }
+
+    // 🔹 SENÃO: É BILHETE (continua usando transacao)
     const transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
 
     if (!transacao || transacao.status === "paid") {
-      console.log(`⚠️ Transação não encontrada ou já paga: paymentId: ${paymentId}`);
       return res.status(200).send("ok");
     }
-
-    console.log(`✅ Transação encontrada: id: ${transacao.id}, userId: ${transacao.userId}`);
 
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
         ? (transacao.metadata as Prisma.JsonObject)
         : {};
 
-    // DEPÓSITO DE CARTEIRA
-    if (metadata["tipo"] === "deposito") {
-      console.log(`💳 Processando depósito de carteira: paymentId: ${paymentId}, userId: ${transacao.userId}, valor: R$ ${Number(transacao.valor).toFixed(2)}`);
-      
-      await prisma.$transaction([
-        prisma.wallet.updateMany({
-          where: { userId: transacao.userId },
-          data: { saldo: { increment: Number(transacao.valor) } },
-        }),
-        prisma.transacao.update({
-          where: { id: transacao.id },
-          data: { status: "paid" },
-        }),
-      ]);
-      
-      console.log(`✅ Depósito processado. Disparando notificação...`);
-      
-      await notify({
-        type: "CARTEIRA_CREDITO",
-        userId: String(transacao.userId),
-        valor: Number(transacao.valor),
-      });
-      
-      console.log(`✅ Webhook concluído para depósito: paymentId: ${paymentId}`);
-      return res.status(200).send("ok");
-    }
-
-    // BILHETES
     if (metadata["tipo"] === "bilhete") {
-      console.log(`🎟️ Processando pagamento de bilhete(s): paymentId: ${paymentId}, userId: ${transacao.userId}`);
-      
+
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
         : [];
@@ -153,8 +145,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
 
-          console.log(`📢 Disparando notificação de bilhete criado: ${dezenas}`);
-
           await notify({
             type: "BILHETE_CRIADO",
             userId: String(transacao.userId),
@@ -163,14 +153,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }
       });
 
-      console.log(`✅ Webhook concluído para bilhete(s): ${bilhetesRaw.length} bilhete(s) criado(s)`);
       return res.status(200).send("ok");
     }
-
-    await prisma.transacao.update({
-      where: { id: transacao.id },
-      data: { status: "paid" },
-    });
 
     return res.status(200).send("ok");
   } catch (err) {
@@ -179,9 +163,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
   }
 });
 
-// Opcional: Healthcheck
 router.get("/__ping_pixwebhook", (req, res) => {
-  res.json({ ping: true, rota: "pixwebhook" });
+  res.json({ ping: true });
 });
 
 export default router;
