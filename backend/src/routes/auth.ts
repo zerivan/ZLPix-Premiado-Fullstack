@@ -1,39 +1,55 @@
-// src/routes/auth.ts
-import { Router } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { prisma } from "../lib/prisma";
-
-const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
-
 // ======================================
-// 🔧 SERIALIZADOR PARA BIGINT DO PRISMA
+// 🛡 LOGIN ADMIN
 // ======================================
-function serialize(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === "bigint") return obj.toString();
-  if (Array.isArray(obj)) return obj.map(serialize);
-  if (typeof obj === "object") {
-    return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => [k, serialize(v)])
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "E-mail e senha são obrigatórios." });
+    }
+
+    const admin = await prisma.admins.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    if (!admin) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
+
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
+
+    const token = jwt.sign(
+      {
+        id: admin.id.toString(),
+        email: admin.email,
+        role: "admin",
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
     );
-  }
-  return obj;
-}
 
-// ======================================
-// 🔒 SANITIZAÇÃO (REMOVE passwordHash)
-// ======================================
-function sanitize(obj: any) {
-  if (!obj) return obj;
-  const s = serialize(obj);
-  if (s && typeof s === "object" && "passwordHash" in s) {
-    delete s.passwordHash;
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+      admin: {
+        id: admin.id,
+        email: admin.email,
+      },
+    });
+  } catch (err) {
+    console.error("Erro em /auth/admin/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
+      error: String(err),
+    });
   }
-  return s;
-}
-
+});
 // ======================================
 // 👤 REGISTER USER
 // ======================================
