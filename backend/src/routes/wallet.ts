@@ -265,7 +265,7 @@ router.get("/historico", async (req, res) => {
       status: tx.status,
       mpPaymentId: tx.mpPaymentId,
       metadata: tx.metadata,
-      createdAt: tx.createdAt?.toISOString(),
+      createdAt: tx.createdAt ? tx.createdAt.toISOString() : null,
     }));
 
     return res.json(lista);

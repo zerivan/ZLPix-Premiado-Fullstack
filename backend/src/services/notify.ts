@@ -66,10 +66,6 @@ export async function notify(event: NotifyEvent) {
       return;
     }
 
-    // Log de até 5 tokens como exemplo
-    const exampleTokens = tokens.slice(0, 5).map((t) => t.token.substring(0, 20) + "...");
-    console.log("📝 Exemplos de tokens (primeiros 5):", exampleTokens);
-
     const message: admin.messaging.MulticastMessage = {
       notification: {
         title: payload.title,
@@ -96,8 +92,7 @@ export async function notify(event: NotifyEvent) {
     res.responses.forEach((r, idx) => {
       if (!r.success) {
         invalidTokens.push(tokens[idx].token);
-        console.error("❌ Falha no token", idx, ":", {
-          token: tokens[idx].token.substring(0, 20) + "...",
+        console.error("❌ Falha no token índice", idx, ":", {
           error: r.error?.code,
           message: r.error?.message,
         });

@@ -31,7 +31,7 @@ router.post("/token", async (req, res) => {
 
     console.log("📥 POST /push/token - body recebido:", {
       userId,
-      tokenPreview: token ? token.substring(0, 20) + "..." : null,
+      tokenReceived: !!token,
     });
 
     if (!token || !userId) {
@@ -123,8 +123,7 @@ router.post("/send", async (req, res) => {
     if (response.failureCount > 0) {
       response.responses.forEach((r, idx) => {
         if (!r.success) {
-          console.error("❌ Falha no token", idx, ":", {
-            token: tokens[idx].token.substring(0, 20) + "...",
+          console.error("❌ Falha no token índice", idx, ":", {
             error: r.error?.code,
             message: r.error?.message,
           });
