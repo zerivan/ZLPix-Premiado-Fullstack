@@ -41,7 +41,7 @@ router.post("/depositar", async (req, res) => {
       data: {
         userId,
         valor: Number(valor),
-        tipo: "deposito",
+        tipo: "DEPOSITO",
         status: "pending",
         metadata: {
           origem: "wallet"
@@ -130,7 +130,7 @@ router.post("/saque", async (req, res) => {
       where: {
         userId,
         status: "pending",
-        tipo: "saque",
+        tipo: "SAQUE",
       },
     });
 
@@ -144,7 +144,7 @@ router.post("/saque", async (req, res) => {
       data: {
         userId,
         valor: Number(valor),
-        tipo: "saque",
+        tipo: "SAQUE",
         status: "pending",
         metadata: {
           origem: "wallet",
