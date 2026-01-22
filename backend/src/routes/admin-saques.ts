@@ -10,13 +10,10 @@ const router = Router();
  * ============================
  */
 router.get("/", async (_req, res) => {
-  const saques = await prisma.transacao.findMany({
+  const saques = await prisma.transacao_carteira.findMany({
     where: {
       status: "pending",
-      metadata: {
-        path: ["tipo"],
-        equals: "saque",
-      },
+      tipo: "saque",
     },
     orderBy: { createdAt: "asc" },
   });
@@ -28,14 +25,13 @@ router.get("/", async (_req, res) => {
  * ============================
  * CONFIRMAR PAGAMENTO DO SAQUE
  * ============================
- * ADMIN confirma que pagou o PIX
  */
 router.post("/:id/pagar", async (req, res) => {
   const id = Number(req.params.id);
 
   console.log(`💰 Admin confirmando pagamento de saque: id: ${id}`);
 
-  const saque = await prisma.transacao.findUnique({
+  const saque = await prisma.transacao_carteira.findUnique({
     where: { id },
   });
 
@@ -49,22 +45,26 @@ router.post("/:id/pagar", async (req, res) => {
     return res.json({ ok: true });
   }
 
-  // 🔐 GARANTE CARTEIRA
   const wallet = await prisma.wallet.findFirst({
     where: { userId: saque.userId },
   });
 
   if (!wallet || Number(wallet.saldo) < Number(saque.valor)) {
-    console.warn(`⚠️ Saldo insuficiente para concluir saque: userId: ${saque.userId}, saldo: ${wallet?.saldo ?? 0}, valor: ${saque.valor}`);
+    console.warn(
+      `⚠️ Saldo insuficiente para concluir saque: userId: ${saque.userId}, saldo: ${wallet?.saldo ?? 0}, valor: ${saque.valor}`
+    );
     return res.status(400).json({
       error: "Saldo insuficiente para concluir saque",
     });
   }
 
-  console.log(`✅ Processando saque: userId: ${saque.userId}, valor: R$ ${Number(saque.valor).toFixed(2)}`);
+  console.log(
+    `✅ Processando saque: userId: ${saque.userId}, valor: R$ ${Number(
+      saque.valor
+    ).toFixed(2)}`
+  );
 
   await prisma.$transaction([
-    // 💳 DEBITA CARTEIRA (CORREÇÃO AQUI)
     prisma.wallet.updateMany({
       where: { userId: saque.userId },
       data: {
@@ -74,8 +74,7 @@ router.post("/:id/pagar", async (req, res) => {
       },
     }),
 
-    // 📄 MARCA SAQUE COMO PAGO
-    prisma.transacao.update({
+    prisma.transacao_carteira.update({
       where: { id: saque.id },
       data: {
         status: "paid",
@@ -87,8 +86,10 @@ router.post("/:id/pagar", async (req, res) => {
     }),
   ]);
 
-  // 🔔 NOTIFICA USUÁRIO
-  console.log(`📢 Disparando notificação de saque pago para userId: ${saque.userId}`);
+  console.log(
+    `📢 Disparando notificação de saque pago para userId: ${saque.userId}`
+  );
+
   await notify({
     type: "SAQUE_PAGO",
     userId: String(saque.userId),
