@@ -67,9 +67,11 @@ export async function notify(event: NotifyEvent) {
     }
 
     // Mostrar exemplos de tokens (até 5) para debug
-    const tokenExamples = tokens.slice(0, 5).map((t) => 
-      t.token.substring(0, 20) + "..." + t.token.substring(t.token.length - 10)
-    );
+    const tokenExamples = tokens.slice(0, 5).map((t) => {
+      const token = t.token;
+      if (token.length <= 30) return token;
+      return token.substring(0, 20) + "..." + token.substring(Math.max(0, token.length - 10));
+    });
     console.log("📱 Exemplos de tokens (primeiros 5):", tokenExamples);
 
     const message: admin.messaging.MulticastMessage = {
@@ -91,9 +93,10 @@ export async function notify(event: NotifyEvent) {
     const invalidTokens: string[] = [];
     res.responses.forEach((r, idx) => {
       if (!r.success) {
-        const tokenSample = tokens[idx].token.substring(0, 20) + "...";
+        const token = tokens[idx].token;
+        const tokenSample = token.length <= 20 ? token : token.substring(0, 20) + "...";
         console.error(`❌ Falha no token [${idx}] (${tokenSample}):`, r.error?.code, r.error?.message);
-        invalidTokens.push(tokens[idx].token);
+        invalidTokens.push(token);
       }
     });
 

@@ -31,7 +31,7 @@ router.post("/token", async (req, res) => {
     
     console.log("📥 POST /push/token - body:", { 
       userId, 
-      tokenSample: token ? token.substring(0, 20) + "..." : "(vazio)" 
+      tokenSample: token ? token.substring(0, Math.min(token.length, 20)) + "..." : "(vazio)" 
     });
 
     if (!token || !userId) {
@@ -50,7 +50,7 @@ router.post("/token", async (req, res) => {
       },
     });
 
-    console.log(`✅ Token salvo para userId=${userId}, token=${token.substring(0, 20)}...`);
+    console.log(`✅ Token salvo para userId=${userId}, token=${token.substring(0, Math.min(token.length, 20))}...`);
 
     return res.json({ ok: true });
   } catch (error) {
@@ -114,7 +114,8 @@ router.post("/send", async (req, res) => {
     if (response.failureCount > 0) {
       response.responses.forEach((r, idx) => {
         if (!r.success) {
-          const tokenSample = tokens[idx].token.substring(0, 20) + "...";
+          const token = tokens[idx].token;
+          const tokenSample = token.length <= 20 ? token : token.substring(0, 20) + "...";
           console.error(`❌ Falha no token [${idx}] (${tokenSample}):`, r.error?.code, r.error?.message);
         }
       });
