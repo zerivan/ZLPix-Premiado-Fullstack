@@ -35,6 +35,10 @@ router.post("/token", async (req, res) => {
       });
     }
 
+    // Log entrada com sample do token
+    const tokenSample = token.substring(0, 20) + "...";
+    console.log("📝 POST /push/token - userId:", userId, "token sample:", tokenSample);
+
     await prisma.pushToken.upsert({
       where: { token },
       update: { userId },
@@ -43,6 +47,9 @@ router.post("/token", async (req, res) => {
         userId,
       },
     });
+
+    // Log confirmação após upsert
+    console.log("✅ Push token salvo/upsert - userId:", userId, "token sample:", tokenSample);
 
     return res.json({ ok: true });
   } catch (error) {
@@ -60,6 +67,9 @@ router.post("/send", async (req, res) => {
   try {
     const { userId, title, body, url } = req.body;
 
+    // Log chamada no início
+    console.log("📨 POST /push/send - userId:", userId, "title:", title, "body:", body, "url:", url || "/");
+
     if (!userId || !title || !body) {
       return res.status(400).json({
         error: "userId, title e body são obrigatórios.",
@@ -70,6 +80,9 @@ router.post("/send", async (req, res) => {
       where: { userId },
       select: { token: true },
     });
+
+    // Log contagem de tokens encontrados
+    console.log("🔑 Tokens encontrados para userId", userId, ":", tokens.length);
 
     if (!tokens.length) {
       return res.json({
@@ -89,9 +102,24 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     };
 
+    // Log antes de enviar
+    console.log("📤 Enviando push - tokenCount:", tokens.length);
+
     const response = await admin
       .messaging()
       .sendEachForMulticast(message);
+
+    // Log após envio com detalhes
+    console.log("📥 Resultado - successCount:", response.successCount, "failureCount:", response.failureCount);
+
+    // Log detalhadamente as falhas por token
+    response.responses.forEach((r, idx) => {
+      if (!r.success) {
+        const tokenSample = tokens[idx].token.substring(0, 20) + "...";
+        const errorMsg = r.error?.message || "erro desconhecido";
+        console.log("❌ Falha no envio - token:", tokenSample, "erro:", errorMsg);
+      }
+    });
 
     return res.json({
       ok: true,

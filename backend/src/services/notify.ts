@@ -39,13 +39,28 @@ export type NotifyEvent =
  */
 export async function notify(event: NotifyEvent) {
   try {
+    // Log quando notify é chamado
+    console.log("📣 notify() chamado - tipo:", event.type, "userId:", event.userId);
+
     const payload = montarMensagem(event);
-    if (!payload) return;
+    
+    // Log se payload for nulo
+    if (!payload) {
+      console.log("⚠️ payload é nulo para evento:", event.type);
+      return;
+    }
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId: Number(payload.userId) },
       select: { token: true },
     });
+
+    // Log contagem e exemplos de tokens (truncados para segurança)
+    console.log("🔑 Tokens encontrados:", tokens.length);
+    if (tokens.length > 0) {
+      const samples = tokens.slice(0, 5).map(t => t.token.substring(0, 20) + "...");
+      console.log("🔑 Samples (5 primeiros, truncados):", samples);
+    }
 
     if (!tokens.length) {
       console.log("🔕 Usuário sem push token:", payload.userId);
@@ -63,12 +78,21 @@ export async function notify(event: NotifyEvent) {
       tokens: tokens.map((t) => t.token),
     };
 
+    // Log antes de enviar
+    console.log("📤 Enviando push - título:", payload.title, "body:", payload.body, "tokens:", tokens.length);
+
     const res = await admin.messaging().sendEachForMulticast(message);
 
-    // 🔥 REMOVE TOKENS INVÁLIDOS
+    // Log após envio
+    console.log("📥 Resultado do envio - successCount:", res.successCount, "failureCount:", res.failureCount, "responses.length:", res.responses.length);
+
+    // 🔥 REMOVE TOKENS INVÁLIDOS e loga detalhes de falhas
     const invalidTokens: string[] = [];
     res.responses.forEach((r, idx) => {
       if (!r.success) {
+        const tokenSample = tokens[idx].token.substring(0, 20) + "...";
+        const errorMsg = r.error?.message || "erro desconhecido";
+        console.log("❌ Falha no token:", tokenSample, "erro:", errorMsg);
         invalidTokens.push(tokens[idx].token);
       }
     });
@@ -89,7 +113,7 @@ export async function notify(event: NotifyEvent) {
       res.failureCount
     );
   } catch (err) {
-    console.error("❌ Erro PUSH:", event.type, err);
+    console.error("❌ Erro notify():", err);
   }
 }
 
