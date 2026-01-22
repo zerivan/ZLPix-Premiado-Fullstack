@@ -239,4 +239,40 @@ router.get("/payment-status/:paymentId", async (req, res) => {
   }
 });
 
+/**
+ * =========================
+ * GET /wallet/historico
+ * Retorna histórico de transações do usuário
+ * =========================
+ */
+router.get("/historico", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(400).json({ error: "Usuário inválido" });
+    }
+
+    const transacoes = await prisma.transacao.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+
+    const lista = transacoes.map((tx) => ({
+      id: tx.id,
+      userId: tx.userId,
+      valor: Number(tx.valor),
+      status: tx.status,
+      mpPaymentId: tx.mpPaymentId,
+      metadata: tx.metadata,
+      createdAt: tx.createdAt?.toISOString(),
+    }));
+
+    return res.json(lista);
+  } catch (err) {
+    console.error("Erro /wallet/historico:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 export default router;

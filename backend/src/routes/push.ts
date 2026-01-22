@@ -29,7 +29,13 @@ router.post("/token", async (req, res) => {
   try {
     const { token, userId } = req.body;
 
+    console.log("📥 POST /push/token - body recebido:", {
+      userId,
+      tokenPreview: token ? token.substring(0, 20) + "..." : null,
+    });
+
     if (!token || !userId) {
+      console.error("❌ POST /push/token - Token ou userId ausente");
       return res.status(400).json({
         error: "Token ou userId ausente.",
       });
@@ -44,9 +50,11 @@ router.post("/token", async (req, res) => {
       },
     });
 
+    console.log("✅ Token salvo/atualizado para userId:", userId);
+
     return res.json({ ok: true });
   } catch (error) {
-    console.error("Erro ao salvar push token:", error);
+    console.error("❌ Erro ao salvar push token:", error);
     return res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -60,7 +68,15 @@ router.post("/send", async (req, res) => {
   try {
     const { userId, title, body, url } = req.body;
 
+    console.log("📥 POST /push/send - body recebido:", {
+      userId,
+      title,
+      body,
+      url,
+    });
+
     if (!userId || !title || !body) {
+      console.error("❌ POST /push/send - userId, title ou body ausente");
       return res.status(400).json({
         error: "userId, title e body são obrigatórios.",
       });
@@ -71,7 +87,10 @@ router.post("/send", async (req, res) => {
       select: { token: true },
     });
 
+    console.log("🔍 Tokens encontrados para userId", userId, ":", tokens.length);
+
     if (!tokens.length) {
+      console.log("⚠️ Usuário não possui tokens registrados");
       return res.json({
         ok: false,
         message: "Usuário não possui tokens registrados.",
@@ -89,9 +108,29 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     };
 
+    console.log("📤 Enviando multicast para", tokens.length, "tokens...");
+
     const response = await admin
       .messaging()
       .sendEachForMulticast(message);
+
+    console.log("📊 Resultado Firebase Admin:", {
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+
+    // Log detalhado de falhas
+    if (response.failureCount > 0) {
+      response.responses.forEach((r, idx) => {
+        if (!r.success) {
+          console.error("❌ Falha no token", idx, ":", {
+            token: tokens[idx].token.substring(0, 20) + "...",
+            error: r.error?.code,
+            message: r.error?.message,
+          });
+        }
+      });
+    }
 
     return res.json({
       ok: true,
@@ -99,7 +138,7 @@ router.post("/send", async (req, res) => {
       failureCount: response.failureCount,
     });
   } catch (error) {
-    console.error("Erro ao enviar push:", error);
+    console.error("❌ Erro ao enviar push:", error);
     return res.status(500).json({ error: "Erro ao enviar push." });
   }
 });
