@@ -23,8 +23,6 @@ function getUserId(req: any): number | null {
 /**
  * =========================
  * POST /wallet/depositar
- * Fluxo: cria transacao (pending) → chama MercadoPago → retorna paymentId/QR
- * Retorna paymentId (camelCase) para o frontend — corresponde ao polling em /wallet/payment-status/:paymentId
  * =========================
  */
 router.post("/depositar", async (req, res) => {
@@ -33,11 +31,8 @@ router.post("/depositar", async (req, res) => {
     const { valor } = req.body;
 
     if (!userId || !valor || Number(valor) <= 0) {
-      console.warn(`⚠️ Depósito recusado: dados inválidos - userId: ${userId}, valor: ${valor}`);
       return res.status(400).json({ error: "Dados inválidos" });
     }
-
-    console.log(`💰 Iniciando depósito: userId: ${userId}, valor: R$ ${Number(valor).toFixed(2)}`);
 
     const user = await prisma.users.findUnique({
       where: { id: Number(userId) },
@@ -45,11 +40,10 @@ router.post("/depositar", async (req, res) => {
     });
 
     if (!user?.email) {
-      console.warn(`⚠️ Usuário inválido para depósito: userId: ${userId}`);
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    // 1️⃣ cria transação PENDENTE (DEPÓSITO — carteira)
+    // cria transação PENDENTE (DEPÓSITO)
     const tx = await prisma.transacao.create({
       data: {
         userId: Number(userId),
@@ -66,9 +60,6 @@ router.post("/depositar", async (req, res) => {
       process.env.MP_ACCESS_TOKEN ||
       process.env.MP_ACCESS_TOKEN_TEST;
 
-    const mpBase =
-      process.env.MP_BASE_URL || "https://api.mercadopago.com";
-
     if (!mpToken) {
       return res.status(500).json({ error: "Token Mercado Pago ausente" });
     }
@@ -83,24 +74,25 @@ router.post("/depositar", async (req, res) => {
       },
     };
 
-    const resp = await fetchFn(`${mpBase}/v1/payments`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mpToken}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": crypto.randomUUID(),
-      },
-      body: JSON.stringify(body),
-    });
+    const resp = await fetchFn(
+      "https://api.mercadopago.com/v1/payments",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${mpToken}`,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": crypto.randomUUID(),
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
-    const mpJson: any = await resp.json().catch(() => null);
+    const mpJson: any = await resp.json();
 
-    if (!resp.ok || !mpJson) {
-      console.error("Erro MercadoPago /payments:", mpJson || "sem json");
+    if (!resp.ok) {
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
-    // 2️⃣ atualiza transação com retorno do MP
     await prisma.transacao.update({
       where: { id: tx.id },
       data: {
@@ -112,8 +104,6 @@ router.post("/depositar", async (req, res) => {
         },
       },
     });
-
-    console.log(`✅ Depósito criado com sucesso: paymentId: ${mpJson.id}, userId: ${userId}`);
 
     return res.json({
       paymentId: String(mpJson.id),
@@ -131,7 +121,6 @@ router.post("/depositar", async (req, res) => {
 /**
  * =========================
  * POST /wallet/saque
- * (mantido)
  * =========================
  */
 router.post("/saque", async (req, res) => {
@@ -140,18 +129,14 @@ router.post("/saque", async (req, res) => {
     const { valor, pixKey } = req.body;
 
     if (!userId || !valor || Number(valor) <= 0) {
-      console.warn(`⚠️ Saque recusado: dados inválidos - userId: ${userId}, valor: ${valor}`);
       return res.status(400).json({ error: "Dados inválidos" });
     }
-
-    console.log(`🏦 Solicitação de saque: userId: ${userId}, valor: R$ ${Number(valor).toFixed(2)}`);
 
     const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
-      console.warn(`⚠️ Saldo insuficiente: userId: ${userId}, saldo: ${wallet?.saldo ?? 0}, valor solicitado: ${valor}`);
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
@@ -185,22 +170,15 @@ router.post("/saque", async (req, res) => {
       },
     });
 
-    // 🔔 DISPARO DE NOTIFICAÇÃO
-    console.log(`📢 Disparando notificação de saque para userId: ${userId}`);
     await notify({
       type: "SAQUE_SOLICITADO",
       userId: String(userId),
       valor: Number(valor),
     });
 
-    console.log(`✅ Saque criado com sucesso e notificação enviada: userId: ${userId}`);
-
-    return res.json({
-      ok: true,
-      message: "Saque solicitado e enviado para análise",
-    });
+    return res.json({ ok: true });
   } catch (err) {
-    console.error("❌ Erro saque:", err);
+    console.error("Erro wallet/saque:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -208,7 +186,6 @@ router.post("/saque", async (req, res) => {
 /**
  * =========================
  * GET /wallet/saldo
- * Retorna o saldo da carteira do usuário
  * =========================
  */
 router.get("/saldo", async (req, res) => {
@@ -218,29 +195,22 @@ router.get("/saldo", async (req, res) => {
       return res.status(400).json({ error: "Usuário não identificado" });
     }
 
-    console.log(`📊 Buscando saldo para userId: ${userId}`);
-
     let wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
-    // Se não existe carteira, cria uma com saldo zero
     if (!wallet) {
-      console.log(`💳 Criando nova carteira para userId: ${userId}`);
       wallet = await prisma.wallet.create({
         data: {
           userId,
           saldo: 0,
-          createdAt: new Date(),
         },
       });
     }
 
-    console.log(`✅ Saldo recuperado: R$ ${Number(wallet.saldo).toFixed(2)}`);
-
     return res.json({ saldo: Number(wallet.saldo) });
   } catch (err) {
-    console.error("❌ Erro wallet/saldo:", err);
+    console.error("Erro wallet/saldo:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -248,7 +218,7 @@ router.get("/saldo", async (req, res) => {
 /**
  * =========================
  * GET /wallet/historico
- * Retorna o histórico de transações da carteira do usuário
+ * (CORRIGIDO – SOMENTE DEPÓSITO E SAQUE)
  * =========================
  */
 router.get("/historico", async (req, res) => {
@@ -258,10 +228,14 @@ router.get("/historico", async (req, res) => {
       return res.status(400).json({ error: "Usuário não identificado" });
     }
 
-    console.log(`📜 Buscando histórico para userId: ${userId}`);
-
     const transacoes = await prisma.transacao.findMany({
-      where: { userId },
+      where: {
+        userId,
+        metadata: {
+          path: ["tipo"],
+          in: ["deposito", "saque"],
+        },
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -272,11 +246,9 @@ router.get("/historico", async (req, res) => {
       },
     });
 
-    console.log(`✅ Histórico recuperado: ${transacoes.length} transações`);
-
     return res.json(transacoes);
   } catch (err) {
-    console.error("❌ Erro wallet/historico:", err);
+    console.error("Erro wallet/historico:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
@@ -284,25 +256,15 @@ router.get("/historico", async (req, res) => {
 /**
  * =========================
  * GET /wallet/payment-status/:paymentId
- * Polling do frontend (fluxo CARTEIRA)
- * Valida metadata.tipo === "deposito"
  * =========================
  */
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
-    if (!paymentId) {
-      return res.status(400).json({ error: "paymentId ausente" });
-    }
 
     const transacao = await prisma.transacao.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-      },
-      select: {
-        status: true,
-        metadata: true,
-      },
+      where: { mpPaymentId: String(paymentId) },
+      select: { status: true, metadata: true },
     });
 
     if (!transacao) {
@@ -310,14 +272,13 @@ router.get("/payment-status/:paymentId", async (req, res) => {
     }
 
     const tipo =
-      transacao.metadata && typeof transacao.metadata === "object"
+      typeof transacao.metadata === "object"
         ? (transacao.metadata as any).tipo
-        : undefined;
+        : null;
 
     if (tipo !== "deposito") {
       return res.status(404).json({
-        error:
-          "Pagamento encontrado, mas não pertence ao fluxo de carteira. Use o endpoint de bilhete se aplicável.",
+        error: "Pagamento não pertence à carteira",
       });
     }
 
