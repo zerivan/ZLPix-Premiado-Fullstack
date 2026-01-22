@@ -69,10 +69,6 @@ export default function Carteira() {
 
     const lista = res.data || [];
 
-    if (lista.length > 0) {
-      localStorage.removeItem("WALLET_HIST_HIDDEN");
-    }
-
     const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
     setTransacoes(hidden === "true" ? [] : lista);
   }
