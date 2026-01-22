@@ -67,10 +67,46 @@ export default function Carteira() {
       headers: { "x-user-id": userId },
     });
 
-    const lista = res.data || [];
+    const lista: Transacao[] = res.data || [];
 
-    const hidden = localStorage.getItem("WALLET_HIST_HIDDEN");
-    setTransacoes(hidden === "true" ? [] : lista);
+    // 🔒 MOSTRAR APENAS OS ÚLTIMOS 15 DIAS
+    const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
+
+    const filtradas = lista.filter(
+      (t) => new Date(t.createdAt).getTime() >= limite
+    );
+
+    setTransacoes(filtradas);
+  }
+
+  function baixarHistorico() {
+    if (transacoes.length === 0) {
+      alert("Nenhuma transação para download");
+      return;
+    }
+
+    const linhas = [
+      ["Tipo", "Valor", "Status", "Data"].join(";"),
+      ...transacoes.map((t) =>
+        [
+          t.metadata?.tipo === "saque" ? "Saque" : "Depósito",
+          Number(t.valor).toFixed(2),
+          traduzirStatus(t.status),
+          formatarDataHora(t.createdAt),
+        ].join(";")
+      ),
+    ];
+
+    const csv = linhas.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "historico-carteira-15-dias.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 
   async function solicitarSaque() {
@@ -115,11 +151,6 @@ export default function Carteira() {
     } finally {
       setLoadingSaque(false);
     }
-  }
-
-  function limparHistorico() {
-    localStorage.setItem("WALLET_HIST_HIDDEN", "true");
-    setTransacoes([]);
   }
 
   useEffect(() => {
@@ -199,15 +230,16 @@ export default function Carteira() {
         )}
 
         <h3 className="text-lg font-bold text-yellow-300">
-          📜 Histórico
+          📜 Histórico (últimos 15 dias)
         </h3>
 
-        <button
-          onClick={limparHistorico}
-          className="w-full py-2 bg-red-500/70 rounded"
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={baixarHistorico}
+          className="w-full py-2 rounded bg-blue-500/80 font-bold"
         >
-          🧹 Limpar histórico
-        </button>
+          📥 Download do histórico
+        </motion.button>
 
         {transacoes.map((t) => (
           <div key={t.id} className="bg-white/10 p-3 rounded">
