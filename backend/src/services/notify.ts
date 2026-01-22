@@ -39,18 +39,38 @@ export type NotifyEvent =
  */
 export async function notify(event: NotifyEvent) {
   try {
+    console.log("🔔 notify() chamado:", event.type, "userId:", event.userId || "(sem userId)");
+    
     const payload = montarMensagem(event);
-    if (!payload) return;
+    if (!payload) {
+      console.log("⚠️ Payload vazio para evento:", event.type);
+      return;
+    }
+
+    console.log("📦 Payload montado:", {
+      userId: payload.userId,
+      title: payload.title,
+      body: payload.body,
+      url: payload.url,
+    });
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId: Number(payload.userId) },
       select: { token: true },
     });
 
+    console.log(`🔍 Tokens encontrados: ${tokens.length} para userId=${payload.userId}`);
+    
     if (!tokens.length) {
       console.log("🔕 Usuário sem push token:", payload.userId);
       return;
     }
+
+    // Mostrar exemplos de tokens (até 5) para debug
+    const tokenExamples = tokens.slice(0, 5).map((t) => 
+      t.token.substring(0, 20) + "..." + t.token.substring(t.token.length - 10)
+    );
+    console.log("📱 Exemplos de tokens (primeiros 5):", tokenExamples);
 
     const message: admin.messaging.MulticastMessage = {
       notification: {
@@ -63,12 +83,16 @@ export async function notify(event: NotifyEvent) {
       tokens: tokens.map((t) => t.token),
     };
 
+    console.log(`📤 Enviando multicast para ${tokens.length} tokens...`);
     const res = await admin.messaging().sendEachForMulticast(message);
+    console.log(`📊 Resultado Firebase: successCount=${res.successCount}, failureCount=${res.failureCount}, responses.length=${res.responses.length}`);
 
-    // 🔥 REMOVE TOKENS INVÁLIDOS
+    // 🔥 REMOVE TOKENS INVÁLIDOS e loga detalhes de falhas
     const invalidTokens: string[] = [];
     res.responses.forEach((r, idx) => {
       if (!r.success) {
+        const tokenSample = tokens[idx].token.substring(0, 20) + "...";
+        console.error(`❌ Falha no token [${idx}] (${tokenSample}):`, r.error?.code, r.error?.message);
         invalidTokens.push(tokens[idx].token);
       }
     });
@@ -77,7 +101,7 @@ export async function notify(event: NotifyEvent) {
       await prisma.pushToken.deleteMany({
         where: { token: { in: invalidTokens } },
       });
-      console.log("🧹 Tokens inválidos removidos:", invalidTokens.length);
+      console.log(`🧹 Tokens inválidos removidos: ${invalidTokens.length}`);
     }
 
     console.log(
@@ -89,7 +113,7 @@ export async function notify(event: NotifyEvent) {
       res.failureCount
     );
   } catch (err) {
-    console.error("❌ Erro PUSH:", event.type, err);
+    console.error("❌ Erro notify():", err);
   }
 }
 
