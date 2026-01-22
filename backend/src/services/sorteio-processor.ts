@@ -154,7 +154,7 @@ export async function processarSorteio(
     await garantirCarteira(bilhete.userId);
 
     await prisma.$transaction([
-      // ✅ CORREÇÃO AQUI
+      // 1️⃣ Incrementar saldo da wallet
       prisma.wallet.updateMany({
         where: { userId: bilhete.userId },
         data: {
@@ -162,19 +162,36 @@ export async function processarSorteio(
         },
       }),
 
-      prisma.transacao.create({
+      // 2️⃣ Registro financeiro em transacao_carteira (tipo: PREMIO, status: paid)
+      prisma.transacao_carteira.create({
         data: {
           userId: bilhete.userId,
           valor: valorPorGanhador,
+          tipo: "PREMIO",
           status: "paid",
           metadata: {
-            tipo: "premio",
             origem: "sorteio",
             bilheteId: bilhete.id,
           },
         },
       }),
 
+      // 3️⃣ Registro de auditoria em transacao (para bilhete premiado)
+      prisma.transacao.create({
+        data: {
+          userId: bilhete.userId,
+          valor: valorPorGanhador,
+          tipo: "BILHETE",
+          status: "paid",
+          metadata: {
+            tipo: "bilhete_premiado",
+            origem: "sorteio",
+            bilheteId: bilhete.id,
+          },
+        },
+      }),
+
+      // 4️⃣ Atualizar status do bilhete
       prisma.bilhete.update({
         where: { id: bilhete.id },
         data: {

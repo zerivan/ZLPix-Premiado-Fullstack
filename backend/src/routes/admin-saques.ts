@@ -13,7 +13,7 @@ router.get("/", async (_req, res) => {
   const saques = await prisma.transacao_carteira.findMany({
     where: {
       status: "pending",
-      tipo: "saque",
+      tipo: "SAQUE",
     },
     orderBy: { createdAt: "asc" },
   });

@@ -30,49 +30,37 @@ router.get("/", async (_req, res) => {
 
       prisma.transacao.count(),
 
-      // 💰 arrecadação real (compra de bilhetes)
+      // 💰 arrecadação real (compra de bilhetes) - APENAS de transacao (bilhetes)
       prisma.transacao.findMany({
         where: {
           status: "paid",
-          metadata: {
-            path: ["tipo"],
-            equals: "bilhete",
-          },
+          tipo: "BILHETE",
         },
         select: { valor: true },
       }),
 
-      // 🏆 prêmios pagos
-      prisma.transacao.findMany({
+      // 🏆 prêmios pagos - EXCLUSIVAMENTE de transacao_carteira
+      prisma.transacao_carteira.findMany({
         where: {
           status: "paid",
-          metadata: {
-            path: ["tipo"],
-            equals: "premio",
-          },
+          tipo: "PREMIO",
         },
         select: { valor: true },
       }),
 
-      // 💼 depósitos em carteira
-      prisma.transacao.findMany({
+      // 💼 depósitos em carteira - EXCLUSIVAMENTE de transacao_carteira
+      prisma.transacao_carteira.findMany({
         where: {
           status: "paid",
-          metadata: {
-            path: ["tipo"],
-            equals: "deposito",
-          },
+          tipo: "DEPOSITO",
         },
         select: { valor: true },
       }),
 
-      // 📤 saques solicitados
-      prisma.transacao.findMany({
+      // 📤 saques solicitados - EXCLUSIVAMENTE de transacao_carteira
+      prisma.transacao_carteira.findMany({
         where: {
-          metadata: {
-            path: ["tipo"],
-            equals: "saque",
-          },
+          tipo: "SAQUE",
         },
         select: { valor: true, status: true },
       }),
