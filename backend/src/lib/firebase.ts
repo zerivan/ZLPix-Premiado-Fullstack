@@ -61,10 +61,6 @@ export function getMessaging() {
     initializeFirebase();
   }
   
-  if (!admin.apps.length) {
-    throw new Error("Firebase Admin não pôde ser inicializado. Verifique as variáveis de ambiente.");
-  }
-  
   return admin.messaging();
 }
 

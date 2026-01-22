@@ -200,7 +200,7 @@ router.post("/saque", async (req, res) => {
       message: "Saque solicitado e enviado para análise",
     });
   } catch (err) {
-    console.error("Erro saque:", err);
+    console.error("❌ Erro saque:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
