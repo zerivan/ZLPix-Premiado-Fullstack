@@ -33,8 +33,11 @@ router.post("/depositar", async (req, res) => {
     const { valor } = req.body;
 
     if (!userId || !valor || Number(valor) <= 0) {
+      console.warn(`⚠️ Depósito recusado: dados inválidos - userId: ${userId}, valor: ${valor}`);
       return res.status(400).json({ error: "Dados inválidos" });
     }
+
+    console.log(`💰 Iniciando depósito: userId: ${userId}, valor: R$ ${Number(valor).toFixed(2)}`);
 
     const user = await prisma.users.findUnique({
       where: { id: Number(userId) },
@@ -42,6 +45,7 @@ router.post("/depositar", async (req, res) => {
     });
 
     if (!user?.email) {
+      console.warn(`⚠️ Usuário inválido para depósito: userId: ${userId}`);
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
@@ -109,6 +113,8 @@ router.post("/depositar", async (req, res) => {
       },
     });
 
+    console.log(`✅ Depósito criado com sucesso: paymentId: ${mpJson.id}, userId: ${userId}`);
+
     return res.json({
       paymentId: String(mpJson.id),
       qr_code_base64:
@@ -134,14 +140,18 @@ router.post("/saque", async (req, res) => {
     const { valor, pixKey } = req.body;
 
     if (!userId || !valor || Number(valor) <= 0) {
+      console.warn(`⚠️ Saque recusado: dados inválidos - userId: ${userId}, valor: ${valor}`);
       return res.status(400).json({ error: "Dados inválidos" });
     }
+
+    console.log(`🏦 Solicitação de saque: userId: ${userId}, valor: R$ ${Number(valor).toFixed(2)}`);
 
     const wallet = await prisma.wallet.findFirst({
       where: { userId },
     });
 
     if (!wallet || Number(wallet.saldo) < Number(valor)) {
+      console.warn(`⚠️ Saldo insuficiente: userId: ${userId}, saldo: ${wallet?.saldo ?? 0}, valor solicitado: ${valor}`);
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
@@ -176,11 +186,14 @@ router.post("/saque", async (req, res) => {
     });
 
     // 🔔 DISPARO DE NOTIFICAÇÃO
+    console.log(`📢 Disparando notificação de saque para userId: ${userId}`);
     await notify({
       type: "SAQUE_SOLICITADO",
       userId: String(userId),
       valor: Number(valor),
     });
+
+    console.log(`✅ Saque criado com sucesso e notificação enviada: userId: ${userId}`);
 
     return res.json({
       ok: true,
@@ -188,6 +201,82 @@ router.post("/saque", async (req, res) => {
     });
   } catch (err) {
     console.error("Erro saque:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/saldo
+ * Retorna o saldo da carteira do usuário
+ * =========================
+ */
+router.get("/saldo", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(400).json({ error: "Usuário não identificado" });
+    }
+
+    console.log(`📊 Buscando saldo para userId: ${userId}`);
+
+    let wallet = await prisma.wallet.findFirst({
+      where: { userId },
+    });
+
+    // Se não existe carteira, cria uma com saldo zero
+    if (!wallet) {
+      console.log(`💳 Criando nova carteira para userId: ${userId}`);
+      wallet = await prisma.wallet.create({
+        data: {
+          userId,
+          saldo: 0,
+          createdAt: new Date(),
+        },
+      });
+    }
+
+    console.log(`✅ Saldo recuperado: R$ ${Number(wallet.saldo).toFixed(2)}`);
+
+    return res.json({ saldo: Number(wallet.saldo) });
+  } catch (err) {
+    console.error("❌ Erro wallet/saldo:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/historico
+ * Retorna o histórico de transações da carteira do usuário
+ * =========================
+ */
+router.get("/historico", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(400).json({ error: "Usuário não identificado" });
+    }
+
+    console.log(`📜 Buscando histórico para userId: ${userId}`);
+
+    const transacoes = await prisma.transacao.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        valor: true,
+        status: true,
+        createdAt: true,
+        metadata: true,
+      },
+    });
+
+    console.log(`✅ Histórico recuperado: ${transacoes.length} transações`);
+
+    return res.json(transacoes);
+  } catch (err) {
+    console.error("❌ Erro wallet/historico:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
