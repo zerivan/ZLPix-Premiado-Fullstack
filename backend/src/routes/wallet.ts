@@ -5,7 +5,6 @@ import { notify } from "../services/notify";
 
 const router = express.Router();
 
-// fetch nativo (compat)
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
@@ -21,9 +20,7 @@ function getUserId(req: any): number | null {
 }
 
 /**
- * =========================
  * POST /wallet/depositar
- * =========================
  */
 router.post("/depositar", async (req, res) => {
   try {
@@ -43,15 +40,13 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    const tx = await prisma.transacao.create({
+    const tx = await prisma.transacao_carteira.create({
       data: {
         userId: Number(userId),
         valor: Number(valor),
         status: "pending",
-        metadata: {
-          tipo: "deposito",
-          origem: "wallet",
-        },
+        tipo: "deposito",
+        origem: "wallet",
       },
     });
 
@@ -92,15 +87,10 @@ router.post("/depositar", async (req, res) => {
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
-    await prisma.transacao.update({
+    await prisma.transacao_carteira.update({
       where: { id: tx.id },
       data: {
         mpPaymentId: String(mpJson.id),
-        metadata: {
-          tipo: "deposito",
-          origem: "wallet",
-          mpResponse: mpJson,
-        },
       },
     });
 
@@ -118,9 +108,7 @@ router.post("/depositar", async (req, res) => {
 });
 
 /**
- * =========================
  * POST /wallet/saque
- * =========================
  */
 router.post("/saque", async (req, res) => {
   try {
@@ -139,14 +127,11 @@ router.post("/saque", async (req, res) => {
       return res.status(400).json({ error: "Saldo insuficiente" });
     }
 
-    const saquePendente = await prisma.transacao.findFirst({
+    const saquePendente = await prisma.transacao_carteira.findFirst({
       where: {
         userId,
         status: "pending",
-        metadata: {
-          path: ["tipo"],
-          equals: "saque",
-        },
+        tipo: "saque",
       },
     });
 
@@ -156,16 +141,14 @@ router.post("/saque", async (req, res) => {
       });
     }
 
-    await prisma.transacao.create({
+    await prisma.transacao_carteira.create({
       data: {
         userId,
         valor: Number(valor),
         status: "pending",
-        metadata: {
-          tipo: "saque",
-          origem: "wallet",
-          pixKey: pixKey || null,
-        },
+        tipo: "saque",
+        origem: "wallet",
+        pixKey: pixKey || null,
       },
     });
 
@@ -183,9 +166,7 @@ router.post("/saque", async (req, res) => {
 });
 
 /**
- * =========================
  * GET /wallet/saldo
- * =========================
  */
 router.get("/saldo", async (req, res) => {
   try {
@@ -215,10 +196,7 @@ router.get("/saldo", async (req, res) => {
 });
 
 /**
- * =========================
  * GET /wallet/historico
- * (CORRIGIDO – SOMENTE DEPÓSITO E SAQUE)
- * =========================
  */
 router.get("/historico", async (req, res) => {
   try {
@@ -227,31 +205,15 @@ router.get("/historico", async (req, res) => {
       return res.status(400).json({ error: "Usuário não identificado" });
     }
 
-    const transacoes = await prisma.transacao.findMany({
-      where: {
-        userId,
-        OR: [
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "deposito",
-            },
-          },
-          {
-            metadata: {
-              path: ["tipo"],
-              equals: "saque",
-            },
-          },
-        ],
-      },
+    const transacoes = await prisma.transacao_carteira.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
         valor: true,
         status: true,
         createdAt: true,
-        metadata: true,
+        tipo: true,
       },
     });
 
@@ -263,32 +225,19 @@ router.get("/historico", async (req, res) => {
 });
 
 /**
- * =========================
  * GET /wallet/payment-status/:paymentId
- * =========================
  */
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
 
-    const transacao = await prisma.transacao.findFirst({
+    const transacao = await prisma.transacao_carteira.findFirst({
       where: { mpPaymentId: String(paymentId) },
-      select: { status: true, metadata: true },
+      select: { status: true },
     });
 
     if (!transacao) {
       return res.json({ status: "pending" });
-    }
-
-    const tipo =
-      typeof transacao.metadata === "object"
-        ? (transacao.metadata as any).tipo
-        : null;
-
-    if (tipo !== "deposito") {
-      return res.status(404).json({
-        error: "Pagamento não pertence à carteira",
-      });
     }
 
     return res.json({ status: transacao.status });
