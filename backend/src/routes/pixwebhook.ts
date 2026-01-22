@@ -102,12 +102,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    const metadata =
-      typeof transacao.metadata === "object" && transacao.metadata !== null
-        ? (transacao.metadata as Prisma.JsonObject)
-        : {};
-
-    if (metadata["tipo"] === "bilhete") {
+    // Verifica se é transação de BILHETE usando o campo ENUM tipo
+    if (transacao.tipo === "BILHETE") {
+      const metadata =
+        typeof transacao.metadata === "object" && transacao.metadata !== null
+          ? (transacao.metadata as Prisma.JsonObject)
+          : {};
 
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
