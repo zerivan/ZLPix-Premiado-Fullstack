@@ -7,6 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TransacaoTipo {
+  BILHETE
+}
+
+enum TransacaoCarteiraTipo {
+  DEPOSITO
+  SAQUE
+  PREMIO
+}
+
 model users {
   id             Int      @id @default(autoincrement())
   name           String
@@ -16,19 +26,19 @@ model users {
   passwordHash   String   @map("passwordhash")
   createdAt      DateTime @default(now()) @map("createdat")
 
-  bilhetes       bilhete[]
-  transacoes     transacao[]
-  wallets        wallet[]
-  passwordResets password_reset[]
-  pushTokens     PushToken[]
+  bilhetes           bilhete[]
+  transacoes         transacao[]
   transacoesCarteira transacao_carteira[]
+  wallets            wallet[]
+  passwordResets     password_reset[]
+  pushTokens         PushToken[]
 }
 
 model wallet {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   saldo     Decimal  @default(0)
-  createdAt DateTime @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   user users @relation(fields: [userId], references: [id])
 
@@ -43,26 +53,28 @@ model admins {
 }
 
 model transacao {
-  id           Int        @id @default(autoincrement())
-  userId       Int        @map("userid")
+  id           Int             @id @default(autoincrement())
+  userId       Int             @map("userid")
   valor        Float
-  status       String     @default("pending")
-  mpPaymentId  String?    @map("mppaymentid")
+  status       String          @default("pending")
+  mpPaymentId  String?         @map("mppaymentid")
+  tipo         TransacaoTipo   @default(BILHETE)
   metadata     Json?
-  createdAt    DateTime   @default(now()) @map("createdat")
+  createdAt    DateTime        @default(now()) @map("createdat")
 
-  user         users      @relation(fields: [userId], references: [id])
-  bilhetes     bilhete[]  @relation("tb_rel")
+  user     users     @relation(fields: [userId], references: [id])
+  bilhetes bilhete[] @relation("tb_rel")
 }
 
 model transacao_carteira {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  valor     Float
-  tipo      String
-  status    String   @default("pending")
-  metadata  Json?
-  createdAt DateTime @default(now()) @map("createdat")
+  id          Int                    @id @default(autoincrement())
+  userId      Int                    @map("userid")
+  valor       Float
+  tipo        TransacaoCarteiraTipo
+  status      String                 @default("pending")
+  mpPaymentId String?                @map("mppaymentid")
+  metadata    Json?
+  createdAt   DateTime               @default(now()) @map("createdat")
 
   user users @relation(fields: [userId], references: [id])
 
@@ -76,23 +88,19 @@ model bilhete {
   dezenas          String
   valor            Float
   pago             Boolean    @default(false)
-
   sorteioData      DateTime   @map("sorteiodata")
-
   status           String     @default("ATIVO")
   resultadoFederal String?    @map("resultadofederal")
   premioValor      Float?     @map("premiovalor")
   apuradoEm        DateTime?  @map("apuradoem")
-
   ganhadorNome     String?    @map("ganhadornome")
   ganhadorEmail    String?    @map("ganhadoremail")
   ganhadorTelefone String?    @map("ganhadortelefone")
   ganhadorPix      String?    @map("ganhadorpix")
-
   createdAt        DateTime   @default(now()) @map("createdat")
 
-  user             users       @relation(fields: [userId], references: [id])
-  transacao        transacao?  @relation("tb_rel", fields: [transacaoId], references: [id])
+  user       users      @relation(fields: [userId], references: [id])
+  transacao  transacao? @relation("tb_rel", fields: [transacaoId], references: [id])
 }
 
 model password_reset {
@@ -113,15 +121,12 @@ model AppContent {
   key         String   @unique
   type        String   @default("text")
   slug        String?  @unique
-
   enabled     Boolean  @default(true)
   isActive    Boolean  @default(true)
   version     Int      @default(1)
-
   title       String
   contentHtml String?
   blocksJson  Json?
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
