@@ -86,7 +86,7 @@ export async function notify(event: NotifyEvent) {
     res.responses.forEach((r, idx) => {
       if (!r.success) {
         invalidTokens.push(tokens[idx].token);
-        console.log("❌ Token inválido detectado:", tokens[idx].token.substring(0, 20) + "...", "Erro:", r.error?.message || "desconhecido");
+        console.log("❌ Token inválido detectado (hash):", tokens[idx].token.length, "chars", "Erro:", r.error?.message || "desconhecido");
       }
     });
 
