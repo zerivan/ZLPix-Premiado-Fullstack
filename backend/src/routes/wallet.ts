@@ -43,7 +43,6 @@ router.post("/depositar", async (req, res) => {
       return res.status(400).json({ error: "Usuário inválido" });
     }
 
-    // cria transação PENDENTE (DEPÓSITO)
     const tx = await prisma.transacao.create({
       data: {
         userId: Number(userId),
@@ -231,10 +230,20 @@ router.get("/historico", async (req, res) => {
     const transacoes = await prisma.transacao.findMany({
       where: {
         userId,
-        metadata: {
-          path: ["tipo"],
-          in: ["deposito", "saque"],
-        },
+        OR: [
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "deposito",
+            },
+          },
+          {
+            metadata: {
+              path: ["tipo"],
+              equals: "saque",
+            },
+          },
+        ],
       },
       orderBy: { createdAt: "desc" },
       select: {
