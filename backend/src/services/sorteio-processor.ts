@@ -181,6 +181,7 @@ export async function processarSorteio(
         data: {
           userId: bilhete.userId,
           valor: valorPorGanhador,
+          tipo: "BILHETE",
           status: "paid",
           metadata: {
             tipo: "bilhete_premiado",

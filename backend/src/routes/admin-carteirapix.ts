@@ -88,6 +88,7 @@ router.post("/pix", async (req, res) => {
     await prisma.transacao_carteira.update({
       where: { id: tx.id },
       data: {
+        mpPaymentId: String(mpJson.id),
         metadata: {
           origem: "wallet", // 🔒 BLINDAGEM MANTIDA
           mpResponse: mpJson,

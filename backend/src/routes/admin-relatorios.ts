@@ -34,6 +34,7 @@ router.get("/", async (_req, res) => {
       prisma.transacao.findMany({
         where: {
           status: "paid",
+          tipo: "BILHETE",
         },
         select: { valor: true },
       }),

@@ -35,6 +35,7 @@ router.post("/create", async (req, res) => {
       data: {
         userId: Number(userId),
         valor: Number(amount),
+        tipo: "BILHETE",
         status: "pending",
         metadata: {
           tipo: "bilhete",
