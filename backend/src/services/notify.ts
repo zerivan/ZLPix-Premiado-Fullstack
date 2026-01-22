@@ -39,13 +39,27 @@ export type NotifyEvent =
  */
 export async function notify(event: NotifyEvent) {
   try {
+    console.log("🔔 notify() chamado com evento:", event.type, "| userId:", event.userId);
+
     const payload = montarMensagem(event);
-    if (!payload) return;
+    if (!payload) {
+      console.log("⚠️ Nenhum payload gerado para evento:", event.type);
+      return;
+    }
+
+    console.log("📦 Payload montado:", {
+      userId: payload.userId,
+      title: payload.title,
+      body: payload.body,
+      url: payload.url,
+    });
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId: Number(payload.userId) },
       select: { token: true },
     });
+
+    console.log("🔍 Tokens encontrados para usuário", payload.userId, ":", tokens.length);
 
     if (!tokens.length) {
       console.log("🔕 Usuário sem push token:", payload.userId);
@@ -63,13 +77,25 @@ export async function notify(event: NotifyEvent) {
       tokens: tokens.map((t) => t.token),
     };
 
+    console.log("📤 Enviando multicast para", tokens.length, "tokens...");
+
     const res = await admin.messaging().sendEachForMulticast(message);
+
+    console.log("📊 Resultado Firebase Admin:", {
+      successCount: res.successCount,
+      failureCount: res.failureCount,
+      responsesLength: res.responses.length,
+    });
 
     // 🔥 REMOVE TOKENS INVÁLIDOS
     const invalidTokens: string[] = [];
     res.responses.forEach((r, idx) => {
       if (!r.success) {
         invalidTokens.push(tokens[idx].token);
+        console.error("❌ Falha no token índice", idx, ":", {
+          error: r.error?.code,
+          message: r.error?.message,
+        });
       }
     });
 
@@ -89,7 +115,7 @@ export async function notify(event: NotifyEvent) {
       res.failureCount
     );
   } catch (err) {
-    console.error("❌ Erro PUSH:", event.type, err);
+    console.error("❌ Erro notify() para evento:", event.type, "| userId:", event.userId, err);
   }
 }
 
