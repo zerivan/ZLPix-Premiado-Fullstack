@@ -1,23 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
-import * as admin from "firebase-admin";
+import { getMessaging } from "../lib/firebase";
 
 const router = Router();
-
-/**
- * ============================
- * FIREBASE ADMIN — INIT
- * ============================
- */
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
 
 /**
  * ============================
@@ -30,10 +15,13 @@ router.post("/token", async (req, res) => {
     const { token, userId } = req.body;
 
     if (!token || !userId) {
+      console.warn("⚠️ Push token registro falhou: token ou userId ausente");
       return res.status(400).json({
         error: "Token ou userId ausente.",
       });
     }
+
+    console.log(`📲 Registrando push token para userId: ${userId}`);
 
     await prisma.pushToken.upsert({
       where: { token },
@@ -44,9 +32,11 @@ router.post("/token", async (req, res) => {
       },
     });
 
+    console.log(`✅ Push token registrado com sucesso para userId: ${userId}`);
+
     return res.json({ ok: true });
   } catch (error) {
-    console.error("Erro ao salvar push token:", error);
+    console.error("❌ Erro ao salvar push token:", error);
     return res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -61,10 +51,13 @@ router.post("/send", async (req, res) => {
     const { userId, title, body, url } = req.body;
 
     if (!userId || !title || !body) {
+      console.warn("⚠️ Push envio falhou: parâmetros obrigatórios ausentes");
       return res.status(400).json({
         error: "userId, title e body são obrigatórios.",
       });
     }
+
+    console.log(`📤 Solicitação de envio de push: userId: ${userId}, title: "${title}"`);
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId },
@@ -72,12 +65,16 @@ router.post("/send", async (req, res) => {
     });
 
     if (!tokens.length) {
+      console.log(`🔕 Usuário ${userId} não possui tokens registrados`);
       return res.json({
         ok: false,
         message: "Usuário não possui tokens registrados.",
       });
     }
 
+    console.log(`📱 Enviando para ${tokens.length} token(s)`);
+
+    const messaging = getMessaging();
     const message = {
       notification: {
         title,
@@ -89,9 +86,9 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     };
 
-    const response = await admin
-      .messaging()
-      .sendEachForMulticast(message);
+    const response = await messaging.sendEachForMulticast(message);
+
+    console.log(`✅ Push enviado: ${response.successCount} sucesso, ${response.failureCount} falha`);
 
     return res.json({
       ok: true,
@@ -99,7 +96,7 @@ router.post("/send", async (req, res) => {
       failureCount: response.failureCount,
     });
   } catch (error) {
-    console.error("Erro ao enviar push:", error);
+    console.error("❌ Erro ao enviar push:", error);
     return res.status(500).json({ error: "Erro ao enviar push." });
   }
 });

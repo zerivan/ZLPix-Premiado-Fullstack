@@ -129,6 +129,7 @@ export async function processarSorteio(
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
     const users = [...new Set(bilhetes.map((b) => b.userId))];
+    console.log(`📢 Disparando notificações de sorteio sem ganhadores para ${users.length} usuário(s)`);
     for (const userId of users) {
       await notify({
         type: "SORTEIO_REALIZADO",
@@ -137,6 +138,7 @@ export async function processarSorteio(
       });
     }
 
+    console.log(`✅ Sorteio processado sem ganhadores - ${bilhetes.length} bilhete(s) apurado(s)`);
     return { ok: true, ganhou: false };
   }
 
@@ -145,6 +147,7 @@ export async function processarSorteio(
    * COM GANHADORES
    * ============================
    */
+  console.log(`🏆 Sorteio COM ganhadores! ${ganhadores.length} ganhador(es) - Prêmio total: R$ ${premioAtual.toFixed(2)}`);
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
@@ -183,6 +186,7 @@ export async function processarSorteio(
       }),
     ]);
 
+    console.log(`📢 Disparando notificação de prêmio para userId: ${bilhete.userId}, valor: R$ ${valorPorGanhador.toFixed(2)}`);
     await notify({
       type: "SORTEIO_REALIZADO",
       userId: String(bilhete.userId),
@@ -190,6 +194,8 @@ export async function processarSorteio(
       valor: valorPorGanhador,
     });
   }
+
+  console.log(`✅ Prêmios creditados para ${ganhadores.length} ganhador(es)`);
 
   const idsGanhadores = ganhadores.map((b) => b.id);
 

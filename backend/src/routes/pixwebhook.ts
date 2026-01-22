@@ -48,8 +48,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.payment_id;
 
     if (!paymentId) {
+      console.log("⚠️ Webhook recebido sem paymentId");
       return res.status(200).send("ok");
     }
+
+    console.log(`📥 Webhook recebido: paymentId: ${paymentId}`);
 
     // Busca info no MP (quando possível)
     const mpInfo: any = await fetchMpPayment(String(paymentId));
@@ -60,7 +63,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.data?.status ||
       payload?.status;
 
+    console.log(`📋 Status do pagamento: ${mpStatus}`);
+
     if (mpStatus !== "approved" && mpStatus !== "paid") {
+      console.log(`⏸️ Pagamento não aprovado (status: ${mpStatus}), ignorando webhook`);
       return res.status(200).send("ok");
     }
 
@@ -69,8 +75,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     });
 
     if (!transacao || transacao.status === "paid") {
+      console.log(`⚠️ Transação não encontrada ou já paga: paymentId: ${paymentId}`);
       return res.status(200).send("ok");
     }
+
+    console.log(`✅ Transação encontrada: id: ${transacao.id}, userId: ${transacao.userId}`);
 
     const metadata =
       typeof transacao.metadata === "object" && transacao.metadata !== null
@@ -79,6 +88,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     // DEPÓSITO DE CARTEIRA
     if (metadata["tipo"] === "deposito") {
+      console.log(`💳 Processando depósito de carteira: paymentId: ${paymentId}, userId: ${transacao.userId}, valor: R$ ${Number(transacao.valor).toFixed(2)}`);
+      
       await prisma.$transaction([
         prisma.wallet.updateMany({
           where: { userId: transacao.userId },
@@ -89,16 +100,23 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           data: { status: "paid" },
         }),
       ]);
+      
+      console.log(`✅ Depósito processado. Disparando notificação...`);
+      
       await notify({
         type: "CARTEIRA_CREDITO",
         userId: String(transacao.userId),
         valor: Number(transacao.valor),
       });
+      
+      console.log(`✅ Webhook concluído para depósito: paymentId: ${paymentId}`);
       return res.status(200).send("ok");
     }
 
     // BILHETES
     if (metadata["tipo"] === "bilhete") {
+      console.log(`🎟️ Processando pagamento de bilhete(s): paymentId: ${paymentId}, userId: ${transacao.userId}`);
+      
       const bilhetesRaw = Array.isArray(metadata["bilhetes"])
         ? metadata["bilhetes"]
         : [];
@@ -135,6 +153,8 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
 
+          console.log(`📢 Disparando notificação de bilhete criado: ${dezenas}`);
+
           await notify({
             type: "BILHETE_CRIADO",
             userId: String(transacao.userId),
@@ -143,6 +163,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }
       });
 
+      console.log(`✅ Webhook concluído para bilhete(s): ${bilhetesRaw.length} bilhete(s) criado(s)`);
       return res.status(200).send("ok");
     }
 

@@ -1,20 +1,5 @@
 import { prisma } from "../lib/prisma";
-import * as admin from "firebase-admin";
-
-/**
- * ============================
- * FIREBASE ADMIN INIT (SAFE)
- * ============================
- */
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
+import { getMessaging } from "../lib/firebase";
 
 /**
  * ============================
@@ -39,8 +24,13 @@ export type NotifyEvent =
  */
 export async function notify(event: NotifyEvent) {
   try {
+    console.log(`📢 Iniciando envio de notificação: ${event.type} para userId: ${event.userId}`);
+    
     const payload = montarMensagem(event);
-    if (!payload) return;
+    if (!payload) {
+      console.warn(`⚠️ Tipo de evento não reconhecido: ${event.type}`);
+      return;
+    }
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId: Number(payload.userId) },
@@ -48,11 +38,14 @@ export async function notify(event: NotifyEvent) {
     });
 
     if (!tokens.length) {
-      console.log("🔕 Usuário sem push token:", payload.userId);
+      console.log(`🔕 Usuário ${payload.userId} não possui tokens push registrados`);
       return;
     }
 
-    const message: admin.messaging.MulticastMessage = {
+    console.log(`📱 Enviando push para ${tokens.length} token(s) do usuário ${payload.userId}`);
+
+    const messaging = getMessaging();
+    const message = {
       notification: {
         title: payload.title,
         body: payload.body,
@@ -63,13 +56,14 @@ export async function notify(event: NotifyEvent) {
       tokens: tokens.map((t) => t.token),
     };
 
-    const res = await admin.messaging().sendEachForMulticast(message);
+    const res = await messaging.sendEachForMulticast(message);
 
     // 🔥 REMOVE TOKENS INVÁLIDOS
     const invalidTokens: string[] = [];
     res.responses.forEach((r, idx) => {
       if (!r.success) {
         invalidTokens.push(tokens[idx].token);
+        console.warn(`⚠️ Token inválido/erro: ${tokens[idx].token.substring(0, 20)}... - ${r.error?.message}`);
       }
     });
 
@@ -77,19 +71,19 @@ export async function notify(event: NotifyEvent) {
       await prisma.pushToken.deleteMany({
         where: { token: { in: invalidTokens } },
       });
-      console.log("🧹 Tokens inválidos removidos:", invalidTokens.length);
+      console.log(`🧹 ${invalidTokens.length} token(s) inválido(s) removido(s)`);
     }
 
     console.log(
-      "📲 PUSH:",
-      event.type,
-      "✔",
-      res.successCount,
-      "✖",
-      res.failureCount
+      `✅ PUSH enviado: ${event.type} | ✔ ${res.successCount} sucesso | ✖ ${res.failureCount} falha`
     );
   } catch (err) {
-    console.error("❌ Erro PUSH:", event.type, err);
+    console.error(`❌ Erro ao enviar PUSH [${event.type}]:`, err);
+    // Log additional details if available
+    if (err instanceof Error) {
+      console.error(`   Mensagem: ${err.message}`);
+      console.error(`   Stack: ${err.stack?.substring(0, 200)}`);
+    }
   }
 }
 
