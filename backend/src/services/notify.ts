@@ -115,7 +115,7 @@ export async function notify(event: NotifyEvent) {
       res.failureCount
     );
   } catch (err) {
-    console.error("❌ Erro notify():", err);
+    console.error("❌ Erro notify() para evento:", event.type, "| userId:", event.userId, err);
   }
 }
 
