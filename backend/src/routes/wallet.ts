@@ -19,9 +19,6 @@ function getUserId(req: any): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-/**
- * POST /wallet/depositar
- */
 router.post("/depositar", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -42,11 +39,13 @@ router.post("/depositar", async (req, res) => {
 
     const tx = await prisma.transacao_carteira.create({
       data: {
-        userId: Number(userId),
+        userId,
         valor: Number(valor),
-        status: "pending",
         tipo: "deposito",
-        origem: "wallet",
+        status: "pending",
+        metadata: {
+          origem: "wallet"
+        },
       },
     });
 
@@ -90,7 +89,10 @@ router.post("/depositar", async (req, res) => {
     await prisma.transacao_carteira.update({
       where: { id: tx.id },
       data: {
-        mpPaymentId: String(mpJson.id),
+        metadata: {
+          origem: "wallet",
+          mpResponse: mpJson
+        },
       },
     });
 
@@ -107,9 +109,6 @@ router.post("/depositar", async (req, res) => {
   }
 });
 
-/**
- * POST /wallet/saque
- */
 router.post("/saque", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -145,10 +144,12 @@ router.post("/saque", async (req, res) => {
       data: {
         userId,
         valor: Number(valor),
-        status: "pending",
         tipo: "saque",
-        origem: "wallet",
-        pixKey: pixKey || null,
+        status: "pending",
+        metadata: {
+          origem: "wallet",
+          pixKey: pixKey || null,
+        },
       },
     });
 
@@ -165,9 +166,6 @@ router.post("/saque", async (req, res) => {
   }
 });
 
-/**
- * GET /wallet/saldo
- */
 router.get("/saldo", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -195,9 +193,6 @@ router.get("/saldo", async (req, res) => {
   }
 });
 
-/**
- * GET /wallet/historico
- */
 router.get("/historico", async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -208,41 +203,11 @@ router.get("/historico", async (req, res) => {
     const transacoes = await prisma.transacao_carteira.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        valor: true,
-        status: true,
-        createdAt: true,
-        tipo: true,
-      },
     });
 
     return res.json(transacoes);
   } catch (err) {
     console.error("Erro wallet/historico:", err);
-    return res.status(500).json({ error: "Erro interno" });
-  }
-});
-
-/**
- * GET /wallet/payment-status/:paymentId
- */
-router.get("/payment-status/:paymentId", async (req, res) => {
-  try {
-    const { paymentId } = req.params;
-
-    const transacao = await prisma.transacao_carteira.findFirst({
-      where: { mpPaymentId: String(paymentId) },
-      select: { status: true },
-    });
-
-    if (!transacao) {
-      return res.json({ status: "pending" });
-    }
-
-    return res.json({ status: transacao.status });
-  } catch (err) {
-    console.error("Erro wallet/payment-status:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
