@@ -42,38 +42,6 @@ export default function AdminLogin() {
     setLoading(false);
   }
 
-  // 🔐 CRIAR ADMIN (TEMPORÁRIO PARA GERAR HASH CORRETA)
-  async function criarAdmin() {
-    setErro("");
-    setLoading(true);
-
-    try {
-      const resposta = await fetch(`${API}/auth/admin/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          secret: "SUA_CHAVE_REAL_DO_RENDER",
-        }),
-      });
-
-      const json = await resposta.json();
-
-      if (!resposta.ok) {
-        setErro(json.message || "Erro ao criar admin.");
-        setLoading(false);
-        return;
-      }
-
-      alert("Admin criado com sucesso!");
-    } catch {
-      setErro("Erro ao conectar com o servidor.");
-    }
-
-    setLoading(false);
-  }
-
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-900 via-blue-700 to-green-700 font-display flex items-center justify-center px-6">
       <div className="w-full max-w-md bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-10 animate-[fadeIn_0.4s_ease-out]">
@@ -123,15 +91,6 @@ export default function AdminLogin() {
           className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-60"
         >
           {loading ? "Entrando..." : "Entrar"}
-        </button>
-
-        {/* BOTÃO TEMPORÁRIO PARA CRIAR ADMIN */}
-        <button
-          onClick={criarAdmin}
-          disabled={loading}
-          className="w-full mt-3 bg-green-500 hover:bg-green-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-60"
-        >
-          Criar Admin (Teste)
         </button>
 
         <p className="text-center text-xs text-blue-200 mt-6 opacity-70">
