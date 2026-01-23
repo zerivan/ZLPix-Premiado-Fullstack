@@ -28,7 +28,9 @@ function sanitize(obj: any) {
   return s;
 }
 
+// ============================
 // REGISTER USER
+// ============================
 router.post("/register", async (req, res) => {
   try {
     let { name, email, phone, pixKey, password } = req.body;
@@ -45,6 +47,7 @@ router.post("/register", async (req, res) => {
     pixKey = pixKey ? String(pixKey).trim() : null;
 
     const existing = await prisma.users.findUnique({ where: { email } });
+
     if (existing) {
       return res.status(409).json({
         message: "E-mail já está cadastrado.",
@@ -76,15 +79,17 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// ============================
 // LOGIN USER
+// ============================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "E-mail e senha são obrigatórios." });
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
     }
 
     const user = await prisma.users.findUnique({
@@ -96,6 +101,7 @@ router.post("/login", async (req, res) => {
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
+
     if (!valid) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
@@ -123,15 +129,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// ============================
 // LOGIN ADMIN (COM MASTER)
+// ============================
 router.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "E-mail e senha são obrigatórios." });
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
     }
 
     const normalizedEmail = String(email).toLowerCase();
@@ -145,6 +153,7 @@ router.post("/admin/login", async (req, res) => {
     }
 
     const valid = await bcrypt.compare(password, admin.passwordHash);
+
     if (!valid) {
       return res.status(401).json({ message: "Senha incorreta." });
     }
