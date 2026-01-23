@@ -7,9 +7,6 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
 
-// ======================================
-// 🔧 SERIALIZADOR PARA BIGINT DO PRISMA
-// ======================================
 function serialize(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return obj.toString();
@@ -22,9 +19,6 @@ function serialize(obj: any): any {
   return obj;
 }
 
-// ======================================
-// 🔒 SANITIZAÇÃO (REMOVE passwordHash)
-// ======================================
 function sanitize(obj: any) {
   if (!obj) return obj;
   const s = serialize(obj);
@@ -34,9 +28,7 @@ function sanitize(obj: any) {
   return s;
 }
 
-// ======================================
-// 👤 REGISTER USER
-// ======================================
+// REGISTER USER
 router.post("/register", async (req, res) => {
   try {
     let { name, email, phone, pixKey, password } = req.body;
@@ -84,9 +76,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// ======================================
-// 🔑 LOGIN USER
-// ======================================
+// LOGIN USER
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -133,9 +123,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ======================================
-// 🛡 LOGIN ADMIN
-// ======================================
+// LOGIN ADMIN (COM MASTER)
 router.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -146,8 +134,10 @@ router.post("/admin/login", async (req, res) => {
         .json({ message: "E-mail e senha são obrigatórios." });
     }
 
+    const normalizedEmail = String(email).toLowerCase();
+
     const admin = await prisma.admins.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!admin) {
@@ -159,8 +149,15 @@ router.post("/admin/login", async (req, res) => {
       return res.status(401).json({ message: "Senha incorreta." });
     }
 
+    const role =
+      normalizedEmail === "master@zlpix.com" ? "master" : "admin";
+
     const token = jwt.sign(
-      { email: admin.email, role: "admin" },
+      {
+        id: admin.id.toString(),
+        email: admin.email,
+        role,
+      },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -168,7 +165,11 @@ router.post("/admin/login", async (req, res) => {
     return res.json({
       message: "Login admin realizado com sucesso.",
       token,
-      admin: sanitize(admin),
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        role,
+      },
     });
   } catch (err) {
     console.error("Erro em /auth/admin/login:", err);
