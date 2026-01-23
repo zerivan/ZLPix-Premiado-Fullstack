@@ -116,7 +116,7 @@ model password_reset {
   @@map("password_resets")
 }
 
-model appcontent {
+model AppContent {
   id         Int      @id @default(autoincrement())
   key         String   @unique
   type        String   @default("text")
