@@ -33,8 +33,11 @@ export function adminAuth(
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    // ✅ VALIDAÇÃO CORRETA
-    if (decoded.role !== "admin" || !decoded.email) {
+    // ✅ VALIDAÇÃO AJUSTADA (admin e master)
+    if (
+      !decoded.email ||
+      (decoded.role !== "admin" && decoded.role !== "master")
+    ) {
       return res.status(401).json({
         ok: false,
         error: "Token não autorizado",
