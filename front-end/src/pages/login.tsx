@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { registerPush } from "../services/push"; // ✅ IMPORT ADICIONADO
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,7 +24,6 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // 🔐 LOGIN USUÁRIO
       const response = await api.post("/auth/login", {
         email,
         password: senha,
@@ -36,19 +36,18 @@ export default function Login() {
         throw new Error("Resposta inválida do servidor.");
       }
 
-      // 🚫 LIMPA QUALQUER ESTADO ADMIN
       localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
       localStorage.removeItem("ZLPIX_ADMIN_AUTH");
 
-      // 💾 SALVA DADOS DO USUÁRIO
       localStorage.setItem("TOKEN_ZLPIX", token);
       localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
       localStorage.setItem("USER_ID", String(user.id));
 
-      // 🔐 aplica token no axios
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // 👉 REDIRECIONA (SEM FAZER MAIS NADA)
+      // ✅ REGISTRA PUSH APÓS LOGIN
+      await registerPush(user.id);
+
       navigate("/home", { replace: true });
 
     } catch (err: any) {
