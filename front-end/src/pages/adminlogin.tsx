@@ -6,7 +6,6 @@ export default function AdminLogin() {
 
   const API = import.meta.env.VITE_API_URL as string;
 
-  // ✅ E-mail admin correto
   const [email, setEmail] = useState("admin@zlpix.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,12 +31,42 @@ export default function AdminLogin() {
         return;
       }
 
-      // 🔐 SALVA TOKEN ADMIN
       localStorage.setItem("TOKEN_ZLPIX_ADMIN", json.token);
       localStorage.setItem("ZLPIX_ADMIN_AUTH", "true");
 
-      // ✅ ROTA ADMIN CORRETA
       navigate("/admin/admindashboard", { replace: true });
+    } catch {
+      setErro("Erro ao conectar com o servidor.");
+    }
+
+    setLoading(false);
+  }
+
+  // 🔐 CRIAR ADMIN (TEMPORÁRIO PARA GERAR HASH CORRETA)
+  async function criarAdmin() {
+    setErro("");
+    setLoading(true);
+
+    try {
+      const resposta = await fetch(`${API}/auth/admin/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          secret: "SUA_CHAVE_REAL_DO_RENDER",
+        }),
+      });
+
+      const json = await resposta.json();
+
+      if (!resposta.ok) {
+        setErro(json.message || "Erro ao criar admin.");
+        setLoading(false);
+        return;
+      }
+
+      alert("Admin criado com sucesso!");
     } catch {
       setErro("Erro ao conectar com o servidor.");
     }
@@ -52,7 +81,6 @@ export default function AdminLogin() {
           🔐 Login Administrativo
         </h1>
 
-        {/* EMAIL */}
         <div className="mb-6">
           <label className="text-sm text-blue-100 font-semibold">E-mail</label>
           <input
@@ -64,7 +92,6 @@ export default function AdminLogin() {
           />
         </div>
 
-        {/* SENHA */}
         <div className="mb-8 relative">
           <label className="text-sm text-blue-100 font-semibold">Senha</label>
 
@@ -96,6 +123,15 @@ export default function AdminLogin() {
           className="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-60"
         >
           {loading ? "Entrando..." : "Entrar"}
+        </button>
+
+        {/* BOTÃO TEMPORÁRIO PARA CRIAR ADMIN */}
+        <button
+          onClick={criarAdmin}
+          disabled={loading}
+          className="w-full mt-3 bg-green-500 hover:bg-green-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-60"
+        >
+          Criar Admin (Teste)
         </button>
 
         <p className="text-center text-xs text-blue-200 mt-6 opacity-70">
