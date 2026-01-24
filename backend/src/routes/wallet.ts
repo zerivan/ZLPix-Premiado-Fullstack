@@ -61,6 +61,8 @@ router.post("/depositar", async (req, res) => {
       transaction_amount: Number(valor),
       description: "Depósito na Carteira ZLPix",
       payment_method_id: "pix",
+      external_reference: `wallet_${tx.id}`,
+      notification_url: "https://zlpix-premiado-fullstack.onrender.com/pix/webhook",
       payer: {
         email: user.email,
         first_name: user.name || "Cliente",
@@ -83,6 +85,7 @@ router.post("/depositar", async (req, res) => {
     const mpJson: any = await resp.json();
 
     if (!resp.ok) {
+      console.error("Erro Mercado Pago:", mpJson);
       return res.status(502).json({ error: "Erro ao gerar PIX" });
     }
 
@@ -213,12 +216,6 @@ router.get("/historico", async (req, res) => {
   }
 });
 
-/**
- * =========================
- * GET /wallet/payment-status/:paymentId
- * Verificação de status de pagamento de depósito em carteira
- * =========================
- */
 router.get("/payment-status/:paymentId", async (req, res) => {
   try {
     const { paymentId } = req.params;
