@@ -243,7 +243,7 @@ router.get("/payment-status/:paymentId", async (req, res) => {
 
     if (transacao.tipo !== "DEPOSITO") {
       return res.status(404).json({
-        error: "Pagamento encontrado, mas não é um depósito. Use o endpoint apropriado.",
+        error: "Pagamento encontrado, mas não é um depósito. Use o endpoint de bilhete se aplicável.",
       });
     }
 
