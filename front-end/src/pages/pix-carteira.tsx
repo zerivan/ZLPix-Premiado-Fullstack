@@ -6,7 +6,9 @@ export default function PixCarteira() {
   const location = useLocation() as any;
   const navigate = useNavigate();
 
-  const API = (import.meta.env.VITE_API_URL as string) || "https://zlpix-premiado-fullstack.onrender.com";
+  const API =
+    (import.meta.env.VITE_API_URL as string) ||
+    "https://zlpix-premiado-fullstack.onrender.com";
 
   const [paymentId] = useState<string>(() => {
     return (
@@ -33,10 +35,15 @@ export default function PixCarteira() {
   });
 
   const [valor] = useState<number>(() => {
-    return location.state?.amount ?? Number(sessionStorage.getItem("PIX_CARTEIRA_AMOUNT") || 0);
+    return (
+      location.state?.amount ??
+      Number(sessionStorage.getItem("PIX_CARTEIRA_AMOUNT") || 0)
+    );
   });
 
-  const [statusText, setStatusText] = useState<string>("Aguardando pagamento...");
+  const [statusText, setStatusText] = useState<string>(
+    "Aguardando pagamento..."
+  );
   const pollingRef = useRef<number | null>(null);
   const redirectedRef = useRef(false);
 
@@ -66,10 +73,13 @@ export default function PixCarteira() {
 
     const poll = async () => {
       try {
-        const resp = await axios.get(`${API}/wallet/payment-status/${paymentId}`);
+        // 🔧 URL CORRIGIDA AQUI
+        const resp = await axios.get(
+          `${API}/admin/carteira/payment-status/${paymentId}`
+        );
+
         const s = String(resp.data?.status || "").toLowerCase();
 
-        // 🔥 CORREÇÃO AQUI
         if (s === "paid" || s === "approved") {
           setStatusText("Pagamento confirmado!");
 
@@ -110,7 +120,9 @@ export default function PixCarteira() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col items-center p-6">
-      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">Depósito via PIX</h1>
+      <h1 className="text-2xl font-extrabold text-yellow-300 mb-4">
+        Depósito via PIX
+      </h1>
 
       <p className="mb-4 text-sm text-white/80">{statusText}</p>
 
@@ -128,7 +140,9 @@ export default function PixCarteira() {
         )}
 
         <div className="text-sm">
-          <div className="mb-2 font-semibold text-yellow-300">Copia e cola</div>
+          <div className="mb-2 font-semibold text-yellow-300">
+            Copia e cola
+          </div>
           <div className="break-words bg-black/30 p-3 rounded text-xs">
             {copyPaste || "—"}
           </div>
@@ -141,7 +155,9 @@ export default function PixCarteira() {
         </div>
 
         <div className="text-sm">
-          <div className="font-semibold text-yellow-300">Valor do depósito</div>
+          <div className="font-semibold text-yellow-300">
+            Valor do depósito
+          </div>
           <div className="text-lg">R$ {Number(valor).toFixed(2)}</div>
         </div>
       </div>
