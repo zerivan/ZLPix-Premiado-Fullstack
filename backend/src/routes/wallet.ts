@@ -89,6 +89,7 @@ router.post("/depositar", async (req, res) => {
     await prisma.transacao_carteira.update({
       where: { id: tx.id },
       data: {
+        mpPaymentId: String(mpJson.id),
         metadata: {
           origem: "wallet",
           mpResponse: mpJson
@@ -208,6 +209,49 @@ router.get("/historico", async (req, res) => {
     return res.json(transacoes);
   } catch (err) {
     console.error("Erro wallet/historico:", err);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/**
+ * =========================
+ * GET /wallet/payment-status/:paymentId
+ * Verificação de status de pagamento de depósito em carteira
+ * =========================
+ */
+router.get("/payment-status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    if (!paymentId) {
+      return res.status(400).json({ error: "paymentId ausente" });
+    }
+
+    const transacao = await prisma.transacao_carteira.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+      },
+      select: {
+        status: true,
+        tipo: true,
+      },
+    });
+
+    if (!transacao) {
+      return res.json({ status: "pending" });
+    }
+
+    if (transacao.tipo !== "DEPOSITO") {
+      return res.status(404).json({
+        error: "Pagamento encontrado, mas não é um depósito. Use o endpoint de bilhete se aplicável.",
+      });
+    }
+
+    return res.json({
+      status: transacao.status,
+    });
+  } catch (err) {
+    console.error("Erro wallet/payment-status:", err);
     return res.status(500).json({ error: "Erro interno" });
   }
 });

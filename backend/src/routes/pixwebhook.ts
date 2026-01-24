@@ -78,7 +78,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       },
     });
 
-    if (transacaoCarteira && transacaoCarteira.status !== "paid") {
+    if (transacaoCarteira) {
+      // Se já foi processado, retorna imediatamente
+      if (transacaoCarteira.status === "paid") {
+        return res.status(200).send("ok");
+      }
+
+      // Processar crédito na carteira
       await prisma.$transaction([
         prisma.wallet.updateMany({
           where: { userId: transacaoCarteira.userId },
