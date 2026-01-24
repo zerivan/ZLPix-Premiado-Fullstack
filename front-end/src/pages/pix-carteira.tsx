@@ -8,7 +8,6 @@ export default function PixCarteira() {
 
   const API = (import.meta.env.VITE_API_URL as string) || "https://zlpix-premiado-fullstack.onrender.com";
 
-  // Recebe via navigate(state)
   const [paymentId] = useState<string>(() => {
     return (
       location.state?.paymentId ||
@@ -41,7 +40,6 @@ export default function PixCarteira() {
   const pollingRef = useRef<number | null>(null);
   const redirectedRef = useRef(false);
 
-  // Persistência mínima
   useEffect(() => {
     if (paymentId) {
       sessionStorage.setItem("PIX_CARTEIRA_PAYMENT_ID", paymentId);
@@ -71,14 +69,15 @@ export default function PixCarteira() {
         const resp = await axios.get(`${API}/wallet/payment-status/${paymentId}`);
         const s = String(resp.data?.status || "").toLowerCase();
 
-        if (s === "paid") {
-          setStatusText("Pagamento confirmado! 🎉");
+        // 🔥 CORREÇÃO AQUI
+        if (s === "paid" || s === "approved") {
+          setStatusText("Pagamento confirmado!");
+
           if (pollingRef.current) {
             window.clearInterval(pollingRef.current);
             pollingRef.current = null;
           }
 
-          // limpar sessão do PIX carteira
           sessionStorage.removeItem("PIX_CARTEIRA_PAYMENT_ID");
           sessionStorage.removeItem("PIX_CARTEIRA_QR");
           sessionStorage.removeItem("PIX_CARTEIRA_COPY");
@@ -98,7 +97,6 @@ export default function PixCarteira() {
       }
     };
 
-    // primeira checagem imediata + intervalo
     poll();
     pollingRef.current = window.setInterval(poll, 3000);
 
