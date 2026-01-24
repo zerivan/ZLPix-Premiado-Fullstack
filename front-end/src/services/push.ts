@@ -1,4 +1,3 @@
-// frontend/src/services/push.ts
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { firebaseApp } from "../lib/firebase";
 import axios from "axios";
@@ -27,8 +26,16 @@ export async function registerPush(userId: number) {
       return;
     }
 
+    // 🔥 REGISTRA EXPLICITAMENTE O SERVICE WORKER CORRETO
+    const registration = await navigator.serviceWorker.register(
+      "/firebase-messaging-sw.js"
+    );
+
+    await navigator.serviceWorker.ready;
+
     const token = await getToken(messaging, {
       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: registration,
     });
 
     if (!token) {
@@ -36,8 +43,7 @@ export async function registerPush(userId: number) {
       return;
     }
 
-    // ✅ ENDPOINT CORRETO
-    await axios.post(`${BASE_URL}/push/register`, {
+    await axios.post(`${BASE_URL}/push/token`, {
       token,
       userId,
     });
