@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { registerPush } from "../public/push"; // ✅ caminho correto
+import { registerPush } from "../services/push"; // ✅ caminho correto
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export default function Login() {
 
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // registra push após login
+      // ✅ REGISTRA PUSH APÓS LOGIN
       try {
         await registerPush(user.id);
       } catch (e) {
@@ -67,6 +67,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display">
       <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm border border-green-400/30">
+
         <div className="text-center mb-5">
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
