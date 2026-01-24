@@ -64,10 +64,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     // 🔹 PRIMEIRO: TENTAR ENCONTRAR EM transacao_carteira
     const transacaoCarteira = await prisma.transacao_carteira.findFirst({
       where: {
-        metadata: {
-          path: ["mpResponse", "id"],
-          equals: Number(paymentId),
-        },
+        mpPaymentId: String(paymentId),
       },
     });
 
@@ -102,7 +99,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // Verifica se é transação de BILHETE usando o campo ENUM tipo
     if (transacao.tipo === "BILHETE") {
       const metadata =
         typeof transacao.metadata === "object" && transacao.metadata !== null
