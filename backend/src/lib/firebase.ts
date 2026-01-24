@@ -4,8 +4,6 @@ import * as admin from "firebase-admin";
  * ============================
  * FIREBASE ADMIN — INICIALIZAÇÃO CENTRALIZADA
  * ============================
- * Centraliza a inicialização do Firebase Admin SDK
- * para evitar duplicação e facilitar manutenção
  */
 
 let firebaseInitialized = false;
@@ -19,7 +17,8 @@ export function initializeFirebase() {
   if (!admin.apps.length) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+    const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+    const privateKey = privateKeyRaw?.replace(/\\n/g, "\n");
 
     if (!projectId || !clientEmail || !privateKey) {
       console.error("❌ Variáveis Firebase não configuradas:");
@@ -30,6 +29,13 @@ export function initializeFirebase() {
       return;
     }
 
+    // 🔎 DEBUG TEMPORÁRIO
+    console.log("=== DEBUG PRIVATE KEY ===");
+    console.log("START:", privateKey.substring(0, 30));
+    console.log("END:", privateKey.slice(-30));
+    console.log("LENGTH:", privateKey.length);
+    console.log("=========================");
+
     try {
       admin.initializeApp({
         credential: admin.credential.cert({
@@ -38,6 +44,7 @@ export function initializeFirebase() {
           privateKey,
         }),
       });
+
       firebaseInitialized = true;
       console.log("✅ Firebase Admin inicializado com sucesso");
       console.log(`   Project ID: ${projectId}`);
@@ -51,18 +58,14 @@ export function initializeFirebase() {
   }
 }
 
-/**
- * Retorna a instância do Firebase Admin Messaging
- * Verifica se está inicializado antes de retornar
- */
 export function getMessaging() {
   if (!admin.apps.length) {
     console.error("❌ Firebase Admin não inicializado! Chamando initializeFirebase()...");
     initializeFirebase();
   }
-  
+
   return admin.messaging();
 }
 
-// Auto-inicialização ao importar
+// Auto-inicialização
 initializeFirebase();
