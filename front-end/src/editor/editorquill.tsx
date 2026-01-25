@@ -29,7 +29,7 @@ const QUILL_MODULES = {
     ["bold", "italic", "underline", "strike"],
     [{ color: [] }, { background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
+    [{ list: "ordered" }, { list: "bullet"] },
     ["link"],
     ["clean"],
   ],
@@ -55,7 +55,14 @@ export default function EditorQuill({
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
 
+  // 🔥 PUSH STATES
+  const [showPushModal, setShowPushModal] = useState(false);
+  const [pushType, setPushType] = useState<"broadcast" | "user">("broadcast");
+  const [userId, setUserId] = useState("");
+  const [sendingPush, setSendingPush] = useState(false);
+
   const SITE_URL = window.location.origin;
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -92,10 +99,46 @@ export default function EditorQuill({
     }
   }
 
+  // 🔥 DISPARO PUSH
+  async function handleSendPush() {
+    try {
+      setSendingPush(true);
+
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+      if (!token) return;
+
+      const payload: any = {
+        title: "ZLPix Premiado",
+        body: "Nova atualização disponível",
+        url: "/anuncio",
+      };
+
+      if (pushType === "broadcast") {
+        payload.broadcast = true;
+      } else {
+        payload.userId = Number(userId);
+      }
+
+      await fetch(`${API_URL}/api/admin/push/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      setShowPushModal(false);
+      setUserId("");
+    } finally {
+      setSendingPush(false);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h3 className="font-semibold text-lg">{areaTitle}</h3>
             <p className="text-xs text-gray-500">
@@ -104,17 +147,28 @@ export default function EditorQuill({
             </p>
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            className={`px-4 py-2 rounded text-white ${
-              dirty
-                ? "bg-indigo-600 hover:bg-indigo-700"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {saving ? "Salvando..." : "Salvar"}
-          </button>
+          <div className="flex gap-2">
+            {page === "anuncio" && (
+              <button
+                onClick={() => setShowPushModal(true)}
+                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >
+                Disparar Push
+              </button>
+            )}
+
+            <button
+              onClick={handleSave}
+              disabled={!dirty || saving}
+              className={`px-4 py-2 rounded text-white ${
+                dirty
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
         </div>
 
         <div
@@ -158,6 +212,64 @@ export default function EditorQuill({
           </div>
         </div>
       </div>
+
+      {/* 🔥 MODAL PUSH */}
+      {showPushModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
+            <h4 className="font-semibold text-lg">
+              Disparar notificação
+            </h4>
+
+            <div className="space-y-2 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "broadcast"}
+                  onChange={() => setPushType("broadcast")}
+                />
+                Enviar para todos
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "user"}
+                  onChange={() => setPushType("user")}
+                />
+                Usuário específico
+              </label>
+
+              {pushType === "user" && (
+                <input
+                  type="number"
+                  placeholder="ID do usuário"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  className="w-full border p-2 rounded"
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowPushModal(false)}
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={handleSendPush}
+                disabled={sendingPush}
+                className="px-4 py-2 bg-green-600 text-white rounded"
+              >
+                {sendingPush ? "Enviando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
