@@ -5,22 +5,14 @@ import { getMessaging } from "../lib/firebase";
 const router = Router();
 
 /**
- * ============================
+ * =========================================
  * ADMIN PUSH MANUAL
- * ============================
- * POST /admin/push
- *
- * Body:
- * {
- *   userId?: number,
- *   title: string,
- *   body: string,
- *   url?: string
- * }
+ * POST /api/admin/push/send
+ * =========================================
  */
-router.post("/", async (req, res) => {
+router.post("/send", async (req, res) => {
   try {
-    const { userId, title, body, url } = req.body;
+    const { title, body, url, userId, broadcast } = req.body;
 
     if (!title || !body) {
       return res.status(400).json({
@@ -30,14 +22,16 @@ router.post("/", async (req, res) => {
 
     let tokens: { token: string }[] = [];
 
-    // 🔹 Envio para usuário específico
+    // 🔹 ENVIO PARA UM USUÁRIO ESPECÍFICO
     if (userId) {
       tokens = await prisma.pushToken.findMany({
         where: { userId: Number(userId) },
         select: { token: true },
       });
-    } else {
-      // 🔹 Envio para todos
+    }
+
+    // 🔹 ENVIO PARA TODOS
+    if (broadcast) {
       tokens = await prisma.pushToken.findMany({
         select: { token: true },
       });
@@ -46,7 +40,7 @@ router.post("/", async (req, res) => {
     if (!tokens.length) {
       return res.json({
         ok: false,
-        message: "Nenhum token encontrado.",
+        message: "Nenhum token encontrado",
       });
     }
 
@@ -58,14 +52,13 @@ router.post("/", async (req, res) => {
         body,
       },
       data: {
-        url: String(url || "/"),
+        url: url || "/",
       },
       tokens: tokens.map((t) => t.token),
     });
 
     return res.json({
       ok: true,
-      totalTokens: tokens.length,
       successCount: response.successCount,
       failureCount: response.failureCount,
     });
