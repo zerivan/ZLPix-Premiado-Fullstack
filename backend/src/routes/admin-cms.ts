@@ -22,6 +22,9 @@ const CMS_AREAS = [
   { key: "pix_info", page: "pix", title: "PIX – Informações" },
   { key: "perfil_info", page: "perfil", title: "Perfil – Informações" },
   { key: "carteira_info", page: "carteira", title: "Carteira – Informações" },
+
+  // 🔥 NOVA PÁGINA ANUNCIO
+  { key: "anuncio_main", page: "anuncio", title: "Anúncio – Conteúdo Principal" },
 ];
 
 /**
@@ -40,7 +43,6 @@ const cmsCache = {
   lastPagesFetch: 0,
 };
 
-// Gera ETag a partir do JSON
 const generateETag = (data: any): string =>
   `"${crypto.createHash("md5").update(JSON.stringify(data)).digest("hex")}"`;
 
@@ -59,6 +61,8 @@ const DEFAULT_HTML: Record<string, string> = {
   pix_info: "",
   perfil_info: "",
   carteira_info: "",
+
+  anuncio_main: "",
 };
 
 /**
@@ -106,25 +110,18 @@ function sanitizeContent(html: string): string {
  * =====================================================
  * 🎨 APARÊNCIA DO APP (ADMIN)
  * =====================================================
- * GET  /api/admin/cms/app-appearance
- * POST /api/admin/cms/app-appearance
  */
-
 const DEFAULT_APPEARANCE = {
   primaryColor: "#4f46e5",
   secondaryColor: "#6366f1",
   accentColor: "#f59e0b",
   backgroundColor: "#ffffff",
-
   textColor: "#111827",
   textSecondaryColor: "#6b7280",
-
   buttonColor: "#4f46e5",
   buttonTextColor: "#ffffff",
   buttonHoverColor: "#4338ca",
-
   borderColor: "#e5e7eb",
-
   themeMode: "light",
   fontPrimary: "Inter",
   fontHeading: "Inter",
@@ -191,49 +188,13 @@ router.post("/app-appearance", async (req: Request, res: Response) => {
 
 /**
  * =====================================================
- * CMS — LISTAR TODAS AS ÁREAS
- * =====================================================
- */
-router.get("/", async (_req: Request, res: Response) => {
-  try {
-    const contents = await prisma.appContent.findMany({
-      where: { type: "content" },
-    });
-
-    const merged = CMS_AREAS.map((area) => {
-      const found = contents.find((c) => c.key === area.key);
-      return {
-        key: area.key,
-        page: area.page,
-        title: found?.title || area.title,
-        hasContent: !!found?.contentHtml,
-      };
-    });
-
-    return res.json({ ok: true, data: merged });
-  } catch (err) {
-    console.error("❌ Erro ao listar áreas:", err);
-    return res.status(500).json({ ok: false });
-  }
-});
-
-/**
- * =====================================================
- * CMS — LISTAR PÁGINAS (PAINEL ADMIN)
+ * CMS — LISTAR PÁGINAS
  * =====================================================
  */
 router.get("/pages", async (_req: Request, res: Response) => {
   const now = Date.now();
 
   if (cmsCache.pages && now - cmsCache.lastPagesFetch < 30000) {
-    const etag = generateETag(cmsCache.pages);
-    res.set("ETag", etag);
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
-
-    if (_req.headers["if-none-match"] === etag) {
-      return res.status(304).end();
-    }
-
     return res.json({ ok: true, pages: cmsCache.pages });
   }
 
@@ -249,44 +210,18 @@ router.get("/pages", async (_req: Request, res: Response) => {
     cmsCache.pages = pages;
     cmsCache.lastPagesFetch = now;
 
-    const etag = generateETag(pages);
-    res.set("ETag", etag);
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
-
     return res.json({ ok: true, pages });
   } catch (err) {
-    console.error("❌ Erro ao listar páginas CMS:", err);
+    console.error("Erro ao listar páginas CMS:", err);
     return res.status(500).json({ ok: false });
   }
 });
 
-/**
- * =====================================================
- * CMS — LISTAR ÁREAS DE UMA PÁGINA
- * =====================================================
- */
 router.get("/areas/:page", async (req: Request, res: Response) => {
-  const { page } = req.params;
-  const cacheKey = `areas_${page}`;
-  const now = Date.now();
-
-  if (
-    cmsCache.areas[cacheKey] &&
-    now - cmsCache.areas[cacheKey].timestamp < 30000
-  ) {
-    const etag = generateETag(cmsCache.areas[cacheKey].data);
-    res.set("ETag", etag);
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
-
-    if (req.headers["if-none-match"] === etag) {
-      return res.status(304).end();
-    }
-
-    return res.json({ ok: true, areas: cmsCache.areas[cacheKey].data });
-  }
-
   try {
+    const { page } = req.params;
     const areas = CMS_AREAS.filter((a) => a.page === page);
+
     const contents = await prisma.appContent.findMany({
       where: { key: { in: areas.map((a) => a.key) } },
     });
@@ -300,24 +235,13 @@ router.get("/areas/:page", async (req: Request, res: Response) => {
       };
     });
 
-    cmsCache.areas[cacheKey] = { data, timestamp: now };
-
-    const etag = generateETag(data);
-    res.set("ETag", etag);
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=30");
-
     return res.json({ ok: true, areas: data });
   } catch (err) {
-    console.error("❌ Erro ao listar áreas da página:", err);
+    console.error("Erro ao listar áreas:", err);
     return res.status(500).json({ ok: false });
   }
 });
 
-/**
- * =====================================================
- * CMS — SALVAR ÁREA (PAINEL ADMIN)
- * =====================================================
- */
 router.post("/area/save", async (req: Request, res: Response) => {
   try {
     const { key, title, contentHtml } = req.body;
@@ -334,13 +258,9 @@ router.post("/area/save", async (req: Request, res: Response) => {
       create: { key, title, contentHtml: safeHtml, type: "content" },
     });
 
-    Object.keys(cmsCache.areas).forEach((k) => {
-      if (k.includes("home") || k.includes(key)) delete cmsCache.areas[k];
-    });
-
     return res.json({ ok: true, data: saved });
   } catch (err) {
-    console.error("❌ Erro ao salvar área CMS:", err);
+    console.error("Erro ao salvar área CMS:", err);
     return res.status(500).json({ ok: false });
   }
 });
