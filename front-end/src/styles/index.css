@@ -179,3 +179,38 @@ body.admin-area {
   max-width: 420px;
   backdrop-filter: blur(8px);
 }
+
+/* =================================
+   QUILL — FONT SELECTOR CUSTOM
+   ================================= */
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="inter"]::before {
+  content: "Inter";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="poppins"]::before {
+  content: "Poppins";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="montserrat"]::before {
+  content: "Montserrat";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="bebas"]::before {
+  content: "Bebas";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="oswald"]::before {
+  content: "Oswald";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="roboto"]::before {
+  content: "Roboto";
+}
+
+.ql-font-inter { font-family: 'Inter', sans-serif; }
+.ql-font-poppins { font-family: 'Poppins', sans-serif; }
+.ql-font-montserrat { font-family: 'Montserrat', sans-serif; }
+.ql-font-bebas { font-family: 'Bebas Neue', sans-serif; }
+.ql-font-oswald { font-family: 'Oswald', sans-serif; }
+.ql-font-roboto { font-family: 'Roboto', sans-serif; }
