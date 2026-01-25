@@ -66,6 +66,19 @@ const CMS_FOLDERS: Record<string, CmsFolder[]> = {
       areas: [{ key: "carteira_info", title: "Carteira › Informações" }],
     },
   ],
+
+  // 🔥 NOVA PÁGINA DE ANÚNCIO
+  anuncio: [
+    {
+      label: "Anúncio",
+      areas: [
+        {
+          key: "anuncio_main",
+          title: "Página de Anúncio › Conteúdo Principal",
+        },
+      ],
+    },
+  ],
 };
 
 export default function AdminConteudoControl() {
