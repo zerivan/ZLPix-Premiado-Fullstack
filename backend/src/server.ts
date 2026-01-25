@@ -17,6 +17,9 @@ import walletRoutes from "./routes/wallet";
 // PUSH
 import pushRoutes from "./routes/push";
 
+// 🔥 NOVO: ADMIN PUSH MANUAL
+import adminPushRoutes from "./routes/admin-push";
+
 // ROTAS ADMIN
 import adminUsuariosRoutes from "./routes/admin-usuarios";
 import adminGanhadoresRoutes from "./routes/admin-ganhadores";
@@ -100,6 +103,9 @@ app.use("/api/admin/apuracao", adminAuth, adminApuracaoRoutes);
 app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
+
+// 🔥 NOVO: ADMIN PUSH MANUAL
+app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
 // IA ADMIN
 app.use(
