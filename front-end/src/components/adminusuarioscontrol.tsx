@@ -75,6 +75,11 @@ export default function UsuariosControl() {
             key={u.id}
             className="rounded border p-3 text-sm space-y-1"
           >
+            {/* 🔥 ID ADICIONADO */}
+            <div>
+              <strong>ID:</strong> {u.id}
+            </div>
+
             <div>
               <strong>Nome:</strong> {u.name}
             </div>
