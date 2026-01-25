@@ -78,7 +78,7 @@ export default function App() {
         if (!userId) return;
 
         // ✅ ENDPOINT CORRETO
-        await fetch(`${import.meta.env.VITE_API_URL}/push/register`, {
+        await fetch(`${import.meta.env.VITE_API_URL}/push/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
