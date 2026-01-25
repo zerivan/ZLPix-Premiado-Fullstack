@@ -54,7 +54,6 @@ export default function Perfil() {
     );
   }
 
-  // 🗓️ Função para formatar a data com segurança
   const getSafeDate = (dateString?: string) => {
     if (!dateString) return null;
     const parsedDate = new Date(dateString);
@@ -70,15 +69,12 @@ export default function Perfil() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white p-6 font-display pb-24 flex flex-col">
-      {/* 🧑‍💼 Cabeçalho */}
       <header className="flex flex-col items-center mb-8">
         <div className="relative">
-          {/* Avatar */}
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-yellow-300 to-green-400 flex items-center justify-center text-blue-900 text-5xl font-extrabold shadow-2xl border-4 border-white/30">
             {user.name?.[0]?.toUpperCase() || "U"}
           </div>
 
-          {/* Ícone editar (placeholder futuro) */}
           <div className="absolute bottom-1 right-1 bg-yellow-400 p-1.5 rounded-full border border-blue-900 cursor-pointer shadow-md hover:scale-105 transition-transform">
             <span className="material-symbols-outlined text-blue-900 text-sm">edit</span>
           </div>
@@ -88,8 +84,18 @@ export default function Perfil() {
         <p className="text-sm text-yellow-300">{user.email}</p>
       </header>
 
-      {/* 📋 Informações do Usuário */}
       <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 shadow-lg mb-6 space-y-3 text-sm">
+
+        {/* 🔥 ID DO USUÁRIO */}
+        {user.id && (
+          <div className="flex justify-between border-b border-white/10 pb-1">
+            <span className="text-white/70">ID do usuário</span>
+            <span className="font-semibold text-yellow-300">
+              #{user.id}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between border-b border-white/10 pb-1">
           <span className="text-white/70">Nome</span>
           <span className="font-semibold text-yellow-300">{user.name}</span>
@@ -124,7 +130,6 @@ export default function Perfil() {
         )}
       </div>
 
-      {/* 🚪 Botão de Logout */}
       <button
         onClick={handleLogout}
         className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
@@ -132,7 +137,6 @@ export default function Perfil() {
         Sair da Conta
       </button>
 
-      {/* 📱 Menu inferior fixo */}
       <NavBottom />
     </div>
   );
