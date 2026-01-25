@@ -14,6 +14,7 @@ import AddCreditos from "../pages/add-creditos";
 import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
+import Anuncio from "../pages/anuncio"; // 🔥 NOVO
 
 // Admin
 import AdminRoute from "../components/adminroute";
@@ -61,6 +62,9 @@ export default function AppRoutes() {
     <Routes>
       {/* HOME PÚBLICA */}
       <Route path="/" element={<Home />} />
+
+      {/* 🔥 PÁGINA DE ANÚNCIO (PÚBLICA E DIRETA VIA URL) */}
+      <Route path="/anuncio" element={<Anuncio />} />
 
       {/* Auth usuário */}
       <Route path="/login" element={<Login />} />
@@ -122,7 +126,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ➕ ADD CRÉDITOS */}
       <Route
         path="/add-creditos"
         element={
@@ -132,7 +135,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* 💰 PIX DA CARTEIRA (SEM PRIVATE ROUTE) */}
       <Route path="/pix-carteira" element={<PixCarteira />} />
 
       <Route
@@ -144,7 +146,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* PIX DOS BILHETES */}
       <Route
         path="/pagamento"
         element={
