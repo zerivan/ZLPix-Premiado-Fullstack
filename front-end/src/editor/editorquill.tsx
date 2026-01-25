@@ -29,7 +29,7 @@ const QUILL_MODULES = {
     ["bold", "italic", "underline", "strike"],
     [{ color: [] }, { background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet"] },
+    [{ list: "ordered" }, { list: "bullet" }],
     ["link"],
     ["clean"],
   ],
@@ -55,7 +55,7 @@ export default function EditorQuill({
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
 
-  // 🔥 PUSH STATES
+  // PUSH STATES
   const [showPushModal, setShowPushModal] = useState(false);
   const [pushType, setPushType] = useState<"broadcast" | "user">("broadcast");
   const [userId, setUserId] = useState("");
@@ -64,6 +64,9 @@ export default function EditorQuill({
   const SITE_URL = window.location.origin;
   const API_URL = import.meta.env.VITE_API_URL;
 
+  /* =========================
+     CARREGA FONTES GOOGLE
+  ========================= */
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -99,7 +102,6 @@ export default function EditorQuill({
     }
   }
 
-  // 🔥 DISPARO PUSH
   async function handleSendPush() {
     try {
       setSendingPush(true);
@@ -137,6 +139,7 @@ export default function EditorQuill({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ================= EDITOR ================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -192,6 +195,7 @@ export default function EditorQuill({
         )}
       </div>
 
+      {/* ================= PREVIEW ================= */}
       <div className="relative border rounded overflow-hidden">
         <div className="bg-gray-800 text-white text-xs px-3 py-2 flex justify-between">
           <span>Preview real da página</span>
@@ -213,7 +217,7 @@ export default function EditorQuill({
         </div>
       </div>
 
-      {/* 🔥 MODAL PUSH */}
+      {/* ================= MODAL PUSH ================= */}
       {showPushModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
