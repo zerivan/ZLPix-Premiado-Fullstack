@@ -55,18 +55,19 @@ export default function EditorQuill({
   const [saving, setSaving] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
 
-  // PUSH STATES
   const [showPushModal, setShowPushModal] = useState(false);
   const [pushType, setPushType] = useState<"broadcast" | "user">("broadcast");
   const [userId, setUserId] = useState("");
   const [sendingPush, setSendingPush] = useState(false);
 
   const SITE_URL = window.location.origin;
-  const API_URL = import.meta.env.VITE_API_URL;
 
-  /* =========================
-     CARREGA FONTES GOOGLE
-  ========================= */
+  // 🔥 SEM import.meta (corrigido)
+  const API_URL =
+    (window as any).__API_URL__ ||
+    process.env.REACT_APP_API_URL ||
+    "";
+
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -139,7 +140,6 @@ export default function EditorQuill({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* ================= EDITOR ================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -174,19 +174,12 @@ export default function EditorQuill({
           </div>
         </div>
 
-        <div
-          style={{
-            fontFamily:
-              "'Inter','Poppins','Montserrat','Roboto','Oswald',system-ui",
-          }}
-        >
-          <ReactQuill
-            theme="snow"
-            value={html}
-            onChange={handleChange}
-            modules={QUILL_MODULES}
-          />
-        </div>
+        <ReactQuill
+          theme="snow"
+          value={html}
+          onChange={handleChange}
+          modules={QUILL_MODULES}
+        />
 
         {dirty && (
           <p className="text-xs text-yellow-600">
@@ -195,7 +188,6 @@ export default function EditorQuill({
         )}
       </div>
 
-      {/* ================= PREVIEW ================= */}
       <div className="relative border rounded overflow-hidden">
         <div className="bg-gray-800 text-white text-xs px-3 py-2 flex justify-between">
           <span>Preview real da página</span>
@@ -209,15 +201,8 @@ export default function EditorQuill({
           src={`${SITE_URL}/${page}?preview=1`}
           className="w-full h-[80vh] bg-white"
         />
-
-        <div className="pointer-events-none absolute inset-0 border-4 border-yellow-400 rounded opacity-80">
-          <div className="absolute top-4 left-4 bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1 rounded shadow">
-            Editando: {areaTitle}
-          </div>
-        </div>
       </div>
 
-      {/* ================= MODAL PUSH ================= */}
       {showPushModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
