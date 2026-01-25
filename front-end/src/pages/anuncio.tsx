@@ -1,32 +1,76 @@
-<section class="anuncio-page">
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-  <header class="anuncio-header">
-    <h1>ZLPix Premiado</h1>
-    <p>seu jogo, sua chance, seu prêmio</p>
-  </header>
+type CmsArea = {
+  key: string;
+  contentHtml: string;
+};
 
-  <section class="anuncio-hero">
-    <h2>🔥 grande sorteio especial</h2>
-    <p>o prêmio está acumulado e pode sair para você</p>
-  </section>
+export default function Anuncio() {
+  const [html, setHtml] = useState<string>("");
 
-  <section class="anuncio-content">
-    <!-- AREA CMS anuncio_main -->
-    <div>
-      <h3>🎯 oportunidade exclusiva</h3>
-      <p>participe agora e acompanhe seus resultados em tempo real.</p>
-      <p>quanto mais bilhetes, maiores suas chances.</p>
-    </div>
-  </section>
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
-  <section class="anuncio-cta">
-    <button onclick="window.location.href='/home'">
-      acessar aplicativo
-    </button>
-  </section>
+  useEffect(() => {
+    async function loadContent() {
+      try {
+        const res = await axios.get(
+          `${BASE_URL}/api/cms/public/anuncio`
+        );
 
-  <footer class="anuncio-footer">
-    <p>© ZLPix Premiado</p>
-  </footer>
+        const area = res.data?.areas?.find(
+          (a: CmsArea) => a.key === "anuncio_main"
+        );
 
-</section>
+        if (area?.contentHtml) {
+          setHtml(area.contentHtml);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar anúncio:", error);
+      }
+    }
+
+    loadContent();
+  }, [BASE_URL]);
+
+  return (
+    <section className="anuncio-page min-h-screen bg-white flex flex-col">
+
+      <header className="anuncio-header text-center py-8 bg-indigo-600 text-white">
+        <h1 className="text-3xl font-bold">ZLPix Premiado</h1>
+        <p className="text-sm opacity-90">
+          seu jogo, sua chance, seu prêmio
+        </p>
+      </header>
+
+      <section className="anuncio-hero text-center py-10 bg-yellow-100">
+        <h2 className="text-2xl font-semibold">
+          grande sorteio especial
+        </h2>
+        <p className="mt-2">
+          o prêmio está acumulado e pode sair para você
+        </p>
+      </section>
+
+      <section className="anuncio-content flex-1 max-w-4xl mx-auto p-6">
+        <div
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </section>
+
+      <section className="anuncio-cta text-center py-8">
+        <button
+          onClick={() => (window.location.href = "/home")}
+          className="bg-indigo-600 text-white px-6 py-3 rounded shadow"
+        >
+          acessar aplicativo
+        </button>
+      </section>
+
+      <footer className="anuncio-footer text-center py-4 text-sm text-gray-500">
+        © ZLPix Premiado
+      </footer>
+
+    </section>
+  );
+}
