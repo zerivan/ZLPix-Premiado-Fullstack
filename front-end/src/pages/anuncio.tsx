@@ -1,45 +1,32 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+<section class="anuncio-page">
 
-type CmsArea = {
-  key: string;
-  contentHtml: string;
-};
+  <header class="anuncio-header">
+    <h1>ZLPix Premiado</h1>
+    <p>seu jogo, sua chance, seu prêmio</p>
+  </header>
 
-export default function Anuncio() {
-  const [html, setHtml] = useState<string>("");
+  <section class="anuncio-hero">
+    <h2>🔥 grande sorteio especial</h2>
+    <p>o prêmio está acumulado e pode sair para você</p>
+  </section>
 
-  const BASE_URL = import.meta.env.VITE_API_URL;
-
-  useEffect(() => {
-    async function loadContent() {
-      try {
-        const res = await axios.get(
-          `${BASE_URL}/api/cms/public/anuncio`
-        );
-
-        const area = res.data?.areas?.find(
-          (a: CmsArea) => a.key === "anuncio_main"
-        );
-
-        if (area?.contentHtml) {
-          setHtml(area.contentHtml);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar anúncio:", error);
-      }
-    }
-
-    loadContent();
-  }, [BASE_URL]);
-
-  return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto p-6">
-        <div
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      </div>
+  <section class="anuncio-content">
+    <!-- AREA CMS anuncio_main -->
+    <div>
+      <h3>🎯 oportunidade exclusiva</h3>
+      <p>participe agora e acompanhe seus resultados em tempo real.</p>
+      <p>quanto mais bilhetes, maiores suas chances.</p>
     </div>
-  );
-}
+  </section>
+
+  <section class="anuncio-cta">
+    <button onclick="window.location.href='/home'">
+      acessar aplicativo
+    </button>
+  </section>
+
+  <footer class="anuncio-footer">
+    <p>© ZLPix Premiado</p>
+  </footer>
+
+</section>
