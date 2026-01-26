@@ -7,6 +7,7 @@ importScripts(
 /**
  * ============================
  * FIREBASE CONFIG — SERVICE WORKER
+ * (MESMO PROJETO DO FRONT)
  * ============================
  */
 firebase.initializeApp({
@@ -64,26 +65,21 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const relativeUrl =
+  const url =
     event.notification?.data?.url || "/meus-bilhetes";
-
-  // 🔥 FORÇA URL ABSOLUTA (CORREÇÃO)
-  const absoluteUrl = new URL(
-    relativeUrl,
-    self.location.origin
-  ).href;
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         for (const client of clientList) {
-          if (client.url === absoluteUrl && "focus" in client) {
+          if (client.url.includes(url) && "focus" in client) {
             return client.focus();
           }
         }
+
         if (clients.openWindow) {
-          return clients.openWindow(absoluteUrl);
+          return clients.openWindow(url);
         }
       })
   );
