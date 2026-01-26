@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 
@@ -75,6 +75,7 @@ type CmsArea = {
 export default function Home() {
   const navigate = useNavigate();
   const [showInfo, setShowInfo] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
   const isPreview = params.get("preview") === "1";
@@ -127,7 +128,46 @@ export default function Home() {
   }, [isPreview]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
+
+      {/* MENU SUPERIOR */}
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="absolute top-6 right-6 text-2xl"
+      >
+        ☰
+      </button>
+
+      {menuOpen && (
+        <div className="absolute top-14 right-6 bg-white text-black rounded-xl shadow-lg w-56 z-50">
+          <div className="flex flex-col text-sm">
+            <Link
+              to="/politica-privacidade"
+              className="px-4 py-3 hover:bg-gray-100"
+              onClick={() => setMenuOpen(false)}
+            >
+              Política de Privacidade
+            </Link>
+
+            <Link
+              to="/termos-de-uso"
+              className="px-4 py-3 hover:bg-gray-100 border-t"
+              onClick={() => setMenuOpen(false)}
+            >
+              Termos de Uso
+            </Link>
+
+            <Link
+              to="/login"
+              className="px-4 py-3 hover:bg-gray-100 border-t"
+              onClick={() => setMenuOpen(false)}
+            >
+              Área do Usuário
+            </Link>
+          </div>
+        </div>
+      )}
+
       <header className="text-center py-7 border-b border-white/10 shadow-md">
         <h1 className="text-3xl font-extrabold text-yellow-300">
           ZLPIX PREMIADO 💰
