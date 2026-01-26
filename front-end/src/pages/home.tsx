@@ -207,4 +207,3 @@ export default function Home() {
     </div>
   );
 }
-``` [❶](code://python)
