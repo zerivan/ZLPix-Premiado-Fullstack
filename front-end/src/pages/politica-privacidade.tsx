@@ -22,13 +22,16 @@ export default function PoliticaPrivacidade() {
             1. Controlador dos Dados
           </h2>
           <p>
-            A plataforma ZLPIX-PREMIADO atua como Controladora dos dados pessoais
-            coletados, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados – LGPD),
-            sendo responsável pelas decisões referentes ao tratamento das informações dos usuários.
+            A plataforma ZLPIX-PREMIADO é operada por seu responsável legal,
+            que atua como Controlador dos dados pessoais coletados, nos termos
+            da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados – LGPD),
+            sendo responsável pelas decisões referentes ao tratamento das
+            informações dos usuários.
           </p>
           <p>
-            Para assuntos relacionados à privacidade e proteção de dados, o titular poderá
-            entrar em contato pelo e-mail oficial de atendimento informado na plataforma.
+            Para solicitações relacionadas à privacidade e proteção de dados,
+            o titular poderá entrar em contato por meio do canal oficial de
+            atendimento disponibilizado na plataforma.
           </p>
         </section>
 
