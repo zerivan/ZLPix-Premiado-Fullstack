@@ -1,11 +1,7 @@
+
 import React, { useEffect } from "react";
 import AppRoutes from "./routes/index";
 import { initializeApp } from "firebase/app";
-import {
-  getMessaging,
-  getToken,
-  isSupported,
-} from "firebase/messaging";
 
 /**
  * ============================
@@ -22,7 +18,7 @@ const firebaseConfig = {
 };
 
 // Inicializa Firebase uma única vez
-const firebaseApp = initializeApp(firebaseConfig);
+initializeApp(firebaseConfig);
 
 export default function App() {
   useEffect(() => {
@@ -48,52 +44,6 @@ export default function App() {
     return () => {
       document.head.removeChild(style);
     };
-  }, []);
-
-  /**
-   * ============================
-   * WEB PUSH — ANDROID / DESKTOP
-   * ============================
-   */
-  useEffect(() => {
-    async function initPush() {
-      try {
-        const supported = await isSupported();
-        if (!supported) return;
-
-        if (Notification.permission !== "granted") {
-          const permission = await Notification.requestPermission();
-          if (permission !== "granted") return;
-        }
-
-        const messaging = getMessaging(firebaseApp);
-
-        const token = await getToken(messaging, {
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        });
-
-        if (!token) return;
-
-        const userId = localStorage.getItem("USER_ID");
-        if (!userId) return;
-
-        // ✅ ENDPOINT CORRETO
-        await fetch(`${import.meta.env.VITE_API_URL}/push/token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token,
-            userId: Number(userId),
-          }),
-        });
-      } catch (err) {
-        console.warn("Push notification indisponível:", err);
-      }
-    }
-
-    initPush();
   }, []);
 
   return <AppRoutes />;
