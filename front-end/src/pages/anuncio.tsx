@@ -9,7 +9,7 @@ type CmsArea = {
 export default function Anuncio() {
   const [html, setHtml] = useState<string>("");
 
-  const BASE_URL = import.meta.env.VITE_API_URL;
+  const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
   useEffect(() => {
     async function loadContent() {
@@ -31,46 +31,57 @@ export default function Anuncio() {
     }
 
     loadContent();
-  }, [BASE_URL]);
+  }, []);
 
   return (
-    <section className="anuncio-page min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-600 via-indigo-500 to-indigo-700 flex flex-col">
 
-      <header className="anuncio-header text-center py-8 bg-indigo-600 text-white">
-        <h1 className="text-3xl font-bold">ZLPix Premiado</h1>
-        <p className="text-sm opacity-90">
-          seu jogo, sua chance, seu prêmio
+      {/* HEADER */}
+      <header className="text-center py-10 text-white">
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          ZLPix Premiado
+        </h1>
+        <p className="mt-2 text-sm opacity-90">
+          Sua chance real de ganhar prêmios todos os dias
         </p>
       </header>
 
-      <section className="anuncio-hero text-center py-10 bg-yellow-100">
-        <h2 className="text-2xl font-semibold">
-          grande sorteio especial
-        </h2>
-        <p className="mt-2">
-          o prêmio está acumulado e pode sair para você
-        </p>
+      {/* HERO CARD */}
+      <section className="max-w-5xl mx-auto px-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">
+              Grande Sorteio Especial
+            </h2>
+            <p className="mt-3 text-gray-600">
+              Participe agora e aumente suas chances de ganhar.
+            </p>
+          </div>
+
+          {/* CONTEÚDO DINÂMICO CMS */}
+          <div className="prose max-w-none text-gray-700">
+            <div
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          </div>
+
+          {/* CTA */}
+          <div className="mt-10 text-center">
+            <button
+              onClick={() => (window.location.href = "/home")}
+              className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-semibold px-8 py-4 rounded-xl shadow-lg text-lg"
+            >
+              Acessar Aplicativo
+            </button>
+          </div>
+        </div>
       </section>
 
-      <section className="anuncio-content flex-1 max-w-4xl mx-auto p-6">
-        <div
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      </section>
-
-      <section className="anuncio-cta text-center py-8">
-        <button
-          onClick={() => (window.location.href = "/home")}
-          className="bg-indigo-600 text-white px-6 py-3 rounded shadow"
-        >
-          acessar aplicativo
-        </button>
-      </section>
-
-      <footer className="anuncio-footer text-center py-4 text-sm text-gray-500">
-        © ZLPix Premiado
+      {/* FOOTER */}
+      <footer className="mt-16 py-6 text-center text-white text-sm opacity-80">
+        © {new Date().getFullYear()} ZLPix Premiado. Todos os direitos reservados.
       </footer>
-
-    </section>
+    </div>
   );
 }
