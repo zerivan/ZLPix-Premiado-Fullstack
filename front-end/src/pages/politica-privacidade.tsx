@@ -13,7 +13,7 @@ export default function PoliticaPrivacidade() {
             Política de Privacidade
           </h1>
           <p className="text-sm text-white/70">
-            Última atualização: {new Date().toLocaleDateString("pt-BR")}
+            Última atualização: 26/01/2026
           </p>
         </header>
 
@@ -22,55 +22,58 @@ export default function PoliticaPrivacidade() {
             1. Controlador dos Dados
           </h2>
           <p>
-            Esta plataforma atua como Controladora dos dados pessoais
-            coletados, nos termos da Lei nº 13.709/2018 (Lei Geral de
-            Proteção de Dados – LGPD).
+            A plataforma ZLPIX-PREMIADO atua como Controladora dos dados pessoais
+            coletados, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados – LGPD),
+            sendo responsável pelas decisões referentes ao tratamento das informações dos usuários.
+          </p>
+          <p>
+            Para assuntos relacionados à privacidade e proteção de dados, o titular poderá
+            entrar em contato pelo e-mail oficial de atendimento informado na plataforma.
           </p>
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-yellow-300">
-            2. Dados Coletados
+            2. Dados Pessoais Coletados
           </h2>
           <ul className="list-disc pl-6 space-y-1">
             <li>Nome completo</li>
             <li>E-mail</li>
             <li>Telefone</li>
-            <li>Chave PIX</li>
-            <li>Histórico de transações</li>
-            <li>Dados técnicos (IP, navegador, dispositivo)</li>
+            <li>Chave PIX para fins de pagamento ou recebimento</li>
+            <li>Histórico de transações financeiras</li>
+            <li>Bilhetes gerados e participação em sorteios</li>
+            <li>Dados técnicos: endereço IP, navegador, dispositivo e logs de acesso</li>
           </ul>
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-yellow-300">
-            3. Finalidade do Tratamento
+            3. Finalidades do Tratamento
           </h2>
-          <p>
-            Os dados são utilizados para:
-          </p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Criação e gerenciamento de conta</li>
+            <li>Criação, autenticação e gerenciamento de conta</li>
             <li>Processamento de pagamentos via PIX</li>
-            <li>Geração de bilhetes e controle de sorteios</li>
-            <li>Envio de notificações</li>
-            <li>Prevenção a fraudes</li>
-            <li>Cumprimento de obrigações legais</li>
+            <li>Gestão de carteira digital interna</li>
+            <li>Geração e controle de bilhetes e sorteios</li>
+            <li>Envio de notificações operacionais</li>
+            <li>Prevenção a fraudes e atividades ilícitas</li>
+            <li>Cumprimento de obrigações legais e regulatórias</li>
           </ul>
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-yellow-300">
-            4. Base Legal
+            4. Bases Legais
           </h2>
           <p>
-            O tratamento de dados é realizado com fundamento:
+            O tratamento de dados pessoais ocorre com fundamento nas seguintes bases legais:
           </p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>No consentimento do titular</li>
-            <li>No cumprimento de obrigação legal</li>
-            <li>Na execução de contrato</li>
-            <li>No legítimo interesse do controlador</li>
+            <li>Execução de contrato ou de procedimentos preliminares</li>
+            <li>Cumprimento de obrigação legal ou regulatória</li>
+            <li>Legítimo interesse do controlador, respeitados os direitos do titular</li>
+            <li>Consentimento do titular, quando aplicável</li>
           </ul>
         </section>
 
@@ -79,13 +82,17 @@ export default function PoliticaPrivacidade() {
             5. Compartilhamento de Dados
           </h2>
           <p>
-            Os dados podem ser compartilhados com:
+            Os dados poderão ser compartilhados com:
           </p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Provedores de pagamento</li>
-            <li>Serviços de hospedagem e infraestrutura</li>
-            <li>Autoridades legais, quando exigido</li>
+            <li>Provedores de pagamento e instituições financeiras</li>
+            <li>Serviços de hospedagem, armazenamento em nuvem e infraestrutura</li>
+            <li>Prestadores de serviços tecnológicos essenciais à operação</li>
+            <li>Autoridades públicas, quando houver obrigação legal</li>
           </ul>
+          <p>
+            Não realizamos venda de dados pessoais.
+          </p>
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
@@ -93,9 +100,9 @@ export default function PoliticaPrivacidade() {
             6. Armazenamento e Segurança
           </h2>
           <p>
-            Adotamos medidas técnicas e organizacionais para proteger os
-            dados contra acessos não autorizados, vazamentos, alteração ou
-            destruição indevida.
+            São adotadas medidas técnicas e organizacionais adequadas para proteção
+            dos dados pessoais contra acessos não autorizados, vazamentos,
+            perda, alteração ou destruição indevida.
           </p>
         </section>
 
@@ -104,8 +111,9 @@ export default function PoliticaPrivacidade() {
             7. Retenção de Dados
           </h2>
           <p>
-            Os dados são mantidos pelo período necessário para cumprimento
-            das finalidades descritas ou conforme exigido por lei.
+            Os dados pessoais são armazenados pelo período necessário ao
+            cumprimento das finalidades descritas nesta política, respeitando
+            prazos legais aplicáveis e obrigações regulatórias.
           </p>
         </section>
 
@@ -114,14 +122,15 @@ export default function PoliticaPrivacidade() {
             8. Direitos do Titular
           </h2>
           <p>
-            O usuário pode solicitar:
+            Nos termos da LGPD, o titular poderá exercer os seguintes direitos:
           </p>
           <ul className="list-disc pl-6 space-y-1">
             <li>Confirmação da existência de tratamento</li>
             <li>Acesso aos dados</li>
-            <li>Correção de dados incompletos</li>
-            <li>Exclusão de dados (quando aplicável)</li>
-            <li>Revogação de consentimento</li>
+            <li>Correção de dados incompletos, inexatos ou desatualizados</li>
+            <li>Anonimização, bloqueio ou eliminação de dados desnecessários</li>
+            <li>Portabilidade dos dados</li>
+            <li>Revogação do consentimento, quando aplicável</li>
           </ul>
         </section>
 
@@ -130,9 +139,9 @@ export default function PoliticaPrivacidade() {
             9. Cookies e Tecnologias
           </h2>
           <p>
-            Podemos utilizar cookies e tecnologias semelhantes para
-            melhorar a experiência do usuário e garantir o funcionamento
-            adequado da plataforma.
+            Poderão ser utilizados cookies e tecnologias semelhantes para
+            autenticação, segurança, melhoria de desempenho e análise de uso
+            da plataforma.
           </p>
         </section>
 
@@ -141,8 +150,8 @@ export default function PoliticaPrivacidade() {
             10. Alterações na Política
           </h2>
           <p>
-            Esta política poderá ser atualizada a qualquer momento.
-            Recomendamos a revisão periódica desta página.
+            Esta Política de Privacidade poderá ser atualizada a qualquer momento,
+            sendo recomendada a consulta periódica desta página.
           </p>
         </section>
 
