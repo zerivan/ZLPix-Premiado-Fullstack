@@ -62,11 +62,8 @@ export default function EditorQuill({
 
   const SITE_URL = window.location.origin;
 
-  // 🔥 SEM import.meta (corrigido)
-  const API_URL =
-    (window as any).__API_URL__ ||
-    process.env.REACT_APP_API_URL ||
-    "";
+  // 🔥 URL FIXA DO BACKEND (CORREÇÃO DEFINITIVA)
+  const API_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -202,63 +199,6 @@ export default function EditorQuill({
           className="w-full h-[80vh] bg-white"
         />
       </div>
-
-      {showPushModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
-            <h4 className="font-semibold text-lg">
-              Disparar notificação
-            </h4>
-
-            <div className="space-y-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={pushType === "broadcast"}
-                  onChange={() => setPushType("broadcast")}
-                />
-                Enviar para todos
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={pushType === "user"}
-                  onChange={() => setPushType("user")}
-                />
-                Usuário específico
-              </label>
-
-              {pushType === "user" && (
-                <input
-                  type="number"
-                  placeholder="ID do usuário"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="w-full border p-2 rounded"
-                />
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowPushModal(false)}
-                className="px-4 py-2 bg-gray-400 text-white rounded"
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={handleSendPush}
-                disabled={sendingPush}
-                className="px-4 py-2 bg-green-600 text-white rounded"
-              >
-                {sendingPush ? "Enviando..." : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
