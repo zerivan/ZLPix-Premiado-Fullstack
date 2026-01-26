@@ -133,7 +133,7 @@ export default function Home() {
       {/* MENU SUPERIOR */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="absolute top-6 right-6 text-2xl"
+        className="absolute top-6 right-6 text-2xl z-50"
       >
         ☰
       </button>
