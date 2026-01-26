@@ -22,7 +22,6 @@ router.post("/send", async (req, res) => {
       });
     }
 
-    // 🔒 Normalização explícita
     const normalizedUserId =
       userId !== undefined && userId !== null
         ? Number(userId)
@@ -31,10 +30,14 @@ router.post("/send", async (req, res) => {
     const normalizedBroadcast =
       broadcast === true || broadcast === "true";
 
-    console.log("🔎 normalizedUserId:", normalizedUserId, "typeof:", typeof normalizedUserId);
+    console.log(
+      "🔎 normalizedUserId:",
+      normalizedUserId,
+      "typeof:",
+      typeof normalizedUserId
+    );
     console.log("🔎 normalizedBroadcast:", normalizedBroadcast);
 
-    // 🔒 Bloqueia ambiguidade
     if (normalizedUserId && normalizedBroadcast) {
       console.log("❌ Envio ambíguo detectado");
       return res.status(400).json({
@@ -44,7 +47,6 @@ router.post("/send", async (req, res) => {
 
     let tokens: { token: string }[] = [];
 
-    // 🔹 ENVIO PARA UM USUÁRIO ESPECÍFICO
     if (normalizedUserId) {
       console.log("📤 Buscando tokens por userId:", normalizedUserId);
 
@@ -52,19 +54,13 @@ router.post("/send", async (req, res) => {
         where: { userId: normalizedUserId },
         select: { token: true },
       });
-    }
-
-    // 🔹 ENVIO PARA TODOS
-    else if (normalizedBroadcast) {
+    } else if (normalizedBroadcast) {
       console.log("📤 Buscando tokens broadcast (todos)");
 
       tokens = await prisma.pushToken.findMany({
         select: { token: true },
       });
-    }
-
-    // 🔒 Nenhum método válido informado
-    else {
+    } else {
       console.log("❌ Nenhum método válido informado");
       return res.status(400).json({
         error: "Informe userId ou broadcast",
@@ -72,13 +68,6 @@ router.post("/send", async (req, res) => {
     }
 
     console.log("📱 Tokens encontrados:", tokens.length);
-
-    if (tokens.length) {
-      console.log(
-        "🔑 Primeiro token:",
-        tokens[0].token.substring(0, 25) + "..."
-      );
-    }
 
     if (!tokens.length) {
       return res.json({
@@ -107,6 +96,31 @@ router.post("/send", async (req, res) => {
       "failure:",
       response.failureCount
     );
+
+    // 🔥 REMOÇÃO AUTOMÁTICA DE TOKENS INVÁLIDOS
+    const invalidTokens: string[] = [];
+
+    response.responses.forEach((r, idx) => {
+      if (!r.success) {
+        invalidTokens.push(tokens[idx].token);
+        console.warn(
+          "⚠️ Token inválido:",
+          tokens[idx].token.substring(0, 25) + "...",
+          "-",
+          r.error?.message
+        );
+      }
+    });
+
+    if (invalidTokens.length) {
+      await prisma.pushToken.deleteMany({
+        where: { token: { in: invalidTokens } },
+      });
+
+      console.log(
+        `🧹 ${invalidTokens.length} token(s) inválido(s) removido(s)`
+      );
+    }
 
     return res.json({
       ok: true,
