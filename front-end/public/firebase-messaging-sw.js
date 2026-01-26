@@ -18,6 +18,11 @@ firebase.initializeApp({
   appId: "1:530368618940:web:bfbb8dd5d343eb1526cbb9",
 });
 
+/**
+ * ============================
+ * FIREBASE MESSAGING
+ * ============================
+ */
 const messaging = firebase.messaging();
 
 /**
@@ -35,12 +40,13 @@ messaging.onBackgroundMessage((payload) => {
     payload.notification?.title || "ZLPix Premiado";
 
   const notificationOptions = {
-    body: payload.notification?.body || "Você tem uma nova notificação 🎉",
+    body:
+      payload.notification?.body ||
+      "Você tem uma nova notificação 🎉",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     data: {
-      // 🔥 ALTERAÇÃO: garante que vá sempre para o app público
-      url: payload.data?.url || "/anuncio",
+      url: payload.data?.url || "/meus-bilhetes",
     },
   };
 
@@ -58,20 +64,26 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const url = event.notification?.data?.url || "/anuncio";
+  const relativeUrl =
+    event.notification?.data?.url || "/meus-bilhetes";
+
+  // 🔥 FORÇA URL ABSOLUTA (CORREÇÃO)
+  const absoluteUrl = new URL(
+    relativeUrl,
+    self.location.origin
+  ).href;
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         for (const client of clientList) {
-          if ("focus" in client) {
-            return client.navigate(url).then(() => client.focus());
+          if (client.url === absoluteUrl && "focus" in client) {
+            return client.focus();
           }
         }
-
         if (clients.openWindow) {
-          return clients.openWindow(url);
+          return clients.openWindow(absoluteUrl);
         }
       })
   );
