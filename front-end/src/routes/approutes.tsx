@@ -14,7 +14,8 @@ import AddCreditos from "../pages/add-creditos";
 import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
-import Anuncio from "../pages/anuncio"; // 🔥 NOVO
+import Anuncio from "../pages/anuncio";
+import PoliticaPrivacidade from "../pages/politica-privacidade"; // ✅ NOVA IMPORTAÇÃO
 
 // Admin
 import AdminRoute from "../components/adminroute";
@@ -63,8 +64,14 @@ export default function AppRoutes() {
       {/* HOME PÚBLICA */}
       <Route path="/" element={<Home />} />
 
-      {/* 🔥 PÁGINA DE ANÚNCIO (PÚBLICA E DIRETA VIA URL) */}
+      {/* PÁGINA DE ANÚNCIO */}
       <Route path="/anuncio" element={<Anuncio />} />
+
+      {/* ✅ NOVA ROTA — POLÍTICA DE PRIVACIDADE (PÚBLICA) */}
+      <Route
+        path="/politica-privacidade"
+        element={<PoliticaPrivacidade />}
+      />
 
       {/* Auth usuário */}
       <Route path="/login" element={<Login />} />
