@@ -7,7 +7,6 @@ importScripts(
 /**
  * ============================
  * FIREBASE CONFIG — SERVICE WORKER
- * (MESMO PROJETO DO FRONT)
  * ============================
  */
 firebase.initializeApp({
@@ -19,11 +18,6 @@ firebase.initializeApp({
   appId: "1:530368618940:web:bfbb8dd5d343eb1526cbb9",
 });
 
-/**
- * ============================
- * FIREBASE MESSAGING
- * ============================
- */
 const messaging = firebase.messaging();
 
 /**
@@ -45,7 +39,8 @@ messaging.onBackgroundMessage((payload) => {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     data: {
-      url: payload.data?.url || "/meus-bilhetes",
+      // 🔥 ALTERAÇÃO: garante que vá sempre para o app público
+      url: payload.data?.url || "/anuncio",
     },
   };
 
@@ -63,17 +58,18 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const url = event.notification?.data?.url || "/meus-bilhetes";
+  const url = event.notification?.data?.url || "/anuncio";
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         for (const client of clientList) {
-          if (client.url.includes(url) && "focus" in client) {
-            return client.focus();
+          if ("focus" in client) {
+            return client.navigate(url).then(() => client.focus());
           }
         }
+
         if (clients.openWindow) {
           return clients.openWindow(url);
         }
