@@ -61,8 +61,6 @@ export default function EditorQuill({
   const [sendingPush, setSendingPush] = useState(false);
 
   const SITE_URL = window.location.origin;
-
-  // 🔥 URL FIXA DO BACKEND (CORREÇÃO DEFINITIVA)
   const API_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
   useEffect(() => {
@@ -102,10 +100,16 @@ export default function EditorQuill({
 
   async function handleSendPush() {
     try {
+      console.log("🚀 Tentando enviar push...");
       setSendingPush(true);
 
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
-      if (!token) return;
+      console.log("🔐 Token encontrado:", !!token);
+
+      if (!token) {
+        alert("Token admin não encontrado.");
+        return;
+      }
 
       const payload: any = {
         title: "ZLPix Premiado",
@@ -119,17 +123,30 @@ export default function EditorQuill({
         payload.userId = Number(userId);
       }
 
-      await fetch(`${API_URL}/api/admin/push/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("📦 Payload:", payload);
+
+      const response = await fetch(
+        `${API_URL}/api/admin/push/send`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("📡 Status:", response.status);
+
+      const data = await response.json().catch(() => null);
+      console.log("📡 Response:", data);
 
       setShowPushModal(false);
       setUserId("");
+
+    } catch (err) {
+      console.error("❌ Erro no envio:", err);
     } finally {
       setSendingPush(false);
     }
@@ -150,6 +167,7 @@ export default function EditorQuill({
           <div className="flex gap-2">
             {page === "anuncio" && (
               <button
+                type="button"
                 onClick={() => setShowPushModal(true)}
                 className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
               >
@@ -158,6 +176,7 @@ export default function EditorQuill({
             )}
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={!dirty || saving}
               className={`px-4 py-2 rounded text-white ${
@@ -177,12 +196,6 @@ export default function EditorQuill({
           onChange={handleChange}
           modules={QUILL_MODULES}
         />
-
-        {dirty && (
-          <p className="text-xs text-yellow-600">
-            Conteúdo alterado e ainda não salvo
-          </p>
-        )}
       </div>
 
       <div className="relative border rounded overflow-hidden">
@@ -199,6 +212,65 @@ export default function EditorQuill({
           className="w-full h-[80vh] bg-white"
         />
       </div>
+
+      {showPushModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
+            <h4 className="font-semibold text-lg">
+              Disparar notificação
+            </h4>
+
+            <div className="space-y-2 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "broadcast"}
+                  onChange={() => setPushType("broadcast")}
+                />
+                Enviar para todos
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "user"}
+                  onChange={() => setPushType("user")}
+                />
+                Usuário específico
+              </label>
+
+              {pushType === "user" && (
+                <input
+                  type="number"
+                  placeholder="ID do usuário"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  className="w-full border p-2 rounded"
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPushModal(false)}
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendPush}
+                disabled={sendingPush}
+                className="px-4 py-2 bg-green-600 text-white rounded"
+              >
+                {sendingPush ? "Enviando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
