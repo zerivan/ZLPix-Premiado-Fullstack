@@ -66,7 +66,6 @@ export default function Home() {
       
       <header className="relative text-center py-7 border-b border-white/10 shadow-md">
         
-        {/* BOTÃO MENU SUPERIOR DIREITO */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="absolute right-4 top-6 text-white text-2xl"
@@ -74,9 +73,8 @@ export default function Home() {
           ☰
         </button>
 
-        {/* DROPDOWN MENU */}
         {menuOpen && (
-          <div className="absolute right-4 top-14 bg-white text-black rounded-xl shadow-lg w-52 z-50">
+          <div className="absolute right-4 top-14 bg-white text-black rounded-xl shadow-lg w-56 z-50">
             <div className="flex flex-col text-sm">
               <Link
                 to="/politica-privacidade"
@@ -84,6 +82,14 @@ export default function Home() {
                 onClick={() => setMenuOpen(false)}
               >
                 Política de Privacidade
+              </Link>
+
+              <Link
+                to="/termos-de-uso"
+                className="px-4 py-3 hover:bg-gray-100 border-t"
+                onClick={() => setMenuOpen(false)}
+              >
+                Termos de Uso
               </Link>
 
               <Link
@@ -104,8 +110,6 @@ export default function Home() {
           Concorra toda quarta-feira com a Loteria Federal 🎯
         </p>
       </header>
-
-      {/* restante do código mantido exatamente igual */}
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
         {/* conteúdo original preservado */}
