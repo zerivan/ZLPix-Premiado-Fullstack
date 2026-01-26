@@ -1,8 +1,8 @@
 // src/pages/login.tsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "../api/client";
-import { registerPush } from "../services/push"; // ✅ caminho correto
+import { registerPush } from "../services/push";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,7 +45,6 @@ export default function Login() {
 
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // ✅ REGISTRA PUSH APÓS LOGIN
       try {
         await registerPush(user.id);
       } catch (e) {
@@ -141,6 +140,18 @@ export default function Login() {
               Cadastre-se
             </span>
           </p>
+
+          {/* LINKS INSTITUCIONAIS */}
+          <div className="text-center text-xs text-white/70 mt-6 space-x-2">
+            <Link to="/politica-privacidade" className="underline">
+              Política de Privacidade
+            </Link>
+            <span>|</span>
+            <Link to="/termos-de-uso" className="underline">
+              Termos de Uso
+            </Link>
+          </div>
+
         </form>
       </div>
     </div>
