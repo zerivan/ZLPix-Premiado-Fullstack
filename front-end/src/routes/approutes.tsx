@@ -15,7 +15,8 @@ import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 import Anuncio from "../pages/anuncio";
-import PoliticaPrivacidade from "../pages/politica-privacidade"; // ✅ NOVA IMPORTAÇÃO
+import PoliticaPrivacidade from "../pages/politica-privacidade";
+import TermosDeUso from "../pages/termos-de-uso"; // ✅ NOVA IMPORTAÇÃO
 
 // Admin
 import AdminRoute from "../components/adminroute";
@@ -67,10 +68,16 @@ export default function AppRoutes() {
       {/* PÁGINA DE ANÚNCIO */}
       <Route path="/anuncio" element={<Anuncio />} />
 
-      {/* ✅ NOVA ROTA — POLÍTICA DE PRIVACIDADE (PÚBLICA) */}
+      {/* POLÍTICA DE PRIVACIDADE */}
       <Route
         path="/politica-privacidade"
         element={<PoliticaPrivacidade />}
+      />
+
+      {/* ✅ NOVA ROTA — TERMOS DE USO (PÚBLICA) */}
+      <Route
+        path="/termos-de-uso"
+        element={<TermosDeUso />}
       />
 
       {/* Auth usuário */}
