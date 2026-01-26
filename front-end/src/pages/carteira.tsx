@@ -34,14 +34,12 @@ export default function Carteira() {
   const [saldo, setSaldo] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // ===== SAQUE =====
   const [mostrarSaque, setMostrarSaque] = useState(false);
   const [valorSaque, setValorSaque] = useState("");
   const [pixKey, setPixKey] = useState("");
   const [loadingSaque, setLoadingSaque] = useState(false);
   const [erroSaque, setErroSaque] = useState<string | null>(null);
 
-  // ===== HISTÓRICO =====
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
   async function carregarSaldo() {
@@ -69,7 +67,6 @@ export default function Carteira() {
 
     const lista: Transacao[] = res.data || [];
 
-    // 🔒 MOSTRAR APENAS OS ÚLTIMOS 15 DIAS
     const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
 
     const filtradas = lista.filter(
@@ -166,7 +163,8 @@ export default function Carteira() {
         </h1>
       </header>
 
-      <main className="flex-1 px-6 pt-8 space-y-6">
+      {/* ✅ AJUSTE DE LAYOUT APLICADO AQUI */}
+      <main className="flex-1 w-full max-w-xl mx-auto px-6 pt-8 space-y-6">
         <div className="bg-white/10 p-6 rounded-3xl text-center">
           <p className="text-sm">Saldo disponível</p>
           <h2 className="text-4xl font-extrabold text-yellow-300">
