@@ -20,20 +20,43 @@ router.post("/send", async (req, res) => {
       });
     }
 
+    // 🔒 Normalização explícita
+    const normalizedUserId =
+      userId !== undefined && userId !== null
+        ? Number(userId)
+        : null;
+
+    const normalizedBroadcast =
+      broadcast === true || broadcast === "true";
+
+    // 🔒 Bloqueia ambiguidade
+    if (normalizedUserId && normalizedBroadcast) {
+      return res.status(400).json({
+        error: "Envio ambíguo: informe userId OU broadcast",
+      });
+    }
+
     let tokens: { token: string }[] = [];
 
     // 🔹 ENVIO PARA UM USUÁRIO ESPECÍFICO
-    if (userId) {
+    if (normalizedUserId) {
       tokens = await prisma.pushToken.findMany({
-        where: { userId: Number(userId) },
+        where: { userId: normalizedUserId },
         select: { token: true },
       });
     }
 
     // 🔹 ENVIO PARA TODOS
-    if (broadcast) {
+    else if (normalizedBroadcast) {
       tokens = await prisma.pushToken.findMany({
         select: { token: true },
+      });
+    }
+
+    // 🔒 Nenhum método válido informado
+    else {
+      return res.status(400).json({
+        error: "Informe userId ou broadcast",
       });
     }
 
