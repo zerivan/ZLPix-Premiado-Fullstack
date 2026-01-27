@@ -28,7 +28,7 @@ export default function PoliticaPrivacidade() {
           Política de Privacidade
         </h1>
 
-        <p className="text-sm text-white/70 mt-4">
+        <p className="text-sm text-white/70 mt-6">
           Última atualização: 26/01/2026
         </p>
       </header>
