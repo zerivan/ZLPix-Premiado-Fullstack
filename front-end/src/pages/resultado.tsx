@@ -1,5 +1,6 @@
 // src/pages/resultado.tsx
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 
@@ -18,13 +19,11 @@ function calcularDataResultado(
   dataApuracao?: string | null,
   timestampProximoSorteio?: number
 ): string | null {
-  // 1️⃣ Se backend mandou a data correta, usa ela
   if (dataApuracao) {
     const d = new Date(dataApuracao);
     if (!isNaN(d.getTime())) return formatarData(d);
   }
 
-  // 2️⃣ Caso contrário, calcula: próxima quarta - 7 dias
   if (timestampProximoSorteio) {
     const d = new Date(timestampProximoSorteio);
     d.setDate(d.getDate() - 7);
@@ -102,52 +101,74 @@ export default function Resultado() {
         {erro && <p className="text-center text-red-400 py-4">{erro}</p>}
 
         {!loading && !erro && resultado && (
-          <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
-            {temResultado ? (
-              <>
-                <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
-                  Resultado do dia {dataResultado}
-                </h2>
+          <>
+            <article className="rounded-2xl bg-white/10 border border-yellow-400/20 shadow-lg p-6 backdrop-blur-sm my-6">
+              {temResultado ? (
+                <>
+                  <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
+                    Resultado do dia {dataResultado}
+                  </h2>
 
-                <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
-                  {[0, 1, 2, 3].map((idx) => (
-                    <div key={idx} className="flex flex-col items-center">
+                  <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
+                    {[0, 1, 2, 3].map((idx) => (
+                      <div key={idx} className="flex flex-col items-center">
+                        <span className="text-sm text-blue-100 mb-2">
+                          {positionLabels[idx]}
+                        </span>
+                        <div className="h-16 w-28 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-2xl font-bold shadow-md">
+                          {resultado.premios?.[idx]}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="col-span-2 flex flex-col items-center mt-2">
                       <span className="text-sm text-blue-100 mb-2">
-                        {positionLabels[idx]}
+                        {positionLabels[4]}
                       </span>
-                      <div className="h-16 w-28 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-2xl font-bold shadow-md">
-                        {resultado.premios?.[idx]}
+                      <div className="h-14 w-32 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-xl font-bold shadow-md">
+                        {resultado.premios?.[4]}
                       </div>
                     </div>
-                  ))}
-
-                  <div className="col-span-2 flex flex-col items-center mt-2">
-                    <span className="text-sm text-blue-100 mb-2">
-                      {positionLabels[4]}
-                    </span>
-                    <div className="h-14 w-32 flex items-center justify-center rounded-xl bg-yellow-400 text-blue-900 text-xl font-bold shadow-md">
-                      {resultado.premios?.[4]}
-                    </div>
                   </div>
-                </div>
 
-                {resultado.proximoSorteio && (
-                  <p className="text-center text-xs text-blue-100/80 mt-4">
-                    Próximo resultado em{" "}
-                    <span className="text-yellow-300 font-semibold">
-                      {new Date(resultado.proximoSorteio).toLocaleDateString(
-                        "pt-BR"
-                      )}
-                    </span>
-                  </p>
-                )}
-              </>
-            ) : (
-              <h2 className="text-lg font-bold text-yellow-300 text-center">
-                Resultado indisponível
-              </h2>
-            )}
-          </article>
+                  {resultado.proximoSorteio && (
+                    <p className="text-center text-xs text-blue-100/80 mt-4">
+                      Próximo resultado em{" "}
+                      <span className="text-yellow-300 font-semibold">
+                        {new Date(resultado.proximoSorteio).toLocaleDateString(
+                          "pt-BR"
+                        )}
+                      </span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <h2 className="text-lg font-bold text-yellow-300 text-center">
+                  Resultado indisponível
+                </h2>
+              )}
+            </article>
+
+            {/* 🔥 Banner animado abaixo do card */}
+            <motion.div
+              className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden"
+              animate={{ opacity: [0.8, 1, 0.8] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <motion.span
+                animate={{ x: ["-100%", "120%"] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                className="absolute top-2 text-xl"
+              >
+                🎉💰
+              </motion.span>
+
+              <p className="text-center text-yellow-300 font-semibold text-sm">
+                Confira suas dezenas com atenção. Se você participou, este pode ser o seu momento!
+                Acompanhe sempre os resultados oficiais e boa sorte no próximo sorteio.
+              </p>
+            </motion.div>
+          </>
         )}
       </main>
 
