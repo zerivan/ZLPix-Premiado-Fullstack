@@ -18,7 +18,7 @@ export default function TermosDeUso() {
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
 
       {/* HEADER PADRÃO */}
-      <header className="relative text-center py-6 border-b border-white/10">
+      <header className="relative text-center pt-16 pb-7 border-b border-white/10 shadow-md">
         <button
           onClick={handleBack}
           className="absolute left-4 top-1/2 -translate-y-1/2 text-sm bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition"
