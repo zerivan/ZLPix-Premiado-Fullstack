@@ -30,7 +30,10 @@ async function obterPremioAtual(): Promise<number> {
     return PREMIO_BASE;
   }
 
-  const valor = Number(row.contentHtml);
+  // 🔒 Sanitiza qualquer HTML antes de converter para número
+  const textoLimpo = row.contentHtml.replace(/<[^>]*>/g, "").trim();
+  const valor = Number(textoLimpo);
+
   return isNaN(valor) || valor <= 0 ? PREMIO_BASE : valor;
 }
 
@@ -84,8 +87,6 @@ export async function processarSorteio(
 
   /**
    * 🔒 TRAVA CONTRA REPROCESSAMENTO
-   * Se já existir qualquer bilhete apurado nessa data,
-   * o sorteio não será executado novamente.
    */
   const jaProcessado = await prisma.bilhete.findFirst({
     where: {
