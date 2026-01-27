@@ -44,26 +44,46 @@ function hasVisibleHtml(html: string | null) {
   return text.length > 0;
 }
 
-/**
- * 🔒 FALLBACK FIXO — NUNCA SOME
- */
 const COMO_FUNCIONA_FALLBACK = `
-<h3 class="text-yellow-300 font-bold text-lg">🎯 Como funciona o jogo</h3>
+<h3 class="text-yellow-300 font-bold text-lg">🎯 Como Jogar</h3>
+
+<p><strong>O bilhete é composto por 03 (três) dezenas de 00 a 99.</strong></p>
+
 <p>
-Você escolhe até <strong>3 dezenas</strong> entre <strong>00 e 99</strong>.
-Cada bilhete concorre automaticamente no próximo sorteio da
-<strong>Loteria Federal</strong>.
+É permitido repetir dezenas. A data do sorteio constará no bilhete.
 </p>
+
 <p>
-Se suas dezenas coincidirem com as dezenas premiadas do
-<strong>1º ao 5º prêmio</strong>, você ganha!
+As dezenas são extraídas com base nos 5 primeiros prêmios da
+<strong>Loteria Federal</strong>, considerando apenas:
 </p>
+
+<ul class="list-disc pl-5">
+<li>Dezena inicial (dois primeiros números)</li>
+<li>Dezena final (dois últimos números)</li>
+</ul>
+
 <p>
-O prêmio é <strong>dividido automaticamente</strong> entre os ganhadores
-e o valor cai direto na sua carteira 💰
+Exemplo: 7590 → 75 e 90
 </p>
-<p class="text-xs text-white/70">
-Sorteios toda quarta-feira às 17h.
+
+<p>
+Não são consideradas dezenas intermediárias.
+</p>
+
+<p>
+Ganha quem acertar as 3 dezenas escolhidas dentro das dezenas válidas do sorteio.
+</p>
+
+<p>
+Se ninguém acertar, o prêmio acumula para o próximo sorteio.
+Havendo mais de um ganhador, o valor será dividido igualmente.
+</p>
+
+<hr class="border-white/20"/>
+
+<p class="text-center font-bold text-yellow-300">
+🎯 Clique em Apostar, escolha suas dezenas e boa sorte!
 </p>
 `;
 
@@ -130,7 +150,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
-      {/* MENU SUPERIOR */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="absolute top-6 right-6 text-2xl z-50"
@@ -141,27 +160,13 @@ export default function Home() {
       {menuOpen && (
         <div className="absolute top-14 right-6 bg-white text-black rounded-xl shadow-lg w-56 z-50">
           <div className="flex flex-col text-sm">
-            <Link
-              to="/politica-privacidade"
-              className="px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link to="/politica-privacidade" className="px-4 py-3 hover:bg-gray-100" onClick={() => setMenuOpen(false)}>
               Política de Privacidade
             </Link>
-
-            <Link
-              to="/termos-de-uso"
-              className="px-4 py-3 hover:bg-gray-100 border-t"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link to="/termos-de-uso" className="px-4 py-3 hover:bg-gray-100 border-t" onClick={() => setMenuOpen(false)}>
               Termos de Uso
             </Link>
-
-            <Link
-              to="/login"
-              className="px-4 py-3 hover:bg-gray-100 border-t"
-              onClick={() => setMenuOpen(false)}
-            >
+            <Link to="/login" className="px-4 py-3 hover:bg-gray-100 border-t" onClick={() => setMenuOpen(false)}>
               Área do Usuário
             </Link>
           </div>
@@ -191,6 +196,10 @@ export default function Home() {
             </p>
           )}
 
+          <p className="text-sm text-white/90 mt-3 font-semibold">
+            Concorra do 1º ao 5º prêmio da Loteria Federal. Apuração 100% vinculada aos resultados oficiais.
+          </p>
+
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
               className="mt-4 text-sm text-white/90"
@@ -208,6 +217,25 @@ export default function Home() {
         >
           🎯 FAZER APOSTA AGORA
         </motion.button>
+
+        {/* BANNER ANIMADO */}
+        <motion.div
+          className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 p-4 relative"
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+        >
+          <motion.span
+            animate={{ x: ["-100%", "120%"] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            className="absolute top-2 text-xl"
+          >
+            🧝‍♂️💰
+          </motion.span>
+
+          <p className="text-yellow-300 font-bold text-sm">
+            🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+          </p>
+        </motion.div>
 
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
