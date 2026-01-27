@@ -82,6 +82,23 @@ export async function processarSorteio(
   const fim = new Date(sorteioData);
   fim.setHours(23, 59, 59, 999);
 
+  /**
+   * 🔒 TRAVA CONTRA REPROCESSAMENTO
+   * Se já existir qualquer bilhete apurado nessa data,
+   * o sorteio não será executado novamente.
+   */
+  const jaProcessado = await prisma.bilhete.findFirst({
+    where: {
+      sorteioData: { gte: inicio, lte: fim },
+      apuradoEm: { not: null },
+    },
+  });
+
+  if (jaProcessado) {
+    console.log("⛔ Sorteio já processado para essa data.");
+    return { ok: false, message: "Sorteio já processado" };
+  }
+
   const bilhetes = await prisma.bilhete.findMany({
     where: {
       status: "ATIVO",
@@ -154,7 +171,6 @@ export async function processarSorteio(
     await garantirCarteira(bilhete.userId);
 
     await prisma.$transaction([
-      // 1️⃣ Incrementar saldo da wallet
       prisma.wallet.updateMany({
         where: { userId: bilhete.userId },
         data: {
@@ -162,7 +178,6 @@ export async function processarSorteio(
         },
       }),
 
-      // 2️⃣ Registro financeiro em transacao_carteira (tipo: PREMIO, status: paid)
       prisma.transacao_carteira.create({
         data: {
           userId: bilhete.userId,
@@ -176,7 +191,6 @@ export async function processarSorteio(
         },
       }),
 
-      // 3️⃣ Registro de auditoria em transacao (para bilhete premiado)
       prisma.transacao.create({
         data: {
           userId: bilhete.userId,
@@ -191,7 +205,6 @@ export async function processarSorteio(
         },
       }),
 
-      // 4️⃣ Atualizar status do bilhete
       prisma.bilhete.update({
         where: { id: bilhete.id },
         data: {
