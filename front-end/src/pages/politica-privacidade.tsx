@@ -16,7 +16,7 @@ export default function PoliticaPrivacidade() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
-      <header className="relative text-center py-7 border-b border-white/10 shadow-md">
+      <header className="relative text-center pt-16 pb-7 border-b border-white/10 shadow-md">
         <button
           onClick={handleBack}
           className="absolute left-4 top-4 bg-white/10 px-4 py-2 rounded-full text-sm"
