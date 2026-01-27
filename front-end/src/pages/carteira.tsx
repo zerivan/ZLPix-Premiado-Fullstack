@@ -163,13 +163,18 @@ export default function Carteira() {
         </h1>
       </header>
 
-      {/* ✅ AJUSTE DE LAYOUT APLICADO AQUI */}
       <main className="flex-1 w-full max-w-xl mx-auto px-6 pt-8 space-y-6">
         <div className="bg-white/10 p-6 rounded-3xl text-center">
           <p className="text-sm">Saldo disponível</p>
           <h2 className="text-4xl font-extrabold text-yellow-300">
             {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
           </h2>
+
+          {/* 🔒 AVISO DE CONFERÊNCIA ADMINISTRATIVA */}
+          <p className="text-xs text-yellow-300/90 mt-3">
+            ⚠️ O valor exibido na carteira refere-se ao resultado automático do sistema.
+            O pagamento do prêmio será realizado somente após conferência administrativa do bilhete.
+          </p>
         </div>
 
         <motion.button
