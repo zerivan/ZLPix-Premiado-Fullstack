@@ -4,6 +4,8 @@ type AssistantResponse = {
   reply: string;
 };
 
+const SUPPORT_EMAIL = "zlpixpremiado.suporte@gmail.com";
+
 export class AssistantEngine {
   private static financialKeywords = [
     "saldo",
@@ -27,7 +29,7 @@ export class AssistantEngine {
     "premiado",
     "meus bilhetes",
     "ver bilhete",
-    "bilhete"
+    "bilhetes"
   ];
 
   private static institutionalKeywords = [
@@ -42,18 +44,37 @@ export class AssistantEngine {
     "participar"
   ];
 
+  private static contactKeywords = [
+    "contato",
+    "falar com",
+    "suporte",
+    "atendimento",
+    "email",
+    "e-mail",
+    "whatsapp",
+    "endereço",
+    "link"
+  ];
+
   static async process(message: string): Promise<AssistantResponse> {
     const normalized = message.toLowerCase().trim();
 
-    // 1️⃣ Bloqueio financeiro
-    if (this.containsKeyword(normalized, this.financialKeywords)) {
+    // 1️⃣ Contato / Suporte
+    if (this.containsKeyword(normalized, this.contactKeywords)) {
       return {
-        reply:
-          "Para questões relacionadas a saldo, pagamentos ou movimentações financeiras, entre em contato com a administração pelo suporte oficial."
+        reply: `Para entrar em contato com a administração, envie um e-mail para ${SUPPORT_EMAIL}`
       };
     }
 
-    // 2️⃣ Resultado (placeholder - integração futura com serviço real)
+    // 2️⃣ Bloqueio financeiro
+    if (this.containsKeyword(normalized, this.financialKeywords)) {
+      return {
+        reply:
+          `Para questões relacionadas a saldo, pagamentos ou movimentações financeiras, envie um e-mail para ${SUPPORT_EMAIL}`
+      };
+    }
+
+    // 3️⃣ Resultado (informativo)
     if (this.containsKeyword(normalized, this.resultKeywords)) {
       return {
         reply:
@@ -61,7 +82,7 @@ export class AssistantEngine {
       };
     }
 
-    // 3️⃣ Perguntas institucionais
+    // 4️⃣ Perguntas institucionais
     if (this.containsKeyword(normalized, this.institutionalKeywords)) {
       return {
         reply:
@@ -69,10 +90,10 @@ export class AssistantEngine {
       };
     }
 
-    // 4️⃣ Fallback
+    // 5️⃣ Fallback
     return {
       reply:
-        "Não entendi sua dúvida. Pode reformular sua pergunta?"
+        `Não entendi sua dúvida. Se preferir, envie um e-mail para ${SUPPORT_EMAIL}`
     };
   }
 
