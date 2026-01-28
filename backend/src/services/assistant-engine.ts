@@ -12,100 +12,71 @@ Envie um e-mail para ${SUPPORT_EMAIL} informando seu nome completo e descrevendo
 
 const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso ajudar com informações relacionadas ao funcionamento do aplicativo, apostas, bilhetes e sorteios.
 
-Para outros assuntos, recomendo utilizar uma ferramenta de pesquisa específica. Se tiver dúvidas sobre o ZLpix, fico à disposição para ajudar.`;
+Se tiver dúvidas sobre a plataforma, fico à disposição para orientar.`;
 
 export class AssistantEngine {
+
   private static sensitiveKeywords = [
-    "saldo",
-    "saque",
-    "pix",
-    "depósito",
-    "deposito",
-    "pagamento",
-    "carteira",
-    "valor",
-    "credito",
-    "crédito",
-    "premio",
-    "prêmio",
-    "ganhei",
-    "ganhador",
-    "erro",
-    "problema",
-    "falha",
-    "bug",
-    "não caiu",
-    "nao caiu",
-    "não foi creditado",
-    "nao foi creditado",
-    "não recebi",
-    "nao recebi",
-    "não funcionou",
-    "nao funcionou",
-    "não gerou",
-    "nao gerou",
-    "não aparece",
-    "nao aparece"
+    "saldo", "saque", "pix", "depósito", "deposito",
+    "pagamento", "valor", "credito", "crédito",
+    "premio", "prêmio", "ganhei", "ganhador",
+    "erro", "problema", "falha", "bug",
+    "não caiu", "nao caiu",
+    "não foi creditado", "nao foi creditado",
+    "não recebi", "nao recebi",
+    "não funcionou", "nao funcionou",
+    "não gerou", "nao gerou",
+    "não aparece", "nao aparece"
   ];
 
-  private static institutionalKeywords = [
-    "como funciona",
-    "como jogar",
-    "aposta",
-    "bilhete",
-    "sorteio",
-    "resultado",
-    "home",
-    "carteira",
-    "regras",
-    "participar",
-    "gerar dezenas",
-    "valor do prêmio",
-    "valor do premio"
+  private static apostaKeywords = [
+    "como jogar", "como apostar", "aposta", "dezenas", "gerar"
   ];
 
-  private static contactKeywords = [
-    "contato",
-    "falar com",
-    "suporte",
-    "atendimento",
-    "email",
-    "e-mail",
-    "endereço",
-    "link"
+  private static resultadoKeywords = [
+    "resultado", "sorteio", "numero sorteado", "número sorteado"
   ];
 
   static async process(message: string): Promise<AssistantResponse> {
     const normalized = message.toLowerCase().trim();
 
-    // 1️⃣ Prioridade máxima: sensível / erro
+    // 🔒 Prioridade: Financeiro / Erro
     if (this.containsKeyword(normalized, this.sensitiveKeywords)) {
       return { reply: FINANCIAL_RESPONSE };
     }
 
-    // 2️⃣ Pedido de contato
-    if (this.containsKeyword(normalized, this.contactKeywords)) {
+    // 🎯 Módulo Apostas
+    if (this.containsKeyword(normalized, this.apostaKeywords)) {
       return {
-        reply: `Você pode entrar em contato com a administração pelo e-mail oficial: ${SUPPORT_EMAIL}`
+        reply: `Para participar, acesse a área de apostas na plataforma.
+
+Você poderá selecionar até três dezenas manualmente ou utilizar o botão 'Gerar' para escolha automática. Após definir as dezenas, confirme sua aposta.
+
+Em seguida, você será direcionado para a página de revisão, onde poderá conferir os números escolhidos. Caso queira alterar, é possível retornar e gerar novos bilhetes. Se estiver tudo correto, basta prosseguir com o pagamento.
+
+Após a confirmação do pagamento, seu bilhete será gerado automaticamente e ficará disponível na área 'Meus Bilhetes'.
+
+Se desejar, posso te orientar sobre a página 'Meus Bilhetes' ou sobre como funciona o sorteio.`
       };
     }
 
-    // 3️⃣ Perguntas institucionais
-    if (this.containsKeyword(normalized, this.institutionalKeywords)) {
+    // 🎉 Módulo Resultado
+    if (this.containsKeyword(normalized, this.resultadoKeywords)) {
       return {
-        reply:
-          "Você pode encontrar todas as informações detalhadas dentro do próprio aplicativo. Caso queira, posso explicar como funciona a área específica que você deseja consultar."
+        reply: `Os sorteios são realizados com base no resultado da Loteria Federal.
+
+A venda de bilhetes é encerrada às 17h da quarta-feira. Bilhetes adquiridos após esse horário passam a concorrer no próximo sorteio.
+
+Você pode consultar o número sorteado e verificar se seu bilhete foi premiado na página 'Resultado' do aplicativo.
+
+Se desejar, posso te orientar sobre como acompanhar seus bilhetes ou sobre a área de carteira.`
       };
     }
 
-    // 4️⃣ Fora de escopo
     return { reply: OUT_OF_SCOPE_RESPONSE };
   }
 
-  private static containsKeyword(
-    text: string,
-    keywords: string[]
-  ): boolean {
+  private static containsKeyword(text: string, keywords: string[]): boolean {
     return keywords.some((keyword) => text.includes(keyword));
   }
 }
