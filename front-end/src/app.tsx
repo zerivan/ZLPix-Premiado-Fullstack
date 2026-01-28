@@ -1,7 +1,7 @@
-
 import React, { useEffect } from "react";
 import AppRoutes from "./routes/index";
 import { initializeApp } from "firebase/app";
+import GlobalChatBot from "./components/GlobalChatBot";
 
 /**
  * ============================
@@ -46,5 +46,10 @@ export default function App() {
     };
   }, []);
 
-  return <AppRoutes />;
+  return (
+    <>
+      <AppRoutes />
+      <GlobalChatBot />
+    </>
+  );
 }
