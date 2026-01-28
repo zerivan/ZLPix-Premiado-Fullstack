@@ -33,8 +33,6 @@ const GlobalChatBot: React.FC = () => {
     window.addEventListener("mousemove", handleActivity);
     window.addEventListener("keydown", handleActivity);
     window.addEventListener("scroll", handleActivity);
-    window.addEventListener("click", handleActivity);
-    window.addEventListener("touchstart", handleActivity);
 
     return () => {
       if (timerRef.current) {
@@ -44,8 +42,6 @@ const GlobalChatBot: React.FC = () => {
       window.removeEventListener("mousemove", handleActivity);
       window.removeEventListener("keydown", handleActivity);
       window.removeEventListener("scroll", handleActivity);
-      window.removeEventListener("click", handleActivity);
-      window.removeEventListener("touchstart", handleActivity);
     };
   }, [openChat]);
 
