@@ -16,7 +16,7 @@ import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
-import TermosDeUso from "../pages/termos-de-uso"; // ✅ NOVA IMPORTAÇÃO
+import TermosDeUso from "../pages/termos-de-uso";
 
 // Admin
 import AdminRoute from "../components/adminroute";
@@ -26,6 +26,9 @@ import AdminDashboard from "../admindashboard";
 import Revisao from "../pages/revisao";
 import PixPagamento from "../pages/pixpagamento";
 import DynamicPage from "../pages/dynamicpage";
+
+// 🔥 NOVO: Chat Global
+import GlobalChatBot from "../components/GlobalChatBot";
 
 /**
  * ============================
@@ -61,143 +64,148 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
  */
 export default function AppRoutes() {
   return (
-    <Routes>
-      {/* HOME PÚBLICA */}
-      <Route path="/" element={<Home />} />
+    <>
+      <Routes>
+        {/* HOME PÚBLICA */}
+        <Route path="/" element={<Home />} />
 
-      {/* PÁGINA DE ANÚNCIO */}
-      <Route path="/anuncio" element={<Anuncio />} />
+        {/* PÁGINA DE ANÚNCIO */}
+        <Route path="/anuncio" element={<Anuncio />} />
 
-      {/* POLÍTICA DE PRIVACIDADE */}
-      <Route
-        path="/politica-privacidade"
-        element={<PoliticaPrivacidade />}
-      />
-
-      {/* ✅ NOVA ROTA — TERMOS DE USO (PÚBLICA) */}
-      <Route
-        path="/termos-de-uso"
-        element={<TermosDeUso />}
-      />
-
-      {/* Auth usuário */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-
-      {/* Usuário logado */}
-      <Route
-        path="/home"
-        element={
-          <PrivateRoute>
-            <Home />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/aposta"
-        element={
-          <PrivateRoute>
-            <ApostaPainel />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/meus-bilhetes"
-        element={
-          <PrivateRoute>
-            <MeusBilhetes />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/resultado"
-        element={
-          <PrivateRoute>
-            <Resultado />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/perfil"
-        element={
-          <PrivateRoute>
-            <Perfil />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/carteira"
-        element={
-          <PrivateRoute>
-            <Carteira />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/add-creditos"
-        element={
-          <PrivateRoute>
-            <AddCreditos />
-          </PrivateRoute>
-        }
-      />
-
-      <Route path="/pix-carteira" element={<PixCarteira />} />
-
-      <Route
-        path="/revisao"
-        element={
-          <PrivateRoute>
-            <Revisao />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/pagamento"
-        element={
-          <PrivateRoute>
-            <PixPagamento />
-          </PrivateRoute>
-        }
-      />
-
-      {/* Admin */}
-      <Route path="/admin" element={<AdminLogin />} />
-
-      <Route
-        path="/admin/dashboard"
-        element={<Navigate to="/admin/admindashboard" replace />}
-      />
-
-      <Route element={<AdminRoute />}>
+        {/* POLÍTICA DE PRIVACIDADE */}
         <Route
-          path="/admin/admindashboard"
-          element={<AdminDashboard />}
+          path="/politica-privacidade"
+          element={<PoliticaPrivacidade />}
         />
-      </Route>
 
-      {/* CMS DINÂMICO */}
-      <Route
-        path="/p/:slug"
-        element={
-          isAdminLoggedIn() || isUserLoggedIn() ? (
-            <DynamicPage />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
+        {/* TERMOS DE USO */}
+        <Route
+          path="/termos-de-uso"
+          element={<TermosDeUso />}
+        />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Auth usuário */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+
+        {/* Usuário logado */}
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/aposta"
+          element={
+            <PrivateRoute>
+              <ApostaPainel />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/meus-bilhetes"
+          element={
+            <PrivateRoute>
+              <MeusBilhetes />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/resultado"
+          element={
+            <PrivateRoute>
+              <Resultado />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/perfil"
+          element={
+            <PrivateRoute>
+              <Perfil />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/carteira"
+          element={
+            <PrivateRoute>
+              <Carteira />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/add-creditos"
+          element={
+            <PrivateRoute>
+              <AddCreditos />
+            </PrivateRoute>
+          }
+        />
+
+        <Route path="/pix-carteira" element={<PixCarteira />} />
+
+        <Route
+          path="/revisao"
+          element={
+            <PrivateRoute>
+              <Revisao />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/pagamento"
+          element={
+            <PrivateRoute>
+              <PixPagamento />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminLogin />} />
+
+        <Route
+          path="/admin/dashboard"
+          element={<Navigate to="/admin/admindashboard" replace />}
+        />
+
+        <Route element={<AdminRoute />}>
+          <Route
+            path="/admin/admindashboard"
+            element={<AdminDashboard />}
+          />
+        </Route>
+
+        {/* CMS DINÂMICO */}
+        <Route
+          path="/p/:slug"
+          element={
+            isAdminLoggedIn() || isUserLoggedIn() ? (
+              <DynamicPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* 🔥 CHAT GLOBAL (renderiza em todas as páginas) */}
+      <GlobalChatBot />
+    </>
   );
 }
