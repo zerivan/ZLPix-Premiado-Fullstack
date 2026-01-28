@@ -52,24 +52,24 @@ const GlobalChatBot: React.FC = () => {
           onClick={() => setOpenChat(true)}
           style={{
             position: "fixed",
-            bottom: 120,
-            right: 20,
+            bottom: 100,
+            right: 16,
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: 10,
             background: "#ffffff",
-            padding: "12px 16px",
-            borderRadius: 50,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+            padding: "10px 14px",
+            borderRadius: 40,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
             cursor: "pointer",
             zIndex: 9999,
-            maxWidth: 280,
+            maxWidth: "85vw",
           }}
         >
           <div
             style={{
-              width: 50,
-              height: 50,
+              width: 40,
+              height: 40,
               borderRadius: "50%",
               background: "#4f46e5",
               display: "flex",
@@ -77,16 +77,16 @@ const GlobalChatBot: React.FC = () => {
               justifyContent: "center",
               color: "#fff",
               fontWeight: "bold",
-              fontSize: 20,
+              fontSize: 18,
               flexShrink: 0,
             }}
           >
             D
           </div>
 
-          <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 13, lineHeight: 1.3 }}>
             <strong>{ASSISTANT_NAME}</strong>
-            <div>Olá, posso te ajudar de alguma forma?</div>
+            <div>Olá, posso te ajudar?</div>
           </div>
         </div>
       )}
@@ -95,9 +95,10 @@ const GlobalChatBot: React.FC = () => {
         <div
           style={{
             position: "fixed",
-            bottom: 120,
-            right: 20,
-            width: 380,
+            bottom: 100,
+            right: 16,
+            width: 360,
+            maxWidth: "95vw",
             background: "#fff",
             borderRadius: 14,
             boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
