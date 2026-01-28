@@ -33,6 +33,9 @@ import adminSorteioRoutes from "./routes/admin-sorteio";
 // IA ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
 
+// 🔥 NOVO: ASSISTENTE CLIENTE
+import assistantRoutes from "./routes/assistant";
+
 // CMS
 import cmsPublicRoutes from "./routes/cms-public";
 import cmsPreviewRoutes from "./routes/cms-preview";
@@ -87,6 +90,9 @@ app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/push", pushRoutes);
+
+// 🔥 NOVO: ASSISTENTE PÚBLICO
+app.use("/assistant", assistantRoutes);
 
 // CMS público
 app.use("/api/cms/public", cmsPublicRoutes);
