@@ -8,14 +8,16 @@ const INACTIVITY_TIME = 30000; // 30 segundos
 const GlobalChatBot: React.FC = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [openChat, setOpenChat] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🔧 CORREÇÃO: usar number (ambiente browser)
+  const timerRef = useRef<number | null>(null);
 
   const resetTimer = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
     }
 
-    timerRef.current = setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       if (!openChat) {
         setShowPrompt(true);
       }
@@ -23,7 +25,7 @@ const GlobalChatBot: React.FC = () => {
   };
 
   useEffect(() => {
-    const events = ["mousemove", "keydown", "scroll", "click"];
+    const events = ["mousemove", "keydown", "scroll", "click", "touchstart"];
 
     const handleActivity = () => {
       setShowPrompt(false);
@@ -40,7 +42,10 @@ const GlobalChatBot: React.FC = () => {
       events.forEach((event) =>
         window.removeEventListener(event, handleActivity)
       );
-      if (timerRef.current) clearTimeout(timerRef.current);
+
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+      }
     };
   }, [openChat]);
 
@@ -107,4 +112,35 @@ const GlobalChatBot: React.FC = () => {
             background: "#fff",
             borderRadius: 12,
             boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
-            zIndex
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "10px 12px",
+              borderBottom: "1px solid #eee",
+              fontWeight: "bold",
+            }}
+          >
+            Assistente
+            <span
+              style={{ cursor: "pointer" }}
+              onClick={() => setOpenChat(false)}
+            >
+              ✕
+            </span>
+          </div>
+
+          <div style={{ padding: 10 }}>
+            <ChatBot />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default GlobalChatBot;
