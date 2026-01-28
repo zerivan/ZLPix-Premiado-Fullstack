@@ -4,65 +4,53 @@ import ChatBot from "./ChatBot";
 const INACTIVITY_TIME = 30000;
 
 const ASSISTANT_NAME = "Dayane";
-const ASSISTANT_AVATAR =
-  "https://cdn-icons-png.flaticon.com/512/4712109.png";
 
 const GlobalChatBot: React.FC = () => {
   const [showAvatar, setShowAvatar] = useState(false);
   const [openChat, setOpenChat] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const startTimer = () => {
+  const resetTimer = () => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
     }
 
     timerRef.current = window.setTimeout(() => {
-      if (!openChat) {
-        setShowAvatar(true);
-      }
+      setShowAvatar(true);
     }, INACTIVITY_TIME);
   };
 
   useEffect(() => {
-    const events = ["mousemove", "keydown", "scroll", "click", "touchstart"];
+    resetTimer();
 
     const handleActivity = () => {
       if (!openChat) {
         setShowAvatar(false);
-        startTimer();
+        resetTimer();
       }
     };
 
-    events.forEach((event) =>
-      window.addEventListener(event, handleActivity)
-    );
-
-    startTimer();
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("scroll", handleActivity);
+    window.addEventListener("click", handleActivity);
+    window.addEventListener("touchstart", handleActivity);
 
     return () => {
-      events.forEach((event) =>
-        window.removeEventListener(event, handleActivity)
-      );
-
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);
       }
+
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
+      window.removeEventListener("click", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
     };
   }, [openChat]);
 
   return (
     <>
-      <style>
-        {`
-          @keyframes slideInRight {
-            from { transform: translateX(40px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-          }
-        `}
-      </style>
-
-      {/* Avatar + mensagem */}
       {showAvatar && !openChat && (
         <div
           onClick={() => setOpenChat(true)}
@@ -78,21 +66,28 @@ const GlobalChatBot: React.FC = () => {
             borderRadius: 50,
             boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
             cursor: "pointer",
-            animation: "slideInRight 0.4s ease-out",
             zIndex: 9999,
             maxWidth: 280,
           }}
         >
-          <img
-            src={ASSISTANT_AVATAR}
-            alt={ASSISTANT_NAME}
+          <div
             style={{
               width: 50,
               height: 50,
               borderRadius: "50%",
+              background: "#4f46e5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: "bold",
+              fontSize: 20,
               flexShrink: 0,
             }}
-          />
+          >
+            D
+          </div>
+
           <div style={{ fontSize: 14, lineHeight: 1.4 }}>
             <strong>{ASSISTANT_NAME}</strong>
             <div>Olá, posso te ajudar de alguma forma?</div>
@@ -100,7 +95,6 @@ const GlobalChatBot: React.FC = () => {
         </div>
       )}
 
-      {/* Janela do chat */}
       {openChat && (
         <div
           style={{
@@ -118,7 +112,7 @@ const GlobalChatBot: React.FC = () => {
           <div
             style={{
               padding: "12px 14px",
-              background: "#007bff",
+              background: "#4f46e5",
               color: "#fff",
               display: "flex",
               justifyContent: "space-between",
@@ -132,7 +126,7 @@ const GlobalChatBot: React.FC = () => {
               onClick={() => {
                 setOpenChat(false);
                 setShowAvatar(false);
-                startTimer();
+                resetTimer();
               }}
             >
               ✕
