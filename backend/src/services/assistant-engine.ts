@@ -6,42 +6,62 @@ type AssistantResponse = {
 
 const SUPPORT_EMAIL = "zlpixpremiado.suporte@gmail.com";
 
+const FINANCIAL_RESPONSE = `Para sua segurança, situações relacionadas a pagamentos, prêmios, saques, créditos na carteira ou possíveis falhas no sistema são tratadas exclusivamente pela administração.
+
+Envie um e-mail para ${SUPPORT_EMAIL} informando seu nome completo e descrevendo detalhadamente o ocorrido para que possamos verificar seu caso com prioridade.`;
+
+const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso ajudar com informações relacionadas ao funcionamento do aplicativo, apostas, bilhetes e sorteios.
+
+Para outros assuntos, recomendo utilizar uma ferramenta de pesquisa específica. Se tiver dúvidas sobre o ZLpix, fico à disposição para ajudar.`;
+
 export class AssistantEngine {
-  private static financialKeywords = [
+  private static sensitiveKeywords = [
     "saldo",
     "saque",
     "pix",
     "depósito",
     "deposito",
     "pagamento",
+    "carteira",
+    "valor",
+    "credito",
+    "crédito",
+    "premio",
+    "prêmio",
+    "ganhei",
+    "ganhador",
+    "erro",
+    "problema",
+    "falha",
+    "bug",
     "não caiu",
     "nao caiu",
-    "carteira",
-    "reembolso",
-    "estorno",
-    "valor caiu"
-  ];
-
-  private static resultKeywords = [
-    "resultado",
-    "ganhei",
-    "fui premiado",
-    "premiado",
-    "meus bilhetes",
-    "ver bilhete",
-    "bilhetes"
+    "não foi creditado",
+    "nao foi creditado",
+    "não recebi",
+    "nao recebi",
+    "não funcionou",
+    "nao funcionou",
+    "não gerou",
+    "nao gerou",
+    "não aparece",
+    "nao aparece"
   ];
 
   private static institutionalKeywords = [
     "como funciona",
-    "regras",
-    "horário",
-    "horario",
+    "como jogar",
+    "aposta",
+    "bilhete",
     "sorteio",
-    "premiação",
-    "premiacao",
-    "valor",
-    "participar"
+    "resultado",
+    "home",
+    "carteira",
+    "regras",
+    "participar",
+    "gerar dezenas",
+    "valor do prêmio",
+    "valor do premio"
   ];
 
   private static contactKeywords = [
@@ -51,7 +71,6 @@ export class AssistantEngine {
     "atendimento",
     "email",
     "e-mail",
-    "whatsapp",
     "endereço",
     "link"
   ];
@@ -59,42 +78,28 @@ export class AssistantEngine {
   static async process(message: string): Promise<AssistantResponse> {
     const normalized = message.toLowerCase().trim();
 
-    // 1️⃣ Contato / Suporte
+    // 1️⃣ Prioridade máxima: sensível / erro
+    if (this.containsKeyword(normalized, this.sensitiveKeywords)) {
+      return { reply: FINANCIAL_RESPONSE };
+    }
+
+    // 2️⃣ Pedido de contato
     if (this.containsKeyword(normalized, this.contactKeywords)) {
       return {
-        reply: `Para entrar em contato com a administração, envie um e-mail para ${SUPPORT_EMAIL}`
+        reply: `Você pode entrar em contato com a administração pelo e-mail oficial: ${SUPPORT_EMAIL}`
       };
     }
 
-    // 2️⃣ Bloqueio financeiro
-    if (this.containsKeyword(normalized, this.financialKeywords)) {
-      return {
-        reply:
-          `Para questões relacionadas a saldo, pagamentos ou movimentações financeiras, envie um e-mail para ${SUPPORT_EMAIL}`
-      };
-    }
-
-    // 3️⃣ Resultado (informativo)
-    if (this.containsKeyword(normalized, this.resultKeywords)) {
-      return {
-        reply:
-          "Para consultar seus bilhetes e resultados do sorteio, acesse a área de bilhetes no painel do usuário."
-      };
-    }
-
-    // 4️⃣ Perguntas institucionais
+    // 3️⃣ Perguntas institucionais
     if (this.containsKeyword(normalized, this.institutionalKeywords)) {
       return {
         reply:
-          "O ZLpix Premiado funciona através da compra de bilhetes para participação em sorteios. Após a confirmação do pagamento, seu bilhete participa automaticamente do próximo sorteio. Fique atento às regras e datas divulgadas na plataforma."
+          "Você pode encontrar todas as informações detalhadas dentro do próprio aplicativo. Caso queira, posso explicar como funciona a área específica que você deseja consultar."
       };
     }
 
-    // 5️⃣ Fallback
-    return {
-      reply:
-        `Não entendi sua dúvida. Se preferir, envie um e-mail para ${SUPPORT_EMAIL}`
-    };
+    // 4️⃣ Fora de escopo
+    return { reply: OUT_OF_SCOPE_RESPONSE };
   }
 
   private static containsKeyword(
