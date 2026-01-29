@@ -1,6 +1,4 @@
-// front-end/src/components/ChatBot.tsx
-
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type Message = {
   role: "user" | "assistant";
@@ -11,6 +9,22 @@ const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // 🔹 Mensagem inicial automática
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Olá, eu sou a Dayane. Estou aqui para te orientar sobre o funcionamento do ZLpix Premiado. Como posso ajudar?",
+      },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -36,7 +50,7 @@ const ChatBot: React.FC = () => {
 
       const botMessage: Message = {
         role: "assistant",
-        content: data.reply || "Erro ao processar resposta.",
+        content: data.reply || "Não foi possível processar sua solicitação.",
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -61,15 +75,16 @@ const ChatBot: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "0 auto" }}>
+    <div style={{ width: "100%" }}>
       <div
         style={{
-          border: "1px solid #ccc",
+          border: "1px solid #ddd",
           borderRadius: 8,
           padding: 10,
-          height: 400,
+          height: 260,
           overflowY: "auto",
           marginBottom: 10,
+          background: "#fafafa",
         }}
       >
         {messages.map((msg, index) => (
@@ -83,11 +98,13 @@ const ChatBot: React.FC = () => {
             <span
               style={{
                 display: "inline-block",
-                padding: "6px 10px",
+                padding: "8px 12px",
                 borderRadius: 12,
                 background:
-                  msg.role === "user" ? "#007bff" : "#e5e5ea",
+                  msg.role === "user" ? "#4f46e5" : "#e5e5ea",
                 color: msg.role === "user" ? "#fff" : "#000",
+                maxWidth: "85%",
+                wordBreak: "break-word",
               }}
             >
               {msg.content}
@@ -95,22 +112,45 @@ const ChatBot: React.FC = () => {
           </div>
         ))}
 
-        {loading && <div>Assistente digitando...</div>}
+        {loading && (
+          <div style={{ fontSize: 13, color: "#666" }}>
+            Dayane está digitando...
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyPress}
-        placeholder="Digite sua pergunta..."
-        style={{
-          width: "100%",
-          padding: 8,
-          borderRadius: 6,
-          border: "1px solid #ccc",
-        }}
-      />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="Digite sua pergunta..."
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+
+        <button
+          onClick={sendMessage}
+          disabled={loading}
+          style={{
+            padding: "0 16px",
+            borderRadius: 6,
+            border: "none",
+            background: "#4f46e5",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          Enviar
+        </button>
+      </div>
     </div>
   );
 };
