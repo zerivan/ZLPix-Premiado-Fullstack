@@ -23,7 +23,6 @@ function parseDataBR(data: string): string | null {
 
 router.get("/", async (_req, res) => {
   try {
-    // ✅ API pública alternativa (não bloqueia servidor)
     const response = await fetch(
       "https://api.guidi.dev.br/loteria/federal/ultimo",
       {
@@ -40,16 +39,8 @@ router.get("/", async (_req, res) => {
 
     const json: any = await response.json();
 
-    /**
-     * Estrutura esperada da API:
-     * {
-     *   dataApuracao: "DD/MM/YYYY",
-     *   premios: [
-     *     { numero: "12345" },
-     *     ...
-     *   ]
-     * }
-     */
+    // DEBUG controlado para validar estrutura real
+    console.log("DEBUG FEDERAL JSON:", JSON.stringify(json));
 
     const dataApuracaoISO = json?.dataApuracao
       ? parseDataBR(json.dataApuracao)
@@ -57,9 +48,24 @@ router.get("/", async (_req, res) => {
 
     let premios: string[] = [];
 
-    if (Array.isArray(json?.premios)) {
+    // 🔹 FORMATO 1: premios = ["12345", ...]
+    if (Array.isArray(json?.premios) && typeof json.premios[0] === "string") {
+      premios = json.premios
+        .filter((n: string) => /^\d{5}$/.test(n))
+        .slice(0, 5);
+    }
+
+    // 🔹 FORMATO 2: premios = [{ numero: "12345" }]
+    else if (Array.isArray(json?.premios)) {
       premios = json.premios
         .map((p: any) => String(p.numero))
+        .filter((n: string) => /^\d{5}$/.test(n))
+        .slice(0, 5);
+    }
+
+    // 🔹 FORMATO 3: listaDezenas = ["12345", ...]
+    else if (Array.isArray(json?.listaDezenas)) {
+      premios = json.listaDezenas
         .filter((n: string) => /^\d{5}$/.test(n))
         .slice(0, 5);
     }
