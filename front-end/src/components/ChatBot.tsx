@@ -141,6 +141,7 @@ const ChatBot: React.FC = () => {
             padding: 10,
             borderRadius: 6,
             border: "1px solid #ccc",
+            color: "#000", // 🔥 Correção: garante que o texto digitado apareça
           }}
         />
 
