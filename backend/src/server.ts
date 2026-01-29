@@ -91,8 +91,8 @@ app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/push", pushRoutes);
 
-// 🔥 NOVO: ASSISTENTE PÚBLICO
-app.use("/assistant", assistantRoutes);
+// 🔥 ASSISTENTE PÚBLICO PADRONIZADO
+app.use("/api/assistant", assistantRoutes);
 
 // CMS público
 app.use("/api/cms/public", cmsPublicRoutes);
