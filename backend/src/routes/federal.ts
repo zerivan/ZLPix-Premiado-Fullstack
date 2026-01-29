@@ -14,9 +14,9 @@ function getNextWednesday(): Date {
 }
 
 function parseDataBR(data: string): string | null {
-  // recebe DD/MM/YYYY e devolve ISO
   const [d, m, y] = data.split("/");
   if (!d || !m || !y) return null;
+
   const iso = new Date(`${y}-${m}-${d}T20:00:00-03:00`);
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
@@ -24,38 +24,38 @@ function parseDataBR(data: string): string | null {
 router.get("/", async (_req, res) => {
   try {
     const response = await fetch(
-      "https://loterias.caixa.gov.br/Paginas/Federal.aspx",
+      "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
       {
         headers: {
           "User-Agent": "Mozilla/5.0",
-          Accept: "text/html",
+          Accept: "application/json",
         },
       }
     );
 
-    const html = await response.text();
-
-    // 🔹 DATA DO SORTEIO (IDENTIFICADOR REAL)
-    let dataApuracaoISO: string | null = null;
-    const dataMatch = html.match(/(\d{2}\/\d{2}\/\d{4})/);
-    if (dataMatch) {
-      dataApuracaoISO = parseDataBR(dataMatch[1]);
+    if (!response.ok) {
+      console.error("Erro HTTP Federal API:", response.status);
+      return res.status(500).json({ ok: false });
     }
 
-    // 🔹 NÚMEROS SORTEADOS (1º AO 5º)
-    let numeros: string[] = [];
-    const regex =
-      /<td[^>]*>\s*\d{1}\s*<\/td>\s*<td[^>]*>\s*(\d{5})\s*<\/td>/g;
+    const json: any = await response.json();
 
-    let m;
-    while ((m = regex.exec(html)) !== null) {
-      numeros.push(m[1]);
-    }
+    // 🔹 Extrai dados do JSON oficial
+    const dataApuracaoISO = json?.dataApuracao
+      ? parseDataBR(json.dataApuracao)
+      : null;
 
-    if (numeros.length < 5) {
-      numeros = [...html.matchAll(/(\d{5})/g)]
-        .map(v => v[1])
-        .slice(0, 5);
+    const premios: string[] = Array.isArray(json?.listaDezenas)
+      ? json.listaDezenas.slice(0, 5)
+      : Array.isArray(json?.dezenas)
+      ? json.dezenas.slice(0, 5)
+      : [];
+
+    if (premios.length !== 5) {
+      console.warn("⚠️ Resultado da Federal inválido ou incompleto");
+      return res.json({
+        ok: false,
+      });
     }
 
     const proximoSorteio = getNextWednesday();
@@ -63,8 +63,8 @@ router.get("/", async (_req, res) => {
     return res.json({
       ok: true,
       data: {
-        dataApuracao: dataApuracaoISO, // ✅ ISO válido
-        premios: numeros,              // ✅ string[]
+        dataApuracao: dataApuracaoISO,
+        premios,
         proximoSorteio: proximoSorteio.toISOString(),
         timestampProximoSorteio: proximoSorteio.getTime(),
       },
