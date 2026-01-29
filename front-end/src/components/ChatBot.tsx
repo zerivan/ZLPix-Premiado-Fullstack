@@ -12,7 +12,6 @@ const ChatBot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // 🔹 Mensagem inicial automática
     setMessages([
       {
         role: "assistant",
@@ -38,19 +37,23 @@ const ChatBot: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("/assistant/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: input }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/assistant/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: input }),
+        }
+      );
 
       const data = await response.json();
 
       const botMessage: Message = {
         role: "assistant",
-        content: data.reply || "Não foi possível processar sua solicitação.",
+        content:
+          data.reply || "Não foi possível processar sua solicitação.",
       };
 
       setMessages((prev) => [...prev, botMessage]);
