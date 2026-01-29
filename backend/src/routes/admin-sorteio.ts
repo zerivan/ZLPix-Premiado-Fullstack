@@ -42,9 +42,13 @@ router.post("/processar", async (req, res) => {
     }
 
     const dezenas: string[] = [];
+
     for (const num of json.data.premios) {
-      dezenas.push(num.slice(0, 2));
-      dezenas.push(num.slice(-2));
+      if (typeof num === "string" && num.length >= 4) {
+        const milhar = num.slice(-4);      // ✅ pega apenas a milhar
+        dezenas.push(milhar.slice(0, 2));  // frente da milhar
+        dezenas.push(milhar.slice(-2));    // fundo da milhar
+      }
     }
 
     await processarSorteio(
