@@ -1,4 +1,3 @@
-// backend/src/routes/federal.ts
 import express from "express";
 
 const router = express.Router();
@@ -39,34 +38,23 @@ router.get("/", async (_req, res) => {
 
     const json: any = await response.json();
 
-    // DEBUG controlado para validar estrutura real
-    console.log("DEBUG FEDERAL JSON:", JSON.stringify(json));
-
     const dataApuracaoISO = json?.dataApuracao
       ? parseDataBR(json.dataApuracao)
       : null;
 
     let premios: string[] = [];
 
-    // 🔹 FORMATO 1: premios = ["12345", ...]
-    if (Array.isArray(json?.premios) && typeof json.premios[0] === "string") {
+    if (Array.isArray(json?.premios)) {
       premios = json.premios
-        .filter((n: string) => /^\d{5}$/.test(n))
+        .map((p: any) => String(p.numero ?? p))
+        .filter((n: string) => /^\d{5,6}$/.test(n))
         .slice(0, 5);
     }
 
-    // 🔹 FORMATO 2: premios = [{ numero: "12345" }]
-    else if (Array.isArray(json?.premios)) {
-      premios = json.premios
-        .map((p: any) => String(p.numero))
-        .filter((n: string) => /^\d{5}$/.test(n))
-        .slice(0, 5);
-    }
-
-    // 🔹 FORMATO 3: listaDezenas = ["12345", ...]
-    else if (Array.isArray(json?.listaDezenas)) {
+    if (Array.isArray(json?.listaDezenas)) {
       premios = json.listaDezenas
-        .filter((n: string) => /^\d{5}$/.test(n))
+        .map((n: any) => String(n))
+        .filter((n: string) => /^\d{5,6}$/.test(n))
         .slice(0, 5);
     }
 
