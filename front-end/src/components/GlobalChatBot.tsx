@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import ChatBot from "./ChatBot";
 
 const INACTIVITY_TIME = 30000;
-
 const ASSISTANT_NAME = "Dayane";
 
 const GlobalChatBot: React.FC = () => {
@@ -16,7 +15,9 @@ const GlobalChatBot: React.FC = () => {
     }
 
     timerRef.current = window.setTimeout(() => {
-      setShowAvatar(true);
+      if (!openChat) {
+        setShowAvatar(true);
+      }
     }, INACTIVITY_TIME);
   };
 
@@ -52,31 +53,32 @@ const GlobalChatBot: React.FC = () => {
           onClick={() => setOpenChat(true)}
           style={{
             position: "fixed",
-            bottom: 100,
-            right: 16,
+            bottom: 110,
+            right: 18,
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            background: "#ffffff",
-            padding: "10px 14px",
-            borderRadius: 40,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
+            gap: 12,
+            background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+            color: "#fff",
+            padding: "10px 16px",
+            borderRadius: 50,
+            boxShadow: "0 8px 22px rgba(0,0,0,0.25)",
             cursor: "pointer",
             zIndex: 9999,
-            maxWidth: "85vw",
+            maxWidth: 260,
           }}
         >
           <div
             style={{
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               borderRadius: "50%",
-              background: "#4f46e5",
+              background: "#ffffff",
+              color: "#4f46e5",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 700,
               fontSize: 18,
               flexShrink: 0,
             }}
@@ -84,9 +86,13 @@ const GlobalChatBot: React.FC = () => {
             D
           </div>
 
-          <div style={{ fontSize: 13, lineHeight: 1.3 }}>
-            <strong>{ASSISTANT_NAME}</strong>
-            <div>Olá, posso te ajudar?</div>
+          <div style={{ lineHeight: 1.3 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              {ASSISTANT_NAME}
+            </div>
+            <div style={{ fontSize: 13 }}>
+              Olá, posso te ajudar?
+            </div>
           </div>
         </div>
       )}
@@ -96,9 +102,9 @@ const GlobalChatBot: React.FC = () => {
           style={{
             position: "fixed",
             bottom: 100,
-            right: 16,
+            right: 18,
             width: 360,
-            maxWidth: "95vw",
+            maxWidth: "92vw",
             background: "#fff",
             borderRadius: 14,
             boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
@@ -115,11 +121,12 @@ const GlobalChatBot: React.FC = () => {
               justifyContent: "space-between",
               alignItems: "center",
               fontWeight: 600,
+              fontSize: 14,
             }}
           >
             Fale com {ASSISTANT_NAME}
             <span
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", fontSize: 16 }}
               onClick={() => {
                 setOpenChat(false);
                 setShowAvatar(false);
