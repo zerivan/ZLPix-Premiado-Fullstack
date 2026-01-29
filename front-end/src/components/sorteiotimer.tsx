@@ -1,50 +1,153 @@
-// front-end/src/components/sorteiotimer.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "../api/client";
 
-/**
- * 🔹 Timer simples e compatível com qualquer fuso horário.
- * 🔹 Usa horário UTC para evitar diferenças entre regiões.
- */
-export default function SorteioTimer() {
-  const [timeLeft, setTimeLeft] = useState("00d 00h 00m 00s");
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export default function ChatBot() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Sorteio daqui a 3 dias (em UTC)
-    const sorteioTimeUTC = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).getTime();
-
-    const timer = setInterval(() => {
-      const nowUTC = new Date().getTime();
-      const diff = sorteioTimeUTC - nowUTC;
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        setTimeLeft("00d 00h 00m 00s");
-        return;
-      }
-
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const m = Math.floor((diff / (1000 * 60)) % 60);
-      const s = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft(
-        `${String(d).padStart(2, "0")}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`
-      );
-    }, 1000);
-
-    return () => clearInterval(timer);
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Olá, eu sou a Dayane. Estou aqui para te orientar sobre o funcionamento do ZLpix Premiado. Como posso ajudar?",
+      },
+    ]);
   }, []);
 
-  return (
-    <div className="text-center">
-      <h2 className="text-lg font-bold text-yellow-300 mb-1">🎯 Próximo Sorteio</h2>
-      <p className="text-3xl font-bold text-white mb-2">💰 R$ 50.000</p>
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-      <div className="flex justify-center items-center gap-2 text-yellow-200 font-mono text-lg bg-blue-900/30 px-4 py-2 rounded-xl border border-yellow-400/20 shadow-md">
-        {timeLeft}
+  async function sendMessage() {
+    if (!input.trim()) return;
+
+    const userMessage: Message = {
+      role: "user",
+      content: input,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await api.post("/assistant/chat", {
+        message: userMessage.content,
+      });
+
+      const botMessage: Message = {
+        role: "assistant",
+        content:
+          response.data?.reply ||
+          "Não foi possível processar sua solicitação.",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Não foi possível comunicar com o servidor no momento.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ width: "100%" }}>
+      <div
+        style={{
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          padding: 10,
+          height: 260,
+          overflowY: "auto",
+          marginBottom: 10,
+          background: "#fafafa",
+        }}
+      >
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            style={{
+              textAlign: msg.role === "user" ? "right" : "left",
+              marginBottom: 8,
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                padding: "8px 12px",
+                borderRadius: 12,
+                background:
+                  msg.role === "user" ? "#4f46e5" : "#e5e5ea",
+                color: msg.role === "user" ? "#fff" : "#000",
+                maxWidth: "85%",
+                wordBreak: "break-word",
+              }}
+            >
+              {msg.content}
+            </span>
+          </div>
+        ))}
+
+        {loading && (
+          <div style={{ fontSize: 13, color: "#666" }}>
+            Dayane está digitando...
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      <p className="text-sm text-blue-100 mt-2 italic">Sorteio em andamento... 🍀</p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage();
+        }}
+        style={{ display: "flex", gap: 8 }}
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Digite sua pergunta..."
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            padding: "0 16px",
+            borderRadius: 6,
+            border: "none",
+            background: "#4f46e5",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          Enviar
+        </button>
+      </form>
     </div>
   );
 }
