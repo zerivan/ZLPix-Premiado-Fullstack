@@ -27,7 +27,6 @@ router.get("/", async (_req, res) => {
       "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
       {
         headers: {
-          "User-Agent": "Mozilla/5.0",
           Accept: "application/json",
         },
       }
@@ -40,22 +39,22 @@ router.get("/", async (_req, res) => {
 
     const json: any = await response.json();
 
-    // 🔹 Extrai dados do JSON oficial
     const dataApuracaoISO = json?.dataApuracao
       ? parseDataBR(json.dataApuracao)
       : null;
 
-    const premios: string[] = Array.isArray(json?.listaDezenas)
-      ? json.listaDezenas.slice(0, 5)
-      : Array.isArray(json?.dezenas)
-      ? json.dezenas.slice(0, 5)
+    // 🔹 Extrai os 5 prêmios e converte para MILHAR (últimos 4 dígitos)
+    const premiosBrutos: string[] = Array.isArray(json?.listaResultados)
+      ? json.listaResultados.slice(0, 5).map((r: any) => r.numero)
       : [];
+
+    const premios: string[] = premiosBrutos
+      .map((num) => num?.slice(-4))
+      .filter((n) => typeof n === "string" && n.length === 4);
 
     if (premios.length !== 5) {
       console.warn("⚠️ Resultado da Federal inválido ou incompleto");
-      return res.json({
-        ok: false,
-      });
+      return res.json({ ok: false });
     }
 
     const proximoSorteio = getNextWednesday();
