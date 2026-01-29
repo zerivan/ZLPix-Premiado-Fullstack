@@ -23,8 +23,9 @@ function parseDataBR(data: string): string | null {
 
 router.get("/", async (_req, res) => {
   try {
+    // ✅ API pública alternativa (não bloqueia servidor)
     const response = await fetch(
-      "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
+      "https://api.guidi.dev.br/loteria/federal/ultimo",
       {
         headers: {
           Accept: "application/json",
@@ -33,24 +34,35 @@ router.get("/", async (_req, res) => {
     );
 
     if (!response.ok) {
-      console.error("Erro HTTP Federal API:", response.status);
+      console.error("Erro HTTP Federal API alternativa:", response.status);
       return res.status(500).json({ ok: false });
     }
 
     const json: any = await response.json();
 
+    /**
+     * Estrutura esperada da API:
+     * {
+     *   dataApuracao: "DD/MM/YYYY",
+     *   premios: [
+     *     { numero: "12345" },
+     *     ...
+     *   ]
+     * }
+     */
+
     const dataApuracaoISO = json?.dataApuracao
       ? parseDataBR(json.dataApuracao)
       : null;
 
-    // 🔹 Extrai os 5 prêmios e converte para MILHAR (últimos 4 dígitos)
-    const premiosBrutos: string[] = Array.isArray(json?.listaResultados)
-      ? json.listaResultados.slice(0, 5).map((r: any) => r.numero)
-      : [];
+    let premios: string[] = [];
 
-    const premios: string[] = premiosBrutos
-      .map((num) => num?.slice(-4))
-      .filter((n) => typeof n === "string" && n.length === 4);
+    if (Array.isArray(json?.premios)) {
+      premios = json.premios
+        .map((p: any) => String(p.numero))
+        .filter((n: string) => /^\d{5}$/.test(n))
+        .slice(0, 5);
+    }
 
     if (premios.length !== 5) {
       console.warn("⚠️ Resultado da Federal inválido ou incompleto");
