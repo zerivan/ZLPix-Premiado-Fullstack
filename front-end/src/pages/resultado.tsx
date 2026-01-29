@@ -72,10 +72,13 @@ export default function Resultado() {
 
   const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
 
+  // ✅ CORREÇÃO: aceitar 5 ou 6 dígitos
   const temResultado =
     resultado?.premios &&
     resultado.premios.length === 5 &&
-    resultado.premios.every((p) => typeof p === "string" && p.length === 5);
+    resultado.premios.every(
+      (p) => typeof p === "string" && /^\d{5,6}$/.test(p)
+    );
 
   const dataResultado = calcularDataResultado(
     resultado?.dataApuracao,
@@ -149,7 +152,6 @@ export default function Resultado() {
               )}
             </article>
 
-            {/* 🔥 Banner animado abaixo do card */}
             <motion.div
               className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden"
               animate={{ opacity: [0.8, 1, 0.8] }}
