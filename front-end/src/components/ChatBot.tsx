@@ -38,7 +38,7 @@ const ChatBot: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/assistant/chat`,
+        `${import.meta.env.VITE_API_URL}/api/assistant/chat`, // ✅ CORRIGIDO AQUI
         {
           method: "POST",
           headers: {
@@ -141,7 +141,7 @@ const ChatBot: React.FC = () => {
             padding: 10,
             borderRadius: 6,
             border: "1px solid #ccc",
-            color: "#000", // 🔥 Correção: garante que o texto digitado apareça
+            color: "#000",
           }}
         />
 
