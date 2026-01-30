@@ -212,7 +212,7 @@ export default function Home() {
         <motion.div
           className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative"
           animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity }}
+          transition={{ duration: 4.5, repeat: Infinity }}
         >
           <motion.span
             animate={{ x: ["0%", "100%"] }}
