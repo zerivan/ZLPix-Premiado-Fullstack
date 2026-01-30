@@ -2,7 +2,7 @@ import { prisma } from "../lib/prisma";
 import { notify } from "./notify";
 
 type ResultadoOficial = {
-  dezenas: string[];
+  dezenas: string[]; // 5 números completos da Federal
 };
 
 const PREMIO_BASE = 500;
@@ -30,7 +30,6 @@ async function obterPremioAtual(): Promise<number> {
     return PREMIO_BASE;
   }
 
-  // 🔒 Sanitiza qualquer HTML antes de converter para número
   const textoLimpo = row.contentHtml.replace(/<[^>]*>/g, "").trim();
   const valor = Number(textoLimpo);
 
@@ -85,9 +84,6 @@ export async function processarSorteio(
   const fim = new Date(sorteioData);
   fim.setHours(23, 59, 59, 999);
 
-  /**
-   * 🔒 TRAVA CONTRA REPROCESSAMENTO
-   */
   const jaProcessado = await prisma.bilhete.findFirst({
     where: {
       sorteioData: { gte: inicio, lte: fim },
@@ -111,10 +107,30 @@ export async function processarSorteio(
     return { ok: false, message: "Nenhum bilhete no sorteio" };
   }
 
-  const dezenasValidas = resultado.dezenas.map((d) => d.trim());
-  const resultadoStr = dezenasValidas.join(",");
-  const agora = new Date();
+  /**
+   * ============================
+   * EXTRAÇÃO OFICIAL DAS DEZENAS
+   * - Pega apenas a milhar (4 últimos dígitos)
+   * - Gera dezena inicial e final
+   * ============================
+   */
+  const dezenasValidas = Array.from(
+    new Set(
+      resultado.dezenas.flatMap((numeroCompleto) => {
+        const numero = numeroCompleto.trim();
 
+        const milhar = numero.slice(-4); // 🔥 apenas milhar
+
+        const dezenaInicial = milhar.slice(0, 2);
+        const dezenaFinal = milhar.slice(2, 4);
+
+        return [dezenaInicial, dezenaFinal];
+      })
+    )
+  );
+
+  const resultadoStr = resultado.dezenas.join(",");
+  const agora = new Date();
   const premioAtual = await obterPremioAtual();
 
   const ganhadores = bilhetes.filter((b) => {
@@ -147,7 +163,7 @@ export async function processarSorteio(
     await atualizarPremio(premioAtual + PREMIO_BASE);
 
     const users = [...new Set(bilhetes.map((b) => b.userId))];
-    console.log(`📢 Disparando notificações de sorteio sem ganhadores para ${users.length} usuário(s)`);
+
     for (const userId of users) {
       await notify({
         type: "SORTEIO_REALIZADO",
@@ -156,7 +172,6 @@ export async function processarSorteio(
       });
     }
 
-    console.log(`✅ Sorteio processado sem ganhadores - ${bilhetes.length} bilhete(s) apurado(s)`);
     return { ok: true, ganhou: false };
   }
 
@@ -165,7 +180,6 @@ export async function processarSorteio(
    * COM GANHADORES
    * ============================
    */
-  console.log(`🏆 Sorteio COM ganhadores! ${ganhadores.length} ganhador(es) - Prêmio total: R$ ${premioAtual.toFixed(2)}`);
   const valorPorGanhador = premioAtual / ganhadores.length;
 
   for (const bilhete of ganhadores) {
@@ -217,7 +231,6 @@ export async function processarSorteio(
       }),
     ]);
 
-    console.log(`📢 Disparando notificação de prêmio para userId: ${bilhete.userId}, valor: R$ ${valorPorGanhador.toFixed(2)}`);
     await notify({
       type: "SORTEIO_REALIZADO",
       userId: String(bilhete.userId),
@@ -225,8 +238,6 @@ export async function processarSorteio(
       valor: valorPorGanhador,
     });
   }
-
-  console.log(`✅ Prêmios creditados para ${ganhadores.length} ganhador(es)`);
 
   const idsGanhadores = ganhadores.map((b) => b.id);
 
