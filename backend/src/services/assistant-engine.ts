@@ -19,7 +19,7 @@ const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso orient
 • Notificações e configurações  
 • Política de privacidade  
 
-Se puder reformular sua pergunta dentro do contexto do aplicativo, terei prazer em ajudar.`;
+Se desejar, posso te orientar em alguma dessas áreas.`;
 
 export class AssistantEngine {
 
@@ -56,13 +56,9 @@ export class AssistantEngine {
         return {
           reply: `Essa pergunta não está relacionada ao funcionamento do ZLpix Premiado.
 
-Para esse tipo de informação, você pode consultar fontes confiáveis como:
-• Google
-• Wikipedia
-• Portais oficiais do governo
-• Sites de notícias reconhecidos
+Para esse tipo de informação, recomendo consultar fontes confiáveis como Google, Wikipedia ou portais oficiais.
 
-Se quiser, posso te ajudar com algo dentro da plataforma.`
+Posso ajudar você com algo dentro da plataforma?`
         };
       }
 
@@ -111,7 +107,9 @@ Se quiser, posso te ajudar com algo dentro da plataforma.`
   private static buildResponse(intent: string, domain: string): string {
 
     if (domain === "preco" || intent === "price") {
-      return `O bilhete custa R$ ${TICKET_PRICE.toFixed(2)}, podendo ser ajustado diretamente pelo administrador conforme as configurações atuais da plataforma.`;
+      return `O bilhete custa R$ ${TICKET_PRICE.toFixed(2)}, podendo ser ajustado diretamente pelo administrador conforme as configurações atuais da plataforma.
+
+Deseja saber como realizar uma aposta agora?`;
     }
 
     if (domain === "aposta") {
@@ -121,10 +119,14 @@ Se quiser, posso te ajudar com algo dentro da plataforma.`
 Você pode selecionar até três dezenas manualmente ou utilizar o botão "Gerar" para escolha automática.  
 Depois confirme sua aposta e finalize o pagamento.
 
-Após o pagamento aprovado, o bilhete ficará disponível em "Meus Bilhetes".`;
+Após o pagamento aprovado, o bilhete ficará disponível em "Meus Bilhetes".
+
+Quer que eu explique como funciona a validação do sorteio?`;
       }
 
-      return `Na página de apostas você escolhe até três dezenas ou usa o botão "Gerar" para seleção automática. Após o pagamento confirmado, seu bilhete é criado automaticamente.`;
+      return `Na página de apostas você escolhe até três dezenas ou usa o botão "Gerar" para seleção automática. Após o pagamento confirmado, seu bilhete é criado automaticamente.
+
+Precisa de ajuda para encontrar seus bilhetes depois da compra?`;
     }
 
     if (domain === "bilhete") {
@@ -132,16 +134,22 @@ Após o pagamento aprovado, o bilhete ficará disponível em "Meus Bilhetes".`;
       if (intent === "purpose") {
         return `O botão de download na página "Meus Bilhetes" permite baixar seu histórico completo em formato CSV.
 
-Esse arquivo contém número do bilhete, data do sorteio, valor e status.`;
+Esse arquivo contém número do bilhete, data do sorteio, valor e status.
+
+Deseja entender quanto tempo os bilhetes permanecem disponíveis?`;
       }
 
       if (intent === "duration") {
         return `Os bilhetes permanecem visíveis por até 7 dias após a data do sorteio.
 
-Depois deixam de aparecer na lista principal, mas continuam registrados internamente.`;
+Depois deixam de aparecer na lista principal, mas continuam registrados internamente.
+
+Quer saber como funciona a conferência do resultado?`;
       }
 
-      return `A página "Meus Bilhetes" mostra seus bilhetes ativos e vencidos recentes, permitindo acompanhar status e dezenas escolhidas.`;
+      return `A página "Meus Bilhetes" mostra seus bilhetes ativos e vencidos recentes, permitindo acompanhar status e dezenas escolhidas.
+
+Deseja saber como funciona o botão de download?`;
     }
 
     if (domain === "resultado") {
@@ -149,14 +157,20 @@ Depois deixam de aparecer na lista principal, mas continuam registrados internam
       if (intent === "how") {
         return `Os resultados são baseados na Loteria Federal.
 
-O sistema utiliza apenas a milhar do 1º ao 5º prêmio para validação interna.`;
+O sistema utiliza apenas a milhar do 1º ao 5º prêmio para validação interna.
+
+Quer entender como a validação das milhares funciona?`;
       }
 
       if (intent === "security") {
-        return `Sim. O resultado exibido é baseado na Loteria Federal, fonte pública e oficial.`;
+        return `Sim. O resultado exibido é baseado na Loteria Federal, fonte pública e oficial.
+
+Deseja saber onde conferir o resultado oficial externamente?`;
       }
 
-      return `A página "Resultados" exibe o número oficial da Loteria Federal e informa o próximo sorteio.`;
+      return `A página "Resultados" exibe o número oficial da Loteria Federal e informa o próximo sorteio.
+
+Precisa de ajuda para interpretar o resultado?`;
     }
 
     if (domain === "carteira") {
@@ -164,33 +178,47 @@ O sistema utiliza apenas a milhar do 1º ao 5º prêmio para validação interna
       if (intent === "how") {
         return `A carteira armazena seus créditos.
 
-Você pode depositar via Pix, solicitar saque e baixar o extrato completo.`;
+Você pode depositar via Pix, solicitar saque e baixar o extrato completo.
+
+Quer que eu explique como funciona o saque?`;
       }
 
       if (intent === "purpose") {
-        return `A carteira serve para gerenciar saldo, depósitos, saques e histórico financeiro.`;
+        return `A carteira serve para gerenciar saldo, depósitos, saques e histórico financeiro.
+
+Deseja saber como funciona o depósito via Pix?`;
       }
 
-      return `A carteira centraliza saldo e movimentações financeiras do usuário.`;
+      return `A carteira centraliza saldo e movimentações financeiras do usuário.
+
+Quer entender como baixar o extrato?`;
     }
 
     if (domain === "pix") {
 
       if (intent === "security") {
-        return `Sim. O pagamento via Pix é seguro e processado dentro dos padrões bancários.`;
+        return `Sim. O pagamento via Pix é seguro e processado dentro dos padrões bancários.
+
+Deseja saber como funciona a confirmação automática?`;
       }
 
-      return `O pagamento é realizado via Pix. Após confirmação, o bilhete é liberado automaticamente.`;
+      return `O pagamento é realizado via Pix. Após confirmação, o bilhete é liberado automaticamente.
+
+Precisa de ajuda para gerar um Pix agora?`;
     }
 
     if (domain === "notificacao") {
-      return `É importante permitir notificações para receber avisos de sorteio, atualizações e informações importantes.`;
+      return `É importante permitir notificações para receber avisos de sorteio, atualizações e informações importantes.
+
+Quer saber como ativar as notificações no seu dispositivo?`;
     }
 
     if (domain === "privacidade") {
       return `Para contato ou política de privacidade, acesse o topo da página inicial.
 
-Suporte direto: ${SUPPORT_EMAIL}.`;
+Suporte direto: ${SUPPORT_EMAIL}.
+
+Deseja que eu explique quais dados são armazenados pelo sistema?`;
     }
 
     return OUT_OF_SCOPE_RESPONSE;
