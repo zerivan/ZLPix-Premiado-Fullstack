@@ -155,12 +155,12 @@ export default function Resultado() {
             <motion.div
               className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden"
               animate={{ opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 5.2, repeat: Infinity }}
             >
               <motion.span
-                animate={{ x: ["-100%", "120%"] }}
+                animate={{ x: ["-0%", "100%"] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
-                className="absolute top-2 text-xl"
+                className="absolute top-2 text-2xl"
               >
                 🎉💰
               </motion.span>
