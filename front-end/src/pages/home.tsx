@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
@@ -219,23 +220,29 @@ export default function Home() {
         </motion.button>
 
         {/* BANNER ANIMADO */}
-        <motion.div
-          className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 p-4 relative"
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 2.5, repeat: Infinity }}
-        >
-          <motion.span
-            animate={{ x: ["-100%", "120%"] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-            className="absolute top-2 text-xl"
-          >
-            🧝‍♂️💰
-          </motion.span>
+<motion.div
+  className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative"
+  animate={{ y: [0, -4, 0] }}
+  transition={{ duration: 2.5, repeat: Infinity }}
+>
+  {/* Trilho superior do gnomo */}
+  <motion.span
+    animate={{ x: ["0%", "85%"] }}
+    transition={{
+      duration: 8,
+      repeat: Infinity,
+      repeatType: "reverse",
+      ease: "linear",
+    }}
+    className="absolute top-3 left-0 text-2xl"
+  >
+    🧝‍♂️💰
+  </motion.span>
 
-          <p className="text-yellow-300 font-bold text-sm">
-            🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
-          </p>
-        </motion.div>
+  <p className="text-yellow-300 font-bold text-sm">
+    🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+  </p>
+</motion.div>
 
         {hasVisibleHtml(homeExtraInfoHtml) && (
           <div
