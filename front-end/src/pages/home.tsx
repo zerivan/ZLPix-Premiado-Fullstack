@@ -225,19 +225,24 @@ export default function Home() {
   animate={{ y: [0, -4, 0] }}
   transition={{ duration: 2.5, repeat: Infinity }}
 >
-  {/* Trilho superior do gnomo */}
   <motion.span
-    animate={{ x: ["0%", "85%"] }}
+    animate={{ x: ["0%", "100%"] }}
     transition={{
-      duration: 8,
+      duration: 4,          // 🔥 mais rápido
       repeat: Infinity,
       repeatType: "reverse",
       ease: "linear",
     }}
-    className="absolute top-3 left-0 text-2xl"
+    className="absolute top-2 left-0 text-2xl"
+    style={{ width: "fit-content" }}
   >
     🧝‍♂️💰
   </motion.span>
+
+  <p className="text-yellow-300 font-bold text-sm">
+    🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+  </p>
+</motion.div>
 
   <p className="text-yellow-300 font-bold text-sm">
     🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
