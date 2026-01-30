@@ -6,19 +6,9 @@ import { processarSorteio } from "../services/sorteio-processor";
 type FederalResponse = {
   ok: boolean;
   data?: {
-    premios: string[]; // 1º ao 5º prêmio (milhar)
+    premios: string[]; // 1º ao 5º prêmio (número completo)
   };
 };
-
-/**
- * ============================================
- * ⏰ CRON AUTOMÁTICO DE SORTEIO (OFICIAL)
- * ============================================
- * - Executa sorteios vencidos
- * - Busca resultado REAL da Federal
- * - Usa Federal como única fonte de verdade
- * - Prêmio é controlado pelo CMS (premio_atual)
- */
 
 async function buscarResultadoFederal(): Promise<string[] | null> {
   try {
@@ -31,14 +21,8 @@ async function buscarResultadoFederal(): Promise<string[] | null> {
     if (!json.ok || !Array.isArray(json.data?.premios)) return null;
     if (json.data.premios.length !== 5) return null;
 
-    const dezenas: string[] = [];
-
-    for (const num of json.data.premios) {
-      dezenas.push(num.slice(0, 2)); // frente
-      dezenas.push(num.slice(-2));  // fundo
-    }
-
-    return dezenas;
+    // ✅ Retorna números completos
+    return json.data.premios;
   } catch {
     return null;
   }
@@ -48,7 +32,6 @@ cron.schedule("*/10 * * * *", async () => {
   try {
     const agora = new Date();
 
-    // 🔍 Busca UM sorteio vencido ainda ATIVO
     const bilhete = await prisma.bilhete.findFirst({
       where: {
         status: "ATIVO",
@@ -62,17 +45,15 @@ cron.schedule("*/10 * * * *", async () => {
 
     console.log("⏳ Sorteio automático (Federal):", sorteioData);
 
-    // 🔢 Resultado REAL da Federal
-    const dezenas = await buscarResultadoFederal();
+    const numerosCompletos = await buscarResultadoFederal();
 
-    if (!dezenas || dezenas.length !== 10) {
+    if (!numerosCompletos) {
       console.log("⚠️ Resultado da Federal indisponível ou inválido");
       return;
     }
 
-    // ✅ PROCESSA SORTEIO
-    // 💰 Prêmio é obtido INTERNAMENTE via CMS (premio_atual)
-    await processarSorteio(sorteioData, { dezenas });
+    // ✅ Motor agora extrai milhar internamente
+    await processarSorteio(sorteioData, { dezenas: numerosCompletos });
 
     console.log("✅ Sorteio Federal processado:", sorteioData);
   } catch (err) {
