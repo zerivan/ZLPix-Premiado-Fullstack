@@ -154,7 +154,7 @@ export default function Resultado() {
             <motion.div
               className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden pt-12"
               animate={{ opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 5.2, repeat: Infinity }}
+              transition={{ duration: 7.2, repeat: Infinity }}
             >
               <motion.span
                 animate={{ x: ["-10%", "110%"] }}
