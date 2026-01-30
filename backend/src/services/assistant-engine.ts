@@ -1,5 +1,3 @@
-// backend/src/services/assistant-engine.ts
-
 type AssistantResponse = {
   reply: string;
 };
@@ -10,9 +8,18 @@ const FINANCIAL_RESPONSE = `Para sua segurança, situações relacionadas a paga
 
 Envie um e-mail para ${SUPPORT_EMAIL} informando seu nome completo e descrevendo detalhadamente o ocorrido para que possamos verificar seu caso com prioridade.`;
 
-const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso ajudar com informações relacionadas ao funcionamento do aplicativo, apostas, bilhetes e sorteios.
+const OUT_OF_SCOPE_RESPONSE = `Sou a assistente oficial do ZLpix Premiado.
 
-Se tiver dúvidas sobre a plataforma, fico à disposição para orientar.`;
+Posso ajudar com dúvidas sobre:
+• Como apostar
+• Funcionamento dos sorteios
+• Resultado da Loteria Federal
+• Meus Bilhetes
+• Carteira (saldo, saque e depósito)
+• Segurança do Pix
+• Notificações e atualizações do aplicativo
+
+Se puder reformular sua pergunta dentro desses temas, ficarei feliz em ajudar.`;
 
 export class AssistantEngine {
 
@@ -30,46 +37,93 @@ export class AssistantEngine {
   ];
 
   private static apostaKeywords = [
-    "como jogar", "como apostar", "aposta", "dezenas", "gerar"
+    "como jogar", "como apostar", "aposta", "dezenas", "gerar", "bilhete"
   ];
 
   private static resultadoKeywords = [
-    "resultado", "sorteio", "numero sorteado", "número sorteado"
+    "resultado", "sorteio", "numero sorteado", "número sorteado", "federal"
+  ];
+
+  private static carteiraKeywords = [
+    "carteira", "saldo", "sacar", "depositar", "histórico"
+  ];
+
+  private static bilheteKeywords = [
+    "meus bilhetes", "bilhetes", "download", "histórico bilhete"
   ];
 
   static async process(message: string): Promise<AssistantResponse> {
     const normalized = message.toLowerCase().trim();
+    const isLong = normalized.length > 80;
 
-    // 🔒 Prioridade: Financeiro / Erro
+    // 🔒 Financeiro sempre tem prioridade
     if (this.containsKeyword(normalized, this.sensitiveKeywords)) {
       return { reply: FINANCIAL_RESPONSE };
     }
 
-    // 🎯 Módulo Apostas
+    // 🎯 APOSTAS
     if (this.containsKeyword(normalized, this.apostaKeywords)) {
       return {
-        reply: `Para participar, acesse a área de apostas na plataforma.
+        reply: isLong
+          ? `Para realizar uma aposta no ZLpix Premiado:
 
-Você poderá selecionar até três dezenas manualmente ou utilizar o botão 'Gerar' para escolha automática. Após definir as dezenas, confirme sua aposta.
+1) Acesse a área de apostas.
+2) Escolha até três dezenas manualmente ou utilize o botão "Gerar" para seleção automática.
+3) Revise seus números na tela de confirmação.
+4) Confirme o pagamento.
+5) Após pagamento confirmado, seu bilhete ficará disponível na página "Meus Bilhetes".
 
-Em seguida, você será direcionado para a página de revisão, onde poderá conferir os números escolhidos. Caso queira alterar, é possível retornar e gerar novos bilhetes. Se estiver tudo correto, basta prosseguir com o pagamento.
-
-Após a confirmação do pagamento, seu bilhete será gerado automaticamente e ficará disponível na área 'Meus Bilhetes'.
-
-Se desejar, posso te orientar sobre a página 'Meus Bilhetes' ou sobre como funciona o sorteio.`
+Recomendamos ativar as notificações para receber avisos automáticos sobre seus bilhetes e resultados.`
+          : `Para apostar, selecione até três dezenas ou use o botão "Gerar", confirme o pagamento e acompanhe seu bilhete em "Meus Bilhetes".`
       };
     }
 
-    // 🎉 Módulo Resultado
+    // 🎉 RESULTADO
     if (this.containsKeyword(normalized, this.resultadoKeywords)) {
       return {
-        reply: `Os sorteios são realizados com base no resultado da Loteria Federal.
+        reply: isLong
+          ? `Os sorteios são baseados oficialmente no resultado da Loteria Federal.
 
-A venda de bilhetes é encerrada às 17h da quarta-feira. Bilhetes adquiridos após esse horário passam a concorrer no próximo sorteio.
+O sistema utiliza as milhares do 1º ao 5º prêmio. A partir dessas milhares são extraídas as dezenas válidas para validação dos bilhetes.
 
-Você pode consultar o número sorteado e verificar se seu bilhete foi premiado na página 'Resultado' do aplicativo.
+A venda de bilhetes encerra às 17h da quarta-feira. Após esse horário, novas apostas concorrem no próximo sorteio.
 
-Se desejar, posso te orientar sobre como acompanhar seus bilhetes ou sobre a área de carteira.`
+Você pode consultar os números na página "Resultado", que utiliza fonte oficial.
+
+Caso não haja ganhador, o prêmio acumula automaticamente para o próximo sorteio.`
+          : `O resultado é baseado na Loteria Federal. O sistema valida as milhares do 1º ao 5º prêmio automaticamente.`
+      };
+    }
+
+    // 💳 CARTEIRA
+    if (this.containsKeyword(normalized, this.carteiraKeywords)) {
+      return {
+        reply: isLong
+          ? `A carteira do ZLpix Premiado centraliza seus valores.
+
+• Saldo: mostra créditos disponíveis.
+• Depositar: gera pagamento via Pix.
+• Sacar: solicita retirada para sua chave cadastrada.
+• Histórico: permite download do extrato.
+
+Para segurança, qualquer divergência financeira deve ser tratada pelo e-mail oficial de suporte.`
+          : `A carteira mostra seu saldo, permite depositar via Pix e solicitar saque.`
+      };
+    }
+
+    // 🎟️ MEUS BILHETES
+    if (this.containsKeyword(normalized, this.bilheteKeywords)) {
+      return {
+        reply: isLong
+          ? `Na página "Meus Bilhetes" você acompanha:
+
+• Bilhetes ativos até o horário do sorteio.
+• Bilhetes vencidos permanecem visíveis por 7 dias após o sorteio.
+• Status pode indicar Pago, Premiado ou Não Premiado.
+• O botão de download gera um histórico em formato CSV para controle pessoal.
+
+Após o período de permanência, os bilhetes deixam de aparecer na área principal.`
+          : `Os bilhetes ficam visíveis até o sorteio e por 7 dias após. O botão de download exporta seu histórico.`
       };
     }
 
