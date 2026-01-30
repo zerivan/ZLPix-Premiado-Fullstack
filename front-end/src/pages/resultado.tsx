@@ -1,4 +1,3 @@
-// src/pages/resultado.tsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
@@ -72,7 +71,6 @@ export default function Resultado() {
 
   const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
 
-  // ✅ CORREÇÃO: aceitar 5 ou 6 dígitos
   const temResultado =
     resultado?.premios &&
     resultado.premios.length === 5 &&
@@ -152,15 +150,16 @@ export default function Resultado() {
               )}
             </article>
 
+            {/* 🔥 Banner animado ajustado */}
             <motion.div
-              className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden"
+              className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden pt-12"
               animate={{ opacity: [0.8, 1, 0.8] }}
               transition={{ duration: 5.2, repeat: Infinity }}
             >
               <motion.span
-                animate={{ x: ["-0%", "100%"] }}
+                animate={{ x: ["-10%", "110%"] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
-                className="absolute top-2 text-2xl"
+                className="absolute top-2 left-0 text-2xl"
               >
                 🎉💰
               </motion.span>
