@@ -5,18 +5,18 @@ const router = Router();
 
 /**
  * =====================================================
- * ADMIN — GANHADORES
+ * ADMIN — RESULTADO DO SORTEIO
  * =====================================================
  * REGRA:
- * - Só mostra bilhetes com status = 'PREMIADO'
+ * - Mostra TODOS os bilhetes já apurados
+ * - PREMIADO e NAO_PREMIADO
  * - Apenas ESPELHA o banco
- * - Não calcula, não inventa
  */
 router.get("/", async (_req, res) => {
   try {
-    const bilhetesPremiados = await prisma.bilhete.findMany({
+    const bilhetes = await prisma.bilhete.findMany({
       where: {
-        status: "PREMIADO",
+        apuradoEm: { not: null }, // 🔥 apenas já processados
       },
       orderBy: {
         apuradoEm: "desc",
@@ -40,13 +40,14 @@ router.get("/", async (_req, res) => {
       },
     });
 
-    const ganhadores = bilhetesPremiados.map((b) => ({
+    const lista = bilhetes.map((b) => ({
       userId: b.user.id,
       nome: b.user.name,
       email: b.user.email,
       telefone: b.user.phone,
       pixKey: b.user.pixKey,
       dezenas: b.dezenas,
+      status: b.status, // 🔥 agora mostra o status real
       premio: Number(b.premioValor || 0),
       resultadoFederal: b.resultadoFederal,
       apuradoEm: b.apuradoEm,
@@ -55,14 +56,14 @@ router.get("/", async (_req, res) => {
 
     return res.json({
       ok: true,
-      total: ganhadores.length,
-      data: ganhadores,
+      total: lista.length,
+      data: lista,
     });
   } catch (error) {
-    console.error("Erro admin ganhadores:", error);
+    console.error("Erro admin resultado:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao buscar ganhadores",
+      error: "Erro ao buscar resultado",
     });
   }
 });
