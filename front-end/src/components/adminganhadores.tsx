@@ -23,7 +23,7 @@ export default function AdminGanhadores() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       const res = await axios.get(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/ganhadores",
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/resultado",
         {
           headers: token
             ? { Authorization: `Bearer ${token}` }
@@ -37,8 +37,8 @@ export default function AdminGanhadores() {
         setErro("Resposta inválida do servidor.");
       }
     } catch (e: any) {
-      console.error("Erro ganhadores:", e);
-      setErro("Erro ao carregar ganhadores.");
+      console.error("Erro resultado:", e);
+      setErro("Erro ao carregar resultado.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function AdminGanhadores() {
   if (loading) {
     return (
       <div className="text-sm text-gray-500">
-        Carregando ganhadores...
+        Carregando resultado...
       </div>
     );
   }
