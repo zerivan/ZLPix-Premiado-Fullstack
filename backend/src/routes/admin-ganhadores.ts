@@ -9,15 +9,27 @@ const router = Router();
  * =====================================================
  * REGRA:
  * - Mostra TODOS os bilhetes já apurados
- * - PREMIADO e NAO_PREMIADO
+ * - Permite filtrar por sorteioData (opcional)
  * - Apenas ESPELHA o banco
  */
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
+    const { sorteioData } = req.query;
+
+    const whereClause: any = {
+      apuradoEm: { not: null },
+    };
+
+    // 🔒 Filtro opcional por data de sorteio
+    if (sorteioData) {
+      const data = new Date(String(sorteioData));
+      if (!isNaN(data.getTime())) {
+        whereClause.sorteioData = data;
+      }
+    }
+
     const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        apuradoEm: { not: null },
-      },
+      where: whereClause,
       orderBy: {
         apuradoEm: "desc",
       },
@@ -41,14 +53,14 @@ router.get("/", async (_req, res) => {
     });
 
     const lista = bilhetes.map((b) => ({
-      id: b.id, // 🔥 importante para o front
+      id: b.id,
       userId: b.user.id,
       nome: b.user.name,
       email: b.user.email,
       telefone: b.user.phone,
       pixKey: b.user.pixKey,
       dezenas: b.dezenas,
-      status: b.status, // status REAL do banco
+      status: b.status,
       premio: b.premioValor ?? 0,
       resultadoFederal: b.resultadoFederal,
       apuradoEm: b.apuradoEm,
