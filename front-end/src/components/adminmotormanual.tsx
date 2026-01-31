@@ -1,13 +1,21 @@
 import { useState } from "react";
 
+type BilheteResultado = {
+  id: number;
+  status: "PREMIADO" | "NAO_PREMIADO";
+};
+
 type Resultado = {
   dezenasValidas: string[];
-  ganhadores: number[];
+  bilhetes: BilheteResultado[];
+  premioTotal: number;
+  premioIndividual: number;
 };
 
 export default function AdminMotorManual() {
   const [listaBilhetes, setListaBilhetes] = useState("");
   const [resultadoFederal, setResultadoFederal] = useState("");
+  const [valorPremio, setValorPremio] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
 
   function extrairDezenasValidas(numeros: string[]): string[] {
@@ -45,9 +53,17 @@ export default function AdminMotorManual() {
       return;
     }
 
+    const premioTotal = Number(valorPremio.replace(",", "."));
+
+    if (!premioTotal || premioTotal <= 0) {
+      alert("Informe um valor de prêmio válido.");
+      return;
+    }
+
     const dezenasValidas = extrairDezenasValidas(numerosFederal);
 
-    const ganhadores: number[] = [];
+    const bilhetes: BilheteResultado[] = [];
+    const idsPremiados: number[] = [];
 
     for (const linha of linhasBilhetes) {
       const partes = linha.split(";");
@@ -63,19 +79,33 @@ export default function AdminMotorManual() {
         .map((d) => d.trim())
         .filter((d) => /^\d{2}$/.test(d));
 
-      if (
+      const premiado =
         dezenasBilhete.length === 3 &&
-        dezenasBilhete.every((d) => dezenasValidas.includes(d))
-      ) {
-        ganhadores.push(id);
+        dezenasBilhete.every((d) => dezenasValidas.includes(d));
+
+      if (premiado) {
+        idsPremiados.push(id);
+        bilhetes.push({ id, status: "PREMIADO" });
+      } else {
+        bilhetes.push({ id, status: "NAO_PREMIADO" });
       }
     }
 
+    const premioIndividual =
+      idsPremiados.length > 0
+        ? premioTotal / idsPremiados.length
+        : 0;
+
     setResultado({
       dezenasValidas,
-      ganhadores,
+      bilhetes,
+      premioTotal,
+      premioIndividual,
     });
   }
+
+  const totalPremiados =
+    resultado?.bilhetes.filter((b) => b.status === "PREMIADO").length || 0;
 
   return (
     <div className="space-y-6">
@@ -107,15 +137,28 @@ export default function AdminMotorManual() {
         />
       </div>
 
+      <div>
+        <p className="text-sm font-medium">
+          Valor total do prêmio (R$)
+        </p>
+        <input
+          type="text"
+          value={valorPremio}
+          onChange={(e) => setValorPremio(e.target.value)}
+          className="w-full p-2 border rounded text-sm"
+          placeholder="1000.00"
+        />
+      </div>
+
       <button
         onClick={conferir}
         className="px-4 py-2 bg-green-600 text-white rounded text-sm"
       >
-        Conferir Sorteio
+        Disparar Sorteio Manual
       </button>
 
       {resultado && (
-        <div className="border-t pt-4 space-y-2 text-sm">
+        <div className="border-t pt-4 space-y-3 text-sm">
           <div>
             <strong>Dezenas válidas:</strong>{" "}
             {resultado.dezenasValidas.join(", ")}
@@ -123,14 +166,29 @@ export default function AdminMotorManual() {
 
           <div>
             <strong>Total de ganhadores:</strong>{" "}
-            {resultado.ganhadores.length}
+            {totalPremiados}
           </div>
 
           <div>
-            <strong>IDs premiados:</strong>{" "}
-            {resultado.ganhadores.length
-              ? resultado.ganhadores.join(", ")
-              : "Nenhum"}
+            <strong>Prêmio total:</strong>{" "}
+            R$ {resultado.premioTotal.toFixed(2)}
+          </div>
+
+          <div>
+            <strong>Prêmio individual:</strong>{" "}
+            R$ {resultado.premioIndividual.toFixed(2)}
+          </div>
+
+          <div className="border-t pt-2 space-y-1">
+            <strong>Resultado por ID:</strong>
+            {resultado.bilhetes.map((b) => (
+              <div key={b.id}>
+                #{b.id} —{" "}
+                {b.status === "PREMIADO"
+                  ? `PREMIADO (R$ ${resultado.premioIndividual.toFixed(2)})`
+                  : "NAO_PREMIADO"}
+              </div>
+            ))}
           </div>
         </div>
       )}
