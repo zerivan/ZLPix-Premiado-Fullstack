@@ -5,65 +5,35 @@ const router = Router();
 
 /**
  * =====================================================
- * ADMIN — RESULTADO DO SORTEIO
+ * ADMIN — LISTAGEM COMPLETA DE BILHETES APURADOS
  * =====================================================
- * REGRA:
- * - Mostra TODOS os bilhetes já apurados
- * - PREMIADO e NAO_PREMIADO
- * - Apenas ESPELHA o banco
+ * - Espelha exatamente a tabela bilhete
+ * - Não formata
+ * - Não recalcula
+ * - Não altera estrutura
+ * - Apenas retorna dados reais do banco
  */
 router.get("/", async (_req, res) => {
   try {
     const bilhetes = await prisma.bilhete.findMany({
       where: {
-        apuradoEm: { not: null }, // 🔥 apenas já processados
+        apuradoEm: { not: null }, // somente já apurados
       },
       orderBy: {
         apuradoEm: "desc",
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            pixKey: true,
-          },
-        },
-        transacao: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
     });
-
-    const lista = bilhetes.map((b) => ({
-      userId: b.user.id,
-      nome: b.user.name,
-      email: b.user.email,
-      telefone: b.user.phone,
-      pixKey: b.user.pixKey,
-      dezenas: b.dezenas,
-      status: b.status, // 🔥 agora mostra o status real
-      premio: Number(b.premioValor || 0),
-      resultadoFederal: b.resultadoFederal,
-      apuradoEm: b.apuradoEm,
-      transacaoId: b.transacao?.id ?? null,
-    }));
 
     return res.json({
       ok: true,
-      total: lista.length,
-      data: lista,
+      total: bilhetes.length,
+      data: bilhetes,
     });
   } catch (error) {
-    console.error("Erro admin resultado:", error);
+    console.error("Erro admin listagem bilhetes:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao buscar resultado",
+      error: "Erro ao buscar bilhetes",
     });
   }
 });
