@@ -25,19 +25,23 @@ export default function AdminMotorManual() {
     return Array.from(new Set(dezenas));
   }
 
+  function normalizarNumerosFederal(input: string): string[] {
+    return input
+      .split(/[\n,;\s]+/)
+      .map((n) => n.trim())
+      .filter((n) => /^\d{5,6}$/.test(n));
+  }
+
   function conferir() {
     const linhasBilhetes = listaBilhetes
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
 
-    const numerosFederal = resultadoFederal
-      .split("\n")
-      .map((n) => n.trim())
-      .filter(Boolean);
+    const numerosFederal = normalizarNumerosFederal(resultadoFederal);
 
     if (numerosFederal.length !== 5) {
-      alert("Informe exatamente 5 números da Federal.");
+      alert("Informe exatamente 5 números válidos da Federal.");
       return;
     }
 
@@ -46,14 +50,18 @@ export default function AdminMotorManual() {
     const ganhadores: number[] = [];
 
     for (const linha of linhasBilhetes) {
-      const [idStr, dezenasStr] = linha.split(";");
-      if (!idStr || !dezenasStr) continue;
+      const partes = linha.split(";");
+      if (partes.length !== 2) continue;
 
-      const id = Number(idStr.trim());
+      const id = Number(partes[0].trim());
+      const dezenasStr = partes[1].trim();
+
+      if (!id || !dezenasStr) continue;
+
       const dezenasBilhete = dezenasStr
         .split(",")
         .map((d) => d.trim())
-        .filter(Boolean);
+        .filter((d) => /^\d{2}$/.test(d));
 
       if (
         dezenasBilhete.length === 3 &&
