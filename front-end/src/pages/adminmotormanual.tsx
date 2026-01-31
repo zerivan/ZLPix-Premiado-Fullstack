@@ -3,11 +3,13 @@ import { useState } from "react";
 type Resultado = {
   dezenasValidas: string[];
   ganhadores: number[];
+  valorPorGanhador: number;
 };
 
 export default function AdminMotorManual() {
   const [listaBilhetes, setListaBilhetes] = useState("");
   const [resultadoFederal, setResultadoFederal] = useState("");
+  const [premioTotal, setPremioTotal] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
 
   function extrairDezenasValidas(numeros: string[]): string[] {
@@ -71,9 +73,16 @@ export default function AdminMotorManual() {
       }
     }
 
+    const premioNumero = Number(premioTotal.replace(",", "."));
+    const valorPorGanhador =
+      ganhadores.length > 0 && premioNumero > 0
+        ? premioNumero / ganhadores.length
+        : 0;
+
     setResultado({
       dezenasValidas,
       ganhadores,
+      valorPorGanhador,
     });
   }
 
@@ -107,6 +116,19 @@ export default function AdminMotorManual() {
         />
       </div>
 
+      <div>
+        <p className="text-sm font-medium">
+          Prêmio Total (R$)
+        </p>
+        <input
+          type="text"
+          value={premioTotal}
+          onChange={(e) => setPremioTotal(e.target.value)}
+          className="w-full p-2 border rounded text-sm"
+          placeholder="500"
+        />
+      </div>
+
       <button
         onClick={conferir}
         className="px-4 py-2 bg-green-600 text-white rounded text-sm"
@@ -124,6 +146,11 @@ export default function AdminMotorManual() {
           <div>
             <strong>Total de ganhadores:</strong>{" "}
             {resultado.ganhadores.length}
+          </div>
+
+          <div>
+            <strong>Valor por ganhador:</strong>{" "}
+            R$ {resultado.valorPorGanhador.toFixed(2)}
           </div>
 
           <div>
