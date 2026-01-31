@@ -8,6 +8,7 @@ type Ganhador = {
   dezenas: string;
   premio: number;
   status: string;
+  apuradoEm?: string;
 };
 
 export default function AdminGanhadores() {
@@ -23,7 +24,7 @@ export default function AdminGanhadores() {
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
       const res = await axios.get(
-        "https://zlpix-premiado-fullstack.onrender.com/api/admin/resultado",
+        "https://zlpix-premiado-fullstack.onrender.com/api/admin/ganhadores",
         {
           headers: token
             ? { Authorization: `Bearer ${token}` }
@@ -37,7 +38,7 @@ export default function AdminGanhadores() {
         setErro("Resposta inválida do servidor.");
       }
     } catch (e: any) {
-      console.error("Erro resultado:", e);
+      console.error("Erro ganhadores:", e);
       setErro("Erro ao carregar resultado.");
     } finally {
       setLoading(false);
@@ -48,7 +49,7 @@ export default function AdminGanhadores() {
     loadGanhadores();
   }, []);
 
-  function copiarLista() {
+  function copiarListaNumerica() {
     const texto = ganhadores
       .map((g) => `${g.id};${g.dezenas}`)
       .join("\n");
@@ -57,42 +58,18 @@ export default function AdminGanhadores() {
   }
 
   if (loading) {
-    return (
-      <div className="text-sm text-gray-500">
-        Carregando resultado...
-      </div>
-    );
+    return <div className="text-sm text-gray-500">Carregando...</div>;
   }
 
   if (erro) {
-    return (
-      <div className="text-sm text-red-600">
-        {erro}
-      </div>
-    );
-  }
-
-  if (ganhadores.length === 0) {
-    return (
-      <div className="text-sm text-gray-600">
-        Nenhum bilhete apurado neste sorteio.
-      </div>
-    );
+    return <div className="text-sm text-red-600">{erro}</div>;
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        Resultado do Sorteio
-      </h2>
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold">Resultado do Sorteio</h2>
 
-      <button
-        onClick={copiarLista}
-        className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
-      >
-        Copiar lista numérica
-      </button>
-
+      {/* ===== BLOCO 1 — LISTAGEM VISUAL (mantém como estava) ===== */}
       <div className="space-y-3">
         {ganhadores.map((g) => (
           <div
@@ -116,6 +93,26 @@ export default function AdminGanhadores() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ===== BLOCO 2 — LISTAGEM NUMÉRICA PARA MOTOR MANUAL ===== */}
+      <div className="border-t pt-4 space-y-2">
+        <h3 className="text-sm font-semibold text-gray-700">
+          Lista Numérica para Conferência Manual
+        </h3>
+
+        <button
+          onClick={copiarListaNumerica}
+          className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
+        >
+          Copiar lista numérica
+        </button>
+
+        <textarea
+          readOnly
+          value={ganhadores.map((g) => `${g.id};${g.dezenas}`).join("\n")}
+          className="w-full h-40 mt-2 p-2 text-xs border rounded bg-gray-100"
+        />
       </div>
     </div>
   );
