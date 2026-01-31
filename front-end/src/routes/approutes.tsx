@@ -18,6 +18,9 @@ import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
 
+// 🔥 NOVO: Motor Manual
+import AdminMotorManual from "../pages/admin/adminmotormanual";
+
 // Admin
 import AdminRoute from "../components/adminroute";
 import AdminDashboard from "../admindashboard";
@@ -30,11 +33,6 @@ import DynamicPage from "../pages/dynamicpage";
 // 🔥 NOVO: Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
 
-/**
- * ============================
- * HELPERS DE AUTH
- * ============================
- */
 function isUserLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
 }
@@ -57,39 +55,25 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   return isUserLoggedIn() ? children : <Navigate to="/login" replace />;
 }
 
-/**
- * ============================
- * ROTAS
- * ============================
- */
 export default function AppRoutes() {
   return (
     <>
       <Routes>
-        {/* HOME PÚBLICA */}
         <Route path="/" element={<Home />} />
-
-        {/* PÁGINA DE ANÚNCIO */}
         <Route path="/anuncio" element={<Anuncio />} />
-
-        {/* POLÍTICA DE PRIVACIDADE */}
         <Route
           path="/politica-privacidade"
           element={<PoliticaPrivacidade />}
         />
-
-        {/* TERMOS DE USO */}
         <Route
           path="/termos-de-uso"
           element={<TermosDeUso />}
         />
 
-        {/* Auth usuário */}
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
-        {/* Usuário logado */}
         <Route
           path="/home"
           element={
@@ -186,9 +170,14 @@ export default function AppRoutes() {
             path="/admin/admindashboard"
             element={<AdminDashboard />}
           />
+
+          {/* 🔥 NOVA ROTA MOTOR MANUAL */}
+          <Route
+            path="/admin/motor-manual"
+            element={<AdminMotorManual />}
+          />
         </Route>
 
-        {/* CMS DINÂMICO */}
         <Route
           path="/p/:slug"
           element={
@@ -200,11 +189,9 @@ export default function AppRoutes() {
           }
         />
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* 🔥 CHAT GLOBAL (renderiza em todas as páginas) */}
       <GlobalChatBot />
     </>
   );
