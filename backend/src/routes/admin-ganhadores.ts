@@ -4,25 +4,19 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 
 /**
-=====================================================
-
-ADMIN — RESULTADO DO SORTEIO
-
-=====================================================
-
-REGRA:
-
-Mostra TODOS os bilhetes já apurados
-
-PREMIADO e NAO_PREMIADO
-
-Apenas ESPELHA o banco
-*/
+ * =====================================================
+ * ADMIN — GANHADORES
+ * =====================================================
+ * REGRA:
+ * - Só mostra bilhetes com status = 'PREMIADO'
+ * - Apenas ESPELHA o banco
+ * - Não calcula, não inventa
+ */
 router.get("/", async (_req, res) => {
   try {
-    const bilhetes = await prisma.bilhete.findMany({
+    const bilhetesPremiados = await prisma.bilhete.findMany({
       where: {
-        apuradoEm: { not: null }, // 🔥 apenas já processados
+        status: "PREMIADO",
       },
       orderBy: {
         apuradoEm: "desc",
@@ -46,16 +40,29 @@ router.get("/", async (_req, res) => {
       },
     });
 
+    const ganhadores = bilhetesPremiados.map((b) => ({
+      userId: b.user.id,
+      nome: b.user.name,
+      email: b.user.email,
+      telefone: b.user.phone,
+      pixKey: b.user.pixKey,
+      dezenas: b.dezenas,
+      premio: Number(b.premioValor || 0),
+      resultadoFederal: b.resultadoFederal,
+      apuradoEm: b.apuradoEm,
+      transacaoId: b.transacao?.id ?? null,
+    }));
+
     return res.json({
       ok: true,
-      total: bilhetes.length,
-      data: bilhetes,
+      total: ganhadores.length,
+      data: ganhadores,
     });
   } catch (error) {
-    console.error("Erro admin resultado:", error);
+    console.error("Erro admin ganhadores:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao buscar resultado",
+      error: "Erro ao buscar ganhadores",
     });
   }
 });
