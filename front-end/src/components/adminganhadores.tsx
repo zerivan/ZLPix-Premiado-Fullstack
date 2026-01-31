@@ -50,10 +50,7 @@ export default function AdminGanhadores() {
 
   function copiarLista() {
     const texto = ganhadores
-      .map(
-        (g) =>
-          `${g.id} - ${g.dezenas} - ${g.status}`
-      )
+      .map((g) => `${g.id};${g.dezenas}`)
       .join("\n");
 
     navigator.clipboard.writeText(texto);
@@ -89,7 +86,6 @@ export default function AdminGanhadores() {
         Resultado do Sorteio
       </h2>
 
-      {/* 🔥 BOTÃO COPIAR */}
       <button
         onClick={copiarLista}
         className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
