@@ -57,9 +57,11 @@ cron.schedule("*/10 * * * *", async () => {
     const federal = await buscarResultadoFederal();
 
     if (!federal) {
-      console.log("⚠️ Resultado da Federal indisponível ou inválido");
-      return;
-    }
+  console.log(
+    "ℹ️ [ZLPix-Premiado] Sorteio não realizado: Nenhum resultado oficial disponível para esta data OU não há bilhete ativo para apuração. Essa mensagem pode aparecer em apurações manuais quando o sorteio da Federal ainda não foi publicado, ou se já foi processado anteriormente."
+  );
+  return;
+}
 
     const { dataApuracao, numeros } = federal;
 
