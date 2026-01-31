@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 type Ganhador = {
+  id: number;
   userId: number;
   nome: string;
   dezenas: string;
   premio: number;
+  status: string;
 };
 
 export default function AdminGanhadores() {
@@ -65,7 +67,7 @@ export default function AdminGanhadores() {
   if (ganhadores.length === 0) {
     return (
       <div className="text-sm text-gray-600">
-        Nenhum ganhador registrado neste sorteio.
+        Nenhum bilhete apurado neste sorteio.
       </div>
     );
   }
@@ -73,13 +75,13 @@ export default function AdminGanhadores() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Ganhadores do Sorteio
+        Resultado do Sorteio
       </h2>
 
       <div className="space-y-3">
-        {ganhadores.map((g, i) => (
+        {ganhadores.map((g) => (
           <div
-            key={i}
+            key={g.id}
             className="rounded border bg-gray-50 p-3 text-sm space-y-1"
           >
             <div>
@@ -91,7 +93,11 @@ export default function AdminGanhadores() {
             </div>
 
             <div>
-              <strong>Prêmio:</strong> R$ {g.premio.toFixed(2)}
+              <strong>Status:</strong> {g.status}
+            </div>
+
+            <div>
+              <strong>Prêmio:</strong> R$ {Number(g.premio || 0).toFixed(2)}
             </div>
           </div>
         ))}
