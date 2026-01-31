@@ -4,23 +4,45 @@ import { prisma } from "../lib/prisma";
 const router = Router();
 
 /**
- * =====================================================
- * ADMIN — LISTAGEM COMPLETA DE BILHETES APURADOS
- * =====================================================
- * - Espelha exatamente a tabela bilhete
- * - Não formata
- * - Não recalcula
- * - Não altera estrutura
- * - Apenas retorna dados reais do banco
- */
+=====================================================
+
+ADMIN — RESULTADO DO SORTEIO
+
+=====================================================
+
+REGRA:
+
+Mostra TODOS os bilhetes já apurados
+
+PREMIADO e NAO_PREMIADO
+
+Apenas ESPELHA o banco
+*/
 router.get("/", async (_req, res) => {
   try {
     const bilhetes = await prisma.bilhete.findMany({
       where: {
-        apuradoEm: { not: null }, // somente já apurados
+        apuradoEm: { not: null }, // 🔥 apenas já processados
       },
       orderBy: {
         apuradoEm: "desc",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            pixKey: true,
+          },
+        },
+        transacao: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
       },
     });
 
@@ -30,10 +52,10 @@ router.get("/", async (_req, res) => {
       data: bilhetes,
     });
   } catch (error) {
-    console.error("Erro admin listagem bilhetes:", error);
+    console.error("Erro admin resultado:", error);
     return res.status(500).json({
       ok: false,
-      error: "Erro ao buscar bilhetes",
+      error: "Erro ao buscar resultado",
     });
   }
 });
