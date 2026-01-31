@@ -18,8 +18,8 @@ import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
 
-// 🔥 NOVO: Motor Manual
-import AdminMotorManual from "../pages/admin/adminmotormanual";
+// 🔥 CORREÇÃO: Motor Manual agora está em components
+import AdminMotorManual from "../components/adminmotormanual";
 
 // Admin
 import AdminRoute from "../components/adminroute";
@@ -30,7 +30,7 @@ import Revisao from "../pages/revisao";
 import PixPagamento from "../pages/pixpagamento";
 import DynamicPage from "../pages/dynamicpage";
 
-// 🔥 NOVO: Chat Global
+// 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
 
 function isUserLoggedIn() {
@@ -171,7 +171,7 @@ export default function AppRoutes() {
             element={<AdminDashboard />}
           />
 
-          {/* 🔥 NOVA ROTA MOTOR MANUAL */}
+          {/* 🔥 Motor Manual */}
           <Route
             path="/admin/motor-manual"
             element={<AdminMotorManual />}
