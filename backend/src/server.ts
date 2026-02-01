@@ -30,9 +30,6 @@ import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
 import adminSaquesRoutes from "./routes/admin-saques";
 import adminSorteioRoutes from "./routes/admin-sorteio";
 
-// 🔥 NOVO: ADMIN DIAGNÓSTICO IA
-import adminDiagnosticoIaRoutes from "./routes/admin-diagnosticoia";
-
 // IA ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
 
@@ -53,17 +50,17 @@ const PORT = Number(process.env.PORT) || 4000;
 // CORS
 // ============================
 app.use(
-  cors({
-    origin: true,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-User-Id",
-      "x-user-id",
-    ],
-  })
+cors({
+origin: true,
+credentials: true,
+methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+allowedHeaders: [
+"Content-Type",
+"Authorization",
+"X-User-Id",
+"x-user-id",
+],
+})
 );
 
 app.options("*", cors());
@@ -73,10 +70,10 @@ app.use(express.json());
 // HEALTHCHECK
 // ============================
 app.get("/", (_req, res) => {
-  res.json({
-    status: "ok",
-    message: "ZLPix backend rodando!",
-  });
+res.json({
+status: "ok",
+message: "ZLPix backend rodando!",
+});
 });
 
 // ============================
@@ -84,7 +81,7 @@ app.get("/", (_req, res) => {
 // ============================
 app.use("/auth", authRoutes);
 
-// 🔥 FEDERAL — DUPLA ROTA
+// 🔥 FEDERAL — DUPLA ROTA (CORREÇÃO DEFINITIVA)
 app.use("/api/federal", federalRoutes);
 app.use("/federal", federalRoutes);
 
@@ -94,7 +91,7 @@ app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/push", pushRoutes);
 
-// 🔥 ASSISTENTE PÚBLICO
+// 🔥 ASSISTENTE PÚBLICO PADRONIZADO
 app.use("/api/assistant", assistantRoutes);
 
 // CMS público
@@ -113,26 +110,19 @@ app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
-// 🔥 ADMIN PUSH MANUAL
+// 🔥 NOVO: ADMIN PUSH MANUAL
 app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
-// 🔥 ADMIN DIAGNÓSTICO IA (UPLOAD ZIP + ANÁLISE)
+// IA ADMIN
 app.use(
-  "/api/admin/diagnostico-ia",
-  adminAuth,
-  adminDiagnosticoIaRoutes
-);
-
-// IA ADMIN CHAT
-app.use(
-  "/api/admin/ia/chat",
-  adminAuth,
-  devAssistenteRoutes
+"/api/admin/ia/chat",
+adminAuth,
+devAssistenteRoutes
 );
 
 // ============================
 // START
 // ============================
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🔥 Servidor rodando na porta ${PORT}`);
+console.log(🔥 Servidor rodando na porta ${PORT});
 });
