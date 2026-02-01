@@ -84,7 +84,7 @@ app.get("/", (_req, res) => {
 // ============================
 app.use("/auth", authRoutes);
 
-// 🔥 FEDERAL — DUPLA ROTA (CORREÇÃO DEFINITIVA)
+// 🔥 FEDERAL — DUPLA ROTA
 app.use("/api/federal", federalRoutes);
 app.use("/federal", federalRoutes);
 
@@ -94,7 +94,7 @@ app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/push", pushRoutes);
 
-// 🔥 ASSISTENTE PÚBLICO PADRONIZADO
+// 🔥 ASSISTENTE PÚBLICO
 app.use("/api/assistant", assistantRoutes);
 
 // CMS público
@@ -113,17 +113,17 @@ app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
-// 🔥 NOVO: ADMIN PUSH MANUAL
+// 🔥 ADMIN PUSH MANUAL
 app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
-// 🔥 NOVO: ADMIN DIAGNÓSTICO IA
+// 🔥 ADMIN DIAGNÓSTICO IA (UPLOAD ZIP + ANÁLISE)
 app.use(
   "/api/admin/diagnostico-ia",
   adminAuth,
   adminDiagnosticoIaRoutes
 );
 
-// IA ADMIN
+// IA ADMIN CHAT
 app.use(
   "/api/admin/ia/chat",
   adminAuth,
