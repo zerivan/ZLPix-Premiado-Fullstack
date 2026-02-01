@@ -7,8 +7,8 @@ import logo from "@/assets/images/logos/logo.png";
 import bannerHome from "@/assets/images/banners/banner-home.png";
 
 /**
- * Ajusta ISO UTC para data BR
- */
+Ajusta ISO UTC para data BR
+*/
 function formatarDataBR(iso: string) {
   const d = new Date(iso);
   d.setHours(d.getHours() - 3);
@@ -16,9 +16,9 @@ function formatarDataBR(iso: string) {
 }
 
 /**
- * REGRA OFICIAL:
- * Sorteio só vira depois das 17h da quarta-feira
- */
+REGRA OFICIAL:
+Sorteio só vira depois das 17h da quarta-feira
+*/
 function ajustarDataSorteio(iso: string) {
   const agora = new Date();
   const diaSemana = agora.getDay();
@@ -143,7 +143,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
       <motion.div
-        className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative bg-cover bg-center"
+        className="w-full max-w-md mt-5 overflow-hidden rounded-xl border border-yellow-300/30 pt-12 pb-4 px-4 relative bg-cover bg-center min-h-[180px]"
         style={{ backgroundImage: `url(${bannerHome})` }}
         animate={{ y: [0, -4, 0] }}
         transition={{ duration: 7.5, repeat: Infinity }}
