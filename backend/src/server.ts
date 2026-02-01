@@ -50,17 +50,17 @@ const PORT = Number(process.env.PORT) || 4000;
 // CORS
 // ============================
 app.use(
-cors({
-origin: true,
-credentials: true,
-methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-allowedHeaders: [
-"Content-Type",
-"Authorization",
-"X-User-Id",
-"x-user-id",
-],
-})
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-User-Id",
+      "x-user-id",
+    ],
+  })
 );
 
 app.options("*", cors());
@@ -70,10 +70,10 @@ app.use(express.json());
 // HEALTHCHECK
 // ============================
 app.get("/", (_req, res) => {
-res.json({
-status: "ok",
-message: "ZLPix backend rodando!",
-});
+  res.json({
+    status: "ok",
+    message: "ZLPix backend rodando!",
+  });
 });
 
 // ============================
@@ -115,14 +115,14 @@ app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
 // IA ADMIN
 app.use(
-"/api/admin/ia/chat",
-adminAuth,
-devAssistenteRoutes
+  "/api/admin/ia/chat",
+  adminAuth,
+  devAssistenteRoutes
 );
 
 // ============================
 // START
 // ============================
 app.listen(PORT, "0.0.0.0", () => {
-console.log(🔥 Servidor rodando na porta ${PORT});
+  console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
