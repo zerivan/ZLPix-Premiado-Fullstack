@@ -29,8 +29,8 @@ const QUILL_MODULES = {
     ["bold", "italic", "underline", "strike"],
     [{ color: [] }, { background: [] }],
     [{ align: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["link"],
+    [{ list: "ordered" }, { list: "bullet"] },
+    ["link", "image"], // ✅ imagem liberada
     ["clean"],
   ],
 };
