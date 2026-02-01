@@ -30,6 +30,9 @@ import adminConfiguracoesRoutes from "./routes/admin-configuracoes";
 import adminSaquesRoutes from "./routes/admin-saques";
 import adminSorteioRoutes from "./routes/admin-sorteio";
 
+// 🔥 NOVO: ADMIN DIAGNÓSTICO IA
+import adminDiagnosticoIaRoutes from "./routes/admin-diagnosticoia";
+
 // IA ADMIN
 import devAssistenteRoutes from "./routes/dev-assistente";
 
@@ -112,6 +115,13 @@ app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
 // 🔥 NOVO: ADMIN PUSH MANUAL
 app.use("/api/admin/push", adminAuth, adminPushRoutes);
+
+// 🔥 NOVO: ADMIN DIAGNÓSTICO IA
+app.use(
+  "/api/admin/diagnostico-ia",
+  adminAuth,
+  adminDiagnosticoIaRoutes
+);
 
 // IA ADMIN
 app.use(
