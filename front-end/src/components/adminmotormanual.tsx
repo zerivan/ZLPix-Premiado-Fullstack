@@ -2,6 +2,7 @@ import { useState } from "react";
 
 type BilheteResultado = {
   id: number;
+  dezenas: string;
   status: "PREMIADO" | "NAO_PREMIADO";
 };
 
@@ -41,10 +42,17 @@ export default function AdminMotorManual() {
   }
 
   function conferir() {
+    setResultado(null);
+
     const linhasBilhetes = listaBilhetes
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
+
+    if (linhasBilhetes.length === 0) {
+      alert("Informe ao menos um bilhete.");
+      return;
+    }
 
     const numerosFederal = normalizarNumerosFederal(resultadoFederal);
 
@@ -85,9 +93,17 @@ export default function AdminMotorManual() {
 
       if (premiado) {
         idsPremiados.push(id);
-        bilhetes.push({ id, status: "PREMIADO" });
+        bilhetes.push({
+          id,
+          dezenas: dezenasStr,
+          status: "PREMIADO",
+        });
       } else {
-        bilhetes.push({ id, status: "NAO_PREMIADO" });
+        bilhetes.push({
+          id,
+          dezenas: dezenasStr,
+          status: "NAO_PREMIADO",
+        });
       }
     }
 
@@ -151,6 +167,7 @@ export default function AdminMotorManual() {
       </div>
 
       <button
+        type="button"
         onClick={conferir}
         className="px-4 py-2 bg-green-600 text-white rounded text-sm"
       >
@@ -180,10 +197,10 @@ export default function AdminMotorManual() {
           </div>
 
           <div className="border-t pt-2 space-y-1">
-            <strong>Resultado por ID:</strong>
+            <strong>Resultado completo:</strong>
             {resultado.bilhetes.map((b) => (
               <div key={b.id}>
-                #{b.id} —{" "}
+                #{b.id} — {b.dezenas} —{" "}
                 {b.status === "PREMIADO"
                   ? `PREMIADO (R$ ${resultado.premioIndividual.toFixed(2)})`
                   : "NAO_PREMIADO"}
