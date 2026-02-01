@@ -142,32 +142,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
-      {/* restante do arquivo permanece exatamente igual até o bloco abaixo */}
-
-        <motion.div
-          className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative bg-cover bg-center"
-          style={{ backgroundImage: `url(${bannerHome})` }}
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 7.5, repeat: Infinity }}
+      <motion.div
+        className="w-full max-w-md mt-5 overflow-hidden rounded-xl border border-yellow-300/30 pt-12 pb-4 px-4 relative bg-cover bg-center min-h-[180px]"
+        style={{ backgroundImage: `url(${bannerHome})` }}
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 7.5, repeat: Infinity }}
+      >
+        <motion.span
+          animate={{ x: ["0%", "100%"] }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "linear",
+          }}
+          className="absolute top-2 left-0 text-2xl"
+          style={{ width: "fit-content" }}
         >
-          <motion.span
-            animate={{ x: ["0%", "100%"] }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              repeatType: "reverse",
-              ease: "linear",
-            }}
-            className="absolute top-2 left-0 text-2xl"
-            style={{ width: "fit-content" }}
-          >
-            🧝‍♂️💰
-          </motion.span>
+          🧝‍♂️💰
+        </motion.span>
 
-          <p className="text-yellow-300 font-bold text-sm">
-            🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
-          </p>
-        </motion.div>
+        <p className="text-yellow-300 font-bold text-sm">
+          🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+        </p>
+      </motion.div>
 
       <NavBottom />
     </div>
