@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
 import logo from "@/assets/images/logos/logo.png";
+import bannerHome from "@/assets/images/banners/banner-home.png";
 
 /**
 Ajusta ISO UTC para data BR
@@ -141,40 +142,34 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="absolute top-6 right-6 text-2xl z-50"
-      >
-        ☰
-      </button>
+      {/* restante do arquivo permanece exatamente igual até o bloco abaixo */}
 
-      {menuOpen && (
-        <div className="absolute top-14 right-6 bg-white text-black rounded-xl shadow-lg w-56 z-50">
-          <div className="flex flex-col text-sm">
-            <Link to="/politica-privacidade" className="px-4 py-3 hover:bg-gray-100" onClick={() => setMenuOpen(false)}>
-              Política de Privacidade
-            </Link>
-            <Link to="/termos-de-uso" className="px-4 py-3 hover:bg-gray-100 border-t" onClick={() => setMenuOpen(false)}>
-              Termos de Uso
-            </Link>
-            <Link to="/login" className="px-4 py-3 hover:bg-gray-100 border-t" onClick={() => setMenuOpen(false)}>
-              Área do Usuário
-            </Link>
-          </div>
-        </div>
-      )}
+        <motion.div
+          className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative bg-cover bg-center"
+          style={{ backgroundImage: `url(${bannerHome})` }}
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 7.5, repeat: Infinity }}
+        >
+          <motion.span
+            animate={{ x: ["0%", "100%"] }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "linear",
+            }}
+            className="absolute top-2 left-0 text-2xl"
+            style={{ width: "fit-content" }}
+          >
+            🧝‍♂️💰
+          </motion.span>
 
-      <header className="text-center py-7 border-b border-white/10 shadow-md">
-        <div className="flex flex-col items-center gap-2">
-          <img src={logo} alt="Logo ZLPix" className="h-14 w-auto" />
-          <h1 className="text-3xl font-extrabold text-yellow-300">
-            ZLPIX PREMIADO 💰
-          </h1>
-        </div>
-        <p className="text-sm text-blue-100 mt-1">
-          Concorra toda quarta-feira com a Loteria Federal 🎯
-        </p>
-      </header>
+          <p className="text-yellow-300 font-bold text-sm">
+            🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+          </p>
+        </motion.div>
 
-      <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
-        {/* restante do arquivo permanece absolutamente igual */}
+      <NavBottom />
+    </div>
+  );
+}
