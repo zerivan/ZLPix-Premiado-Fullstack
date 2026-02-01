@@ -15,6 +15,9 @@ export default function AdminDiagnosticoIA() {
   const [erro, setErro] = useState<string | null>(null);
   const [copiadoIndex, setCopiadoIndex] = useState<number | null>(null);
 
+  // 🔥 NOVO ESTADO PARA ZIP
+  const [arquivoZip, setArquivoZip] = useState<File | null>(null);
+
   async function enviarPergunta() {
     if (!input.trim() || loading) return;
 
@@ -69,6 +72,64 @@ export default function AdminDiagnosticoIA() {
     }
   }
 
+  // 🔥 NOVA FUNÇÃO: ENVIAR ZIP
+  async function enviarZip() {
+    if (!arquivoZip || loading) return;
+
+    const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+    if (!token) {
+      setErro("Token de administrador ausente.");
+      return;
+    }
+
+    setErro(null);
+    setLoading(true);
+
+    setMensagens((prev) => [
+      ...prev,
+      { role: "user", content: `📦 Enviado arquivo: ${arquivoZip.name}` },
+    ]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", arquivoZip);
+
+      const res = await axios.post(
+        `${BASE_URL}/api/admin/diagnostico-ia`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setMensagens((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            res.data?.resposta ||
+            "Diagnóstico concluído.",
+        },
+      ]);
+
+      setArquivoZip(null);
+    } catch {
+      setMensagens((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Erro ao enviar ZIP. Verifique o backend.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function copiarTexto(texto: string, index: number) {
     navigator.clipboard.writeText(texto);
     setCopiadoIndex(index);
@@ -84,7 +145,7 @@ export default function AdminDiagnosticoIA() {
       <div className="h-80 overflow-y-auto rounded border bg-gray-50 p-3 space-y-3">
         {mensagens.length === 0 && (
           <div className="text-sm text-gray-500">
-            Faça uma pergunta técnica sobre o projeto.
+            Faça uma pergunta técnica ou envie um ZIP do projeto.
           </div>
         )}
 
@@ -120,6 +181,26 @@ export default function AdminDiagnosticoIA() {
           {erro}
         </div>
       )}
+
+      {/* 🔥 NOVO BLOCO DE UPLOAD */}
+      <div className="space-y-2 border-t pt-3">
+        <input
+          type="file"
+          accept=".zip"
+          onChange={(e) =>
+            setArquivoZip(e.target.files?.[0] || null)
+          }
+          className="text-sm"
+        />
+
+        <button
+          onClick={enviarZip}
+          disabled={!arquivoZip || loading}
+          className="rounded bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+        >
+          {loading ? "Enviando..." : "Enviar ZIP para Diagnóstico"}
+        </button>
+      </div>
 
       <div className="flex gap-2">
         <textarea
