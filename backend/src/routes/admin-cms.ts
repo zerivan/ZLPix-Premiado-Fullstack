@@ -11,27 +11,19 @@ const router = Router();
  * =====================================================
  */
 const CMS_AREAS = [
-  // HOME
   { key: "home_info", page: "home", title: "Home – Texto Topo" },
   { key: "home_card_info", page: "home", title: "Home – Texto do Card" },
   { key: "home_extra_info", page: "home", title: "Home – Texto Abaixo do Botão" },
   { key: "home_footer", page: "home", title: "Home – Como Funciona" },
 
-  // OUTRAS PÁGINAS
   { key: "resultado_info", page: "resultado", title: "Resultado – Informações" },
   { key: "pix_info", page: "pix", title: "PIX – Informações" },
   { key: "perfil_info", page: "perfil", title: "Perfil – Informações" },
   { key: "carteira_info", page: "carteira", title: "Carteira – Informações" },
 
-  // 🔥 NOVA PÁGINA ANUNCIO
   { key: "anuncio_main", page: "anuncio", title: "Anúncio – Conteúdo Principal" },
 ];
 
-/**
- * =====================================================
- * CACHE EM MEMÓRIA — PARA MELHOR PERFORMANCE
- * =====================================================
- */
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -46,11 +38,6 @@ const cmsCache = {
 const generateETag = (data: any): string =>
   `"${crypto.createHash("md5").update(JSON.stringify(data)).digest("hex")}"`;
 
-/**
- * =====================================================
- * HTML PADRÃO
- * =====================================================
- */
 const DEFAULT_HTML: Record<string, string> = {
   home_info: "",
   home_card_info: "",
@@ -91,12 +78,14 @@ function sanitizeContent(html: string): string {
       "h3",
       "h4",
       "span",
+      "img", // ✅ liberado
     ],
     allowedAttributes: {
       a: ["href", "target", "rel"],
       span: ["style"],
+      img: ["src", "alt", "title", "width", "height", "class"], // ✅ liberado
     },
-    allowedSchemes: ["http", "https", "mailto"],
+    allowedSchemes: ["http", "https", "mailto", "data"], // ✅ permite base64
     transformTags: {
       a: sanitizeHtml.simpleTransform("a", {
         target: "_blank",
@@ -186,11 +175,6 @@ router.post("/app-appearance", async (req: Request, res: Response) => {
   }
 });
 
-/**
- * =====================================================
- * CMS — LISTAR PÁGINAS
- * =====================================================
- */
 router.get("/pages", async (_req: Request, res: Response) => {
   const now = Date.now();
 
