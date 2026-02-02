@@ -92,66 +92,66 @@ export default function MeusBilhetes() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
-      <header className="text-center pt-6 pb-2">
-        <h1 className="text-xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
+      <header className="text-center pt-5 pb-2">
+        <h1 className="text-lg font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
         <p className="text-xs text-blue-100">
           Bilhetes ativos e vencidos recentes
         </p>
       </header>
 
-      <main className="px-4 max-w-md mx-auto space-y-3 pb-10 mt-4">
+      <main className="px-3 max-w-sm mx-auto space-y-3 pb-10 mt-4">
         {bilhetesVisiveis.map((b: any) => {
           const status = getStatusLabel(b);
 
           return (
             <div
               key={b.id}
-              className="relative overflow-hidden bg-white/10 border border-white/10 rounded-xl p-3 shadow-lg"
+              className="relative overflow-hidden bg-white/10 border border-white/10 rounded-lg p-3 shadow-md"
             >
               {/* 🔥 MARCA D’ÁGUA */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-white text-5xl font-extrabold opacity-5 rotate-[-25deg] select-none">
-                  ZLPIX
+                <span className="text-white text-4xl font-extrabold opacity-5 rotate-[-25deg] select-none text-center leading-tight">
+                  ZLPIX<br />PREMIADO
                 </span>
               </div>
 
               <div className="relative z-10">
-                <div className="relative mb-2 text-center">
-                  <span className="text-yellow-300 text-base font-extrabold tracking-wide">
+                <div className="mb-2 text-center">
+                  <span className="text-yellow-300 text-sm font-extrabold tracking-wide">
                     ZLPIX PREMIADO
                   </span>
                 </div>
 
                 <div className="mb-2">
-                  <h2 className="font-bold text-base text-yellow-300">
+                  <h2 className="font-bold text-sm text-yellow-300">
                     Bilhete #{b.id}
                   </h2>
-                  <p className="text-xs text-blue-100">
-                    Criado em: {new Date(b.createdAt).toLocaleString("pt-BR")}
+                  <p className="text-[10px] text-blue-100">
+                    Criado: {new Date(b.createdAt).toLocaleString("pt-BR")}
                   </p>
-                  <p className="text-xs text-blue-100">
+                  <p className="text-[10px] text-blue-100">
                     Sorteio: {new Date(b.sorteioData).toLocaleString("pt-BR")}
                   </p>
                 </div>
 
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-1 mb-3">
                   {b.dezenas.split(",").map((n: string, i: number) => (
                     <span
                       key={i}
-                      className="h-8 w-8 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md text-sm"
+                      className="h-7 w-7 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow text-xs"
                     >
                       {n}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-sm text-green-400 font-semibold">
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-green-400 font-semibold">
                     R$ {Number(b.valor).toFixed(2)}
                   </p>
 
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${status.className}`}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
                   >
                     {status.label}
                   </span>
