@@ -93,30 +93,37 @@ export default function MeusBilhetes() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center pt-6 pb-2">
-        <h1 className="text-2xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
-        <p className="text-sm text-blue-100">
+        <h1 className="text-xl font-bold text-yellow-300">🎟️ Meus Bilhetes</h1>
+        <p className="text-xs text-blue-100">
           Bilhetes ativos e vencidos recentes
         </p>
       </header>
 
-      <main className="px-4 max-w-lg mx-auto space-y-4 pb-10 mt-6">
+      <main className="px-4 max-w-md mx-auto space-y-3 pb-10 mt-4">
         {bilhetesVisiveis.map((b: any) => {
           const status = getStatusLabel(b);
 
           return (
             <div
               key={b.id}
-              className="relative overflow-hidden bg-white/10 border border-white/10 rounded-2xl p-4 shadow-lg"
+              className="relative overflow-hidden bg-white/10 border border-white/10 rounded-xl p-3 shadow-lg"
             >
-              <div className="relative mb-3 text-center">
-                <span className="text-yellow-300 text-lg font-extrabold tracking-wide">
-                  ZLPIX PREMIADO
+              {/* 🔥 MARCA D’ÁGUA */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-white text-5xl font-extrabold opacity-5 rotate-[-25deg] select-none">
+                  ZLPIX
                 </span>
               </div>
 
-              <div>
+              <div className="relative z-10">
+                <div className="relative mb-2 text-center">
+                  <span className="text-yellow-300 text-base font-extrabold tracking-wide">
+                    ZLPIX PREMIADO
+                  </span>
+                </div>
+
                 <div className="mb-2">
-                  <h2 className="font-bold text-lg text-yellow-300">
+                  <h2 className="font-bold text-base text-yellow-300">
                     Bilhete #{b.id}
                   </h2>
                   <p className="text-xs text-blue-100">
@@ -127,11 +134,11 @@ export default function MeusBilhetes() {
                   </p>
                 </div>
 
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-3">
                   {b.dezenas.split(",").map((n: string, i: number) => (
                     <span
                       key={i}
-                      className="h-10 w-10 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md"
+                      className="h-8 w-8 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow-md text-sm"
                     >
                       {n}
                     </span>
@@ -144,7 +151,7 @@ export default function MeusBilhetes() {
                   </p>
 
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${status.className}`}
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${status.className}`}
                   >
                     {status.label}
                   </span>
