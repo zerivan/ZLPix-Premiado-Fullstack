@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ChatBot from "./ChatBot";
 
 const INACTIVITY_TIME = 30000;
-const ASSISTANT_NAME = "Olá eu sou Dayane";
+const ASSISTANT_NAME = "Olá, eu sou Dayane";
 
 const GlobalChatBot: React.FC = () => {
   const [showAvatar, setShowAvatar] = useState(false);
