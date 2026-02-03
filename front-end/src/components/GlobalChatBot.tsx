@@ -74,16 +74,36 @@ const GlobalChatBot: React.FC = () => {
               height: 42,
               borderRadius: "50%",
               background: "#ffffff",
-              color: "#4f46e5",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontWeight: 700,
-              fontSize: 18,
               flexShrink: 0,
+              overflow: "hidden",
             }}
           >
-            D
+            {/* Avatar feminino cabelo cacheado */}
+            <svg
+              width="38"
+              height="38"
+              viewBox="0 0 64 64"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="32" cy="32" r="30" fill="#f3f4f6" />
+              <circle cx="32" cy="28" r="12" fill="#fcd7b6" />
+              <path
+                d="M16 28c0-10 8-18 16-18s16 8 16 18c0 0-3-6-6-6s-3 4-6 4-3-4-6-4-6 6-6 6z"
+                fill="#2f2f2f"
+              />
+              <circle cx="27" cy="27" r="2" fill="#333" />
+              <circle cx="37" cy="27" r="2" fill="#333" />
+              <path
+                d="M27 33c2 2 8 2 10 0"
+                stroke="#b45309"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+              />
+            </svg>
           </div>
 
           <div style={{ lineHeight: 1.3 }}>
