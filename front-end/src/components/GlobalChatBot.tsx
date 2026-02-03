@@ -111,7 +111,7 @@ const GlobalChatBot: React.FC = () => {
               {ASSISTANT_NAME}
             </div>
             <div style={{ fontSize: 13 }}>
-              Olá, posso te ajudar?
+              Posso te ajudar?
             </div>
           </div>
         </div>
