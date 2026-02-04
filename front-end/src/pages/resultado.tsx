@@ -14,22 +14,45 @@ function formatarData(date: Date) {
   return date.toLocaleDateString("pt-BR");
 }
 
-function calcularDataResultado(
-  dataApuracao?: string | null,
-  timestampProximoSorteio?: number
-): string | null {
+/**
+ * 🔥 CORREÇÃO DEFINITIVA DA TIMELINE
+ * Regra:
+ * - Sorteios válidos: quarta e sábado
+ * - Resultado considerado válido após 20h
+ */
+function calcularDataResultado(dataApuracao?: string | null): string | null {
   if (dataApuracao) {
     const d = new Date(dataApuracao);
-    if (!isNaN(d.getTime())) return formatarData(d);
+    if (!isNaN(d.getTime())) {
+      return formatarData(d);
+    }
   }
 
-  if (timestampProximoSorteio) {
-    const d = new Date(timestampProximoSorteio);
-    d.setDate(d.getDate() - 7);
-    return formatarData(d);
+  const agora = new Date();
+  const dia = agora.getDay(); // 0=dom, 3=qua, 6=sab
+  const hora = agora.getHours();
+
+  const resultado = new Date(agora);
+
+  const ehQuarta = dia === 3;
+  const ehSabado = dia === 6;
+
+  // Se for quarta ou sábado antes das 20h → ainda é o sorteio de hoje
+  if ((ehQuarta || ehSabado) && hora < 20) {
+    return formatarData(resultado);
   }
 
-  return null;
+  // Após 20h, calcula próximo sorteio válido
+  if (ehQuarta) {
+    resultado.setDate(resultado.getDate() + 3); // próximo sábado
+  } else if (ehSabado) {
+    resultado.setDate(resultado.getDate() + 4); // próxima quarta
+  } else {
+    const diasAteQuarta = (3 - dia + 7) % 7;
+    resultado.setDate(resultado.getDate() + diasAteQuarta);
+  }
+
+  return formatarData(resultado);
 }
 
 export default function Resultado() {
@@ -79,8 +102,7 @@ export default function Resultado() {
     );
 
   const dataResultado = calcularDataResultado(
-    resultado?.dataApuracao,
-    resultado?.timestampProximoSorteio
+    resultado?.dataApuracao
   );
 
   return (
@@ -150,7 +172,6 @@ export default function Resultado() {
               )}
             </article>
 
-            {/* 🔥 Banner animado ajustado */}
             <motion.div
               className="w-full rounded-xl bg-white/10 border border-yellow-300/30 p-4 mb-6 relative overflow-hidden pt-12"
               animate={{ opacity: [0.8, 1, 0.8] }}
