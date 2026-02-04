@@ -7,7 +7,7 @@ type FederalResponse = {
   ok: boolean;
   data?: {
     dataApuracao?: string | null;
-    premios: string[]; // 1º ao 5º prêmio (número completo)
+    premios: string[];
   };
 };
 
@@ -46,24 +46,33 @@ async function buscarResultadoFederal(): Promise<{
  * =====================================================
  * CRON — APURAÇÃO BASEADA EM DATA OFICIAL DA FEDERAL
  * =====================================================
- * Regra correta:
- * - NÃO depende de horário (17h não interfere)
- * - NÃO depende apenas de bilhete vencido
- * - Só processa quando existir resultado oficial
- * - Só processa se ainda houver bilhete ATIVO não apurado
  */
 cron.schedule("*/10 * * * *", async () => {
   try {
     const federal = await buscarResultadoFederal();
 
     if (!federal) {
-  console.log(
-    "ℹ️ [ZLPix-Premiado] Sorteio não realizado: Nenhum resultado oficial disponível para esta data OU não há bilhete ativo para apuração. Essa mensagem pode aparecer em apurações manuais quando o sorteio da Federal ainda não foi publicado, ou se já foi processado anteriormente."
-  );
-  return;
-}
+      console.log(
+        "ℹ️ [ZLPix-Premiado] Nenhum resultado oficial disponível."
+      );
+      return;
+    }
 
     const { dataApuracao, numeros } = federal;
+
+    // 🔥 REGRA DO APP: somente quarta-feira
+    const diaSemana = dataApuracao.getDay(); // 0=dom, 3=qua
+    if (diaSemana !== 3) {
+      console.log("⛔ Resultado ignorado: não é quarta-feira.");
+      return;
+    }
+
+    // 🔥 REGRA DO APP: somente após 20h
+    const agora = new Date();
+    if (agora.getHours() < 20) {
+      console.log("⏳ Aguardando 20h para validar sorteio.");
+      return;
+    }
 
     const inicio = new Date(dataApuracao);
     inicio.setHours(0, 0, 0, 0);
@@ -71,7 +80,6 @@ cron.schedule("*/10 * * * *", async () => {
     const fim = new Date(dataApuracao);
     fim.setHours(23, 59, 59, 999);
 
-    // 🔎 Verifica se ainda existe bilhete ATIVO não apurado
     const bilhetePendente = await prisma.bilhete.findFirst({
       where: {
         status: "ATIVO",
@@ -90,7 +98,7 @@ cron.schedule("*/10 * * * *", async () => {
     console.log("⏳ Processando sorteio oficial:", dataApuracao);
 
     await processarSorteio(dataApuracao, {
-      dezenas: numeros, // números completos, motor extrai milhar
+      dezenas: numeros,
     });
 
     console.log("✅ Sorteio processado com base na Federal:", dataApuracao);
