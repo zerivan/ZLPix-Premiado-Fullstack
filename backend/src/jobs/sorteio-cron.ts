@@ -52,25 +52,45 @@ cron.schedule("*/10 * * * *", async () => {
     const federal = await buscarResultadoFederal();
 
     if (!federal) {
-      console.log(
-        "ℹ️ [ZLPix-Premiado] Nenhum resultado oficial disponível."
-      );
+      console.log("ℹ️ [ZLPix-Premiado] Nenhum resultado oficial disponível.");
       return;
     }
 
     const { dataApuracao, numeros } = federal;
 
-    // 🔥 REGRA DO APP: somente quarta-feira
-    const diaSemana = dataApuracao.getDay(); // 0=dom, 3=qua
-    if (diaSemana !== 3) {
+    /**
+     * 🔥 AJUSTE PARA HORÁRIO DO BRASIL (UTC-3)
+     */
+    const agoraUtc = new Date();
+    const agoraBrasil = new Date(agoraUtc.getTime() - 3 * 60 * 60 * 1000);
+
+    const hojeBrasil = new Date(agoraBrasil);
+    hojeBrasil.setHours(0, 0, 0, 0);
+
+    const dataFederalBrasil = new Date(dataApuracao);
+    dataFederalBrasil.setHours(0, 0, 0, 0);
+
+    /**
+     * 🔥 REGRA 1: Só processa se for quarta-feira
+     */
+    if (dataFederalBrasil.getDay() !== 3) {
       console.log("⛔ Resultado ignorado: não é quarta-feira.");
       return;
     }
 
-    // 🔥 REGRA DO APP: somente após 20h
-    const agora = new Date();
-    if (agora.getHours() < 20) {
-      console.log("⏳ Aguardando 20h para validar sorteio.");
+    /**
+     * 🔥 REGRA 2: Só processa se a data da Federal for HOJE (Brasil)
+     */
+    if (dataFederalBrasil.getTime() !== hojeBrasil.getTime()) {
+      console.log("⛔ Resultado ignorado: não é a quarta-feira atual.");
+      return;
+    }
+
+    /**
+     * 🔥 REGRA 3: Só após 20h horário Brasil
+     */
+    if (agoraBrasil.getHours() < 20) {
+      console.log("⏳ Aguardando 20h (horário Brasil) para validar sorteio.");
       return;
     }
 
