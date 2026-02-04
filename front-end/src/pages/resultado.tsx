@@ -15,11 +15,33 @@ function formatarData(date: Date) {
 }
 
 /**
- * 🔥 CORREÇÃO DEFINITIVA DA TIMELINE
- * Regra:
- * - Sorteios válidos: quarta e sábado
- * - Resultado considerado válido após 20h
+ * 🔥 REGRA OFICIAL ZLPIX (MESMA DA HOME)
+ * - Sorteio válido: SOMENTE quarta-feira
+ * - Considera virada apenas após 20h
  */
+function calcularProximaQuartaValida(): string {
+  const agora = new Date();
+  const dia = agora.getDay(); // 0=dom, 3=qua
+  const hora = agora.getHours();
+
+  const proxima = new Date(agora);
+
+  const ehQuarta = dia === 3;
+
+  if (ehQuarta && hora < 20) {
+    // Ainda é a quarta válida de hoje
+    return formatarData(proxima);
+  }
+
+  // Calcular próxima quarta
+  const diasAteQuarta = (3 - dia + 7) % 7;
+  const ajuste = diasAteQuarta === 0 ? 7 : diasAteQuarta;
+
+  proxima.setDate(proxima.getDate() + ajuste);
+
+  return formatarData(proxima);
+}
+
 function calcularDataResultado(dataApuracao?: string | null): string | null {
   if (dataApuracao) {
     const d = new Date(dataApuracao);
@@ -27,32 +49,7 @@ function calcularDataResultado(dataApuracao?: string | null): string | null {
       return formatarData(d);
     }
   }
-
-  const agora = new Date();
-  const dia = agora.getDay(); // 0=dom, 3=qua, 6=sab
-  const hora = agora.getHours();
-
-  const resultado = new Date(agora);
-
-  const ehQuarta = dia === 3;
-  const ehSabado = dia === 6;
-
-  // Se for quarta ou sábado antes das 20h → ainda é o sorteio de hoje
-  if ((ehQuarta || ehSabado) && hora < 20) {
-    return formatarData(resultado);
-  }
-
-  // Após 20h, calcula próximo sorteio válido
-  if (ehQuarta) {
-    resultado.setDate(resultado.getDate() + 3); // próximo sábado
-  } else if (ehSabado) {
-    resultado.setDate(resultado.getDate() + 4); // próxima quarta
-  } else {
-    const diasAteQuarta = (3 - dia + 7) % 7;
-    resultado.setDate(resultado.getDate() + diasAteQuarta);
-  }
-
-  return formatarData(resultado);
+  return null;
 }
 
 export default function Resultado() {
@@ -105,13 +102,17 @@ export default function Resultado() {
     resultado?.dataApuracao
   );
 
+  const proximaQuartaValida = calcularProximaQuartaValida();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center py-6">
         <h1 className="text-2xl font-extrabold text-yellow-300 drop-shadow-md">
           🎯 Loteria Federal — Resultados Oficiais
         </h1>
-        <p className="text-sm text-blue-100">Fonte oficial do sistema</p>
+        <p className="text-sm text-blue-100">
+          Sorteio válido no ZLPIX apenas às quartas-feiras
+        </p>
       </header>
 
       <main className="max-w-2xl mx-auto px-4">
@@ -129,7 +130,7 @@ export default function Resultado() {
               {temResultado ? (
                 <>
                   <h2 className="text-lg font-bold text-yellow-300 mb-4 text-center">
-                    Resultado do dia {dataResultado}
+                    Resultado oficial do dia {dataResultado}
                   </h2>
 
                   <div className="grid grid-cols-2 gap-4 items-center justify-items-center mb-4">
@@ -154,16 +155,14 @@ export default function Resultado() {
                     </div>
                   </div>
 
-                  {resultado.proximoSorteio && (
-                    <p className="text-center text-xs text-blue-100/80 mt-4">
-                      Próximo resultado em{" "}
-                      <span className="text-yellow-300 font-semibold">
-                        {new Date(resultado.proximoSorteio).toLocaleDateString(
-                          "pt-BR"
-                        )}
+                  <div className="text-center mt-4 text-xs text-blue-100/90">
+                    <p>
+                      📌 Sorteio válido para o ZLPIX:
+                      <span className="text-yellow-300 font-semibold ml-1">
+                        {proximaQuartaValida}
                       </span>
                     </p>
-                  )}
+                  </div>
                 </>
               ) : (
                 <h2 className="text-lg font-bold text-yellow-300 text-center">
@@ -186,8 +185,7 @@ export default function Resultado() {
               </motion.span>
 
               <p className="text-center text-yellow-300 font-semibold text-sm">
-                Confira suas dezenas com atenção. Se você participou, este pode ser o seu momento!
-                Acompanhe sempre os resultados oficiais e boa sorte no próximo sorteio.
+                Confira suas dezenas com atenção. O ZLPIX considera apenas o resultado da quarta-feira após 20h.
               </p>
             </motion.div>
           </>
