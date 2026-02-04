@@ -8,14 +8,39 @@ const router = express.Router();
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
+/**
+ * 🔥 REGRA CORRETA DO SORTEIO
+ * - Quarta antes das 17h → hoje às 20h
+ * - Quarta após 17h → próxima quarta às 20h
+ * - Outros dias → próxima quarta às 20h
+ */
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0);
-  return next;
+  const day = now.getDay(); // 0=dom, 3=qua
+  const hour = now.getHours();
+
+  const target = new Date(now);
+
+  if (day === 3) {
+    // Hoje é quarta-feira
+    if (hour < 17) {
+      // Antes das 17h → concorre hoje
+      target.setHours(20, 0, 0, 0);
+      return target;
+    }
+
+    // Após 17h → próxima quarta
+    target.setDate(target.getDate() + 7);
+    target.setHours(20, 0, 0, 0);
+    return target;
+  }
+
+  // Não é quarta → calcula próxima quarta
+  const diff = (3 - day + 7) % 7;
+  target.setDate(target.getDate() + diff);
+  target.setHours(20, 0, 0, 0);
+
+  return target;
 }
 
 async function fetchMpPayment(paymentId: string) {
@@ -79,12 +104,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     });
 
     if (transacaoCarteira) {
-      // Se já foi processado, retorna imediatamente
       if (transacaoCarteira.status === "paid") {
         return res.status(200).send("ok");
       }
 
-      // Processar crédito na carteira
       await prisma.$transaction([
         prisma.wallet.updateMany({
           where: { userId: transacaoCarteira.userId },
