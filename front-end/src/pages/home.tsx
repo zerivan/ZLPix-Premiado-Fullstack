@@ -14,17 +14,22 @@ function formatarDataBR(iso: string) {
 }
 
 /**
-REGRA OFICIAL:
-Sorteio só vira depois das 17h da quarta-feira
+🔥 NOVA REGRA DE TIMELINE
+Sorteios válidos: quarta e sábado
+Só vira após 20h
 */
 function ajustarDataSorteio(iso: string) {
   const agora = new Date();
-  const diaSemana = agora.getDay();
+  const dia = agora.getDay(); // 0=dom, 3=qua, 6=sab
   const hora = agora.getHours();
 
   const dataApi = new Date(iso);
 
-  if (diaSemana === 3 && hora < 17) {
+  const ehQuarta = dia === 3;
+  const ehSabado = dia === 6;
+
+  // Antes das 20h ainda considera ciclo anterior
+  if ((ehQuarta || ehSabado) && hora < 20) {
     const corrigida = new Date(dataApi);
     corrigida.setDate(corrigida.getDate() - 7);
     return formatarDataBR(corrigida.toISOString());
@@ -208,7 +213,6 @@ export default function Home() {
           🎯 FAZER APOSTA AGORA
         </motion.button>
 
-        {/* BANNER ANIMADO */}
         <motion.div
           className="w-full max-w-md mt-5 overflow-hidden rounded-xl bg-white/10 border border-yellow-300/30 pt-12 pb-4 px-4 relative"
           animate={{ y: [0, -4, 0] }}
