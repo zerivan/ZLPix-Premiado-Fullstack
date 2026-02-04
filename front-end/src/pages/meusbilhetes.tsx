@@ -44,35 +44,36 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
-  function venceuEm(b: any): Date | null {
+  // 🔥 Sorteio vira oficialmente às 20h
+  function dataVirada(b: any): Date | null {
     if (!b.sorteioData) return null;
+
     const d = new Date(b.sorteioData);
-    d.setHours(17, 0, 0, 0);
+    d.setHours(20, 0, 0, 0); // ✅ agora usa 20h
     return d;
   }
 
   function dentroDaPermanencia(b: any) {
-    const vencimento = venceuEm(b);
-    if (!vencimento) return false;
+    const virada = dataVirada(b);
+    if (!virada) return false;
 
-    const limite = new Date(vencimento);
+    const limite = new Date(virada);
     limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
 
     return Date.now() <= limite.getTime();
   }
 
   function isVisivel(b: any) {
-    const vencimento = venceuEm(b);
+    const virada = dataVirada(b);
+    if (!virada) return false;
 
-    if (b.status === "ATIVO" && vencimento && Date.now() < vencimento.getTime()) {
+    // 🔥 Antes das 20h → bilhete ainda está válido
+    if (Date.now() < virada.getTime()) {
       return true;
     }
 
-    if (vencimento && dentroDaPermanencia(b)) {
-      return true;
-    }
-
-    return false;
+    // 🔥 Depois das 20h → permanece 7 dias
+    return dentroDaPermanencia(b);
   }
 
   const bilhetesVisiveis = bilhetes.filter(isVisivel);
@@ -108,7 +109,6 @@ export default function MeusBilhetes() {
               key={b.id}
               className="relative overflow-hidden bg-white/10 border border-white/10 rounded-lg p-3 shadow-md"
             >
-              {/* 🔥 MARCA D’ÁGUA */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="text-white text-4xl font-extrabold opacity-5 rotate-[-25deg] select-none text-center leading-tight">
                   ZLPIX<br />PREMIADO
