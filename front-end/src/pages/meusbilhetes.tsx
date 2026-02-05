@@ -44,12 +44,37 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
-  // 🔥 Sorteio vira oficialmente às 20h
+  function baixarHistorico() {
+    if (!bilhetes.length) return;
+
+    const conteudo = bilhetes
+      .map((b) => {
+        return `
+Bilhete #${b.id}
+Criado: ${new Date(b.createdAt).toLocaleString("pt-BR")}
+Sorteio: ${new Date(b.sorteioData).toLocaleString("pt-BR")}
+Dezenas: ${b.dezenas}
+Valor: R$ ${Number(b.valor).toFixed(2)}
+Status: ${b.status}
+-----------------------------`;
+      })
+      .join("\n");
+
+    const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `historico-bilhetes-${Date.now()}.txt`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
   function dataVirada(b: any): Date | null {
     if (!b.sorteioData) return null;
-
     const d = new Date(b.sorteioData);
-    d.setHours(20, 0, 0, 0); // ✅ agora usa 20h
+    d.setHours(20, 0, 0, 0);
     return d;
   }
 
@@ -67,12 +92,10 @@ export default function MeusBilhetes() {
     const virada = dataVirada(b);
     if (!virada) return false;
 
-    // 🔥 Antes das 20h → bilhete ainda está válido
     if (Date.now() < virada.getTime()) {
       return true;
     }
 
-    // 🔥 Depois das 20h → permanece 7 dias
     return dentroDaPermanencia(b);
   }
 
@@ -99,6 +122,18 @@ export default function MeusBilhetes() {
           Bilhetes ativos e vencidos recentes
         </p>
       </header>
+
+      {/* 🔥 BOTÃO DOWNLOAD HISTÓRICO */}
+      {bilhetes.length > 0 && (
+        <div className="text-center mt-3">
+          <button
+            onClick={baixarHistorico}
+            className="bg-yellow-400 text-blue-900 font-bold px-5 py-2 rounded-full shadow-md"
+          >
+            ⬇️ Baixar Histórico
+          </button>
+        </div>
+      )}
 
       <main className="px-3 max-w-sm mx-auto space-y-3 pb-10 mt-4">
         {bilhetesVisiveis.map((b: any) => {
