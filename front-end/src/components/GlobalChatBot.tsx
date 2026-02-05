@@ -6,7 +6,7 @@ const ASSISTANT_NAME = "Dayane";
 
 // Avatar hospedado no Google Drive (link direto)
 const AVATAR_URL =
-  "https://br.pinterest.com/pin/797911259025602046#imgViewer";
+  "https://randomuser.me/api/portraits/women/65.jpg";
 
 const GlobalChatBot: React.FC = () => {
   const [showAvatar, setShowAvatar] = useState(false);
