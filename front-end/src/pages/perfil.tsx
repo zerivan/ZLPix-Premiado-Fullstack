@@ -1,10 +1,12 @@
 // src/pages/perfil.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
 
 export default function Perfil() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +30,35 @@ export default function Perfil() {
     localStorage.removeItem("USER_ZLPIX");
     navigate("/login");
   };
+
+  function handleSelecionarImagem() {
+    fileInputRef.current?.click();
+  }
+
+  function handleImagemChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Selecione uma imagem válida.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+
+      const userAtualizado = {
+        ...user,
+        avatar: base64,
+      };
+
+      setUser(userAtualizado);
+      localStorage.setItem("USER_ZLPIX", JSON.stringify(userAtualizado));
+    };
+
+    reader.readAsDataURL(file);
+  }
 
   if (loading) {
     return (
@@ -69,21 +100,40 @@ export default function Perfil() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
-      
-      {/* ✅ Container centralizado */}
       <div className="flex-1 w-full max-w-xl mx-auto px-6 pt-6">
 
         <header className="flex flex-col items-center mb-8">
           <div className="relative">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-yellow-300 to-green-400 flex items-center justify-center text-blue-900 text-5xl font-extrabold shadow-2xl border-4 border-white/30">
-              {user.name?.[0]?.toUpperCase() || "U"}
+
+            {/* AVATAR */}
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt="Avatar"
+                className="w-28 h-28 rounded-full object-cover border-4 border-white/30 shadow-2xl"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-yellow-300 to-green-400 flex items-center justify-center text-blue-900 text-5xl font-extrabold shadow-2xl border-4 border-white/30">
+                {user.name?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
+
+            {/* BOTÃO EDITAR */}
+            <div
+              onClick={handleSelecionarImagem}
+              className="absolute bottom-1 right-1 bg-yellow-400 p-1.5 rounded-full border border-blue-900 cursor-pointer shadow-md hover:scale-105 transition-transform"
+            >
+              ✏️
             </div>
 
-            <div className="absolute bottom-1 right-1 bg-yellow-400 p-1.5 rounded-full border border-blue-900 cursor-pointer shadow-md hover:scale-105 transition-transform">
-              <span className="material-symbols-outlined text-blue-900 text-sm">
-                edit
-              </span>
-            </div>
+            {/* INPUT OCULTO */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImagemChange}
+              className="hidden"
+            />
           </div>
 
           <h1 className="text-2xl font-bold mt-4">
@@ -151,7 +201,6 @@ export default function Perfil() {
         >
           Sair da Conta
         </button>
-
       </div>
 
       <NavBottom />
