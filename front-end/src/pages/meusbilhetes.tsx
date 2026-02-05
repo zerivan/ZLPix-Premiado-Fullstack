@@ -44,31 +44,42 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
+  // 🔥 ALTERAÇÃO AQUI: agora gera PDF via print
   function baixarHistorico() {
     if (!bilhetes.length) return;
 
     const conteudo = bilhetes
       .map((b) => {
         return `
-Bilhete #${b.id}
-Criado: ${new Date(b.createdAt).toLocaleString("pt-BR")}
-Sorteio: ${new Date(b.sorteioData).toLocaleString("pt-BR")}
-Dezenas: ${b.dezenas}
-Valor: R$ ${Number(b.valor).toFixed(2)}
-Status: ${b.status}
------------------------------`;
+        <div style="margin-bottom:20px;">
+          <strong>Bilhete #${b.id}</strong><br/>
+          Criado: ${new Date(b.createdAt).toLocaleString("pt-BR")}<br/>
+          Sorteio: ${new Date(b.sorteioData).toLocaleString("pt-BR")}<br/>
+          Dezenas: ${b.dezenas}<br/>
+          Valor: R$ ${Number(b.valor).toFixed(2)}<br/>
+          Status: ${b.status}
+        </div>
+        `;
       })
-      .join("\n");
+      .join("");
 
-    const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const janela = window.open("", "", "width=800,height=600");
+    if (!janela) return;
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `historico-bilhetes-${Date.now()}.txt`;
-    link.click();
+    janela.document.write(`
+      <html>
+        <head>
+          <title>Histórico de Bilhetes</title>
+        </head>
+        <body style="font-family: Arial; padding:20px;">
+          <h2>ZLPIX PREMIADO - Histórico de Bilhetes</h2>
+          ${conteudo}
+        </body>
+      </html>
+    `);
 
-    URL.revokeObjectURL(url);
+    janela.document.close();
+    janela.print();
   }
 
   function dataVirada(b: any): Date | null {
@@ -123,14 +134,13 @@ Status: ${b.status}
         </p>
       </header>
 
-      {/* 🔥 BOTÃO DOWNLOAD HISTÓRICO */}
       {bilhetes.length > 0 && (
         <div className="text-center mt-3">
           <button
             onClick={baixarHistorico}
             className="bg-yellow-400 text-blue-900 font-bold px-5 py-2 rounded-full shadow-md"
           >
-            ⬇️ Baixar Histórico
+            ⬇️ Baixar Histórico (PDF)
           </button>
         </div>
       )}
