@@ -6,7 +6,7 @@ const ASSISTANT_NAME = "Dayane";
 
 // Avatar hospedado no Google Drive (link direto)
 const AVATAR_URL =
-  "https://drive.google.com/uc?export=view&id=1nwpsl0bR3t2CPO4_--2YLv8r-a3KrNiA";
+  https://drive.usercontent.google.com/download?id=1nwpsl0bR3t2CPO4_--2YLv8r-a3KrNiA&export=view&authuser=0";
 
 const GlobalChatBot: React.FC = () => {
   const [showAvatar, setShowAvatar] = useState(false);
