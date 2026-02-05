@@ -76,34 +76,43 @@ export default function Carteira() {
     setTransacoes(filtradas);
   }
 
+  // 🔥 ALTERAÇÃO AQUI — agora gera PDF
   function baixarHistorico() {
     if (transacoes.length === 0) {
       alert("Nenhuma transação para download");
       return;
     }
 
-    const linhas = [
-      ["Tipo", "Valor", "Status", "Data"].join(";"),
-      ...transacoes.map((t) =>
-        [
-          t.metadata?.tipo === "saque" ? "Saque" : "Depósito",
-          Number(t.valor).toFixed(2),
-          traduzirStatus(t.status),
-          formatarDataHora(t.createdAt),
-        ].join(";")
-      ),
-    ];
+    const conteudo = transacoes
+      .map((t) => {
+        return `
+          <div style="margin-bottom:15px;">
+            <strong>${t.metadata?.tipo === "saque" ? "Saque" : "Depósito"}</strong><br/>
+            Valor: R$ ${Number(t.valor).toFixed(2)}<br/>
+            Status: ${traduzirStatus(t.status)}<br/>
+            Data: ${formatarDataHora(t.createdAt)}
+          </div>
+        `;
+      })
+      .join("");
 
-    const csv = linhas.join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const janela = window.open("", "", "width=800,height=600");
+    if (!janela) return;
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "historico-carteira-15-dias.csv";
-    link.click();
+    janela.document.write(`
+      <html>
+        <head>
+          <title>Histórico da Carteira</title>
+        </head>
+        <body style="font-family: Arial; padding:20px;">
+          <h2>ZLPIX PREMIADO - Histórico da Carteira (15 dias)</h2>
+          ${conteudo}
+        </body>
+      </html>
+    `);
 
-    URL.revokeObjectURL(url);
+    janela.document.close();
+    janela.print();
   }
 
   async function solicitarSaque() {
@@ -170,7 +179,6 @@ export default function Carteira() {
             {loading ? "R$ --,--" : `R$ ${saldo.toFixed(2)}`}
           </h2>
 
-          {/* 🔒 AVISO DE CONFERÊNCIA ADMINISTRATIVA */}
           <p className="text-xs text-yellow-300/90 mt-3">
             ⚠️ O valor exibido na carteira refere-se ao resultado automático do sistema.
             O pagamento do prêmio será realizado somente após conferência administrativa do bilhete.
@@ -241,7 +249,7 @@ export default function Carteira() {
           onClick={baixarHistorico}
           className="w-full py-2 rounded bg-blue-500/80 font-bold"
         >
-          📥 Download do histórico
+          📥 Download do histórico (PDF)
         </motion.button>
 
         {transacoes.map((t) => (
