@@ -29,11 +29,9 @@ function calcularProximaQuartaValida(): string {
   const ehQuarta = dia === 3;
 
   if (ehQuarta && hora < 20) {
-    // Ainda é a quarta válida de hoje
     return formatarData(proxima);
   }
 
-  // Calcular próxima quarta
   const diasAteQuarta = (3 - dia + 7) % 7;
   const ajuste = diasAteQuarta === 0 ? 7 : diasAteQuarta;
 
@@ -88,6 +86,34 @@ export default function Resultado() {
 
     carregarResultado();
   }, []);
+
+  function baixarResultado() {
+    if (!resultado?.premios || !resultado.dataApuracao) return;
+
+    const conteudo = `
+ZLPIX PREMIADO
+Resultado oficial da Loteria Federal
+Data: ${calcularDataResultado(resultado.dataApuracao)}
+
+1º: ${resultado.premios[0]}
+2º: ${resultado.premios[1]}
+3º: ${resultado.premios[2]}
+4º: ${resultado.premios[3]}
+5º: ${resultado.premios[4]}
+
+Sorteio válido no ZLPIX: ${calcularProximaQuartaValida()}
+    `.trim();
+
+    const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `resultado-zlpix-${Date.now()}.txt`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
 
   const positionLabels = ["1º", "2º", "3º", "4º", "5º"];
 
@@ -162,6 +188,16 @@ export default function Resultado() {
                         {proximaQuartaValida}
                       </span>
                     </p>
+                  </div>
+
+                  {/* 🔥 BOTÃO RESTAURADO */}
+                  <div className="text-center mt-6">
+                    <button
+                      onClick={baixarResultado}
+                      className="bg-yellow-400 text-blue-900 font-bold px-6 py-2 rounded-full shadow-md hover:scale-95 transition"
+                    >
+                      ⬇️ Baixar Resultado
+                    </button>
                   </div>
                 </>
               ) : (
