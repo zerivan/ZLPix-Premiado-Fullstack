@@ -104,24 +104,40 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     });
 
     if (transacaoCarteira) {
-      if (transacaoCarteira.status === "paid") {
-        return res.status(200).send("ok");
-      }
+      const processado = await prisma.$transaction(async (db) => {
+        const claim = await db.transacao_carteira.updateMany({
+          where: {
+            id: transacaoCarteira.id,
+            NOT: { status: "paid" },
+          },
+          data: { status: "paid" },
+        });
 
-      await prisma.$transaction([
-        prisma.wallet.updateMany({
+        if (claim.count === 0) {
+          return false;
+        }
+
+        await db.$executeRaw`
+          INSERT INTO wallet (user_id, saldo, created_at)
+          VALUES (${transacaoCarteira.userId}, 0, NOW())
+          ON CONFLICT (user_id) DO NOTHING
+        `;
+
+        await db.wallet.updateMany({
           where: { userId: transacaoCarteira.userId },
           data: {
             saldo: {
               increment: Number(transacaoCarteira.valor),
             },
           },
-        }),
-        prisma.transacao_carteira.update({
-          where: { id: transacaoCarteira.id },
-          data: { status: "paid" },
-        }),
-      ]);
+        });
+
+        return true;
+      });
+
+      if (!processado) {
+        return res.status(200).send("ok");
+      }
 
       await notify({
         type: "CARTEIRA_CREDITO",
@@ -137,7 +153,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       where: { mpPaymentId: String(paymentId) },
     });
 
-    if (!transacao || transacao.status === "paid") {
+    if (!transacao) {
       return res.status(200).send("ok");
     }
 
@@ -154,11 +170,18 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
       const sorteioData = getNextWednesday();
 
-      await prisma.$transaction(async (db) => {
-        await db.transacao.update({
-          where: { id: transacao.id },
+      const processado = await prisma.$transaction(async (db) => {
+        const claim = await db.transacao.updateMany({
+          where: {
+            id: transacao.id,
+            NOT: { status: "paid" },
+          },
           data: { status: "paid" },
         });
+
+        if (claim.count === 0) {
+          return false;
+        }
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
@@ -193,7 +216,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             codigo: dezenas,
           });
         }
+
+        return true;
       });
+
+      if (!processado) {
+        return res.status(200).send("ok");
+      }
 
       return res.status(200).send("ok");
     }
