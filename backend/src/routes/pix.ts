@@ -74,6 +74,7 @@ router.post("/create", async (req, res) => {
       description:
         description || "Pagamento de bilhetes ZLPix",
       payment_method_id: "pix",
+      notification_url: "https://zlpix-premiado-fullstack.onrender.com/pix/webhook",
       payer: {
         email: user.email,
         first_name: user.name || "Cliente",
