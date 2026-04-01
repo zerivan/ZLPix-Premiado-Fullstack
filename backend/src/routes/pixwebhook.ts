@@ -22,20 +22,16 @@ function getNextWednesday(): Date {
   const target = new Date(now);
 
   if (day === 3) {
-    // Hoje é quarta-feira
     if (hour < 17) {
-      // Antes das 17h → concorre hoje
       target.setHours(20, 0, 0, 0);
       return target;
     }
 
-    // Após 17h → próxima quarta
     target.setDate(target.getDate() + 7);
     target.setHours(20, 0, 0, 0);
     return target;
   }
 
-  // Não é quarta → calcula próxima quarta
   const diff = (3 - day + 7) % 7;
   target.setDate(target.getDate() + diff);
   target.setHours(20, 0, 0, 0);
@@ -96,7 +92,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔹 PRIMEIRO: VERIFICAR SE É CARTEIRA
     const transacaoCarteira = await prisma.transacao_carteira.findFirst({
       where: {
         mpPaymentId: String(paymentId),
@@ -127,115 +122,4 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           where: { userId: transacaoCarteira.userId },
           data: {
             saldo: {
-              increment: Number(transacaoCarteira.valor),
-            },
-          },
-        });
-
-        return true;
-      });
-
-      if (!processado) {
-        return res.status(200).send("ok");
-      }
-
-      await notify({
-        type: "CARTEIRA_CREDITO",
-        userId: String(transacaoCarteira.userId),
-        valor: Number(transacaoCarteira.valor),
-      });
-
-      return res.status(200).send("ok");
-    }
-
-    // 🔹 SENÃO: É BILHETE
-    const transacao = await prisma.transacao.findFirst({
-      where: { mpPaymentId: String(paymentId) },
-    });
-
-    if (!transacao) {
-      return res.status(200).send("ok");
-    }
-
-    if (transacao.tipo === "BILHETE") {
-      const metadata =
-        typeof transacao.metadata === "object" &&
-        transacao.metadata !== null
-          ? (transacao.metadata as Prisma.JsonObject)
-          : {};
-
-      const bilhetesRaw = Array.isArray(metadata["bilhetes"])
-        ? metadata["bilhetes"]
-        : [];
-
-      const sorteioData = getNextWednesday();
-
-      const processado = await prisma.$transaction(async (db) => {
-        const claim = await db.transacao.updateMany({
-          where: {
-            id: transacao.id,
-            NOT: { status: "paid" },
-          },
-          data: { status: "paid" },
-        });
-
-        if (claim.count === 0) {
-          return false;
-        }
-
-        for (const item of bilhetesRaw) {
-          let dezenas = "";
-
-          const valor =
-            Number(transacao.valor) /
-            Math.max(bilhetesRaw.length, 1);
-
-          if (typeof item === "string") {
-            dezenas = item;
-          } else if (typeof item === "object" && item !== null) {
-            dezenas = String((item as any).dezenas ?? "");
-          }
-
-          if (!dezenas) continue;
-
-          await db.bilhete.create({
-            data: {
-              userId: transacao.userId,
-              transacaoId: transacao.id,
-              dezenas,
-              valor,
-              pago: true,
-              sorteioData,
-              status: "ATIVO",
-            },
-          });
-
-          await notify({
-            type: "BILHETE_CRIADO",
-            userId: String(transacao.userId),
-            codigo: dezenas,
-          });
-        }
-
-        return true;
-      });
-
-      if (!processado) {
-        return res.status(200).send("ok");
-      }
-
-      return res.status(200).send("ok");
-    }
-
-    return res.status(200).send("ok");
-  } catch (err) {
-    console.error("pixWebhook erro:", err);
-    return res.status(200).send("ok");
-  }
-});
-
-router.get("/__ping_pixwebhook", (req, res) => {
-  res.json({ ping: true });
-});
-
-export default router;
+              increment: Number(transacaoCarteira
