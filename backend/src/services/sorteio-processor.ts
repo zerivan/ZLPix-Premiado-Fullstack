@@ -50,7 +50,7 @@ async function atualizarPremio(valor: number) {
 
 /**
  * ============================
- * GARANTE CARTEIRA (CORRIGIDO)
+ * GARANTE CARTEIRA
  * ============================
  */
 async function garantirCarteira(userId: number) {
@@ -63,6 +63,15 @@ async function garantirCarteira(userId: number) {
       createdAt: new Date(),
     },
   });
+}
+
+/**
+ * ============================
+ * NORMALIZA DEZENA (PADRÃO OFICIAL)
+ * ============================
+ */
+function normalizarDezena(valor: string): string {
+  return valor.trim().padStart(2, "0");
 }
 
 /**
@@ -137,26 +146,41 @@ export async function processarSorteio(
       return { ok: false, message: "Nenhum bilhete no sorteio" };
     }
 
+    /**
+     * ============================
+     * GERA AS 10 DEZENAS CORRETAS
+     * ============================
+     */
     const dezenasValidas = Array.from(
       new Set(
         resultado.dezenas.flatMap((numeroCompleto) => {
-          const numero = numeroCompleto.trim();
+          const numero = numeroCompleto.replace(/\D/g, "").padStart(5, "0");
           const milhar = numero.slice(-4);
-          const dezenaInicial = milhar.slice(0, 2);
-          const dezenaFinal = milhar.slice(2, 4);
+
+          const dezenaInicial = normalizarDezena(milhar.slice(0, 2));
+          const dezenaFinal = normalizarDezena(milhar.slice(2, 4));
+
           return [dezenaInicial, dezenaFinal];
         })
       )
     );
 
-    const resultadoStr = resultado.dezenas.join(",");
+    const resultadoStr = resultado.dezenas
+      .map((n) => n.replace(/\D/g, ""))
+      .join(",");
+
     const agora = new Date();
     const premioAtual = await obterPremioAtual();
 
+    /**
+     * ============================
+     * VALIDA GANHADORES
+     * ============================
+     */
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas
         .split(",")
-        .map((d) => d.trim())
+        .map((d) => normalizarDezena(d))
         .filter(Boolean);
 
       return (
