@@ -29,13 +29,6 @@ export function initializeFirebase() {
       return;
     }
 
-    // 🔎 DEBUG TEMPORÁRIO
-    console.log("=== DEBUG PRIVATE KEY ===");
-    console.log("START:", privateKey.substring(0, 30));
-    console.log("END:", privateKey.slice(-30));
-    console.log("LENGTH:", privateKey.length);
-    console.log("=========================");
-
     try {
       admin.initializeApp({
         credential: admin.credential.cert({
