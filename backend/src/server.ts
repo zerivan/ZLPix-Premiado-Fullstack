@@ -1,4 +1,3 @@
-// backend/src/server.ts
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -39,6 +38,9 @@ import assistantRoutes from "./routes/assistant";
 // CMS
 import cmsPublicRoutes from "./routes/cms-public";
 import cmsPreviewRoutes from "./routes/cms-preview";
+
+// 🔥 NOVO: SIMULAÇÃO (ISOLADO)
+import devSimulacaoRoutes from "./routes/dev-simulacao";
 
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
@@ -97,6 +99,11 @@ app.use("/api/assistant", assistantRoutes);
 // CMS público
 app.use("/api/cms/public", cmsPublicRoutes);
 app.use("/api/cms", cmsPreviewRoutes);
+
+// ============================
+// 🔥 ROTA DEV (SIMULAÇÃO)
+// ============================
+app.use("/dev", devSimulacaoRoutes);
 
 // ============================
 // ROTAS ADMIN
