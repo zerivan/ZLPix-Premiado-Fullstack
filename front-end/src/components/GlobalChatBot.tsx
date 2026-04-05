@@ -4,9 +4,8 @@ import ChatBot from "./ChatBot";
 const INACTIVITY_TIME = 30000;
 const ASSISTANT_NAME = "Dayane";
 
-// Avatar hospedado no Google Drive (link direto)
-const AVATAR_URL =
-  "https://randomuser.me/api/portraits/women/65.jpg";
+// ✅ AVATAR LOCAL (public/assets/avatar.png)
+const AVATAR_URL = "/assets/avatar.png";
 
 const GlobalChatBot: React.FC = () => {
   const [showAvatar, setShowAvatar] = useState(false);
