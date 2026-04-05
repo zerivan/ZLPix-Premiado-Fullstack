@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
 import { notify } from "../services/notify";
@@ -22,20 +23,16 @@ function getNextWednesday(): Date {
   const target = new Date(now);
 
   if (day === 3) {
-    // Hoje é quarta-feira
     if (hour < 17) {
-      // Antes das 17h → concorre hoje
       target.setHours(20, 0, 0, 0);
       return target;
     }
 
-    // Após 17h → próxima quarta
     target.setDate(target.getDate() + 7);
     target.setHours(20, 0, 0, 0);
     return target;
   }
 
-  // Não é quarta → calcula próxima quarta
   const diff = (3 - day + 7) % 7;
   target.setDate(target.getDate() + diff);
   target.setHours(20, 0, 0, 0);
@@ -81,8 +78,55 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.id ||
       payload?.payment_id;
 
+    // 🔒 IMPORTANTE: ignora webhook sem ID antes da validação
     if (!paymentId) {
       return res.status(200).send("ok");
+    }
+
+    /**
+     * 🔐 VALIDAÇÃO DE ASSINATURA MERCADO PAGO
+     * - Protege contra chamadas falsas no webhook
+     * - Só processa se assinatura for válida
+     */
+    const xSignatureRaw = req.header("x-signature");
+    const xRequestIdRaw = req.header("x-request-id");
+
+    const xSignature = Array.isArray(xSignatureRaw)
+      ? xSignatureRaw[0]
+      : xSignatureRaw || "";
+
+    const xRequestId = Array.isArray(xRequestIdRaw)
+      ? xRequestIdRaw[0]
+      : xRequestIdRaw || "";
+
+    const signatureParts: Record<string, string> = xSignature
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .reduce((acc, part) => {
+        const [key, ...valueParts] = part.split("=");
+        if (key) {
+          acc[key] = valueParts.join("=");
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+    const ts = signatureParts.ts || "";
+    const v1 = signatureParts.v1 || "";
+    const webhookSecret = process.env.MP_WEBHOOK_SECRET || "";
+
+    const manifest = `id:${String(paymentId)};request-id:${xRequestId};ts:${ts};`;
+
+    const generatedSignature = webhookSecret
+      ? crypto
+          .createHmac("sha256", webhookSecret)
+          .update(manifest)
+          .digest("hex")
+      : "";
+
+    // 🚫 Assinatura inválida → ignora
+    if (!v1 || generatedSignature !== v1) {
+      return res.status(200).send("invalid signature");
     }
 
     const mpInfo: any = await fetchMpPayment(String(paymentId));
