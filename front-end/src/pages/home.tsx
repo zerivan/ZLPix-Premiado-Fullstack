@@ -28,7 +28,6 @@ function ajustarDataSorteio(iso: string) {
   const ehQuarta = dia === 3;
   const ehSabado = dia === 6;
 
-  // Antes das 20h ainda considera ciclo anterior
   if ((ehQuarta || ehSabado) && hora < 20) {
     const corrigida = new Date(dataApi);
     corrigida.setDate(corrigida.getDate() - 7);
@@ -112,9 +111,21 @@ export default function Home() {
           );
         }
 
+        // 🔥 CORREÇÃO AQUI (premio dinâmico seguro)
         const premio = await api.get("/api/cms/public/premio");
-        if (premio.data?.ok && typeof premio.data.valor === "number") {
-          setPremioAtual(`R$ ${premio.data.valor}`);
+        if (premio.data?.ok) {
+          const valor =
+            typeof premio.data.valor === "number"
+              ? premio.data.valor
+              : Number(
+                  String(premio.data.valor || "")
+                    .replace(/[^\d.,]/g, "")
+                    .replace(",", ".")
+                );
+
+          if (!isNaN(valor) && valor > 0) {
+            setPremioAtual(`R$ ${valor.toFixed(2)}`);
+          }
         }
 
         const cms = await api.get(
