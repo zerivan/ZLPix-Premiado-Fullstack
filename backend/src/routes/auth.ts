@@ -1,4 +1,3 @@
-// src/routes/auth.ts
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -27,6 +26,53 @@ function sanitize(obj: any) {
   }
   return s;
 }
+
+// ============================
+// 🔥 RECUPERAR SENHA (NOVO)
+// ============================
+router.post("/recover", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "E-mail é obrigatório.",
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    // 🔒 Não revela se existe ou não
+    if (!user) {
+      return res.json({
+        message:
+          "Se este e-mail estiver cadastrado, enviaremos instruções.",
+      });
+    }
+
+    // 🔥 TOKEN SIMPLES (TEMPORÁRIO)
+    const token = jwt.sign(
+      { id: user.id },
+      JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    console.log("🔑 TOKEN RECUPERAÇÃO:", token);
+
+    // ⚠️ AINDA NÃO ENVIA EMAIL (FASE 1)
+    return res.json({
+      message:
+        "Recuperação gerada. (Modo dev: ver token no console do servidor)",
+    });
+  } catch (err) {
+    console.error("Erro em /auth/recover:", err);
+    return res.status(500).json({
+      message: "Erro ao solicitar recuperação.",
+    });
+  }
+});
 
 // ============================
 // REGISTER USER
@@ -130,7 +176,7 @@ router.post("/login", async (req, res) => {
 });
 
 // ============================
-// LOGIN ADMIN (COM MASTER)
+// LOGIN ADMIN
 // ============================
 router.post("/admin/login", async (req, res) => {
   try {
