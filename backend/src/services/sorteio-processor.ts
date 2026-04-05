@@ -2,16 +2,12 @@ import { prisma } from "../lib/prisma";
 import { notify } from "./notify";
 
 type ResultadoOficial = {
-  dezenas: string[]; // 5 números completos da Federal
+  dezenas: string[];
 };
 
 const PREMIO_BASE = 500;
+const PERCENTUAL_PREMIO = 0.3; // 🔥 30% das vendas
 
-/**
- * ============================
- * PRÊMIO ATUAL
- * ============================
- */
 async function obterPremioAtual(): Promise<number> {
   const row = await prisma.appContent.findUnique({
     where: { key: "premio_atual" },
@@ -48,11 +44,6 @@ async function atualizarPremio(valor: number) {
   });
 }
 
-/**
- * ============================
- * GARANTE CARTEIRA
- * ============================
- */
 async function garantirCarteira(userId: number) {
   await prisma.wallet.upsert({
     where: { userId },
@@ -65,20 +56,10 @@ async function garantirCarteira(userId: number) {
   });
 }
 
-/**
- * ============================
- * NORMALIZA DEZENA (PADRÃO OFICIAL)
- * ============================
- */
 function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
-/**
- * ============================
- * MOTOR OFICIAL DO SORTEIO
- * ============================
- */
 export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
@@ -104,33 +85,6 @@ export async function processarSorteio(
   });
 
   if (claim.count === 0) {
-    const jaProcessado = await prisma.bilhete.findFirst({
-      where: {
-        sorteioData: { gte: inicio, lte: fim },
-        apuradoEm: { not: null },
-      },
-      select: { id: true },
-    });
-
-    if (jaProcessado) {
-      console.log("⛔ Sorteio já processado para essa data.");
-      return { ok: false, message: "Sorteio já processado" };
-    }
-
-    const emProcessamento = await prisma.bilhete.findFirst({
-      where: {
-        sorteioData: { gte: inicio, lte: fim },
-        status: "ATIVO",
-        apuradoEm: null,
-        resultadoFederal: { startsWith: "PROCESSANDO_" },
-      },
-      select: { id: true },
-    });
-
-    if (emProcessamento) {
-      return { ok: false, message: "Sorteio em processamento" };
-    }
-
     return { ok: false, message: "Nenhum bilhete no sorteio" };
   }
 
@@ -147,8 +101,18 @@ export async function processarSorteio(
     }
 
     /**
+     * 🔥 CALCULA ARRECADAÇÃO DA RODADA
+     */
+    const totalArrecadado = bilhetes.reduce(
+      (acc, b) => acc + Number(b.valor || 0),
+      0
+    );
+
+    const incrementoPremio = totalArrecadado * PERCENTUAL_PREMIO;
+
+    /**
      * ============================
-     * GERA AS 10 DEZENAS CORRETAS
+     * DEZENAS (MILHAR)
      * ============================
      */
     const dezenasValidas = Array.from(
@@ -172,11 +136,6 @@ export async function processarSorteio(
     const agora = new Date();
     const premioAtual = await obterPremioAtual();
 
-    /**
-     * ============================
-     * VALIDA GANHADORES
-     * ============================
-     */
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas
         .split(",")
@@ -189,6 +148,9 @@ export async function processarSorteio(
       );
     });
 
+    /**
+     * 🔁 SEM GANHADOR → ACUMULA DINÂMICO
+     */
     if (!ganhadores.length) {
       await prisma.bilhete.updateMany({
         where: { resultadoFederal: claimToken },
@@ -199,22 +161,19 @@ export async function processarSorteio(
         },
       });
 
-      await atualizarPremio(premioAtual + PREMIO_BASE);
-
-      const users = [...new Set(bilhetes.map((b) => b.userId))];
-
-      for (const userId of users) {
-        await notify({
-          type: "SORTEIO_REALIZADO",
-          userId: String(userId),
-          ganhou: false,
-        });
-      }
+      await atualizarPremio(
+        premioAtual + PREMIO_BASE + incrementoPremio
+      );
 
       return { ok: true, ganhou: false };
     }
 
-    const valorPorGanhador = premioAtual / ganhadores.length;
+    /**
+     * 🏆 COM GANHADOR → DIVIDE
+     */
+    const valorPorGanhador = Number(
+      (premioAtual / ganhadores.length).toFixed(2)
+    );
 
     for (const bilhete of ganhadores) {
       await garantirCarteira(bilhete.userId);
@@ -233,24 +192,6 @@ export async function processarSorteio(
             valor: valorPorGanhador,
             tipo: "PREMIO",
             status: "paid",
-            metadata: {
-              origem: "sorteio",
-              bilheteId: bilhete.id,
-            },
-          },
-        }),
-
-        prisma.transacao.create({
-          data: {
-            userId: bilhete.userId,
-            valor: valorPorGanhador,
-            tipo: "BILHETE",
-            status: "paid",
-            metadata: {
-              tipo: "bilhete_premiado",
-              origem: "sorteio",
-              bilheteId: bilhete.id,
-            },
           },
         }),
 
@@ -264,30 +205,9 @@ export async function processarSorteio(
           },
         }),
       ]);
-
-      await notify({
-        type: "SORTEIO_REALIZADO",
-        userId: String(bilhete.userId),
-        ganhou: true,
-        valor: valorPorGanhador,
-      });
     }
 
-    const idsGanhadores = ganhadores.map((b) => b.id);
-
-    await prisma.bilhete.updateMany({
-      where: {
-        resultadoFederal: claimToken,
-        id: { notIn: idsGanhadores },
-      },
-      data: {
-        status: "NAO_PREMIADO",
-        resultadoFederal: resultadoStr,
-        apuradoEm: agora,
-      },
-    });
-
-    await atualizarPremio(PREMIO_BASE);
+    await atualizarPremio(PREMIO_BASE); // 🔥 RESET
 
     return {
       ok: true,
@@ -299,8 +219,6 @@ export async function processarSorteio(
       where: {
         resultadoFederal: claimToken,
         apuradoEm: null,
-        status: "ATIVO",
-        sorteioData: { gte: inicio, lte: fim },
       },
       data: {
         resultadoFederal: null,
