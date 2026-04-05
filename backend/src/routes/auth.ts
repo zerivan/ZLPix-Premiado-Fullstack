@@ -32,10 +32,12 @@ function sanitize(obj: any) {
 }
 
 // ============================
-// 🔥 RECUPERAR SENHA (ATUALIZADO)
+// 🔥 RECUPERAR SENHA (COM DEBUG)
 // ============================
 router.post("/recover", async (req, res) => {
   try {
+    console.log("🔥 /auth/recover chamado:", req.body);
+
     const { email } = req.body;
 
     if (!email) {
@@ -47,6 +49,8 @@ router.post("/recover", async (req, res) => {
     const user = await prisma.users.findUnique({
       where: { email: String(email).toLowerCase() },
     });
+
+    console.log("👤 USER:", user?.email || "não encontrado");
 
     if (!user) {
       return res.json({
@@ -61,27 +65,31 @@ router.post("/recover", async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    // 🔥 ENVIO REAL DE EMAIL
-    await resend.emails.send({
+    console.log("🔑 TOKEN GERADO:", token);
+    console.log("🔐 RESEND KEY:", process.env.RESEND_API_KEY);
+
+    const result = await resend.emails.send({
       from: "ZLPix <onboarding@resend.dev>",
       to: user.email,
       subject: "Recuperação de senha",
       html: `
         <p>Olá, ${user.name}</p>
         <p>Clique no link abaixo para redefinir sua senha:</p>
-        <a href="https://SEU_DOMINIO.com/reset?token=${token}">
+        <a href="https://zlpix-premiado-fullstack.onrender.com/reset?token=${token}">
           Recuperar senha
         </a>
         <p>Esse link expira em 15 minutos.</p>
       `,
     });
 
+    console.log("📨 RESEND RESULT:", result);
+
     return res.json({
       message:
         "Se este e-mail estiver cadastrado, enviaremos instruções.",
     });
   } catch (err) {
-    console.error("Erro em /auth/recover:", err);
+    console.error("❌ ERRO /auth/recover:", err);
     return res.status(500).json({
       message: "Erro ao solicitar recuperação.",
     });
