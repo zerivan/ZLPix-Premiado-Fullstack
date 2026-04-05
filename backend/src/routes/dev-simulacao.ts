@@ -11,7 +11,6 @@ function extrairDezenas(resultado: string[]): string[] {
     new Set(
       resultado.flatMap((numeroCompleto) => {
         const numero = numeroCompleto.replace(/\D/g, "").padStart(5, "0");
-
         const milhar = numero.slice(-4);
 
         const inicio = normalizarDezena(milhar.slice(0, 2));
@@ -23,6 +22,11 @@ function extrairDezenas(resultado: string[]): string[] {
   );
 }
 
+/**
+ * ============================
+ * SIMULAÇÃO SIMPLES
+ * ============================
+ */
 router.post("/simulacao-sorteio", (req, res) => {
   try {
     const { resultados, bilhetes, premio } = req.body;
@@ -74,10 +78,70 @@ router.post("/simulacao-sorteio", (req, res) => {
       valorPorGanhador,
       resultadoBilhetes,
     });
-  } catch (error) {
-    return res.status(500).json({
-      erro: "Erro na simulação",
+  } catch {
+    return res.status(500).json({ erro: "Erro na simulação" });
+  }
+});
+
+/**
+ * ============================
+ * 🔥 SIMULAÇÃO EM MASSA
+ * ============================
+ */
+router.post("/simulacao-massa", (req, res) => {
+  try {
+    const { rodadas = 1000, bilhetesPorRodada = 100, premio = 500 } = req.body;
+
+    let totalGanhadores = 0;
+    let rodadasComGanhador = 0;
+    let totalPago = 0;
+
+    for (let i = 0; i < rodadas; i++) {
+      // gera 5 números aleatórios (simulando Federal)
+      const resultados = Array.from({ length: 5 }, () =>
+        String(Math.floor(Math.random() * 100000)).padStart(5, "0")
+      );
+
+      const dezenasSorteadas = extrairDezenas(resultados);
+
+      let ganhadoresRodada = 0;
+
+      for (let j = 0; j < bilhetesPorRodada; j++) {
+        const bilhete = Array.from({ length: 3 }, () =>
+          normalizarDezena(String(Math.floor(Math.random() * 100)))
+        );
+
+        const acertos = bilhete.filter((d) =>
+          dezenasSorteadas.includes(d)
+        ).length;
+
+        if (acertos === 3) {
+          ganhadoresRodada++;
+        }
+      }
+
+      if (ganhadoresRodada > 0) {
+        rodadasComGanhador++;
+        totalGanhadores += ganhadoresRodada;
+        totalPago += premio;
+      }
+    }
+
+    return res.json({
+      rodadas,
+      bilhetesPorRodada,
+      rodadasComGanhador,
+      percentualRodadasComGanhador: (
+        (rodadasComGanhador / rodadas) *
+        100
+      ).toFixed(2) + "%",
+      mediaGanhadoresPorRodada: (
+        totalGanhadores / rodadas
+      ).toFixed(2),
+      totalPago,
     });
+  } catch {
+    return res.status(500).json({ erro: "Erro na simulação em massa" });
   }
 });
 
