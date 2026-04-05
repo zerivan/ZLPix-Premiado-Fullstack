@@ -14,6 +14,10 @@ export default function UsuariosControl() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
+  // 🔥 NOVO
+  const [total, setTotal] = useState<number>(0);
+  const [buscaId, setBuscaId] = useState<string>("");
+
   async function loadUsuarios() {
     try {
       setLoading(true);
@@ -32,12 +36,45 @@ export default function UsuariosControl() {
 
       if (res.data?.ok) {
         setData(res.data.data || []);
+        setTotal(res.data.total || 0); // 🔥 TOTAL
       } else {
         setErro("Resposta inválida do servidor.");
       }
     } catch (err) {
       console.error(err);
       setErro("Erro ao carregar usuários.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 🔥 NOVO - BUSCA POR ID
+  async function buscarPorId() {
+    if (!buscaId) return;
+
+    try {
+      setLoading(true);
+      setErro(null);
+
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
+      const res = await axios.get(
+        `https://zlpix-premiado-fullstack.onrender.com/api/admin/usuarios?id=${buscaId}`,
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
+      );
+
+      if (res.data?.ok) {
+        setData(res.data.data || []);
+      } else {
+        setErro("Usuário não encontrado.");
+      }
+    } catch (err) {
+      console.error(err);
+      setErro("Erro ao buscar usuário.");
     } finally {
       setLoading(false);
     }
@@ -63,6 +100,37 @@ export default function UsuariosControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Usuários</h2>
 
+      {/* 🔥 TOTAL */}
+      <div className="text-sm text-gray-500">
+        Total de usuários: <strong>{total}</strong>
+      </div>
+
+      {/* 🔥 BUSCA POR ID */}
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Buscar por ID"
+          value={buscaId}
+          onChange={(e) => setBuscaId(e.target.value)}
+          className="flex-1 border rounded px-2 py-1 text-black"
+        />
+
+        <button
+          onClick={buscarPorId}
+          className="bg-blue-600 text-white px-3 rounded"
+        >
+          Buscar
+        </button>
+
+        {/* 🔥 VOLTAR PRA LISTA */}
+        <button
+          onClick={loadUsuarios}
+          className="bg-gray-500 text-white px-3 rounded"
+        >
+          Resetar
+        </button>
+      </div>
+
       {data.length === 0 && (
         <div className="text-sm text-gray-500">
           Nenhum usuário encontrado.
@@ -75,7 +143,6 @@ export default function UsuariosControl() {
             key={u.id}
             className="rounded border p-3 text-sm space-y-1"
           >
-            {/* 🔥 ID ADICIONADO */}
             <div>
               <strong>ID:</strong> {u.id}
             </div>
