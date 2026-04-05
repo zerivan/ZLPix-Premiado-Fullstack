@@ -2,9 +2,13 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
+import { Resend } from "resend";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
+
+// 🔥 RESEND INSTÂNCIA
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function serialize(obj: any): any {
   if (obj === null || obj === undefined) return obj;
@@ -28,7 +32,7 @@ function sanitize(obj: any) {
 }
 
 // ============================
-// 🔥 RECUPERAR SENHA (NOVO)
+// 🔥 RECUPERAR SENHA (ATUALIZADO)
 // ============================
 router.post("/recover", async (req, res) => {
   try {
@@ -44,7 +48,6 @@ router.post("/recover", async (req, res) => {
       where: { email: String(email).toLowerCase() },
     });
 
-    // 🔒 Não revela se existe ou não
     if (!user) {
       return res.json({
         message:
@@ -52,19 +55,30 @@ router.post("/recover", async (req, res) => {
       });
     }
 
-    // 🔥 TOKEN SIMPLES (TEMPORÁRIO)
     const token = jwt.sign(
       { id: user.id },
       JWT_SECRET,
       { expiresIn: "15m" }
     );
 
-    console.log("🔑 TOKEN RECUPERAÇÃO:", token);
+    // 🔥 ENVIO REAL DE EMAIL
+    await resend.emails.send({
+      from: "ZLPix <onboarding@resend.dev>",
+      to: user.email,
+      subject: "Recuperação de senha",
+      html: `
+        <p>Olá, ${user.name}</p>
+        <p>Clique no link abaixo para redefinir sua senha:</p>
+        <a href="https://SEU_DOMINIO.com/reset?token=${token}">
+          Recuperar senha
+        </a>
+        <p>Esse link expira em 15 minutos.</p>
+      `,
+    });
 
-    // ⚠️ AINDA NÃO ENVIA EMAIL (FASE 1)
     return res.json({
       message:
-        "Recuperação gerada. (Modo dev: ver token no console do servidor)",
+        "Se este e-mail estiver cadastrado, enviaremos instruções.",
     });
   } catch (err) {
     console.error("Erro em /auth/recover:", err);
