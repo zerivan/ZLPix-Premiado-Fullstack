@@ -2,20 +2,10 @@ import { Router } from "express";
 
 const router = Router();
 
-/**
- * NORMALIZA DEZENA
- */
 function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
-/**
- * EXTRAÇÃO BASEADA NA MILHAR (REGRA OFICIAL DO SISTEMA)
- * - pega os últimos 4 dígitos
- * - gera 2 dezenas:
- *   - início (2 primeiros da milhar)
- *   - fim (2 últimos da milhar)
- */
 function extrairDezenas(resultado: string[]): string[] {
   return Array.from(
     new Set(
@@ -33,31 +23,26 @@ function extrairDezenas(resultado: string[]): string[] {
   );
 }
 
-/**
- * SIMULAÇÃO
- */
 router.post("/simulacao-sorteio", (req, res) => {
   try {
-    const { resultados, bilhetes } = req.body;
+    const { resultados, bilhetes, premio } = req.body;
 
     if (!Array.isArray(resultados) || resultados.length !== 5) {
-      return res.status(400).json({
-        erro: "Envie exatamente 5 resultados",
-      });
+      return res.status(400).json({ erro: "Envie 5 resultados" });
     }
 
     if (!Array.isArray(bilhetes)) {
-      return res.status(400).json({
-        erro: "Bilhetes inválidos",
-      });
+      return res.status(400).json({ erro: "Bilhetes inválidos" });
     }
+
+    const premioTotal = Number(premio || 500);
 
     const dezenasSorteadas = extrairDezenas(resultados);
 
     const resultadoBilhetes = bilhetes.map((b: string) => {
       const dezenasBilhete = b
         .split(",")
-        .map((d) => normalizarDezena(d))
+        .map(normalizarDezena)
         .filter(Boolean);
 
       const acertos = dezenasBilhete.filter((d) =>
@@ -67,19 +52,31 @@ router.post("/simulacao-sorteio", (req, res) => {
       return {
         bilhete: dezenasBilhete,
         acertos,
-        ganhou: acertos === 3, // regra 3/3
+        ganhou: acertos === 3,
       };
     });
+
+    const ganhadores = resultadoBilhetes.filter((b) => b.ganhou);
+
+    let valorPorGanhador = 0;
+
+    if (ganhadores.length > 0) {
+      valorPorGanhador = Number(
+        (premioTotal / ganhadores.length).toFixed(2)
+      );
+    }
 
     return res.json({
       dezenasSorteadas,
       totalDezenas: dezenasSorteadas.length,
+      premioTotal,
+      ganhadores: ganhadores.length,
+      valorPorGanhador,
       resultadoBilhetes,
     });
   } catch (error) {
     return res.status(500).json({
       erro: "Erro na simulação",
-      detalhe: error instanceof Error ? error.message : error,
     });
   }
 });
