@@ -3,25 +3,25 @@ import { Router } from "express";
 const router = Router();
 
 /**
- * ============================
  * NORMALIZA DEZENA
- * (COPIADO — NÃO IMPORTA DO PROCESSOR)
- * ============================
  */
 function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
 /**
- * ============================
- * EXTRAÇÃO (MESMA REGRA DO SISTEMA)
- * ============================
+ * EXTRAÇÃO BASEADA NA MILHAR (REGRA OFICIAL DO SISTEMA)
+ * - pega os últimos 4 dígitos
+ * - gera 2 dezenas:
+ *   - início (2 primeiros da milhar)
+ *   - fim (2 últimos da milhar)
  */
 function extrairDezenas(resultado: string[]): string[] {
   return Array.from(
     new Set(
       resultado.flatMap((numeroCompleto) => {
         const numero = numeroCompleto.replace(/\D/g, "").padStart(5, "0");
+
         const milhar = numero.slice(-4);
 
         const inicio = normalizarDezena(milhar.slice(0, 2));
@@ -34,9 +34,7 @@ function extrairDezenas(resultado: string[]): string[] {
 }
 
 /**
- * ============================
- * ENDPOINT
- * ============================
+ * SIMULAÇÃO
  */
 router.post("/simulacao-sorteio", (req, res) => {
   try {
@@ -69,7 +67,7 @@ router.post("/simulacao-sorteio", (req, res) => {
       return {
         bilhete: dezenasBilhete,
         acertos,
-        ganhou: acertos === 3, // regra oficial
+        ganhou: acertos === 3, // regra 3/3
       };
     });
 
