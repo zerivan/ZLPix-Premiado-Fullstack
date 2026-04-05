@@ -32,12 +32,10 @@ function sanitize(obj: any) {
 }
 
 // ============================
-// 🔥 RECUPERAR SENHA (COM DEBUG)
+// 🔥 RECUPERAR SENHA (ORIGINAL)
 // ============================
 router.post("/recover", async (req, res) => {
   try {
-    console.log("🔥 /auth/recover chamado:", req.body);
-
     const { email } = req.body;
 
     if (!email) {
@@ -49,8 +47,6 @@ router.post("/recover", async (req, res) => {
     const user = await prisma.users.findUnique({
       where: { email: String(email).toLowerCase() },
     });
-
-    console.log("👤 USER:", user?.email || "não encontrado");
 
     if (!user) {
       return res.json({
@@ -65,10 +61,7 @@ router.post("/recover", async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    console.log("🔑 TOKEN GERADO:", token);
-    console.log("🔐 RESEND KEY:", process.env.RESEND_API_KEY);
-
-    const result = await resend.emails.send({
+    await resend.emails.send({
       from: "ZLPix <onboarding@resend.dev>",
       to: user.email,
       subject: "Recuperação de senha",
@@ -82,14 +75,12 @@ router.post("/recover", async (req, res) => {
       `,
     });
 
-    console.log("📨 RESEND RESULT:", result);
-
     return res.json({
       message:
         "Se este e-mail estiver cadastrado, enviaremos instruções.",
     });
   } catch (err) {
-    console.error("❌ ERRO /auth/recover:", err);
+    console.error("Erro em /auth/recover:", err);
     return res.status(500).json({
       message: "Erro ao solicitar recuperação.",
     });
