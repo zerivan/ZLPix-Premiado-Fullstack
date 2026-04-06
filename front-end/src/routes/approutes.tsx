@@ -14,6 +14,7 @@ import AddCreditos from "../pages/add-creditos";
 import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
+import ResetPassword from "../pages/resetpassword"; // 🔥 ADICIONADO
 import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
@@ -73,6 +74,9 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+
+        {/* 🔥 NOVA ROTA RESET */}
+        <Route path="/reset" element={<ResetPassword />} />
 
         <Route
           path="/home"
