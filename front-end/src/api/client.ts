@@ -1,11 +1,11 @@
 import axios from "axios";
 
-const baseURL =
-  import.meta.env.VITE_API_URL ||
+const apiBaseUrl =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
   "https://zlpix-premiado-fullstack.onrender.com";
 
 export const api = axios.create({
-  baseURL,
+  baseURL: apiBaseUrl,
 });
 
 // 🔐 INTERCEPTOR DE AUTENTICAÇÃO (CORRIGIDO)
@@ -19,7 +19,9 @@ api.interceptors.request.use((config) => {
     url.startsWith("/api/cms/public") ||
     url.startsWith("/api/federal") ||
     url.startsWith("/auth/login") ||
-    url.startsWith("/auth/register");
+    url.startsWith("/auth/register") ||
+    url.startsWith("/auth/recover") ||
+    url.startsWith("/auth/reset");
 
   if (token && !isPublic) {
     config.headers = config.headers || {};
