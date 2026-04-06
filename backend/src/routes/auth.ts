@@ -100,6 +100,47 @@ Recuperar senha
 });
 
 // ============================
+// 🔥 RESETAR SENHA (NOVO)
+// ============================
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        message: "Token e senha são obrigatórios.",
+      });
+    }
+
+    let decoded: any;
+
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(400).json({
+        message: "Token inválido ou expirado.",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.users.update({
+      where: { id: decoded.id },
+      data: { passwordHash },
+    });
+
+    return res.json({
+      message: "Senha atualizada com sucesso.",
+    });
+  } catch (err) {
+    console.error("Erro em /auth/reset-password:", err);
+    return res.status(500).json({
+      message: "Erro ao redefinir senha.",
+    });
+  }
+});
+
+// ============================
 // REGISTER USER
 // ============================
 router.post("/register", async (req, res) => {
