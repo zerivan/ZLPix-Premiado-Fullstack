@@ -72,7 +72,7 @@ router.post("/recover", async (req, res) => {
         html: `
 <p>Olá, ${user.name}</p>
 <p>Clique no link abaixo para redefinir sua senha:</p>
-<a href="https://zlpix-premiado-fullstack.onrender.com/reset?token=${token}">
+<a href="https://zlpixpremiado.com.br/reset?token=${token}">
 Recuperar senha
 </a>
 <p>Esse link expira em 15 minutos.</p>
