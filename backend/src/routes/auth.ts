@@ -1,251 +1,283 @@
-import { Router } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+// backend/src/routes/pixwebhook.ts
+import express, { Request, Response } from "express";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
-import { Resend } from "resend";
+import { Prisma } from "@prisma/client";
+import { notify } from "../services/notify";
 
-const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
+const router = express.Router();
 
-// 🔥 RESEND INSTÂNCIA
-const resend = new Resend(process.env.RESEND_API_KEY);
+const fetchFn: typeof fetch = (...args: any) =>
+  (globalThis as any).fetch(...args);
 
-function serialize(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === "bigint") return obj.toString();
-  if (Array.isArray(obj)) return obj.map(serialize);
-  if (typeof obj === "object") {
-    return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => [k, serialize(v)])
-    );
+/**
+ * 🔥 REGRA CORRETA DO SORTEIO
+ * - Quarta antes das 17h → hoje às 20h
+ * - Quarta após 17h → próxima quarta às 20h
+ * - Outros dias → próxima quarta às 20h
+ */
+function getNextWednesday(): Date {
+  const now = new Date();
+  const day = now.getDay(); // 0=dom, 3=qua
+  const hour = now.getHours();
+
+  const target = new Date(now);
+
+  if (day === 3) {
+    // Hoje é quarta-feira
+    if (hour < 17) {
+      // Antes das 17h → concorre hoje
+      target.setHours(20, 0, 0, 0);
+      return target;
+    }
+
+    // Após 17h → próxima quarta
+    target.setDate(target.getDate() + 7);
+    target.setHours(20, 0, 0, 0);
+    return target;
   }
-  return obj;
+
+  // Não é quarta → calcula próxima quarta
+  const diff = (3 - day + 7) % 7;
+  target.setDate(target.getDate() + diff);
+  target.setHours(20, 0, 0, 0);
+
+  return target;
 }
 
-function sanitize(obj: any) {
-  if (!obj) return obj;
-  const s = serialize(obj);
-  if (s && typeof s === "object" && "passwordHash" in s) {
-    delete s.passwordHash;
+async function fetchMpPayment(paymentId: string) {
+  const token =
+    process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN_TEST;
+
+  const base =
+    process.env.MP_BASE_URL || "https://api.mercadopago.com";
+
+  if (!token) return null;
+
+  try {
+    const resp = await fetchFn(
+      `${base}/v1/payments/${encodeURIComponent(paymentId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!resp.ok) return null;
+
+    return await resp.json();
+  } catch {
+    return null;
   }
-  return s;
 }
 
-// ============================
-// 🔥 RECUPERAR SENHA (ORIGINAL)
-// ============================
-router.post("/recover", async (req, res) => {
+router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const payload: any = req.body || {};
 
-    if (!email) {
-      return res.status(400).json({
-        message: "E-mail é obrigatório.",
-      });
+    const paymentId =
+      payload?.data?.id ||
+      payload?.resource?.id ||
+      payload?.id ||
+      payload?.payment_id;
+
+    const xSignatureRaw = req.header("x-signature");
+    const xRequestIdRaw = req.header("x-request-id");
+
+    const xSignature = Array.isArray(xSignatureRaw)
+      ? xSignatureRaw[0]
+      : xSignatureRaw || "";
+
+    const xRequestId = Array.isArray(xRequestIdRaw)
+      ? xRequestIdRaw[0]
+      : xRequestIdRaw || "";
+
+    const signatureParts: Record<string, string> = xSignature
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .reduce((acc, part) => {
+        const [key, ...valueParts] = part.split("=");
+        if (key) {
+          acc[key] = valueParts.join("=");
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+    const ts = signatureParts.ts || "";
+    const v1 = signatureParts.v1 || "";
+    const webhookSecret = process.env.MP_WEBHOOK_SECRET || "";
+    const manifest = `id:${String(
+      paymentId || ""
+    )};request-id:${xRequestId};ts:${ts};`;
+    const generatedSignature = webhookSecret
+      ? crypto
+          .createHmac("sha256", webhookSecret)
+          .update(manifest)
+          .digest("hex")
+      : "";
+
+    if (!v1 || generatedSignature !== v1) {
+      return res.status(200).send("invalid signature");
     }
 
-    const user = await prisma.users.findUnique({
-      where: { email: String(email).toLowerCase() },
-    });
-
-    if (!user) {
-      return res.json({
-        message:
-          "Se este e-mail estiver cadastrado, enviaremos instruções.",
-      });
+    if (!paymentId) {
+      return res.status(200).send("ok");
     }
 
-    const token = jwt.sign(
-      { id: user.id },
-      JWT_SECRET,
-      { expiresIn: "15m" }
-    );
+    const mpInfo: any = await fetchMpPayment(String(paymentId));
 
-    await resend.emails.send({
-      from: "ZLPix <onboarding@resend.dev>",
-      to: user.email,
-      subject: "Recuperação de senha",
-      html: `
-        <p>Olá, ${user.name}</p>
-        <p>Clique no link abaixo para redefinir sua senha:</p>
-        <a href="https://zlpix-premiado-fullstack.onrender.com/reset?token=${token}">
-          Recuperar senha
-        </a>
-        <p>Esse link expira em 15 minutos.</p>
-      `,
+    const mpStatus =
+      mpInfo?.status ||
+      payload?.data?.status ||
+      payload?.status;
+
+    if (mpStatus !== "approved" && mpStatus !== "paid") {
+      return res.status(200).send("ok");
+    }
+
+    // 🔹 PRIMEIRO: VERIFICAR SE É CARTEIRA
+    const transacaoCarteira = await prisma.transacao_carteira.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+      },
     });
 
-    return res.json({
-      message:
-        "Se este e-mail estiver cadastrado, enviaremos instruções.",
+    if (transacaoCarteira) {
+      const processado = await prisma.$transaction(async (db) => {
+        const claim = await db.transacao_carteira.updateMany({
+          where: {
+            id: transacaoCarteira.id,
+            NOT: { status: "paid" },
+          },
+          data: { status: "paid" },
+        });
+
+        if (claim.count === 0) {
+          return false;
+        }
+
+        await db.$executeRaw`
+          INSERT INTO wallet (user_id, saldo, created_at)
+          VALUES (${transacaoCarteira.userId}, 0, NOW())
+          ON CONFLICT (user_id) DO NOTHING
+        `;
+
+        await db.wallet.updateMany({
+          where: { userId: transacaoCarteira.userId },
+          data: {
+            saldo: {
+              increment: Number(transacaoCarteira.valor),
+            },
+          },
+        });
+
+        return true;
+      });
+
+      if (!processado) {
+        return res.status(200).send("ok");
+      }
+
+      await notify({
+        type: "CARTEIRA_CREDITO",
+        userId: String(transacaoCarteira.userId),
+        valor: Number(transacaoCarteira.valor),
+      });
+
+      return res.status(200).send("ok");
+    }
+
+    // 🔹 SENÃO: É BILHETE
+    const transacao = await prisma.transacao.findFirst({
+      where: { mpPaymentId: String(paymentId) },
     });
+
+    if (!transacao) {
+      return res.status(200).send("ok");
+    }
+
+    if (transacao.tipo === "BILHETE") {
+      const metadata =
+        typeof transacao.metadata === "object" &&
+        transacao.metadata !== null
+          ? (transacao.metadata as Prisma.JsonObject)
+          : {};
+
+      const bilhetesRaw = Array.isArray(metadata["bilhetes"])
+        ? metadata["bilhetes"]
+        : [];
+
+      const sorteioData = getNextWednesday();
+
+      const processado = await prisma.$transaction(async (db) => {
+        const claim = await db.transacao.updateMany({
+          where: {
+            id: transacao.id,
+            NOT: { status: "paid" },
+          },
+          data: { status: "paid" },
+        });
+
+        if (claim.count === 0) {
+          return false;
+        }
+
+        for (const item of bilhetesRaw) {
+          let dezenas = "";
+
+          const valor =
+            Number(transacao.valor) /
+            Math.max(bilhetesRaw.length, 1);
+
+          if (typeof item === "string") {
+            dezenas = item;
+          } else if (typeof item === "object" && item !== null) {
+            dezenas = String((item as any).dezenas ?? "");
+          }
+
+          if (!dezenas) continue;
+
+          await db.bilhete.create({
+            data: {
+              userId: transacao.userId,
+              transacaoId: transacao.id,
+              dezenas,
+              valor,
+              pago: true,
+              sorteioData,
+              status: "ATIVO",
+            },
+          });
+
+          await notify({
+            type: "BILHETE_CRIADO",
+            userId: String(transacao.userId),
+            codigo: dezenas,
+          });
+        }
+
+        return true;
+      });
+
+      if (!processado) {
+        return res.status(200).send("ok");
+      }
+
+      return res.status(200).send("ok");
+    }
+
+    return res.status(200).send("ok");
   } catch (err) {
-    console.error("Erro em /auth/recover:", err);
-    return res.status(500).json({
-      message: "Erro ao solicitar recuperação.",
-    });
+    console.error("pixWebhook erro:", err);
+    return res.status(200).send("ok");
   }
 });
 
-// ============================
-// REGISTER USER
-// ============================
-router.post("/register", async (req, res) => {
-  try {
-    let { name, email, phone, pixKey, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "Nome, e-mail e senha são obrigatórios.",
-      });
-    }
-
-    name = String(name).trim();
-    email = String(email).trim().toLowerCase();
-    phone = phone ? String(phone).trim() : null;
-    pixKey = pixKey ? String(pixKey).trim() : null;
-
-    const existing = await prisma.users.findUnique({ where: { email } });
-
-    if (existing) {
-      return res.status(409).json({
-        message: "E-mail já está cadastrado.",
-      });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await prisma.users.create({
-      data: {
-        name,
-        email,
-        phone,
-        pixKey,
-        passwordHash,
-      },
-    });
-
-    return res.status(201).json({
-      message: "Usuário cadastrado com sucesso.",
-      user: sanitize(user),
-    });
-  } catch (err) {
-    console.error("Erro em /auth/register:", err);
-    return res.status(500).json({
-      message: "Erro ao cadastrar usuário.",
-      error: String(err),
-    });
-  }
-});
-
-// ============================
-// LOGIN USER
-// ============================
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "E-mail e senha são obrigatórios.",
-      });
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { email: String(email).toLowerCase() },
-    });
-
-    if (!user) {
-      return res.status(401).json({ message: "Credenciais inválidas." });
-    }
-
-    const valid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!valid) {
-      return res.status(401).json({ message: "Credenciais inválidas." });
-    }
-
-    const token = jwt.sign(
-      {
-        id: user.id.toString(),
-        email: user.email,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    return res.json({
-      message: "Login realizado com sucesso.",
-      token,
-      user: sanitize(user),
-    });
-  } catch (err) {
-    console.error("Erro em /auth/login:", err);
-    return res.status(500).json({
-      message: "Erro ao fazer login.",
-      error: String(err),
-    });
-  }
-});
-
-// ============================
-// LOGIN ADMIN
-// ============================
-router.post("/admin/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "E-mail e senha são obrigatórios.",
-      });
-    }
-
-    const normalizedEmail = String(email).toLowerCase();
-
-    const admin = await prisma.admins.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (!admin) {
-      return res.status(401).json({ message: "Admin não encontrado." });
-    }
-
-    const valid = await bcrypt.compare(password, admin.passwordHash);
-
-    if (!valid) {
-      return res.status(401).json({ message: "Senha incorreta." });
-    }
-
-    const role =
-      normalizedEmail === "master@zlpix.com" ? "master" : "admin";
-
-    const token = jwt.sign(
-      {
-        id: admin.id.toString(),
-        email: admin.email,
-        role,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    return res.json({
-      message: "Login admin realizado com sucesso.",
-      token,
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        role,
-      },
-    });
-  } catch (err) {
-    console.error("Erro em /auth/admin/login:", err);
-    return res.status(500).json({
-      message: "Erro ao fazer login admin.",
-      error: String(err),
-    });
-  }
+router.get("/__ping_pixwebhook", (req, res) => {
+  res.json({ ping: true });
 });
 
 export default router;
