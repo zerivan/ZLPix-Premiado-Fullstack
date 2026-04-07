@@ -3,6 +3,7 @@ import "./styles/index.css";
 
 import AppRoutes from "./routes/approutes";
 import { BrowserRouter } from "react-router-dom";
+import { setupGlobalAxiosInterceptors } from "./api/setupInterceptors";
 
 /**
  * Injeta Google Font dinamicamente (evita duplicar)
@@ -48,6 +49,7 @@ function applyDefaultAppearance() {
 
 // ✅ Aplica aparência ANTES de renderizar o React
 applyDefaultAppearance();
+setupGlobalAxiosInterceptors();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
