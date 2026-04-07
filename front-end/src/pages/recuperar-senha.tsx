@@ -20,12 +20,17 @@ export default function RecuperarSenha() {
     try {
       setLoading(true);
 
-      // 🔥 ATIVADO (ANTES ESTAVA COMENTADO)
       await api.post("/auth/recover", { email });
 
       setMsg(
         "Se este e-mail estiver cadastrado, enviaremos instruções para recuperar sua senha."
       );
+
+      // 🔥 REDIRECIONAMENTO AJUSTADO PARA 5s
+      setTimeout(() => {
+        navigate("/login");
+      }, 5000);
+
     } catch (err) {
       setMsg("Erro ao solicitar recuperação. Tente novamente.");
     } finally {
