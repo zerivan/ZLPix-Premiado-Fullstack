@@ -73,14 +73,27 @@ app.use(express.json());
 // ============================
 app.use(async (req, res, next) => {
   try {
-    const config = await prisma.configuracoes_admin.findFirst();
-
     // 🔥 libera rotas admin SEMPRE
     if (req.path.startsWith("/api/admin")) {
       return next();
     }
 
-    if (config?.modoManutencao) {
+    const row = await prisma.appContent.findUnique({
+      where: { key: "configuracoes_gerais" },
+    });
+
+    let modoManutencao = false;
+
+    if (row?.contentHtml) {
+      try {
+        const parsed = JSON.parse(row.contentHtml);
+        modoManutencao = !!parsed.modoManutencao;
+      } catch {
+        modoManutencao = false;
+      }
+    }
+
+    if (modoManutencao) {
       return res.status(503).json({
         maintenance: true,
         message: "Sistema em manutenção",
