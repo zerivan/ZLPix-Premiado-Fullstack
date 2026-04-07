@@ -73,8 +73,11 @@ app.use(express.json());
 // ============================
 app.use(async (req, res, next) => {
   try {
-    // 🔥 libera rotas admin SEMPRE
-    if (req.path.startsWith("/api/admin")) {
+    // 🔥 libera admin e auth
+    if (
+      req.path.startsWith("/api/admin") ||
+      req.path.startsWith("/auth")
+    ) {
       return next();
     }
 
