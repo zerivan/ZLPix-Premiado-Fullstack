@@ -29,7 +29,7 @@ export default function RecuperarSenha() {
       // 🔥 REDIRECIONAMENTO AJUSTADO PARA 5s
       setTimeout(() => {
         navigate("/login");
-      }, 5000);
+      }, 10000);
 
     } catch (err) {
       setMsg("Erro ao solicitar recuperação. Tente novamente.");
