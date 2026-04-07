@@ -1,4 +1,3 @@
-
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -43,6 +42,9 @@ import cmsPreviewRoutes from "./routes/cms-preview";
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
 
+// 🔥 NOVO: PRISMA
+import { prisma } from "./lib/prisma";
+
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -65,6 +67,28 @@ app.use(
 
 app.options("*", cors());
 app.use(express.json());
+
+// ============================
+// 🔥 MODO MANUTENÇÃO (GLOBAL)
+// ============================
+app.use(async (req, res, next) => {
+  try {
+    // 🔥 busca configuração atual
+    const config = await prisma.configuracoes_admin.findFirst();
+
+    if (config?.modoManutencao) {
+      return res.status(503).json({
+        maintenance: true,
+        message: "Sistema em manutenção",
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error("Erro ao verificar modo manutenção:", err);
+    next();
+  }
+});
 
 // ============================
 // HEALTHCHECK
