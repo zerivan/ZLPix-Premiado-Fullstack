@@ -9,11 +9,12 @@ export default function ResetPassword() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  // 🔒 NOVO: controle do "não sou robô"
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const [verified, setVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,18 +42,13 @@ export default function ResetPassword() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token,
-            password,
-          }),
+          body: JSON.stringify({ token, password }),
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message);
-      }
+      if (!res.ok) throw new Error(data.message);
 
       alert("Senha atualizada com sucesso!");
       navigate("/login");
@@ -64,61 +60,48 @@ export default function ResetPassword() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #2c3e90, #1e7a5f)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          background: "rgba(255,255,255,0.08)",
-          borderRadius: 16,
-          padding: 24,
-          backdropFilter: "blur(10px)",
-          color: "#fff",
-        }}
-      >
+    <div style={wrapper}>
+      <form onSubmit={handleSubmit} style={card}>
         <h2 style={{ textAlign: "center", marginBottom: 20 }}>
           Redefinir senha
         </h2>
 
         {/* NOVA SENHA */}
-        <input
-          type={show ? "text" : "password"}
-          placeholder="Nova senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle}
-        />
+        <div style={inputContainer}>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Nova senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={input}
+          />
+          <span
+            style={eye}
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            👁
+          </span>
+        </div>
 
-        {/* CONFIRMAR SENHA (corrigido) */}
-        <input
-          type={show ? "text" : "password"}
-          placeholder="Confirmar senha"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          style={inputStyle}
-        />
+        {/* CONFIRMAR SENHA */}
+        <div style={inputContainer}>
+          <input
+            type={showConfirm ? "text" : "password"}
+            placeholder="Confirmar senha"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            style={input}
+          />
+          <span
+            style={eye}
+            onClick={() => setShowConfirm(!showConfirm)}
+          >
+            👁
+          </span>
+        </div>
 
-        {/* MOSTRAR SENHA */}
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
-          style={toggleStyle}
-        >
-          {show ? "Ocultar senha" : "Mostrar senha"}
-        </button>
-
-        {/* 🔒 NÃO SOU ROBÔ (TRAVA REAL) */}
-        <label style={robotStyle}>
+        {/* NÃO SOU ROBÔ */}
+        <label style={robot}>
           <input
             type="checkbox"
             checked={verified}
@@ -127,20 +110,13 @@ export default function ResetPassword() {
           <span style={{ marginLeft: 8 }}>Não sou um robô</span>
         </label>
 
-        {/* BOTÃO BLOQUEADO */}
         <button
           type="submit"
           disabled={!verified || loading}
           style={{
-            width: "100%",
-            padding: 14,
-            borderRadius: 999,
-            border: "none",
+            ...btn,
             background: !verified ? "#999" : "#ffd700",
-            color: "#000",
-            fontWeight: "bold",
             cursor: !verified ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
           }}
         >
           {loading ? "Atualizando..." : "Atualizar senha"}
@@ -150,26 +126,61 @@ export default function ResetPassword() {
   );
 }
 
-const inputStyle: React.CSSProperties = {
+/* ===== estilos ===== */
+
+const wrapper = {
+  minHeight: "100vh",
+  background: "linear-gradient(180deg, #2c3e90, #1e7a5f)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 20,
+};
+
+const card = {
+  width: "100%",
+  maxWidth: 400,
+  background: "rgba(255,255,255,0.08)",
+  borderRadius: 16,
+  padding: 24,
+  backdropFilter: "blur(10px)",
+  color: "#fff",
+};
+
+const inputContainer = {
+  position: "relative" as const,
+  marginBottom: 12,
+};
+
+const input = {
   width: "100%",
   padding: 14,
-  marginBottom: 12,
   borderRadius: 10,
   border: "none",
   outline: "none",
+  background: "#fff",
+  color: "#000", // 🔥 CORREÇÃO AQUI
 };
 
-const toggleStyle: React.CSSProperties = {
-  marginBottom: 12,
-  background: "transparent",
-  border: "none",
-  color: "#ffd700",
+const eye = {
+  position: "absolute" as const,
+  right: 12,
+  top: "50%",
+  transform: "translateY(-50%)",
   cursor: "pointer",
 };
 
-const robotStyle: React.CSSProperties = {
+const robot = {
   marginBottom: 16,
   display: "flex",
   alignItems: "center",
-  fontSize: 14,
+};
+
+const btn = {
+  width: "100%",
+  padding: 14,
+  borderRadius: 999,
+  border: "none",
+  color: "#000",
+  fontWeight: "bold",
 };
