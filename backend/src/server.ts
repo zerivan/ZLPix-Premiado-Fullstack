@@ -73,8 +73,12 @@ app.use(express.json());
 // ============================
 app.use(async (req, res, next) => {
   try {
-    // 🔥 busca configuração atual
     const config = await prisma.configuracoes_admin.findFirst();
+
+    // 🔥 libera rotas admin SEMPRE
+    if (req.path.startsWith("/api/admin")) {
+      return next();
+    }
 
     if (config?.modoManutencao) {
       return res.status(503).json({
