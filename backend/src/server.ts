@@ -73,8 +73,15 @@ app.use(express.json());
 // ============================
 app.use(async (req, res, next) => {
   try {
-    // 🔥 libera SOMENTE ADMIN
-    if (req.path.startsWith("/api/admin")) {
+    const isAdminRoute = req.path.startsWith("/api/admin");
+    const isAllowedAuthRoute =
+      req.path === "/auth/login" ||
+      req.path === "/auth/recover" ||
+      req.path === "/auth/reset-password";
+
+    const isHealthCheck = req.path === "/";
+
+    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck) {
       return next();
     }
 
