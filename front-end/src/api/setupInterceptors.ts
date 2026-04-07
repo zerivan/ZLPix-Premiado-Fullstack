@@ -13,7 +13,14 @@ export function setupGlobalAxiosInterceptors() {
       const status = error?.response?.status;
 
       if (status === 503 && typeof window !== "undefined") {
-        if (window.location.pathname !== "/manutencao") {
+        const path = window.location.pathname;
+
+        // 🔥 NÃO bloquear rotas do admin
+        if (path.startsWith("/admin")) {
+          return Promise.reject(error);
+        }
+
+        if (path !== "/manutencao") {
           window.location.href = "/manutencao";
         }
       }
