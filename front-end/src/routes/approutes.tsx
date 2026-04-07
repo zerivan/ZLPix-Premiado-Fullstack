@@ -197,7 +197,16 @@ export default function AppRoutes() {
           }
         />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={
+            window.location.pathname === "/manutencao" ? (
+              <Manutencao />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Routes>
 
       <GlobalChatBot />
