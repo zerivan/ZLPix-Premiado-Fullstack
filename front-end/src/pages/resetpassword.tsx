@@ -12,8 +12,16 @@ export default function ResetPassword() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🔒 NOVO: controle do "não sou robô"
+  const [verified, setVerified] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!verified) {
+      alert("Confirme que você não é um robô.");
+      return;
+    }
 
     if (!password || !confirmPassword) {
       alert("Preencha todos os campos");
@@ -82,6 +90,7 @@ export default function ResetPassword() {
           Redefinir senha
         </h2>
 
+        {/* NOVA SENHA */}
         <input
           type={show ? "text" : "password"}
           placeholder="Nova senha"
@@ -90,6 +99,7 @@ export default function ResetPassword() {
           style={inputStyle}
         />
 
+        {/* CONFIRMAR SENHA (corrigido) */}
         <input
           type={show ? "text" : "password"}
           placeholder="Confirmar senha"
@@ -98,47 +108,39 @@ export default function ResetPassword() {
           style={inputStyle}
         />
 
+        {/* MOSTRAR SENHA */}
         <button
           type="button"
           onClick={() => setShow(!show)}
-          style={{
-            marginBottom: 12,
-            background: "transparent",
-            border: "none",
-            color: "#ffd700",
-            cursor: "pointer",
-          }}
+          style={toggleStyle}
         >
           {show ? "Ocultar senha" : "Mostrar senha"}
         </button>
 
-        {/* Placeholder segurança */}
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 10,
-            background: "#fff",
-            color: "#000",
-            borderRadius: 8,
-            textAlign: "center",
-            fontSize: 14,
-          }}
-        >
-          🔒 Não sou robô (simulação)
-        </div>
+        {/* 🔒 NÃO SOU ROBÔ (TRAVA REAL) */}
+        <label style={robotStyle}>
+          <input
+            type="checkbox"
+            checked={verified}
+            onChange={() => setVerified(!verified)}
+          />
+          <span style={{ marginLeft: 8 }}>Não sou um robô</span>
+        </label>
 
+        {/* BOTÃO BLOQUEADO */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={!verified || loading}
           style={{
             width: "100%",
             padding: 14,
             borderRadius: 999,
             border: "none",
-            background: "#ffd700",
+            background: !verified ? "#999" : "#ffd700",
             color: "#000",
             fontWeight: "bold",
-            cursor: "pointer",
+            cursor: !verified ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
           }}
         >
           {loading ? "Atualizando..." : "Atualizar senha"}
@@ -155,4 +157,19 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 10,
   border: "none",
   outline: "none",
+};
+
+const toggleStyle: React.CSSProperties = {
+  marginBottom: 12,
+  background: "transparent",
+  border: "none",
+  color: "#ffd700",
+  cursor: "pointer",
+};
+
+const robotStyle: React.CSSProperties = {
+  marginBottom: 16,
+  display: "flex",
+  alignItems: "center",
+  fontSize: 14,
 };
