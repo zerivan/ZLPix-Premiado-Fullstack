@@ -16,7 +16,6 @@ export default function ResetPassword() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 ANALISADOR DE SENHA
   function analisarSenha(password: string) {
     return {
       length: password.length >= 8,
@@ -29,7 +28,6 @@ export default function ResetPassword() {
 
   const regras = analisarSenha(password);
 
-  // 🔥 NOVO: FORÇA DA SENHA (ADICIONADO)
   function calcularForca() {
     let score = 0;
     if (regras.length) score++;
@@ -73,6 +71,12 @@ export default function ResetPassword() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // 🔥 CORREÇÃO MÍNIMA
+    if (!token) {
+      alert("Token inválido ou ausente.");
+      return;
+    }
 
     if (!verified) {
       alert("Confirme que você não é um robô.");
@@ -140,7 +144,6 @@ export default function ResetPassword() {
           </span>
         </div>
 
-        {/* 🔥 BARRA DE FORÇA (ADICIONADO) */}
         <div
           style={{
             height: 6,
@@ -160,7 +163,6 @@ export default function ResetPassword() {
           />
         </div>
 
-        {/* 🔥 TEXTO MANTIDO */}
         <div style={{ fontSize: 12, marginBottom: 10 }}>
           <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
             • Mínimo 8 caracteres
@@ -216,8 +218,6 @@ export default function ResetPassword() {
     </div>
   );
 }
-
-/* estilos mantidos */
 
 const wrapper = {
   minHeight: "100vh",
