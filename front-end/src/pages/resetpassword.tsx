@@ -16,7 +16,7 @@ export default function ResetPassword() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 ANALISADOR DE SENHA (NOVO)
+  // 🔥 ANALISADOR DE SENHA
   function analisarSenha(password: string) {
     return {
       length: password.length >= 8,
@@ -28,6 +28,29 @@ export default function ResetPassword() {
   }
 
   const regras = analisarSenha(password);
+
+  // 🔥 NOVO: FORÇA DA SENHA (ADICIONADO)
+  function calcularForca() {
+    let score = 0;
+    if (regras.length) score++;
+    if (regras.upper) score++;
+    if (regras.lower) score++;
+    if (regras.number) score++;
+    if (regras.special) score++;
+    return score;
+  }
+
+  const forca = calcularForca();
+
+  function corForca() {
+    if (forca <= 2) return "#ef4444";
+    if (forca <= 4) return "#facc15";
+    return "#22c55e";
+  }
+
+  function larguraForca() {
+    return `${(forca / 5) * 100}%`;
+  }
 
   function validarSenha(password: string) {
     if (!password || password.length < 8) {
@@ -117,7 +140,27 @@ export default function ResetPassword() {
           </span>
         </div>
 
-        {/* 🔥 FEEDBACK VISUAL (NOVO) */}
+        {/* 🔥 BARRA DE FORÇA (ADICIONADO) */}
+        <div
+          style={{
+            height: 6,
+            borderRadius: 6,
+            background: "#333",
+            marginBottom: 10,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: larguraForca(),
+              background: corForca(),
+              transition: "all 0.3s ease",
+            }}
+          />
+        </div>
+
+        {/* 🔥 TEXTO MANTIDO */}
         <div style={{ fontSize: 12, marginBottom: 10 }}>
           <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
             • Mínimo 8 caracteres
