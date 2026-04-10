@@ -79,6 +79,59 @@ function validarSenha(password: string, email?: string) {
 }
 
 // ============================
+// 🔥 REGISTER USER (ADICIONADO)
+// ============================
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, phone, pixKey, password } = req.body;
+
+    if (!name || !email || !phone || !pixKey || !password) {
+      return res.status(400).json({
+        message: "Preencha todos os campos obrigatórios.",
+      });
+    }
+
+    const existing = await prisma.users.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "E-mail já cadastrado.",
+      });
+    }
+
+    const erroSenha = validarSenha(password, email);
+    if (erroSenha) {
+      return res.status(400).json({ message: erroSenha });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.users.create({
+      data: {
+        name,
+        email: String(email).toLowerCase(),
+        phone,
+        pixKey,
+        passwordHash,
+      },
+    });
+
+    return res.json({
+      message: "Conta criada com sucesso.",
+      user: sanitize(user),
+    });
+  } catch (err: any) {
+    console.error("Erro em /auth/register:", err);
+    return res.status(500).json({
+      message: "Erro ao criar conta.",
+      error: String(err),
+    });
+  }
+});
+
+// ============================
 // 🔥 RECUPERAR SENHA
 // ============================
 router.post("/recover", async (req, res) => {
@@ -134,7 +187,7 @@ router.post("/recover", async (req, res) => {
 <p>Esse link expira em 15 minutos.</p>
 `,
       });
-    } catch (emailError) {
+    } catch {
       return res.status(500).json({
         message: "Erro ao enviar email.",
       });
@@ -144,7 +197,7 @@ router.post("/recover", async (req, res) => {
       message:
         "Se este e-mail estiver cadastrado, enviaremos instruções.",
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       message: "Erro ao solicitar recuperação.",
     });
@@ -206,7 +259,7 @@ router.post("/reset-password", async (req, res) => {
     return res.json({
       message: "Senha atualizada com sucesso.",
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({
       message: "Erro ao redefinir senha.",
     });
@@ -266,7 +319,7 @@ router.post("/login", async (req, res) => {
 });
 
 // ============================
-// 🔥 LOGIN ADMIN (RESTAURADO)
+// 🔥 LOGIN ADMIN
 // ============================
 router.post("/admin/login", async (req, res) => {
   try {
