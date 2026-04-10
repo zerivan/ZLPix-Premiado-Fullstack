@@ -13,6 +13,19 @@ if (!process.env.RESEND_API_KEY) {
 }
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// 🔥 NOVO: RATE LIMIT LOGIN (MEMÓRIA)
+const loginAttempts = new Map<
+  string,
+  { count: number; blockedUntil: number }
+>();
+
+const MAX_TENTATIVAS = 5;
+const BLOQUEIO_MS = 60 * 1000;
+
+function getKey(req: any, email: string) {
+  return `${req.ip}-${email.toLowerCase()}`;
+}
+
 function serialize(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return obj.toString();
@@ -131,7 +144,7 @@ Recuperar senha
 });
 
 // ============================
-// 🔥 RESETAR SENHA (CORRIGIDO)
+// 🔥 RESETAR SENHA
 // ============================
 router.post("/reset-password", async (req, res) => {
   try {
@@ -163,13 +176,11 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
-    // 🔥 valida com email correto
     const erroSenha = validarSenha(password, user.email);
     if (erroSenha) {
       return res.status(400).json({ message: erroSenha });
     }
 
-    // 🔥 impede reutilizar senha
     const mesmaSenha = await bcrypt.compare(password, user.passwordHash);
     if (mesmaSenha) {
       return res.status(400).json({
@@ -196,14 +207,81 @@ router.post("/reset-password", async (req, res) => {
 });
 
 // ============================
-// REGISTER USER
+// 🔥 LOGIN USER (PROTEGIDO)
 // ============================
-// (NÃO ALTERADO)
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-// ============================
-// LOGIN USER
-// ============================
-// (NÃO ALTERADO)
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
+    }
+
+    const key = getKey(req, email);
+    const now = Date.now();
+    const attempt = loginAttempts.get(key);
+
+    if (attempt && attempt.blockedUntil > now) {
+      const segundos = Math.ceil((attempt.blockedUntil - now) / 1000);
+      return res.status(429).json({
+        message: `Muitas tentativas. Aguarde ${segundos}s.`,
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    if (!user) {
+      const count = (attempt?.count || 0) + 1;
+
+      loginAttempts.set(key, {
+        count,
+        blockedUntil: count >= MAX_TENTATIVAS ? now + BLOQUEIO_MS : 0,
+      });
+
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!valid) {
+      const count = (attempt?.count || 0) + 1;
+
+      loginAttempts.set(key, {
+        count,
+        blockedUntil: count >= MAX_TENTATIVAS ? now + BLOQUEIO_MS : 0,
+      });
+
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
+
+    loginAttempts.delete(key);
+
+    const token = jwt.sign(
+      {
+        id: user.id.toString(),
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login realizado com sucesso.",
+      token,
+      user: sanitize(user),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login.",
+      error: String(err),
+    });
+  }
+});
 
 // ============================
 // LOGIN ADMIN
