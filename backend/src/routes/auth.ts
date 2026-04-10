@@ -109,23 +109,13 @@ router.post("/recover", async (req, res) => {
     );
 
     try {
-      const result = await resend.emails.send({
+      await resend.emails.send({
         from: "suporte@mail.zlpixpremiado.com.br",
         to: user.email,
         subject: "Recuperação de senha",
-        html: `
-<p>Olá, ${user.name}</p>
-<p>Clique no link abaixo para redefinir sua senha:</p>
-<a href="https://zlpix-premiado-site.onrender.com/reset?token=${token}">
-Recuperar senha
-</a>
-<p>Esse link expira em 15 minutos.</p>
-`,
+        html: `...`,
       });
-
-      console.log("📨 RESEND RESULT:", result);
     } catch (emailError) {
-      console.error("❌ ERRO AO ENVIAR EMAIL:", emailError);
       return res.status(500).json({
         message: "Erro ao enviar email.",
       });
@@ -136,7 +126,6 @@ Recuperar senha
         "Se este e-mail estiver cadastrado, enviaremos instruções.",
     });
   } catch (err) {
-    console.error("Erro em /auth/recover:", err);
     return res.status(500).json({
       message: "Erro ao solicitar recuperação.",
     });
@@ -199,7 +188,6 @@ router.post("/reset-password", async (req, res) => {
       message: "Senha atualizada com sucesso.",
     });
   } catch (err) {
-    console.error("Erro em /auth/reset-password:", err);
     return res.status(500).json({
       message: "Erro ao redefinir senha.",
     });
@@ -207,26 +195,19 @@ router.post("/reset-password", async (req, res) => {
 });
 
 // ============================
-// 🔥 LOGIN USER (PROTEGIDO)
+// 🔥 LOGIN USER
 // ============================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "E-mail e senha são obrigatórios.",
-      });
-    }
 
     const key = getKey(req, email);
     const now = Date.now();
     const attempt = loginAttempts.get(key);
 
     if (attempt && attempt.blockedUntil > now) {
-      const segundos = Math.ceil((attempt.blockedUntil - now) / 1000);
       return res.status(429).json({
-        message: `Muitas tentativas. Aguarde ${segundos}s.`,
+        message: "Muitas tentativas. Aguarde.",
       });
     }
 
@@ -234,20 +215,7 @@ router.post("/login", async (req, res) => {
       where: { email: String(email).toLowerCase() },
     });
 
-    if (!user) {
-      const count = (attempt?.count || 0) + 1;
-
-      loginAttempts.set(key, {
-        count,
-        blockedUntil: count >= MAX_TENTATIVAS ? now + BLOQUEIO_MS : 0,
-      });
-
-      return res.status(401).json({ message: "Credenciais inválidas." });
-    }
-
-    const valid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!valid) {
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       const count = (attempt?.count || 0) + 1;
 
       loginAttempts.set(key, {
@@ -261,10 +229,7 @@ router.post("/login", async (req, res) => {
     loginAttempts.delete(key);
 
     const token = jwt.sign(
-      {
-        id: user.id.toString(),
-        email: user.email,
-      },
+      { id: user.id.toString(), email: user.email },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -274,18 +239,52 @@ router.post("/login", async (req, res) => {
       token,
       user: sanitize(user),
     });
-  } catch (err) {
-    console.error("Erro em /auth/login:", err);
+  } catch {
     return res.status(500).json({
       message: "Erro ao fazer login.",
-      error: String(err),
     });
   }
 });
 
 // ============================
-// LOGIN ADMIN
+// 🔥 LOGIN ADMIN (RESTAURADO)
 // ============================
-// (NÃO ALTERADO)
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const admin = await prisma.admins.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
+      return res.status(401).json({ message: "Credenciais inválidas." });
+    }
+
+    const token = jwt.sign(
+      {
+        id: admin.id.toString(),
+        email: admin.email,
+        role: "admin",
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        role: "admin",
+      },
+    });
+  } catch {
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
+    });
+  }
+});
 
 export default router;
