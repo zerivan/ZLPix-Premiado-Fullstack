@@ -35,6 +35,42 @@ function sanitize(obj: any) {
 }
 
 // ============================
+// 🔥 VALIDAÇÃO DE SENHA (NOVO)
+// ============================
+function validarSenha(password: string, email?: string) {
+  if (!password || password.length < 8) {
+    return "A senha deve ter no mínimo 8 caracteres.";
+  }
+
+  if (email && password.toLowerCase() === email.toLowerCase()) {
+    return "A senha não pode ser igual ao e-mail.";
+  }
+
+  const temMaiuscula = /[A-Z]/.test(password);
+  const temMinuscula = /[a-z]/.test(password);
+  const temNumero = /[0-9]/.test(password);
+  const temEspecial = /[^A-Za-z0-9]/.test(password);
+
+  if (!temMaiuscula) {
+    return "A senha deve conter pelo menos uma letra maiúscula.";
+  }
+
+  if (!temMinuscula) {
+    return "A senha deve conter pelo menos uma letra minúscula.";
+  }
+
+  if (!temNumero) {
+    return "A senha deve conter pelo menos um número.";
+  }
+
+  if (!temEspecial) {
+    return "A senha deve conter pelo menos um caractere especial.";
+  }
+
+  return null;
+}
+
+// ============================
 // 🔥 RECUPERAR SENHA
 // ============================
 router.post("/recover", async (req, res) => {
@@ -112,6 +148,12 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
+    // 🔥 VALIDAÇÃO NOVA
+    const erroSenha = validarSenha(password);
+    if (erroSenha) {
+      return res.status(400).json({ message: erroSenha });
+    }
+
     let decoded: any;
 
     try {
@@ -164,6 +206,12 @@ router.post("/register", async (req, res) => {
       return res.status(409).json({
         message: "E-mail já está cadastrado.",
       });
+    }
+
+    // 🔥 VALIDAÇÃO NOVA
+    const erroSenha = validarSenha(password, email);
+    if (erroSenha) {
+      return res.status(400).json({ message: erroSenha });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
