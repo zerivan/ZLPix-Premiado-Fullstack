@@ -11,20 +11,20 @@ export function setupGlobalAxiosInterceptors() {
     (response) => response,
     (error) => {
       const status = error?.response?.status;
-      const requestUrl = error?.config?.url || "";
+      const requestUrl = String(error?.config?.url || "");
 
       if (status === 503 && typeof window !== "undefined") {
-        const path = window.location.pathname;
+        const currentPath = window.location.pathname || "";
+        const isAdminPage = currentPath === "/admin" || currentPath.startsWith("/admin/");
+        const isAdminApiRequest =
+          requestUrl.includes("/api/admin") || requestUrl.startsWith("/admin/");
 
         // 🔥 NÃO bloquear admin (rota e API)
-        if (
-          path.startsWith("/admin") ||
-          requestUrl.includes("/api/admin")
-        ) {
+        if (isAdminPage || isAdminApiRequest) {
           return Promise.reject(error);
         }
 
-        if (path !== "/manutencao") {
+        if (currentPath !== "/manutencao") {
           window.location.href = "/manutencao";
         }
       }
