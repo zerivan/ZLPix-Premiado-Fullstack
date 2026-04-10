@@ -1,4 +1,3 @@
-// src/pages/login.tsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../api/client";
@@ -12,9 +11,39 @@ export default function Login() {
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🔥 NOVO: CONTROLE DE TENTATIVAS
+  const MAX_TENTATIVAS = 5;
+  const BLOQUEIO_MS = 60 * 1000; // 1 minuto
+
+  function getTentativas() {
+    return Number(localStorage.getItem("LOGIN_TENTATIVAS") || "0");
+  }
+
+  function setTentativas(value: number) {
+    localStorage.setItem("LOGIN_TENTATIVAS", String(value));
+  }
+
+  function getBloqueio() {
+    return Number(localStorage.getItem("LOGIN_BLOQUEIO") || "0");
+  }
+
+  function setBloqueio(timestamp: number) {
+    localStorage.setItem("LOGIN_BLOQUEIO", String(timestamp));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+
+    const agora = Date.now();
+    const bloqueadoAte = getBloqueio();
+
+    // 🔥 BLOQUEIO ATIVO
+    if (bloqueadoAte && agora < bloqueadoAte) {
+      const segundos = Math.ceil((bloqueadoAte - agora) / 1000);
+      setErro(`Muitas tentativas. Aguarde ${segundos}s.`);
+      return;
+    }
 
     if (!email || !senha) {
       setErro("Preencha e-mail e senha.");
@@ -36,6 +65,10 @@ export default function Login() {
         throw new Error("Resposta inválida do servidor.");
       }
 
+      // 🔥 RESET CONTROLE
+      setTentativas(0);
+      setBloqueio(0);
+
       localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
       localStorage.removeItem("ZLPIX_ADMIN_AUTH");
 
@@ -54,10 +87,20 @@ export default function Login() {
       navigate("/home", { replace: true });
 
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        "Não foi possível entrar. Verifique seus dados.";
-      setErro(msg);
+      // 🔥 INCREMENTA TENTATIVAS
+      const tentativas = getTentativas() + 1;
+      setTentativas(tentativas);
+
+      if (tentativas >= MAX_TENTATIVAS) {
+        const bloqueioAte = Date.now() + BLOQUEIO_MS;
+        setBloqueio(bloqueioAte);
+        setErro("Muitas tentativas. Tente novamente em 1 minuto.");
+      } else {
+        const msg =
+          err?.response?.data?.message ||
+          "Não foi possível entrar. Verifique seus dados.";
+        setErro(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -141,7 +184,6 @@ export default function Login() {
             </span>
           </p>
 
-          {/* LINKS INSTITUCIONAIS */}
           <div className="text-center text-xs text-white/70 mt-6 space-x-2">
             <Link to="/politica-privacidade" className="underline">
               Política de Privacidade
