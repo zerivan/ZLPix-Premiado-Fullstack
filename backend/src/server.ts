@@ -83,7 +83,9 @@ app.use(async (req, res, next) => {
       path === "/auth/login" ||
       path === "/auth/recover" ||
       path === "/auth/reset-password" ||
-      path === "/auth/admin/login";
+      path === "/auth/admin/login" ||
+      path === "/auth/admin/refresh" ||     // 🔥 ADICIONADO
+      path === "/auth/admin/verify";        // 🔥 ADICIONADO
 
     const isHealthCheck = path === "/";
 
