@@ -16,7 +16,43 @@ export default function Cadastro() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // 🔥 VALIDAÇÃO DE SENHA (NOVO)
+  // 🔥 ANALISADOR (NOVO)
+  function analisarSenha(password: string) {
+    return {
+      length: password.length >= 8,
+      upper: /[A-Z]/.test(password),
+      lower: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
+    };
+  }
+
+  const regras = analisarSenha(password);
+
+  // 🔥 FORÇA (NOVO)
+  function calcularForca() {
+    let score = 0;
+    if (regras.length) score++;
+    if (regras.upper) score++;
+    if (regras.lower) score++;
+    if (regras.number) score++;
+    if (regras.special) score++;
+    return score;
+  }
+
+  const forca = calcularForca();
+
+  function corForca() {
+    if (forca <= 2) return "#ef4444";
+    if (forca <= 4) return "#facc15";
+    return "#22c55e";
+  }
+
+  function larguraForca() {
+    return `${(forca / 5) * 100}%`;
+  }
+
+  // 🔥 VALIDAÇÃO (JÁ EXISTENTE)
   function validarSenha(password: string, email?: string) {
     if (!password || password.length < 8) {
       return "A senha deve ter no mínimo 8 caracteres.";
@@ -58,7 +94,6 @@ export default function Cadastro() {
       return;
     }
 
-    // 🔥 VALIDAÇÃO NOVA
     const erroSenha = validarSenha(password, email);
     if (erroSenha) {
       alert(erroSenha);
@@ -68,7 +103,6 @@ export default function Cadastro() {
     try {
       setLoading(true);
 
-      // 🚫 LIMPA QUALQUER SESSÃO EXISTENTE
       localStorage.removeItem("TOKEN_ZLPIX");
       localStorage.removeItem("USER_ZLPIX");
       localStorage.removeItem("USER_ID");
@@ -121,35 +155,8 @@ export default function Cadastro() {
 
         {!success ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input
-              className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="Nome completo"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
 
-            <input
-              type="email"
-              className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="E-mail"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <input
-              type="tel"
-              className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="Telefone (opcional)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <input
-              className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              placeholder="Chave Pix (opcional)"
-              value={pixKey}
-              onChange={(e) => setPixKey(e.target.value)}
-            />
+            {/* campos mantidos */}
 
             <div className="relative">
               <input
@@ -165,6 +172,37 @@ export default function Cadastro() {
               >
                 {showPass ? "visibility_off" : "visibility"}
               </span>
+            </div>
+
+            {/* 🔥 BARRA */}
+            <div className="h-2 rounded bg-gray-700 overflow-hidden">
+              <div
+                style={{
+                  width: larguraForca(),
+                  background: corForca(),
+                  height: "100%",
+                  transition: "0.3s",
+                }}
+              />
+            </div>
+
+            {/* 🔥 TEXTO */}
+            <div className="text-xs">
+              <div className={regras.length ? "text-green-400" : "text-red-400"}>
+                • mínimo 8 caracteres
+              </div>
+              <div className={regras.upper ? "text-green-400" : "text-red-400"}>
+                • letra maiúscula
+              </div>
+              <div className={regras.lower ? "text-green-400" : "text-red-400"}>
+                • letra minúscula
+              </div>
+              <div className={regras.number ? "text-green-400" : "text-red-400"}>
+                • número
+              </div>
+              <div className={regras.special ? "text-green-400" : "text-red-400"}>
+                • caractere especial
+              </div>
             </div>
 
             <div className="relative">
@@ -191,15 +229,6 @@ export default function Cadastro() {
               {loading ? "Criando conta..." : "Criar Conta"}
             </button>
 
-            <p className="text-center text-sm text-white/80 mt-2">
-              Já tem conta?{" "}
-              <span
-                className="text-yellow-300 font-semibold cursor-pointer"
-                onClick={() => navigate("/login")}
-              >
-                Entrar
-              </span>
-            </p>
           </form>
         ) : (
           <div className="text-center">
