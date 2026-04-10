@@ -16,6 +16,26 @@ export default function ResetPassword() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🔥 VALIDAÇÃO DE SENHA (NOVO)
+  function validarSenha(password: string) {
+    if (!password || password.length < 8) {
+      return "A senha deve ter no mínimo 8 caracteres.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "A senha deve conter pelo menos uma letra maiúscula.";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "A senha deve conter pelo menos uma letra minúscula.";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "A senha deve conter pelo menos um número.";
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return "A senha deve conter pelo menos um caractere especial.";
+    }
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -31,6 +51,13 @@ export default function ResetPassword() {
 
     if (password !== confirmPassword) {
       alert("As senhas não coincidem");
+      return;
+    }
+
+    // 🔥 VALIDAÇÃO NOVA
+    const erroSenha = validarSenha(password);
+    if (erroSenha) {
+      alert(erroSenha);
       return;
     }
 
@@ -66,7 +93,6 @@ export default function ResetPassword() {
           Redefinir senha
         </h2>
 
-        {/* NOVA SENHA */}
         <div style={inputContainer}>
           <input
             type={showPassword ? "text" : "password"}
@@ -83,7 +109,6 @@ export default function ResetPassword() {
           </span>
         </div>
 
-        {/* CONFIRMAR SENHA */}
         <div style={inputContainer}>
           <input
             type={showConfirm ? "text" : "password"}
@@ -100,7 +125,6 @@ export default function ResetPassword() {
           </span>
         </div>
 
-        {/* NÃO SOU ROBÔ */}
         <label style={robot}>
           <input
             type="checkbox"
@@ -126,7 +150,7 @@ export default function ResetPassword() {
   );
 }
 
-/* ===== estilos ===== */
+/* estilos mantidos */
 
 const wrapper = {
   minHeight: "100vh",
@@ -159,7 +183,7 @@ const input = {
   border: "none",
   outline: "none",
   background: "#fff",
-  color: "#000", // 🔥 CORREÇÃO AQUI
+  color: "#000",
 };
 
 const eye = {
