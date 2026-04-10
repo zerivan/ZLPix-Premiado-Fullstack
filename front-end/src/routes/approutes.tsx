@@ -15,12 +15,11 @@ import PixCarteira from "../pages/pix-carteira";
 import AdminLogin from "../pages/adminlogin";
 import RecuperarSenha from "../pages/recuperar-senha";
 import ResetPassword from "../pages/resetpassword";
-import Manutencao from "../pages/manutencao"; // 🔥 ADICIONADO
+import Manutencao from "../pages/manutencao";
 import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
 
-// 🔥 CORREÇÃO: Motor Manual agora está em components
 import AdminMotorManual from "../components/adminmotormanual";
 
 // Admin
@@ -63,23 +62,13 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/anuncio" element={<Anuncio />} />
-        <Route
-          path="/politica-privacidade"
-          element={<PoliticaPrivacidade />}
-        />
-        <Route
-          path="/termos-de-uso"
-          element={<TermosDeUso />}
-        />
+        <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+        <Route path="/termos-de-uso" element={<TermosDeUso />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-
-        {/* 🔥 NOVA ROTA RESET */}
         <Route path="/reset" element={<ResetPassword />} />
-
-        {/* 🔥 NOVA ROTA MANUTENÇÃO */}
         <Route path="/manutencao" element={<Manutencao />} />
 
         <Route
@@ -179,7 +168,6 @@ export default function AppRoutes() {
             element={<AdminDashboard />}
           />
 
-          {/* 🔥 Motor Manual */}
           <Route
             path="/admin/motor-manual"
             element={<AdminMotorManual />}
@@ -197,16 +185,8 @@ export default function AppRoutes() {
           }
         />
 
-        <Route
-          path="*"
-          element={
-            window.location.pathname === "/manutencao" ? (
-              <Manutencao />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+        {/* 🔥 CORREÇÃO: fallback limpo */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <GlobalChatBot />
