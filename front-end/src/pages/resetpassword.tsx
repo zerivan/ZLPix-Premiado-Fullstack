@@ -16,7 +16,19 @@ export default function ResetPassword() {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 VALIDAÇÃO DE SENHA (NOVO)
+  // 🔥 ANALISADOR DE SENHA (NOVO)
+  function analisarSenha(password: string) {
+    return {
+      length: password.length >= 8,
+      upper: /[A-Z]/.test(password),
+      lower: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
+    };
+  }
+
+  const regras = analisarSenha(password);
+
   function validarSenha(password: string) {
     if (!password || password.length < 8) {
       return "A senha deve ter no mínimo 8 caracteres.";
@@ -54,7 +66,6 @@ export default function ResetPassword() {
       return;
     }
 
-    // 🔥 VALIDAÇÃO NOVA
     const erroSenha = validarSenha(password);
     if (erroSenha) {
       alert(erroSenha);
@@ -101,12 +112,28 @@ export default function ResetPassword() {
             onChange={(e) => setPassword(e.target.value)}
             style={input}
           />
-          <span
-            style={eye}
-            onClick={() => setShowPassword(!showPassword)}
-          >
+          <span style={eye} onClick={() => setShowPassword(!showPassword)}>
             👁
           </span>
+        </div>
+
+        {/* 🔥 FEEDBACK VISUAL (NOVO) */}
+        <div style={{ fontSize: 12, marginBottom: 10 }}>
+          <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
+            • Mínimo 8 caracteres
+          </div>
+          <div style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>
+            • Letra maiúscula
+          </div>
+          <div style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>
+            • Letra minúscula
+          </div>
+          <div style={{ color: regras.number ? "#4ade80" : "#f87171" }}>
+            • Número
+          </div>
+          <div style={{ color: regras.special ? "#4ade80" : "#f87171" }}>
+            • Caractere especial
+          </div>
         </div>
 
         <div style={inputContainer}>
@@ -117,10 +144,7 @@ export default function ResetPassword() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             style={input}
           />
-          <span
-            style={eye}
-            onClick={() => setShowConfirm(!showConfirm)}
-          >
+          <span style={eye} onClick={() => setShowConfirm(!showConfirm)}>
             👁
           </span>
         </div>
