@@ -16,6 +16,35 @@ export default function Cadastro() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // 🔥 VALIDAÇÃO DE SENHA (NOVO)
+  function validarSenha(password: string, email?: string) {
+    if (!password || password.length < 8) {
+      return "A senha deve ter no mínimo 8 caracteres.";
+    }
+
+    if (email && password.toLowerCase() === email.toLowerCase()) {
+      return "A senha não pode ser igual ao e-mail.";
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return "A senha deve conter pelo menos uma letra maiúscula.";
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return "A senha deve conter pelo menos uma letra minúscula.";
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return "A senha deve conter pelo menos um número.";
+    }
+
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return "A senha deve conter pelo menos um caractere especial.";
+    }
+
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -29,17 +58,23 @@ export default function Cadastro() {
       return;
     }
 
+    // 🔥 VALIDAÇÃO NOVA
+    const erroSenha = validarSenha(password, email);
+    if (erroSenha) {
+      alert(erroSenha);
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // 🚫 LIMPA QUALQUER SESSÃO EXISTENTE (EVITA HERANÇA DE FLUXO)
+      // 🚫 LIMPA QUALQUER SESSÃO EXISTENTE
       localStorage.removeItem("TOKEN_ZLPIX");
       localStorage.removeItem("USER_ZLPIX");
       localStorage.removeItem("USER_ID");
       localStorage.removeItem("TOKEN_ZLPIX_ADMIN");
       localStorage.removeItem("ZLPIX_ADMIN_AUTH");
 
-      // 🟢 Envia dados de cadastro
       const response = await api.post("/auth/register", {
         name: fullName,
         email,
@@ -49,7 +84,6 @@ export default function Cadastro() {
         createdAt: new Date().toISOString(),
       });
 
-      // 🟢 Salva dados básicos (SEM logar)
       const user = response.data?.user || {
         name: fullName,
         email,
