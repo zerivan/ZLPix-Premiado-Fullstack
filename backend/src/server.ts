@@ -78,10 +78,12 @@ app.use(async (req, res, next) => {
 
     const isAdminRoute =
       path === "/api/admin" || path.startsWith("/api/admin/");
+
     const isAllowedAuthRoute =
       path === "/auth/login" ||
       path === "/auth/recover" ||
-      path === "/auth/reset-password";
+      path === "/auth/reset-password" ||
+      path === "/auth/admin/login";
 
     const isHealthCheck = path === "/";
 
