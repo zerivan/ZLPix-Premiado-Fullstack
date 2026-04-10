@@ -11,12 +11,16 @@ export function setupGlobalAxiosInterceptors() {
     (response) => response,
     (error) => {
       const status = error?.response?.status;
+      const requestUrl = error?.config?.url || "";
 
       if (status === 503 && typeof window !== "undefined") {
         const path = window.location.pathname;
 
-        // 🔥 NÃO bloquear rotas do admin
-        if (path.startsWith("/admin")) {
+        // 🔥 NÃO bloquear admin (rota e API)
+        if (
+          path.startsWith("/admin") ||
+          requestUrl.includes("/api/admin")
+        ) {
           return Promise.reject(error);
         }
 
