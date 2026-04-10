@@ -16,6 +16,7 @@ export default function Cadastro() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // 🔥 ANALISADOR DE SENHA
   function analisarSenha(password: string) {
     return {
       length: password.length >= 8,
@@ -54,27 +55,21 @@ export default function Cadastro() {
     if (!password || password.length < 8) {
       return "A senha deve ter no mínimo 8 caracteres.";
     }
-
     if (email && password.toLowerCase() === email.toLowerCase()) {
       return "A senha não pode ser igual ao e-mail.";
     }
-
     if (!/[A-Z]/.test(password)) {
       return "A senha deve conter pelo menos uma letra maiúscula.";
     }
-
     if (!/[a-z]/.test(password)) {
       return "A senha deve conter pelo menos uma letra minúscula.";
     }
-
     if (!/[0-9]/.test(password)) {
       return "A senha deve conter pelo menos um número.";
     }
-
     if (!/[^A-Za-z0-9]/.test(password)) {
       return "A senha deve conter pelo menos um caractere especial.";
     }
-
     return null;
   }
 
@@ -86,9 +81,9 @@ export default function Cadastro() {
       return;
     }
 
-    // 🔥 CORREÇÃO: CAMPOS OBRIGATÓRIOS COMPLETOS
+    // 🔥 CORREÇÃO: CAMPOS OBRIGATÓRIOS
     if (!fullName || !email || !phone || !pixKey || !password) {
-      alert("Preencha nome, e-mail, telefone, chave Pix e senha.");
+      alert("Preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -155,7 +150,6 @@ export default function Cadastro() {
         {!success ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
-            {/* 🔥 RESTAURADO */}
             <input
               className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3"
               placeholder="Nome completo"
@@ -203,26 +197,18 @@ export default function Cadastro() {
               </span>
             </div>
 
-            {/* 🔥 BARRA IGUAL RESET */}
-            <div
-              style={{
-                height: 6,
-                borderRadius: 6,
-                background: "#333",
-                overflow: "hidden",
-              }}
-            >
+            {/* BARRA */}
+            <div style={{ height: 6, background: "#333", borderRadius: 6 }}>
               <div
                 style={{
                   height: "100%",
                   width: larguraForca(),
                   background: corForca(),
-                  transition: "all 0.3s ease",
                 }}
               />
             </div>
 
-            {/* 🔥 TEXTO IGUAL RESET */}
+            {/* TEXTO */}
             <div style={{ fontSize: 12 }}>
               <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>• mínimo 8 caracteres</div>
               <div style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>• letra maiúscula</div>
@@ -255,6 +241,16 @@ export default function Cadastro() {
             >
               {loading ? "Criando conta..." : "Criar Conta"}
             </button>
+
+            <p className="text-center text-sm text-white/80 mt-2">
+              Já tem conta?{" "}
+              <span
+                className="text-yellow-300 cursor-pointer"
+                onClick={() => navigate("/login")}
+              >
+                Entrar
+              </span>
+            </p>
 
           </form>
         ) : (
