@@ -113,7 +113,26 @@ router.post("/recover", async (req, res) => {
         from: "suporte@mail.zlpixpremiado.com.br",
         to: user.email,
         subject: "Recuperação de senha",
-        html: `...`,
+        html: `
+<p>Olá, ${user.name}</p>
+
+<p>Clique no botão abaixo para redefinir sua senha:</p>
+
+<p>
+  <a href="https://zlpix-premiado-site.onrender.com/reset?token=${token}" 
+     style="display:inline-block;padding:12px 20px;background:#ffd700;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;">
+    Redefinir senha
+  </a>
+</p>
+
+<p>Se o botão não funcionar, copie e cole o link abaixo no navegador:</p>
+
+<p style="word-break:break-all;">
+  https://zlpix-premiado-site.onrender.com/reset?token=${token}
+</p>
+
+<p>Esse link expira em 15 minutos.</p>
+`,
       });
     } catch (emailError) {
       return res.status(500).json({
