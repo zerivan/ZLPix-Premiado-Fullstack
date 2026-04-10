@@ -73,13 +73,15 @@ app.use(express.json());
 // ============================
 app.use(async (req, res, next) => {
   try {
-    const isAdminRoute = req.path.startsWith("/api/admin");
-    const isAllowedAuthRoute =
-      req.path === "/auth/login" ||
-      req.path === "/auth/recover" ||
-      req.path === "/auth/reset-password";
+    const url = req.originalUrl;
 
-    const isHealthCheck = req.path === "/";
+    const isAdminRoute = url.startsWith("/api/admin");
+    const isAllowedAuthRoute =
+      url === "/auth/login" ||
+      url === "/auth/recover" ||
+      url === "/auth/reset-password";
+
+    const isHealthCheck = url === "/";
 
     if (isAdminRoute || isAllowedAuthRoute || isHealthCheck) {
       return next();
