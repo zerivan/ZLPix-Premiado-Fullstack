@@ -16,7 +16,6 @@ export default function Cadastro() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // 🔥 ANALISADOR (NOVO)
   function analisarSenha(password: string) {
     return {
       length: password.length >= 8,
@@ -29,7 +28,6 @@ export default function Cadastro() {
 
   const regras = analisarSenha(password);
 
-  // 🔥 FORÇA (NOVO)
   function calcularForca() {
     let score = 0;
     if (regras.length) score++;
@@ -52,7 +50,6 @@ export default function Cadastro() {
     return `${(forca / 5) * 100}%`;
   }
 
-  // 🔥 VALIDAÇÃO (JÁ EXISTENTE)
   function validarSenha(password: string, email?: string) {
     if (!password || password.length < 8) {
       return "A senha deve ter no mínimo 8 caracteres.";
@@ -89,8 +86,9 @@ export default function Cadastro() {
       return;
     }
 
-    if (!fullName || !email || !password) {
-      alert("Preencha nome, e-mail e senha.");
+    // 🔥 CORREÇÃO: CAMPOS OBRIGATÓRIOS COMPLETOS
+    if (!fullName || !email || !phone || !pixKey || !password) {
+      alert("Preencha nome, e-mail, telefone, chave Pix e senha.");
       return;
     }
 
@@ -125,6 +123,7 @@ export default function Cadastro() {
         pixKey,
         createdAt: new Date().toISOString(),
       };
+
       localStorage.setItem("USER_ZLPIX", JSON.stringify(user));
 
       setSuccess(true);
@@ -156,66 +155,94 @@ export default function Cadastro() {
         {!success ? (
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
-            {/* campos mantidos */}
+            {/* 🔥 RESTAURADO */}
+            <input
+              className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3"
+              placeholder="Nome completo"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
 
+            <input
+              type="email"
+              className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3"
+              placeholder="E-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <input
+              type="tel"
+              className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3"
+              placeholder="Telefone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+
+            <input
+              className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3"
+              placeholder="Chave Pix"
+              value={pixKey}
+              onChange={(e) => setPixKey(e.target.value)}
+            />
+
+            {/* SENHA */}
             <div className="relative">
               <input
                 type={showPass ? "text" : "password"}
-                className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 w-full"
                 placeholder="Crie uma senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <span
                 onClick={() => setShowPass(!showPass)}
-                className="material-symbols-outlined absolute right-4 top-3 text-yellow-400 cursor-pointer select-none"
+                className="material-symbols-outlined absolute right-4 top-3 text-yellow-400 cursor-pointer"
               >
                 {showPass ? "visibility_off" : "visibility"}
               </span>
             </div>
 
-            {/* 🔥 BARRA */}
-            <div className="h-2 rounded bg-gray-700 overflow-hidden">
+            {/* 🔥 BARRA IGUAL RESET */}
+            <div
+              style={{
+                height: 6,
+                borderRadius: 6,
+                background: "#333",
+                overflow: "hidden",
+              }}
+            >
               <div
                 style={{
+                  height: "100%",
                   width: larguraForca(),
                   background: corForca(),
-                  height: "100%",
-                  transition: "0.3s",
+                  transition: "all 0.3s ease",
                 }}
               />
             </div>
 
-            {/* 🔥 TEXTO */}
-            <div className="text-xs">
-              <div className={regras.length ? "text-green-400" : "text-red-400"}>
-                • mínimo 8 caracteres
-              </div>
-              <div className={regras.upper ? "text-green-400" : "text-red-400"}>
-                • letra maiúscula
-              </div>
-              <div className={regras.lower ? "text-green-400" : "text-red-400"}>
-                • letra minúscula
-              </div>
-              <div className={regras.number ? "text-green-400" : "text-red-400"}>
-                • número
-              </div>
-              <div className={regras.special ? "text-green-400" : "text-red-400"}>
-                • caractere especial
-              </div>
+            {/* 🔥 TEXTO IGUAL RESET */}
+            <div style={{ fontSize: 12 }}>
+              <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>• mínimo 8 caracteres</div>
+              <div style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>• letra maiúscula</div>
+              <div style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>• letra minúscula</div>
+              <div style={{ color: regras.number ? "#4ade80" : "#f87171" }}>• número</div>
+              <div style={{ color: regras.special ? "#4ade80" : "#f87171" }}>• caractere especial</div>
             </div>
 
+            {/* CONFIRMAR */}
             <div className="relative">
               <input
                 type={showConfirmPass ? "text" : "password"}
-                className="bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="bg-white/10 text-white border border-white/20 rounded-lg px-4 py-3 w-full"
                 placeholder="Repita sua senha"
                 value={confirmPass}
                 onChange={(e) => setConfirmPass(e.target.value)}
               />
               <span
                 onClick={() => setShowConfirmPass(!showConfirmPass)}
-                className="material-symbols-outlined absolute right-4 top-3 text-yellow-400 cursor-pointer select-none"
+                className="material-symbols-outlined absolute right-4 top-3 text-yellow-400 cursor-pointer"
               >
                 {showConfirmPass ? "visibility_off" : "visibility"}
               </span>
@@ -224,7 +251,7 @@ export default function Cadastro() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3 mt-2 hover:bg-yellow-500 transition shadow-lg"
+              className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3 mt-2"
             >
               {loading ? "Criando conta..." : "Criar Conta"}
             </button>
@@ -235,12 +262,9 @@ export default function Cadastro() {
             <h2 className="text-xl font-bold text-yellow-300 mb-3">
               🎉 Conta criada com sucesso!
             </h2>
-            <p className="text-white/80 text-sm mb-4">
-              Agora faça login para acessar sua conta.
-            </p>
             <button
               onClick={() => navigate("/login", { replace: true })}
-              className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3 hover:bg-yellow-500 transition shadow-lg"
+              className="w-full bg-yellow-400 text-blue-900 font-bold rounded-full py-3"
             >
               Ir para o login
             </button>
