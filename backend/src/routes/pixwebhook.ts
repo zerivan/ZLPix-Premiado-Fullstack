@@ -175,22 +175,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         valor: Number(transacaoCarteira.valor),
       });
 
-      // 🔥 PUSH (NOVO - CIRÚRGICO)
-      try {
-        await fetchFn("http://localhost:4000/push/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: transacaoCarteira.userId,
-            title: "Saldo adicionado",
-            body: "Seu saldo foi creditado na carteira!",
-            url: "/carteira",
-          }),
-        });
-      } catch (e) {
-        console.error("Push carteira erro:", e);
-      }
-
       return res.status(200).send("ok");
     }
 
@@ -261,22 +245,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       });
 
       if (!processado) return res.status(200).send("ok");
-
-      // 🔥 PUSH (NOVO - CIRÚRGICO)
-      try {
-        await fetchFn("http://localhost:4000/push/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: transacao.userId,
-            title: "Bilhete gerado",
-            body: "Seu bilhete foi criado com sucesso!",
-            url: "/meus-bilhetes",
-          }),
-        });
-      } catch (e) {
-        console.error("Push bilhete erro:", e);
-      }
 
       return res.status(200).send("ok");
     }
