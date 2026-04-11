@@ -135,7 +135,7 @@ router.post("/register", async (req, res) => {
 });
 
 // ============================
-// 🔥 LOGIN (ADICIONADO)
+// 🔥 LOGIN CLIENTE
 // ============================
 router.post("/login", async (req, res) => {
   try {
@@ -211,6 +211,58 @@ router.post("/login", async (req, res) => {
     console.error("Erro em /auth/login:", err);
     return res.status(500).json({
       message: "Erro ao fazer login.",
+    });
+  }
+});
+
+// ============================
+// 🔥 LOGIN ADMIN (ADICIONADO)
+// ============================
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
+    }
+
+    const admin = await prisma.admins.findUnique({
+      where: { email: String(email).toLowerCase() },
+    });
+
+    if (!admin) {
+      return res.status(401).json({
+        message: "Credenciais inválidas.",
+      });
+    }
+
+    const senhaValida = await bcrypt.compare(
+      password,
+      admin.passwordHash
+    );
+
+    if (!senhaValida) {
+      return res.status(401).json({
+        message: "Credenciais inválidas.",
+      });
+    }
+
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, role: "admin" },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login admin realizado com sucesso.",
+      token,
+    });
+  } catch (err) {
+    console.error("Erro em /auth/admin/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login admin.",
     });
   }
 });
