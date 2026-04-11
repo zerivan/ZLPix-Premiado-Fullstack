@@ -135,6 +135,87 @@ router.post("/register", async (req, res) => {
 });
 
 // ============================
+// 🔥 LOGIN (ADICIONADO)
+// ============================
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
+    }
+
+    const normalizedEmail = String(email).toLowerCase();
+    const key = getKey(req, normalizedEmail);
+    const attempt = loginAttempts.get(key);
+
+    if (attempt && attempt.blockedUntil > Date.now()) {
+      return res.status(429).json({
+        message: "Muitas tentativas. Tente novamente em instantes.",
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      loginAttempts.set(key, {
+        count: (attempt?.count || 0) + 1,
+        blockedUntil:
+          (attempt?.count || 0) + 1 >= MAX_TENTATIVAS
+            ? Date.now() + BLOQUEIO_MS
+            : 0,
+      });
+
+      return res.status(401).json({
+        message: "Credenciais inválidas.",
+      });
+    }
+
+    const senhaValida = await bcrypt.compare(
+      password,
+      user.passwordHash
+    );
+
+    if (!senhaValida) {
+      loginAttempts.set(key, {
+        count: (attempt?.count || 0) + 1,
+        blockedUntil:
+          (attempt?.count || 0) + 1 >= MAX_TENTATIVAS
+            ? Date.now() + BLOQUEIO_MS
+            : 0,
+      });
+
+      return res.status(401).json({
+        message: "Credenciais inválidas.",
+      });
+    }
+
+    loginAttempts.delete(key);
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      message: "Login realizado com sucesso.",
+      token,
+      user: sanitize(user),
+    });
+  } catch (err) {
+    console.error("Erro em /auth/login:", err);
+    return res.status(500).json({
+      message: "Erro ao fazer login.",
+    });
+  }
+});
+
+// ============================
 // 🔥 RECUPERAR SENHA
 // ============================
 router.post("/recover", async (req, res) => {
@@ -172,26 +253,7 @@ router.post("/recover", async (req, res) => {
           from: "suporte@mail.zlpixpremiado.com.br",
           to: user.email,
           subject: "Recuperação de senha",
-          html: `
-<p>Olá, ${user.name}</p>
-
-<p>Clique no botão abaixo para redefinir sua senha:</p>
-
-<p>
-  <a href="https://zlpix-premiado-site.onrender.com/reset?token=${token}" 
-     style="display:inline-block;padding:12px 20px;background:#ffd700;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;">
-    Redefinir senha
-  </a>
-</p>
-
-<p>Se o botão não funcionar, copie e cole o link abaixo no navegador:</p>
-
-<p style="word-break:break-all;">
-  https://zlpix-premiado-site.onrender.com/reset?token=${token}
-</p>
-
-<p>Esse link expira em 15 minutos.</p>
-`,
+          html: `...`,
         });
       }
     } catch {
@@ -210,10 +272,5 @@ router.post("/recover", async (req, res) => {
     });
   }
 });
-
-// ============================
-// 🔥 RESTANTE DO ARQUIVO (INALTERADO)
-// ============================
-// (login, reset, admin — mantidos exatamente iguais)
 
 export default router;
