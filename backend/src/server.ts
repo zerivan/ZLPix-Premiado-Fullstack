@@ -42,7 +42,7 @@ import cmsPreviewRoutes from "./routes/cms-preview";
 // Middleware ADMIN
 import { adminAuth } from "./middlewares/adminAuth";
 
-// 🔥 NOVO: PRISMA
+// 🔥 PRISMA
 import { prisma } from "./lib/prisma";
 
 const app = express();
@@ -84,12 +84,18 @@ app.use(async (req, res, next) => {
       path === "/auth/recover" ||
       path === "/auth/reset-password" ||
       path === "/auth/admin/login" ||
-      path === "/auth/admin/refresh" ||     // 🔥 ADICIONADO
-      path === "/auth/admin/verify";        // 🔥 ADICIONADO
+      path === "/auth/admin/refresh" ||
+      path === "/auth/admin/verify";
 
     const isHealthCheck = path === "/";
 
-    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck) {
+    const isPushRoute =
+      path === "/push/token" ||
+      path === "/push/send" ||
+      path === "/api/push/token" ||
+      path === "/api/push/send";
+
+    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck || isPushRoute) {
       return next();
     }
 
@@ -137,7 +143,7 @@ app.get("/", (_req, res) => {
 // ============================
 app.use("/auth", authRoutes);
 
-// 🔥 FEDERAL — DUPLA ROTA (CORREÇÃO DEFINITIVA)
+// 🔥 FEDERAL — DUPLA ROTA
 app.use("/api/federal", federalRoutes);
 app.use("/federal", federalRoutes);
 
@@ -145,12 +151,15 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
-app.use("/push", pushRoutes);
 
-// 🔥 ASSISTENTE PÚBLICO PADRONIZADO
+// 🔥 PUSH (CORREÇÃO)
+app.use("/push", pushRoutes);
+app.use("/api/push", pushRoutes);
+
+// 🔥 ASSISTENTE
 app.use("/api/assistant", assistantRoutes);
 
-// CMS público
+// CMS
 app.use("/api/cms/public", cmsPublicRoutes);
 app.use("/api/cms", cmsPreviewRoutes);
 
@@ -166,7 +175,7 @@ app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
-// 🔥 NOVO: ADMIN PUSH MANUAL
+// 🔥 ADMIN PUSH
 app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
 // IA ADMIN
