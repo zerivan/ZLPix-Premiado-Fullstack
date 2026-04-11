@@ -85,7 +85,15 @@ app.use(async (req, res, next) => {
       path === "/auth/reset-password" ||
       path === "/auth/admin/login" ||
       path === "/auth/admin/refresh" ||
-      path === "/auth/admin/verify";
+      path === "/auth/admin/verify" ||
+
+      // 🔥 SUPORTE /api (CORREÇÃO)
+      path === "/api/auth/login" ||
+      path === "/api/auth/recover" ||
+      path === "/api/auth/reset-password" ||
+      path === "/api/auth/admin/login" ||
+      path === "/api/auth/admin/refresh" ||
+      path === "/api/auth/admin/verify";
 
     const isHealthCheck = path === "/";
 
@@ -152,7 +160,7 @@ app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
 
-// 🔥 PUSH (CORREÇÃO)
+// 🔥 PUSH
 app.use("/push", pushRoutes);
 app.use("/api/push", pushRoutes);
 
