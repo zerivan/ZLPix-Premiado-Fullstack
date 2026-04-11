@@ -90,6 +90,34 @@ router.post("/send", async (req, res) => {
 
     const response = await messaging.sendEachForMulticast(message);
 
+    // 🔥 NOVO: REMOVER TOKENS INVÁLIDOS (CIRÚRGICO)
+    if (response.responses && response.responses.length) {
+      const tokensToRemove: string[] = [];
+
+      response.responses.forEach((resp, index) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+
+          if (
+            errorCode === "messaging/registration-token-not-registered" ||
+            errorCode === "messaging/invalid-registration-token"
+          ) {
+            tokensToRemove.push(tokens[index].token);
+          }
+        }
+      });
+
+      if (tokensToRemove.length) {
+        console.warn(`🧹 Removendo ${tokensToRemove.length} token(s) inválido(s)`);
+
+        await prisma.pushToken.deleteMany({
+          where: {
+            token: { in: tokensToRemove },
+          },
+        });
+      }
+    }
+
     console.log(`✅ Push enviado: ${response.successCount} sucesso, ${response.failureCount} falha`);
 
     return res.json({
