@@ -12,32 +12,24 @@ const fetchFn: typeof fetch = (...args: any) =>
 
 /**
  * 🔥 REGRA CORRETA DO SORTEIO
- * - Quarta antes das 17h → hoje às 20h
- * - Quarta após 17h → próxima quarta às 20h
- * - Outros dias → próxima quarta às 20h
  */
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay(); // 0=dom, 3=qua
+  const day = now.getDay();
   const hour = now.getHours();
 
   const target = new Date(now);
 
   if (day === 3) {
-    // Hoje é quarta-feira
     if (hour < 17) {
-      // Antes das 17h → concorre hoje
       target.setHours(20, 0, 0, 0);
       return target;
     }
-
-    // Após 17h → próxima quarta
     target.setDate(target.getDate() + 7);
     target.setHours(20, 0, 0, 0);
     return target;
   }
 
-  // Não é quarta → calcula próxima quarta
   const diff = (3 - day + 7) % 7;
   target.setDate(target.getDate() + diff);
   target.setHours(20, 0, 0, 0);
@@ -138,7 +130,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔹 PRIMEIRO: VERIFICAR SE É CARTEIRA
+    // 🔹 CARTEIRA
     const transacaoCarteira = await prisma.transacao_carteira.findFirst({
       where: {
         mpPaymentId: String(paymentId),
@@ -155,9 +147,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           data: { status: "paid" },
         });
 
-        if (claim.count === 0) {
-          return false;
-        }
+        if (claim.count === 0) return false;
 
         await db.$executeRaw`
           INSERT INTO wallet (user_id, saldo, created_at)
@@ -177,9 +167,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         return true;
       });
 
-      if (!processado) {
-        return res.status(200).send("ok");
-      }
+      if (!processado) return res.status(200).send("ok");
 
       await notify({
         type: "CARTEIRA_CREDITO",
@@ -187,17 +175,31 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         valor: Number(transacaoCarteira.valor),
       });
 
+      // 🔥 PUSH (NOVO - CIRÚRGICO)
+      try {
+        await fetchFn("http://localhost:4000/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: transacaoCarteira.userId,
+            title: "Saldo adicionado",
+            body: "Seu saldo foi creditado na carteira!",
+            url: "/carteira",
+          }),
+        });
+      } catch (e) {
+        console.error("Push carteira erro:", e);
+      }
+
       return res.status(200).send("ok");
     }
 
-    // 🔹 SENÃO: É BILHETE
+    // 🔹 BILHETE
     const transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
 
-    if (!transacao) {
-      return res.status(200).send("ok");
-    }
+    if (!transacao) return res.status(200).send("ok");
 
     if (transacao.tipo === "BILHETE") {
       const metadata =
@@ -221,9 +223,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           data: { status: "paid" },
         });
 
-        if (claim.count === 0) {
-          return false;
-        }
+        if (claim.count === 0) return false;
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
@@ -232,11 +232,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             Number(transacao.valor) /
             Math.max(bilhetesRaw.length, 1);
 
-          if (typeof item === "string") {
-            dezenas = item;
-          } else if (typeof item === "object" && item !== null) {
+          if (typeof item === "string") dezenas = item;
+          else if (typeof item === "object" && item !== null)
             dezenas = String((item as any).dezenas ?? "");
-          }
 
           if (!dezenas) continue;
 
@@ -262,8 +260,22 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         return true;
       });
 
-      if (!processado) {
-        return res.status(200).send("ok");
+      if (!processado) return res.status(200).send("ok");
+
+      // 🔥 PUSH (NOVO - CIRÚRGICO)
+      try {
+        await fetchFn("http://localhost:4000/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: transacao.userId,
+            title: "Bilhete gerado",
+            body: "Seu bilhete foi criado com sucesso!",
+            url: "/meus-bilhetes",
+          }),
+        });
+      } catch (e) {
+        console.error("Push bilhete erro:", e);
       }
 
       return res.status(200).send("ok");
