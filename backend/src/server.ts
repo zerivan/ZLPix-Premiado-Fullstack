@@ -83,6 +83,7 @@ app.use(async (req, res, next) => {
       path === "/auth/login" ||
       path === "/auth/recover" ||
       path === "/auth/reset-password" ||
+      path === "/auth/register" || // ✅ ADICIONADO
       path === "/auth/admin/login" ||
       path === "/auth/admin/refresh" ||
       path === "/auth/admin/verify" ||
@@ -91,6 +92,7 @@ app.use(async (req, res, next) => {
       path === "/api/auth/login" ||
       path === "/api/auth/recover" ||
       path === "/api/auth/reset-password" ||
+      path === "/api/auth/register" || // ✅ ADICIONADO
       path === "/api/auth/admin/login" ||
       path === "/api/auth/admin/refresh" ||
       path === "/api/auth/admin/verify";
