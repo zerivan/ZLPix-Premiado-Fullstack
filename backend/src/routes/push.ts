@@ -13,17 +13,16 @@ const router = Router();
 router.post("/token", async (req, res) => {
   try {
     const { token, userId } = req.body;
-    const normalizedUserId =
-      userId !== undefined && userId !== null ? Number(userId) : NaN;
+    const normalizedUserId = Number(userId);
 
-    if (!token || !Number.isInteger(normalizedUserId)) {
+    if (!token || !userId || Number.isNaN(normalizedUserId)) {
       console.warn("⚠️ Push token registro falhou: token ou userId ausente");
       return res.status(400).json({
         error: "Token ou userId ausente.",
       });
     }
 
-    console.log(`📲 Registrando push token para userId: ${normalizedUserId}`);
+    console.log(`📲 Registrando push token para userId: ${userId}`);
 
     await prisma.pushToken.upsert({
       where: { token },
@@ -34,7 +33,7 @@ router.post("/token", async (req, res) => {
       },
     });
 
-    console.log(`✅ Push token registrado com sucesso para userId: ${normalizedUserId}`);
+    console.log(`✅ Push token registrado com sucesso para userId: ${userId}`);
 
     return res.json({ ok: true });
   } catch (error) {
@@ -51,19 +50,16 @@ router.post("/token", async (req, res) => {
 router.post("/send", async (req, res) => {
   try {
     const { userId, title, body, url } = req.body;
-    const normalizedUserId =
-      userId !== undefined && userId !== null ? Number(userId) : NaN;
+    const normalizedUserId = Number(userId);
 
-    if (!Number.isInteger(normalizedUserId) || !title || !body) {
+    if (!userId || !title || !body || Number.isNaN(normalizedUserId)) {
       console.warn("⚠️ Push envio falhou: parâmetros obrigatórios ausentes");
       return res.status(400).json({
         error: "userId, title e body são obrigatórios.",
       });
     }
 
-    console.log(
-      `📤 Solicitação de envio de push: userId: ${normalizedUserId}, title: "${title}"`
-    );
+    console.log(`📤 Solicitação de envio de push: userId: ${userId}, title: "${title}"`);
 
     const tokens = await prisma.pushToken.findMany({
       where: { userId: normalizedUserId },
@@ -71,7 +67,7 @@ router.post("/send", async (req, res) => {
     });
 
     if (!tokens.length) {
-      console.log(`🔕 Usuário ${normalizedUserId} não possui tokens registrados`);
+      console.log(`🔕 Usuário ${userId} não possui tokens registrados`);
       return res.json({
         ok: false,
         message: "Usuário não possui tokens registrados.",
@@ -92,7 +88,6 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     };
 
-    console.log("🚀 Disparando admin.messaging().sendEachForMulticast...");
     const response = await messaging.sendEachForMulticast(message);
 
     console.log(`✅ Push enviado: ${response.successCount} sucesso, ${response.failureCount} falha`);
