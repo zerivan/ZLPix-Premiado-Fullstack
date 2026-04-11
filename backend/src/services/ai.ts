@@ -1,15 +1,29 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let client: OpenAI | null = null;
+
+function getClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+
+  if (!client) {
+    client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+
+  return client;
+}
 
 export async function analisarErro(prompt: string): Promise<string> {
-  if (!process.env.OPENAI_API_KEY) {
+  const openai = getClient();
+
+  if (!openai) {
     throw new Error("OPENAI_API_KEY não configurada");
   }
 
-  const response = await client.responses.create({
+  const response = await openai.responses.create({
     model: "gpt-4.1",
     input: [
       {
