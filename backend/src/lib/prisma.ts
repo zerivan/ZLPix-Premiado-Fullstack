@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
+// 🧠 Garante que o Prisma seja criado uma única vez
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -13,33 +14,36 @@ export const prisma =
         : ["query", "warn", "error"],
   });
 
+// ♻️ Reaproveita instância
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
-/**
- * 🔥 WRAPPER DE RESILIÊNCIA
- * Reexecuta query se conexão estiver fechada
- */
-export async function prismaSafe<T>(fn: () => Promise<T>): Promise<T> {
+// 🧩 Teste inicial (mantido)
+async function testConnection() {
   try {
-    return await fn();
-  } catch (error: any) {
-    const msg = String(error);
+    await prisma.$connect();
+    console.log("🟢 Prisma conectado ao banco com sucesso.");
+  } catch (err) {
+    console.error("🔴 Erro ao conectar ao banco via Prisma:", err);
+  }
+}
+testConnection();
 
-    if (msg.includes("Closed") || msg.includes("Connection")) {
-      console.warn("⚠️ Prisma conexão perdida. Reconectando...");
+/**
+ * 🔥 NOVO: GARANTE RECONEXÃO AUTOMÁTICA
+ */
+export async function ensurePrismaConnection() {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    console.warn("⚠️ Prisma perdeu conexão. Reconectando...");
 
-      try {
-        await prisma.$disconnect();
-      } catch {}
+    try {
+      await prisma.$disconnect();
+    } catch {}
 
-      await prisma.$connect();
-
-      return await fn(); // tenta novamente
-    }
-
-    throw error;
+    await prisma.$connect();
   }
 }
 
