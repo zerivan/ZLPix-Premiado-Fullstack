@@ -83,49 +83,30 @@ app.use(async (req, res, next) => {
       path === "/auth/login" ||
       path === "/auth/recover" ||
       path === "/auth/reset-password" ||
-      path === "/auth/register" || // ✅ ADICIONADO
-      path === "/auth/admin/login" ||
-      path === "/auth/admin/refresh" ||
-      path === "/auth/admin/verify" ||
-
-      // 🔥 SUPORTE /api
-      path === "/api/auth/login" ||
-      path === "/api/auth/recover" ||
-      path === "/api/auth/reset-password" ||
-      path === "/api/auth/register" || // ✅ ADICIONADO
-      path === "/api/auth/admin/login" ||
-      path === "/api/auth/admin/refresh" ||
-      path === "/api/auth/admin/verify";
+      path === "/auth/register" || // ✅ CORREÇÃO
+      path === "/auth/admin/login" || // ✅ CORREÇÃO
+      path === "/auth/admin/refresh" || // ✅ CORREÇÃO
+      path === "/auth/admin/verify"; // ✅ CORREÇÃO
 
     const isHealthCheck = path === "/";
 
-    const isPushRoute =
-      path === "/push/token" ||
-      path === "/push/send" ||
-      path === "/api/push/token" ||
-      path === "/api/push/send";
-
-    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck || isPushRoute) {
+    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck) {
       return next();
     }
 
-    // 🔥 CORREÇÃO CRÍTICA
-    let row = null;
-
-    try {
-      row = await prisma.appContent.findUnique({
-        where: { key: "configuracoes_gerais" },
-      });
-    } catch (err) {
-      console.error("⚠️ Prisma falhou no middleware global:", err);
-      return next(); // NÃO BLOQUEIA
-    }
+    const row = await prisma.appContent.findUnique({
+      where: { key: "configuracoes_gerais" },
+    });
 
     let modoManutencao = false;
 
     if (row?.contentHtml) {
       try {
-        const parsed = JSON.parse(row.contentHtml);
+        const parsed =
+          typeof row.contentHtml === "string"
+            ? JSON.parse(row.contentHtml)
+            : row.contentHtml;
+
         modoManutencao = !!parsed.modoManutencao;
       } catch {
         modoManutencao = false;
@@ -169,10 +150,7 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
-
-// 🔥 PUSH
 app.use("/push", pushRoutes);
-app.use("/api/push", pushRoutes);
 
 // 🔥 ASSISTENTE
 app.use("/api/assistant", assistantRoutes);
