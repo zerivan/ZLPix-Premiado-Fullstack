@@ -12,7 +12,6 @@ const fetchFn: typeof fetch = (...args: any) =>
 /**
  * =========================
  * POST /pix/create
- * Criação de PIX para pagamento de BILHETES
  * =========================
  */
 router.post("/create", async (req, res) => {
@@ -138,61 +137,84 @@ router.post("/create", async (req, res) => {
 /**
  * =========================
  * GET /pix/payment-status/:paymentId
- * Verificação de status de pagamento de bilhete
  * =========================
  */
-router.get(
-  "/payment-status/:paymentId",
-  async (req, res) => {
-    try {
-      const { paymentId } = req.params;
+router.get("/payment-status/:paymentId", async (req, res) => {
+  try {
+    const { paymentId } = req.params;
 
-      if (!paymentId) {
-        return res
-          .status(400)
-          .json({ error: "paymentId ausente" });
-      }
-
-      const transacao =
-        await prisma.transacao.findFirst({
-          where: {
-            mpPaymentId: String(paymentId),
-            tipo: "BILHETE",
-          },
-          orderBy: {
-            id: "desc",
-          },
-          select: {
-            status: true,
-            tipo: true,
-          },
-        });
-
-      if (!transacao) {
-        console.log(
-          `[pix/payment-status] Transacao não encontrada: paymentId=${paymentId}`
-        );
-        return res.json({ status: "pending" });
-      }
-
-      console.log(
-        `[pix/payment-status] Status retornado: paymentId=${paymentId}, status=${transacao.status}`
-      );
-
-      return res.json({
-        status: transacao.status,
-      });
-    } catch (err) {
-      console.error(
-        "Erro pix/payment-status:",
-        err
-      );
-      return res
-        .status(500)
-        .json({ error: "Erro interno" });
+    if (!paymentId) {
+      return res.status(400).json({ error: "paymentId ausente" });
     }
+
+    // 🔹 1. tenta via mpPaymentId
+    let transacao = await prisma.transacao.findFirst({
+      where: {
+        mpPaymentId: String(paymentId),
+        tipo: "BILHETE",
+      },
+      orderBy: { id: "desc" },
+      select: { status: true, tipo: true },
+    });
+
+    // 🔥 2. fallback via external_reference
+    if (!transacao) {
+      const token =
+        process.env.MP_ACCESS_TOKEN ||
+        process.env.MP_ACCESS_TOKEN_TEST;
+
+      if (token) {
+        const resp = await fetchFn(
+          `https://api.mercadopago.com/v1/payments/${paymentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const mpInfo: any = await resp.json().catch(() => null);
+
+        const externalReference = String(
+          mpInfo?.external_reference || ""
+        );
+
+        const match = externalReference.match(/^bilhete_tx_(\d+)$/);
+
+        if (match) {
+          const txId = Number(match[1]);
+
+          const tx = await prisma.transacao.findUnique({
+            where: { id: txId },
+            select: { status: true, tipo: true },
+          });
+
+          if (tx && tx.tipo === "BILHETE") {
+            transacao = tx;
+          }
+        }
+      }
+    }
+
+    if (!transacao) {
+      console.log(
+        `[pix/payment-status] NÃO encontrada: paymentId=${paymentId}`
+      );
+      return res.json({ status: "pending" });
+    }
+
+    console.log(
+      `[pix/payment-status] OK: paymentId=${paymentId}, status=${transacao.status}`
+    );
+
+    return res.json({
+      status: transacao.status,
+    });
+  } catch (err) {
+    console.error("Erro pix/payment-status:", err);
+    return res.status(500).json({ error: "Erro interno" });
   }
-);
+});
 
 // Healthcheck
 router.get("/__ping_pix", (req, res) => {
