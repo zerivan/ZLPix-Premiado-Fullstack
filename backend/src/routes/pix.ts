@@ -1,3 +1,4 @@
+// backend/src/routes/pix.ts
 import express from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -156,6 +157,10 @@ router.get(
         await prisma.transacao.findFirst({
           where: {
             mpPaymentId: String(paymentId),
+            tipo: "BILHETE",
+          },
+          orderBy: {
+            id: "desc",
           },
           select: {
             status: true,
@@ -164,15 +169,15 @@ router.get(
         });
 
       if (!transacao) {
+        console.log(
+          `[pix/payment-status] Transacao não encontrada: paymentId=${paymentId}`
+        );
         return res.json({ status: "pending" });
       }
 
-      if (transacao.tipo !== "BILHETE") {
-        return res.status(404).json({
-          error:
-            "Pagamento encontrado, mas não pertence ao fluxo de bilhete. Use o endpoint de carteira se aplicável.",
-        });
-      }
+      console.log(
+        `[pix/payment-status] Status retornado: paymentId=${paymentId}, status=${transacao.status}`
+      );
 
       return res.json({
         status: transacao.status,
