@@ -65,6 +65,20 @@ async function fetchMpPayment(paymentId: string) {
   }
 }
 
+function parseExternalReferenceId(
+  externalReference: string,
+  prefix: "wallet_" | "bilhete_tx_"
+): number | null {
+  if (!externalReference.startsWith(prefix)) return null;
+
+  const rawId = externalReference.slice(prefix.length);
+
+  if (!/^\d+$/.test(rawId)) return null;
+
+  const id = Number(rawId);
+  return Number.isSafeInteger(id) ? id : null;
+}
+
 router.post("/", express.json(), async (req: Request, res: Response) => {
   try {
     const payload: any = req.body || {};
@@ -130,12 +144,41 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
+    const externalReference = String(mpInfo?.external_reference || "");
+
     // 🔹 CARTEIRA
-    const transacaoCarteira = await prisma.transacao_carteira.findFirst({
+    let transacaoCarteira = await prisma.transacao_carteira.findFirst({
       where: {
         mpPaymentId: String(paymentId),
       },
     });
+
+    if (!transacaoCarteira) {
+      const carteiraTxId = parseExternalReferenceId(
+        externalReference,
+        "wallet_"
+      );
+
+      if (carteiraTxId !== null) {
+        const linked = await prisma.transacao_carteira.updateMany({
+          where: {
+            id: carteiraTxId,
+            OR: [
+              { mpPaymentId: null },
+              { mpPaymentId: "" },
+              { mpPaymentId: String(paymentId) },
+            ],
+          },
+          data: { mpPaymentId: String(paymentId) },
+        });
+
+        if (linked.count > 0) {
+          transacaoCarteira = await prisma.transacao_carteira.findUnique({
+            where: { id: carteiraTxId },
+          });
+        }
+      }
+    }
 
     if (transacaoCarteira) {
       const processado = await prisma.$transaction(async (db) => {
@@ -179,9 +222,36 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // 🔹 BILHETE
-    const transacao = await prisma.transacao.findFirst({
+    let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
+
+    if (!transacao) {
+      const bilheteTxId = parseExternalReferenceId(
+        externalReference,
+        "bilhete_tx_"
+      );
+
+      if (bilheteTxId !== null) {
+        const linked = await prisma.transacao.updateMany({
+          where: {
+            id: bilheteTxId,
+            OR: [
+              { mpPaymentId: null },
+              { mpPaymentId: "" },
+              { mpPaymentId: String(paymentId) },
+            ],
+          },
+          data: { mpPaymentId: String(paymentId) },
+        });
+
+        if (linked.count > 0) {
+          transacao = await prisma.transacao.findUnique({
+            where: { id: bilheteTxId },
+          });
+        }
+      }
+    }
 
     if (!transacao) return res.status(200).send("ok");
 
