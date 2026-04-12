@@ -269,15 +269,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       const sorteioData = getNextWednesday();
 
       const processado = await prisma.$transaction(async (db) => {
-        const claim = await db.transacao.updateMany({
-          where: {
-            id: transacao.id,
-            NOT: { status: "paid" },
-          },
+        // ✅ CORREÇÃO: garantir persistência do status
+        await db.transacao.update({
+          where: { id: transacao.id },
           data: { status: "paid" },
         });
-
-        if (claim.count === 0) return false;
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
