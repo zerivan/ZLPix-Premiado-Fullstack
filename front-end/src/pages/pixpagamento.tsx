@@ -52,7 +52,6 @@ export default function PixPagamento() {
   const pollingRef = useRef<number | null>(null);
   const redirectedRef = useRef(false);
 
-  // Persistência mínima para evitar perda de state no reload
   useEffect(() => {
     if (paymentId) {
       sessionStorage.setItem("PIX_BILHETE_PAYMENT_ID", paymentId);
@@ -80,15 +79,17 @@ export default function PixPagamento() {
     const poll = async () => {
       try {
         const res = await axios.get(`${API}/pix/payment-status/${paymentId}`);
-        const s = String(res.data?.status || "").toLowerCase();
+        const s = String(res.data?.status || "").toLowerCase().trim();
 
-        if (s === "paid") {
+        // 🔥 CORREÇÃO CIRÚRGICA
+        if (s === "paid" || s === "approved") {
           setStatusText("Pagamento confirmado! 🎉");
+
           if (pollingRef.current) {
             window.clearInterval(pollingRef.current);
             pollingRef.current = null;
           }
-          // limpeza de session apenas do fluxo bilhete
+
           sessionStorage.removeItem("PIX_BILHETE_PAYMENT_ID");
           sessionStorage.removeItem("PIX_BILHETE_QR");
           sessionStorage.removeItem("PIX_BILHETE_COPY");
@@ -103,11 +104,10 @@ export default function PixPagamento() {
           setStatusText("Aguardando pagamento...");
         }
       } catch (err) {
-        // erro silencioso (não trava a UI)
+        // erro silencioso (mantido conforme seu padrão)
       }
     };
 
-    // primeira checagem imediata + intervalo contínuo
     poll();
     pollingRef.current = window.setInterval(poll, 3000);
 
@@ -128,7 +128,6 @@ export default function PixPagamento() {
       <p className="mb-4 text-sm text-white/80">{statusText}</p>
 
       <div className="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-6 text-center space-y-4">
-        {/* QR Code */}
         {qrBase64 ? (
           <img
             src={`data:image/png;base64,${qrBase64}`}
