@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 import { Prisma } from "@prisma/client";
 import { notify } from "../services/notify";
@@ -84,46 +83,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       payload?.id ||
       payload?.payment_id;
 
-    const xSignatureRaw = req.header("x-signature");
-    const xRequestIdRaw = req.header("x-request-id");
-
-    const xSignature = Array.isArray(xSignatureRaw)
-      ? xSignatureRaw[0]
-      : xSignatureRaw || "";
-
-    const xRequestId = Array.isArray(xRequestIdRaw)
-      ? xRequestIdRaw[0]
-      : xRequestIdRaw || "";
-
-    const signatureParts: Record<string, string> = xSignature
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .reduce((acc, part) => {
-        const [key, ...valueParts] = part.split("=");
-        if (key) acc[key] = valueParts.join("=");
-        return acc;
-      }, {} as Record<string, string>);
-
-    const ts = signatureParts.ts || "";
-    const v1 = signatureParts.v1 || "";
-    const webhookSecret = process.env.MP_WEBHOOK_SECRET || "";
-
-    const manifest = `id:${String(
-      paymentId || ""
-    )};request-id:${xRequestId};ts:${ts};`;
-
-    const generatedSignature = webhookSecret
-      ? crypto
-          .createHmac("sha256", webhookSecret)
-          .update(manifest)
-          .digest("hex")
-      : "";
-
-    if (!v1 || generatedSignature !== v1) {
-      return res.status(200).send("invalid signature");
-    }
-
     if (!paymentId) {
       return res.status(200).send("ok");
     }
@@ -144,7 +103,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     );
 
     // =========================
-    // 🔹 CARTEIRA (CORREÇÃO)
+    // 🔹 CARTEIRA (PRIORIDADE)
     // =========================
     let carteira = await prisma.transacao_carteira.findFirst({
       where: { mpPaymentId: String(paymentId) },
@@ -172,15 +131,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     if (carteira) {
       await prisma.$transaction(async (db) => {
-        const claim = await db.transacao_carteira.updateMany({
-          where: {
-            id: carteira.id,
-            NOT: { status: "paid" },
-          },
+        await db.transacao_carteira.update({
+          where: { id: carteira.id },
           data: { status: "paid" },
         });
-
-        if (claim.count === 0) return;
 
         await db.$executeRaw`
           INSERT INTO wallet (user_id, saldo, created_at)
@@ -208,7 +162,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================
-    // 🔹 BILHETE (CORREÇÃO DEFINITIVA)
+    // 🔹 BILHETE
     // =========================
     let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
@@ -221,15 +175,16 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       );
 
       if (txId) {
-        // 🔥 FORÇA vínculo SEM condição
-        await prisma.transacao.update({
-          where: { id: txId },
-          data: { mpPaymentId: String(paymentId) },
-        });
-
         transacao = await prisma.transacao.findUnique({
           where: { id: txId },
         });
+
+        if (transacao) {
+          await prisma.transacao.update({
+            where: { id: txId },
+            data: { mpPaymentId: String(paymentId) },
+          });
+        }
       }
     }
 
@@ -251,21 +206,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       const sorteioData = getNextWednesday();
 
       await prisma.$transaction(async (db) => {
-        const claim = await db.transacao.updateMany({
-          where: {
-            id: transacao.id,
-            NOT: { status: "paid" },
-          },
+        await db.transacao.update({
+          where: { id: transacao.id },
           data: { status: "paid" },
         });
-
-        if (claim.count === 0) return;
-
-        const jaExiste = await db.bilhete.findFirst({
-          where: { transacaoId: transacao.id },
-        });
-
-        if (jaExiste) return;
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
