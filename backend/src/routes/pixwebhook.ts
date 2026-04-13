@@ -130,33 +130,50 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     if (carteira) {
+      // 🔒 ALTERAÇÃO: controle de idempotência para crédito em carteira
+      let carteiraFoiPagaAgora = false;
+
       await prisma.$transaction(async (db) => {
-        await db.transacao_carteira.update({
-          where: { id: carteira.id },
-          data: { status: "paid" },
-        });
-
-        await db.$executeRaw`
-          INSERT INTO wallet (user_id, saldo, created_at)
-          VALUES (${carteira.userId}, 0, NOW())
-          ON CONFLICT (user_id) DO NOTHING
-        `;
-
-        await db.wallet.updateMany({
-          where: { userId: carteira.userId },
-          data: {
-            saldo: {
-              increment: Number(carteira.valor),
+        // 🔒 ALTERAÇÃO: updateMany + NOT status paid para evitar reprocessamento
+        const carteiraStatusUpdated =
+          await db.transacao_carteira.updateMany({
+            where: {
+              id: carteira.id,
+              NOT: { status: "paid" },
             },
-          },
-        });
+            data: { status: "paid" },
+          });
+
+        carteiraFoiPagaAgora =
+          carteiraStatusUpdated.count > 0;
+
+        // 🔒 ALTERAÇÃO: só credita saldo se acabou de marcar como paid
+        if (carteiraFoiPagaAgora) {
+          await db.$executeRaw`
+            INSERT INTO wallet (user_id, saldo, created_at)
+            VALUES (${carteira.userId}, 0, NOW())
+            ON CONFLICT (user_id) DO NOTHING
+          `;
+
+          await db.wallet.updateMany({
+            where: { userId: carteira.userId },
+            data: {
+              saldo: {
+                increment: Number(carteira.valor),
+              },
+            },
+          });
+        }
       });
 
-      await notify({
-        type: "CARTEIRA_CREDITO",
-        userId: String(carteira.userId),
-        valor: Number(carteira.valor),
-      });
+      // 🔒 ALTERAÇÃO: notify fora da transação para não afetar confirmação de pagamento
+      if (carteiraFoiPagaAgora) {
+        await notify({
+          type: "CARTEIRA_CREDITO",
+          userId: String(carteira.userId),
+          valor: Number(carteira.valor),
+        });
+      }
 
       return res.status(200).send("ok");
     }
@@ -204,12 +221,34 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : [];
 
       const sorteioData = getNextWednesday();
+      // 🔒 ALTERAÇÃO: notify fora da transação para não causar rollback
+      const bilhetesParaNotificar: string[] = [];
 
       await prisma.$transaction(async (db) => {
-        await db.transacao.update({
-          where: { id: transacao.id },
-          data: { status: "paid" },
-        });
+        // 🔒 ALTERAÇÃO: updateMany + NOT status paid para idempotência
+        const transacaoStatusUpdated =
+          await db.transacao.updateMany({
+            where: {
+              id: transacao.id,
+              NOT: { status: "paid" },
+            },
+            data: { status: "paid" },
+          });
+
+        // 🔒 ALTERAÇÃO: só cria bilhetes se acabou de pagar nesta execução
+        if (transacaoStatusUpdated.count === 0) {
+          return;
+        }
+
+        // 🔒 ALTERAÇÃO: evita duplicação de bilhetes por transação
+        const bilheteExistente =
+          await db.bilhete.findFirst({
+            where: { transacaoId: transacao.id },
+          });
+
+        if (bilheteExistente) {
+          return;
+        }
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
@@ -236,13 +275,18 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             },
           });
 
-          await notify({
-            type: "BILHETE_CRIADO",
-            userId: String(transacao.userId),
-            codigo: dezenas,
-          });
+          bilhetesParaNotificar.push(dezenas);
         }
       });
+
+      // 🔒 ALTERAÇÃO: notify fora da transação
+      for (const dezenas of bilhetesParaNotificar) {
+        await notify({
+          type: "BILHETE_CRIADO",
+          userId: String(transacao.userId),
+          codigo: dezenas,
+        });
+      }
 
       return res.status(200).send("ok");
     }
