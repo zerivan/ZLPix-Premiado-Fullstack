@@ -17,6 +17,7 @@ const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso orient
 • Carteira (saldo, saque e histórico)  
 • Pagamento via Pix  
 • Notificações e configurações  
+• Recuperação de senha  
 • Política de privacidade  
 
 Se desejar, posso te orientar em alguma dessas áreas.`;
@@ -31,7 +32,8 @@ export class AssistantEngine {
     pix: ["pix", "pagamento"],
     notificacao: ["notificação", "notificacao", "avisos"],
     privacidade: ["privacidade", "contato", "suporte"],
-    preco: ["preço", "valor", "quanto custa", "custa quanto"]
+    preco: ["preço", "valor", "quanto custa", "custa quanto"],
+    senha: ["senha", "recuperar senha", "esqueci minha senha", "resetar senha"]
   };
 
   private static sensitiveKeywords = [
@@ -105,6 +107,30 @@ Posso ajudar você com algo dentro da plataforma?`
   }
 
   private static buildResponse(intent: string, domain: string): string {
+
+    if (domain === "senha") {
+      if (intent === "how") {
+        return `Para recuperar sua senha:
+
+1. Acesse a tela de login  
+2. Clique em "Esqueci minha senha"  
+3. Informe seu e-mail cadastrado  
+4. Verifique sua caixa de entrada (e também o spam)  
+5. Clique no link recebido e defina uma nova senha  
+
+Se o e-mail não chegar, aguarde alguns minutos e verifique a pasta de spam.
+
+Precisa de ajuda com algum erro nesse processo?`;
+      }
+
+      return `Se você esqueceu sua senha, utilize a opção "Esqueci minha senha" na tela de login.
+
+Um link será enviado para seu e-mail para redefinição.
+
+Caso não encontre o e-mail, verifique também a caixa de spam.
+
+Posso te orientar se estiver com algum problema específico.`;
+    }
 
     if (domain === "preco" || intent === "price") {
       return `O bilhete custa R$ ${TICKET_PRICE.toFixed(2)}, podendo ser ajustado diretamente pelo administrador conforme as configurações atuais da plataforma.
