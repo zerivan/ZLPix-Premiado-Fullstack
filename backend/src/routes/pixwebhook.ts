@@ -61,11 +61,12 @@ async function fetchMpPayment(paymentId: string) {
 }
 
 function parseExternalReferenceId(
-  externalReference: string
+  externalReference: string,
+  prefix: "wallet_" | "bilhete_tx_"
 ): number | null {
-  if (!externalReference.startsWith("bilhete_tx_")) return null;
+  if (!externalReference.startsWith(prefix)) return null;
 
-  const rawId = externalReference.replace("bilhete_tx_", "");
+  const rawId = externalReference.replace(prefix, "");
 
   if (!/^\d+$/.test(rawId)) return null;
 
@@ -97,18 +98,81 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     }
 
-    // 🔥 BUSCA DIRETA
+    const externalReference = String(
+      mpInfo?.external_reference || ""
+    );
+
+    // =========================
+    // 🔹 CARTEIRA (PRIORIDADE)
+    // =========================
+    let carteira = await prisma.transacao_carteira.findFirst({
+      where: { mpPaymentId: String(paymentId) },
+    });
+
+    if (!carteira) {
+      const carteiraId = parseExternalReferenceId(
+        externalReference,
+        "wallet_"
+      );
+
+      if (carteiraId) {
+        carteira = await prisma.transacao_carteira.findUnique({
+          where: { id: carteiraId },
+        });
+
+        if (carteira) {
+          await prisma.transacao_carteira.update({
+            where: { id: carteiraId },
+            data: { mpPaymentId: String(paymentId) },
+          });
+        }
+      }
+    }
+
+    if (carteira) {
+      await prisma.$transaction(async (db) => {
+        await db.transacao_carteira.update({
+          where: { id: carteira.id },
+          data: { status: "paid" },
+        });
+
+        await db.$executeRaw`
+          INSERT INTO wallet (user_id, saldo, created_at)
+          VALUES (${carteira.userId}, 0, NOW())
+          ON CONFLICT (user_id) DO NOTHING
+        `;
+
+        await db.wallet.updateMany({
+          where: { userId: carteira.userId },
+          data: {
+            saldo: {
+              increment: Number(carteira.valor),
+            },
+          },
+        });
+      });
+
+      await notify({
+        type: "CARTEIRA_CREDITO",
+        userId: String(carteira.userId),
+        valor: Number(carteira.valor),
+      });
+
+      return res.status(200).send("ok");
+    }
+
+    // =========================
+    // 🔹 BILHETE
+    // =========================
     let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
 
-    // 🔥 FALLBACK DEFINITIVO (external_reference)
     if (!transacao) {
-      const externalReference = String(
-        mpInfo?.external_reference || ""
+      const txId = parseExternalReferenceId(
+        externalReference,
+        "bilhete_tx_"
       );
-
-      const txId = parseExternalReferenceId(externalReference);
 
       if (txId) {
         transacao = await prisma.transacao.findUnique({
@@ -116,7 +180,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         });
 
         if (transacao) {
-          // 🔥 GARANTE VÍNCULO
           await prisma.transacao.update({
             where: { id: txId },
             data: { mpPaymentId: String(paymentId) },
@@ -125,12 +188,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       }
     }
 
-    // 🔴 AGORA NUNCA MORRE SEM TENTAR
     if (!transacao) {
-      console.error("Webhook: transacao não encontrada", {
-        paymentId,
-        externalReference: mpInfo?.external_reference,
-      });
       return res.status(200).send("ok");
     }
 
@@ -148,7 +206,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       const sorteioData = getNextWednesday();
 
       await prisma.$transaction(async (db) => {
-        // 🔥 SEMPRE GARANTE STATUS
         await db.transacao.update({
           where: { id: transacao.id },
           data: { status: "paid" },
@@ -161,11 +218,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             Number(transacao.valor) /
             Math.max(bilhetesRaw.length, 1);
 
-          if (typeof item === "string") {
-            dezenas = item;
-          } else if (typeof item === "object" && item !== null) {
+          if (typeof item === "string") dezenas = item;
+          else if (typeof item === "object" && item !== null)
             dezenas = String((item as any).dezenas ?? "");
-          }
 
           if (!dezenas) continue;
 
