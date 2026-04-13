@@ -203,7 +203,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================
-    // 🔹 BILHETE (CORRIGIDO)
+    // 🔹 BILHETE (CORREÇÃO FINAL)
     // =========================
     let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
@@ -244,18 +244,19 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
       const sorteioData = getNextWednesday();
 
-      const processado = await prisma.$transaction(async (db) => {
-        const claim = await db.transacao.updateMany({
-          where: {
-            id: transacao.id,
-            NOT: { status: "paid" },
-          },
+      await prisma.$transaction(async (db) => {
+        // 🔥 garante status sempre
+        await db.transacao.update({
+          where: { id: transacao.id },
           data: { status: "paid" },
         });
 
-        if (claim.count === 0) {
-          return false;
-        }
+        // 🔥 evita duplicação
+        const jaExiste = await db.bilhete.findFirst({
+          where: { transacaoId: transacao.id },
+        });
+
+        if (jaExiste) return;
 
         for (const item of bilhetesRaw) {
           let dezenas = "";
@@ -288,13 +289,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             codigo: dezenas,
           });
         }
-
-        return true;
       });
-
-      if (!processado) {
-        return res.status(200).send("ok");
-      }
 
       return res.status(200).send("ok");
     }
