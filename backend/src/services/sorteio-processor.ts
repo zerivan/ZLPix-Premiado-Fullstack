@@ -1,230 +1,152 @@
-import { prisma } from "../lib/prisma";
-import { notify } from "./notify";
-
-type ResultadoOficial = {
-  dezenas: string[];
+type AssistantResponse = {
+  reply: string;
 };
 
-const PREMIO_BASE = 500;
-const PERCENTUAL_PREMIO = 0.3; // 🔥 30% das vendas
+const SUPPORT_EMAIL = "zlpixpremiado.suporte@gmail.com";
+const TICKET_PRICE = 2;
 
-async function obterPremioAtual(): Promise<number> {
-  const row = await prisma.appContent.findUnique({
-    where: { key: "premio_atual" },
-  });
+const FINANCIAL_RESPONSE = `Para sua segurança, assuntos relacionados a pagamentos, prêmios, saques, créditos na carteira ou possíveis falhas financeiras são tratados exclusivamente pela administração.
 
-  if (!row || !row.contentHtml) {
-    await prisma.appContent.upsert({
-      where: { key: "premio_atual" },
-      update: { contentHtml: String(PREMIO_BASE) },
-      create: {
-        key: "premio_atual",
-        title: "Prêmio Atual",
-        contentHtml: String(PREMIO_BASE),
-      },
-    });
-    return PREMIO_BASE;
-  }
+Envie um e-mail para ${SUPPORT_EMAIL} informando seu nome completo e descrevendo detalhadamente o ocorrido para que possamos verificar seu caso com prioridade.`;
 
-  const textoLimpo = row.contentHtml.replace(/<[^>]*>/g, "").trim();
-  const valor = Number(textoLimpo);
+const OUT_OF_SCOPE_RESPONSE = `Sou a assistente do ZLpix Premiado e posso orientar você sobre:
 
-  return isNaN(valor) || valor <= 0 ? PREMIO_BASE : valor;
-}
+• Como apostar  
+• Funcionamento dos bilhetes  
+• Página de resultados  
+• Carteira (saldo, saque e histórico)  
+• Pagamento via Pix  
+• Notificações e configurações  
+• Recuperação de senha  
+• Política de privacidade  
 
-async function atualizarPremio(valor: number) {
-  await prisma.appContent.upsert({
-    where: { key: "premio_atual" },
-    update: { contentHtml: String(valor) },
-    create: {
-      key: "premio_atual",
-      title: "Prêmio Atual",
-      contentHtml: String(valor),
-    },
-  });
-}
+Se desejar, posso te orientar em alguma dessas áreas.`;
 
-async function garantirCarteira(userId: number) {
-  await prisma.wallet.upsert({
-    where: { userId },
-    update: {},
-    create: {
-      userId,
-      saldo: 0,
-      createdAt: new Date(),
-    },
-  });
-}
+export class AssistantEngine {
 
-function normalizarDezena(valor: string): string {
-  return valor.trim().padStart(2, "0");
-}
+  private static domains = {
+    aposta: ["apostar", "aposta", "gerar", "dezenas"],
+    bilhete: ["bilhete", "meus bilhetes", "download", "historico", "histórico"],
+    resultado: ["resultado", "sorteio", "numero sorteado", "número sorteado"],
+    carteira: ["carteira", "saldo", "sacar", "depositar", "extrato"],
+    pix: ["pix", "pagamento"],
+    notificacao: ["notificação", "notificacao", "avisos"],
+    privacidade: ["privacidade", "contato", "suporte"],
+    preco: ["preço", "valor", "quanto custa", "custa quanto"],
+    senha: ["senha", "recuperar senha", "esqueci minha senha", "resetar senha"],
+    saudacao: ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite"],
+    identidade: ["seu nome", "quem é você", "quem e voce"]
+  };
 
-export async function processarSorteio(
-  sorteioData: Date,
-  resultado: ResultadoOficial
-) {
-  const inicio = new Date(sorteioData);
-  inicio.setHours(0, 0, 0, 0);
+  private static sensitiveKeywords = [
+    "não caiu", "nao caiu",
+    "não recebi", "nao recebi",
+    "não foi creditado", "nao foi creditado",
+    "erro", "falha", "bug"
+  ];
 
-  const fim = new Date(sorteioData);
-  fim.setHours(23, 59, 59, 999);
+  private static confirmations = ["sim", "quero", "pode", "ok", "claro", "isso"];
 
-  const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
+  static async process(message: string): Promise<AssistantResponse> {
+    const normalized = message.toLowerCase().trim();
 
-  const claim = await prisma.bilhete.updateMany({
-    where: {
-      status: "ATIVO",
-      apuradoEm: null,
-      resultadoFederal: null,
-      sorteioData: { gte: inicio, lte: fim },
-    },
-    data: {
-      resultadoFederal: claimToken,
-    },
-  });
+    // 🔥 SAUDAÇÃO
+    if (this.containsKeyword(normalized, this.domains.saudacao)) {
+      return {
+        reply: `Olá! Eu sou a assistente do ZLpix Premiado.
 
-  if (claim.count === 0) {
-    return { ok: false, message: "Nenhum bilhete no sorteio" };
-  }
+Posso te ajudar com apostas, pagamentos, carteira, bilhetes ou resultados.
 
-  try {
-    const bilhetes = await prisma.bilhete.findMany({
-      where: {
-        resultadoFederal: claimToken,
-        sorteioData: { gte: inicio, lte: fim },
-      },
-    });
-
-    if (!bilhetes.length) {
-      return { ok: false, message: "Nenhum bilhete no sorteio" };
+O que você gostaria de saber?`
+      };
     }
 
-    /**
-     * 🔥 CALCULA ARRECADAÇÃO DA RODADA
-     */
-    const totalArrecadado = bilhetes.reduce(
-      (acc, b) => acc + Number(b.valor || 0),
-      0
-    );
+    // 🔥 IDENTIDADE
+    if (this.containsKeyword(normalized, this.domains.identidade)) {
+      return {
+        reply: `Sou a assistente virtual do ZLpix Premiado.
 
-    const incrementoPremio = totalArrecadado * PERCENTUAL_PREMIO;
+Estou aqui para te orientar sobre o funcionamento da plataforma de forma rápida e segura.
 
-    /**
-     * ============================
-     * DEZENAS (MILHAR)
-     * ============================
-     */
-    const dezenasValidas = Array.from(
-      new Set(
-        resultado.dezenas.flatMap((numeroCompleto) => {
-          const numero = numeroCompleto.replace(/\D/g, "").padStart(5, "0");
-          const milhar = numero.slice(-4);
-
-          const dezenaInicial = normalizarDezena(milhar.slice(0, 2));
-          const dezenaFinal = normalizarDezena(milhar.slice(2, 4));
-
-          return [dezenaInicial, dezenaFinal];
-        })
-      )
-    );
-
-    const resultadoStr = resultado.dezenas
-      .map((n) => n.replace(/\D/g, ""))
-      .join(",");
-
-    const agora = new Date();
-    const premioAtual = await obterPremioAtual();
-
-    const ganhadores = bilhetes.filter((b) => {
-      const dezenasBilhete = b.dezenas
-        .split(",")
-        .map((d) => normalizarDezena(d))
-        .filter(Boolean);
-
-      return (
-        dezenasBilhete.length === 3 &&
-        dezenasBilhete.every((d) => dezenasValidas.includes(d))
-      );
-    });
-
-    /**
-     * 🔁 SEM GANHADOR → ACUMULA DINÂMICO
-     */
-    if (!ganhadores.length) {
-      await prisma.bilhete.updateMany({
-        where: { resultadoFederal: claimToken },
-        data: {
-          status: "NAO_PREMIADO",
-          resultadoFederal: resultadoStr,
-          apuradoEm: agora,
-        },
-      });
-
-      await atualizarPremio(
-        premioAtual + PREMIO_BASE + incrementoPremio
-      );
-
-      return { ok: true, ganhou: false };
+Como posso te ajudar?`
+      };
     }
 
-    /**
-     * 🏆 COM GANHADOR → DIVIDE
-     */
-    const valorPorGanhador = Number(
-      (premioAtual / ganhadores.length).toFixed(2)
-    );
+    // 🔥 CONFIRMAÇÃO
+    if (this.confirmations.includes(normalized)) {
+      return {
+        reply: `Perfeito. Após o pagamento confirmado, você pode acessar seus bilhetes na página "Meus Bilhetes".
 
-    for (const bilhete of ganhadores) {
-      await garantirCarteira(bilhete.userId);
+Lá você encontrará:
+• As dezenas escolhidas  
+• Status do bilhete  
+• Data do sorteio  
 
-      await prisma.$transaction([
-        prisma.wallet.updateMany({
-          where: { userId: bilhete.userId },
-          data: {
-            saldo: { increment: valorPorGanhador },
-          },
-        }),
+Se algo não aparecer, aguarde alguns segundos e atualize a página.
 
-        prisma.transacao_carteira.create({
-          data: {
-            userId: bilhete.userId,
-            valor: valorPorGanhador,
-            tipo: "PREMIO",
-            status: "paid",
-          },
-        }),
-
-        prisma.bilhete.update({
-          where: { id: bilhete.id },
-          data: {
-            status: "PREMIADO",
-            premioValor: valorPorGanhador,
-            resultadoFederal: resultadoStr,
-            apuradoEm: agora,
-          },
-        }),
-      ]);
+Posso te ajudar com mais alguma coisa?`
+      };
     }
 
-    await atualizarPremio(PREMIO_BASE); // 🔥 RESET
+    if (this.containsKeyword(normalized, this.sensitiveKeywords)) {
+      return { reply: FINANCIAL_RESPONSE };
+    }
 
-    return {
-      ok: true,
-      ganhadores: ganhadores.length,
-      valorPorGanhador,
-    };
-  } catch (error) {
-    await prisma.bilhete.updateMany({
-      where: {
-        resultadoFederal: claimToken,
-        apuradoEm: null,
-      },
-      data: {
-        resultadoFederal: null,
-      },
-    });
+    const intent = this.detectIntent(normalized);
+    const domain = this.detectDomain(normalized);
 
-    throw error;
+    if (!domain) {
+      if (this.isGeneralKnowledge(normalized)) {
+        return {
+          reply: `Essa pergunta não está relacionada ao funcionamento do ZLpix Premiado.
+
+Para esse tipo de informação, recomendo consultar fontes confiáveis como Google, Wikipedia ou portais oficiais.
+
+Posso ajudar você com algo dentro da plataforma?`
+        };
+      }
+
+      return { reply: OUT_OF_SCOPE_RESPONSE };
+    }
+
+    const reply = this.buildResponse(intent, domain);
+    return { reply };
   }
-}
+
+  private static detectIntent(text: string): string {
+    if (text.startsWith("como")) return "how";
+    if (text.includes("para que serve")) return "purpose";
+    if (text.includes("o que acontece")) return "what_happens";
+    if (text.includes("é seguro") || text.includes("seguro")) return "security";
+    if (text.includes("quanto") || text.includes("valor") || text.includes("preço")) return "price";
+    if (text.includes("quanto tempo")) return "duration";
+    if (text.includes("onde")) return "location";
+    return "info";
+  }
+
+  private static detectDomain(text: string): string | null {
+    for (const [domain, keywords] of Object.entries(this.domains)) {
+      if (this.containsKeyword(text, keywords)) {
+        return domain;
+      }
+    }
+    return null;
+  }
+
+  private static containsKeyword(text: string, keywords: string[]): boolean {
+    return keywords.some((k) => text.includes(k));
+  }
+
+  private static isGeneralKnowledge(text: string): boolean {
+    return (
+      text.includes("capital") ||
+      text.includes("presidente") ||
+      text.includes("história") ||
+      text.includes("geografia") ||
+      text.includes("matemática") ||
+      text.includes("significado")
+    );
+  }
+
+  private static buildResponse(intent: string, domain: string): string {
+    // 🔒 NÃO ALTERADO (seu fluxo intacto)
