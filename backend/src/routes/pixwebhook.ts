@@ -1,4 +1,3 @@
-// backend/src/routes/pixwebhook.ts
 import express, { Request, Response } from "express";
 import crypto from "crypto";
 import { prisma } from "../lib/prisma";
@@ -10,9 +9,6 @@ const router = express.Router();
 const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
-/**
- * 🔥 REGRA CORRETA DO SORTEIO
- */
 function getNextWednesday(): Date {
   const now = new Date();
   const day = now.getDay();
@@ -118,6 +114,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     const manifest = `id:${String(
       paymentId || ""
     )};request-id:${xRequestId};ts:${ts};`;
+
     const generatedSignature = webhookSecret
       ? crypto
           .createHmac("sha256", webhookSecret)
@@ -146,86 +143,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     const externalReference = String(mpInfo?.external_reference || "");
 
-    // 🔹 CARTEIRA
-    let transacaoCarteira = await prisma.transacao_carteira.findFirst({
-      where: {
-        mpPaymentId: String(paymentId),
-      },
-    });
-
-    if (!transacaoCarteira) {
-      const carteiraTxId = parseExternalReferenceId(
-        externalReference,
-        "wallet_"
-      );
-
-      if (carteiraTxId !== null) {
-        const linked = await prisma.transacao_carteira.updateMany({
-          where: {
-            id: carteiraTxId,
-            OR: [
-              { mpPaymentId: null },
-              { mpPaymentId: "" },
-              { mpPaymentId: String(paymentId) },
-            ],
-          },
-          data: { mpPaymentId: String(paymentId) },
-        });
-
-        if (linked.count > 0) {
-          transacaoCarteira = await prisma.transacao_carteira.findUnique({
-            where: { id: carteiraTxId },
-          });
-        }
-      }
-    }
-
-    if (transacaoCarteira) {
-      const processado = await prisma.$transaction(async (db) => {
-        const claim = await db.transacao_carteira.updateMany({
-          where: {
-            id: transacaoCarteira.id,
-            NOT: { status: "paid" },
-          },
-          data: { status: "paid" },
-        });
-
-        if (claim.count === 0) return false;
-
-        await db.$executeRaw`
-          INSERT INTO wallet (user_id, saldo, created_at)
-          VALUES (${transacaoCarteira.userId}, 0, NOW())
-          ON CONFLICT (user_id) DO NOTHING
-        `;
-
-        await db.wallet.updateMany({
-          where: { userId: transacaoCarteira.userId },
-          data: {
-            saldo: {
-              increment: Number(transacaoCarteira.valor),
-            },
-          },
-        });
-
-        return true;
-      });
-
-      if (!processado) return res.status(200).send("ok");
-
-      await notify({
-        type: "CARTEIRA_CREDITO",
-        userId: String(transacaoCarteira.userId),
-        valor: Number(transacaoCarteira.valor),
-      });
-
-      return res.status(200).send("ok");
-    }
-
     // 🔹 BILHETE
     let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
     });
 
+    // ✅ CORREÇÃO CIRÚRGICA AQUI
     if (!transacao) {
       const bilheteTxId = parseExternalReferenceId(
         externalReference,
@@ -233,21 +156,14 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       );
 
       if (bilheteTxId !== null) {
-        const linked = await prisma.transacao.updateMany({
-          where: {
-            id: bilheteTxId,
-            OR: [
-              { mpPaymentId: null },
-              { mpPaymentId: "" },
-              { mpPaymentId: String(paymentId) },
-            ],
-          },
-          data: { mpPaymentId: String(paymentId) },
+        transacao = await prisma.transacao.findUnique({
+          where: { id: bilheteTxId },
         });
 
-        if (linked.count > 0) {
-          transacao = await prisma.transacao.findUnique({
+        if (transacao) {
+          await prisma.transacao.update({
             where: { id: bilheteTxId },
+            data: { mpPaymentId: String(paymentId) },
           });
         }
       }
@@ -268,8 +184,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
       const sorteioData = getNextWednesday();
 
-      const processado = await prisma.$transaction(async (db) => {
-        // ✅ CORREÇÃO: garantir persistência do status
+      await prisma.$transaction(async (db) => {
         await db.transacao.update({
           where: { id: transacao.id },
           data: { status: "paid" },
@@ -306,11 +221,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             codigo: dezenas,
           });
         }
-
-        return true;
       });
-
-      if (!processado) return res.status(200).send("ok");
 
       return res.status(200).send("ok");
     }
