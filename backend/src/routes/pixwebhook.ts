@@ -144,7 +144,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     );
 
     // =========================
-    // 🔹 CARTEIRA (mantido)
+    // 🔹 CARTEIRA (CORREÇÃO)
     // =========================
     let carteira = await prisma.transacao_carteira.findFirst({
       where: { mpPaymentId: String(paymentId) },
@@ -172,10 +172,15 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
     if (carteira) {
       await prisma.$transaction(async (db) => {
-        await db.transacao_carteira.update({
-          where: { id: carteira.id },
+        const claim = await db.transacao_carteira.updateMany({
+          where: {
+            id: carteira.id,
+            NOT: { status: "paid" },
+          },
           data: { status: "paid" },
         });
+
+        if (claim.count === 0) return;
 
         await db.$executeRaw`
           INSERT INTO wallet (user_id, saldo, created_at)
@@ -203,7 +208,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================
-    // 🔹 BILHETE (CORREÇÃO FINAL)
+    // 🔹 BILHETE (CORREÇÃO DEFINITIVA)
     // =========================
     let transacao = await prisma.transacao.findFirst({
       where: { mpPaymentId: String(paymentId) },
@@ -216,6 +221,7 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       );
 
       if (txId) {
+        // 🔥 FORÇA vínculo SEM condição
         await prisma.transacao.update({
           where: { id: txId },
           data: { mpPaymentId: String(paymentId) },
@@ -245,13 +251,16 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
       const sorteioData = getNextWednesday();
 
       await prisma.$transaction(async (db) => {
-        // 🔥 garante status sempre
-        await db.transacao.update({
-          where: { id: transacao.id },
+        const claim = await db.transacao.updateMany({
+          where: {
+            id: transacao.id,
+            NOT: { status: "paid" },
+          },
           data: { status: "paid" },
         });
 
-        // 🔥 evita duplicação
+        if (claim.count === 0) return;
+
         const jaExiste = await db.bilhete.findFirst({
           where: { transacaoId: transacao.id },
         });
