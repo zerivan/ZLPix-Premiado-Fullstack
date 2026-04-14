@@ -73,10 +73,13 @@ export default function AdminGanhadores() {
   }, {} as Record<number, Ganhador[]>);
 
   /* ============================
-     DOWNLOAD MOTOR (CORRIGIDO)
+     DOWNLOAD MOTOR (CORRIGIDO ORDEM)
   ============================ */
   function baixarAtivosMotor() {
-    const ativos = ganhadores.filter((g) => !g.apuradoEm);
+    const ativos = ganhadores
+      .filter((g) => !g.apuradoEm)
+      .slice()
+      .reverse(); // 🔥 CORREÇÃO DA ORDEM
 
     if (!ativos.length) {
       alert("Nenhum bilhete ativo para exportar.");
