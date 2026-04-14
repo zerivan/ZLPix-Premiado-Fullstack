@@ -50,7 +50,6 @@ export class AssistantEngine {
   static async process(message: string): Promise<AssistantResponse> {
     const normalized = message.toLowerCase().trim();
 
-    // 🔥 SAUDAÇÃO
     if (this.containsKeyword(normalized, this.domains.saudacao)) {
       return {
         reply: `Olá! Eu sou a assistente do ZLpix Premiado.
@@ -61,7 +60,6 @@ O que você gostaria de saber?`
       };
     }
 
-    // 🔥 IDENTIDADE
     if (this.containsKeyword(normalized, this.domains.identidade)) {
       return {
         reply: `Sou a assistente virtual do ZLpix Premiado.
@@ -72,7 +70,6 @@ Como posso te ajudar?`
       };
     }
 
-    // 🔥 CONFIRMAÇÃO
     if (this.confirmations.includes(normalized)) {
       return {
         reply: `Perfeito. Após o pagamento confirmado, você pode acessar seus bilhetes na página "Meus Bilhetes".
@@ -149,4 +146,43 @@ Posso ajudar você com algo dentro da plataforma?`
   }
 
   private static buildResponse(intent: string, domain: string): string {
-    // 🔒 NÃO ALTERADO (seu fluxo intacto)
+
+    if (domain === "senha") {
+      return `Para recuperar sua senha, utilize a opção "Esqueci minha senha" na tela de login e siga as instruções enviadas para seu e-mail.`;
+    }
+
+    if (domain === "preco") {
+      return `O bilhete custa R$ ${TICKET_PRICE.toFixed(2)}.`;
+    }
+
+    if (domain === "aposta") {
+      return `Na página "Apostar", escolha até três dezenas e finalize o pagamento via Pix. Após aprovação, seu bilhete será gerado automaticamente.`;
+    }
+
+    if (domain === "bilhete") {
+      return `Acesse "Meus Bilhetes" para visualizar suas dezenas, status e data do sorteio.`;
+    }
+
+    if (domain === "resultado") {
+      return `Os resultados são baseados na Loteria Federal e exibidos na página "Resultados".`;
+    }
+
+    if (domain === "carteira") {
+      return `A carteira permite depósitos via Pix, saques e consulta de saldo.`;
+    }
+
+    if (domain === "pix") {
+      return `O pagamento via Pix é confirmado automaticamente. Após aprovação, o sistema libera seu bilhete ou saldo.`;
+    }
+
+    if (domain === "notificacao") {
+      return `Ative notificações para receber avisos importantes do sistema.`;
+    }
+
+    if (domain === "privacidade") {
+      return `Para suporte: ${SUPPORT_EMAIL}.`;
+    }
+
+    return OUT_OF_SCOPE_RESPONSE;
+  }
+}
