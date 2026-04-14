@@ -73,21 +73,22 @@ export default function AdminGanhadores() {
   }, {} as Record<number, Ganhador[]>);
 
   /* ============================
-     DOWNLOAD MOTOR (CORRIGIDO ORDEM)
+     DOWNLOAD MOTOR (CORRIGIDO)
   ============================ */
   function baixarAtivosMotor() {
     const ativos = ganhadores
       .filter((g) => !g.apuradoEm)
       .slice()
-      .reverse(); // 🔥 CORREÇÃO DA ORDEM
+      .reverse();
 
     if (!ativos.length) {
       alert("Nenhum bilhete ativo para exportar.");
       return;
     }
 
+    // 🔥 CORREÇÃO: usar ID REAL do bilhete
     const linhas = ativos.map(
-      (g, index) => `${index + 1};${g.dezenas}`
+      (g) => `${g.id};${g.dezenas}`
     );
 
     const conteudo = linhas.join("\n");
@@ -137,7 +138,6 @@ export default function AdminGanhadores() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Resultado do Sorteio</h2>
 
-      {/* ===== LISTA AGRUPADA ===== */}
       <div className="space-y-3">
         {Object.entries(agrupado).map(([userId, lista]) => (
           <details
@@ -178,7 +178,6 @@ export default function AdminGanhadores() {
         ))}
       </div>
 
-      {/* ===== BLOCO 2 — LISTAGEM NUMÉRICA ===== */}
       <div className="border-t pt-4 space-y-2">
         <h3 className="text-sm font-semibold text-gray-700">
           Lista Numérica para Conferência Manual
