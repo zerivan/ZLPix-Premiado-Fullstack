@@ -20,19 +20,31 @@ function parseDataBR(data: string): string | null {
 }
 
 router.get("/", async (_req, res) => {
+  const controller = new AbortController();
+  const timeoutMs = 8000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const response = await fetch(
       "https://api.guidi.dev.br/loteria/federal/ultimo",
       {
         headers: {
           Accept: "application/json"
-        }
+        },
+        signal: controller.signal
       }
     );
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error("Erro HTTP Federal API alternativa:", response.status);
       return res.status(500).json({ ok: false });
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      console.error("Resposta Federal API não é JSON:", contentType);
+      return res.status(502).json({ ok: false });
     }
 
     const json: any = await response.json();
@@ -76,8 +88,15 @@ router.get("/", async (_req, res) => {
       }
     });
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Erro Federal: timeout na API externa");
+      return res.status(504).json({ ok: false });
+    }
+
     console.error("Erro Federal:", error);
     return res.status(500).json({ ok: false });
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 
