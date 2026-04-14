@@ -3,6 +3,7 @@ import { useState } from "react";
 type BilheteResultado = {
   id: number;
   dezenas: string;
+  nome?: string;
   status: "PREMIADO" | "NAO_PREMIADO";
 };
 
@@ -75,10 +76,13 @@ export default function AdminMotorManual() {
 
     for (const linha of linhasBilhetes) {
       const partes = linha.split(";");
-      if (partes.length !== 2) continue;
+
+      // 🔥 ACEITA 2 OU 3 CAMPOS
+      if (partes.length < 2) continue;
 
       const id = Number(partes[0].trim());
       const dezenasStr = partes[1].trim();
+      const nome = partes[2]?.trim() || undefined;
 
       if (!id || !dezenasStr) continue;
 
@@ -96,12 +100,14 @@ export default function AdminMotorManual() {
         bilhetes.push({
           id,
           dezenas: dezenasStr,
+          nome,
           status: "PREMIADO",
         });
       } else {
         bilhetes.push({
           id,
           dezenas: dezenasStr,
+          nome,
           status: "NAO_PREMIADO",
         });
       }
@@ -131,13 +137,13 @@ export default function AdminMotorManual() {
 
       <div>
         <p className="text-sm font-medium">
-          Lista de Bilhetes (id;dezenas)
+          Lista de Bilhetes (id;dezenas;nome opcional)
         </p>
         <textarea
           value={listaBilhetes}
           onChange={(e) => setListaBilhetes(e.target.value)}
           className="w-full h-40 p-2 border rounded text-xs"
-          placeholder="12;59,36,80"
+          placeholder="12;59,36,80;Zerivan"
         />
       </div>
 
@@ -200,7 +206,10 @@ export default function AdminMotorManual() {
             <strong>Resultado completo:</strong>
             {resultado.bilhetes.map((b) => (
               <div key={b.id}>
-                #{b.id} — {b.dezenas} —{" "}
+                #{b.id}
+                {b.nome ? ` — ${b.nome}` : ""}
+                {" — "}
+                {b.dezenas} —{" "}
                 {b.status === "PREMIADO"
                   ? `PREMIADO (R$ ${resultado.premioIndividual.toFixed(2)})`
                   : "NAO_PREMIADO"}
