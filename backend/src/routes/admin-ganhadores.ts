@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
     const bilhetes = await prisma.bilhete.findMany({
       where: whereClause,
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc", // 🔥 CORREÇÃO AQUI
       },
       include: {
         user: {
@@ -57,10 +57,8 @@ router.get("/", async (req, res) => {
     // 🔥 NOVA REGRA:
     // ATIVOS + APURADOS (7 dias)
     const bilhetesFiltrados = bilhetes.filter((b) => {
-      // ✔ ATIVO
       if (!b.apuradoEm) return true;
 
-      // ✔ APURADO (regra de 7 dias)
       if (!b.sorteioData) return false;
 
       const vencimento = new Date(b.sorteioData);
