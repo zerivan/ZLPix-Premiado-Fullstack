@@ -63,30 +63,20 @@ export default function AdminGanhadores() {
 
   const ganhadoresVisiveis = ganhadores.filter(visivel);
 
-  /* ============================
-     AGRUPAMENTO POR USUÁRIO
-  ============================ */
   const agrupado = ganhadoresVisiveis.reduce((acc, g) => {
     if (!acc[g.userId]) acc[g.userId] = [];
     acc[g.userId].push(g);
     return acc;
   }, {} as Record<number, Ganhador[]>);
 
-  /* ============================
-     DOWNLOAD MOTOR (CORRIGIDO)
-  ============================ */
   function baixarAtivosMotor() {
-    const ativos = ganhadores
-      .filter((g) => !g.apuradoEm)
-      .slice()
-      .reverse();
+    const ativos = ganhadores.filter((g) => !g.apuradoEm); // 🔥 REMOVIDO reverse()
 
     if (!ativos.length) {
       alert("Nenhum bilhete ativo para exportar.");
       return;
     }
 
-    // 🔥 CORREÇÃO: usar ID REAL do bilhete
     const linhas = ativos.map(
       (g) => `${g.id};${g.dezenas}`
     );
