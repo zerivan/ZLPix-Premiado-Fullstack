@@ -19,41 +19,34 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
-async function fetchHeroku(signal: AbortSignal) {
-  const response = await fetch(
-    "https://loteriascaixa-api.herokuapp.com/api/federal/latest",
-    { signal }
-  );
-
-  if (!response.ok) {
-    throw new Error(`HEROKU_HTTP_${response.status}`);
-  }
-
-  const json: any = await response.json();
-
-  return {
-    dataApuracao: json?.data ? parseDataBR(json.data) : null,
-    dezenas: json?.dezenas || [],
-  };
+// 🔥 FETCH PADRÃO COM HEADERS (ANTI-BLOQUEIO)
+async function safeFetch(url: string, signal: AbortSignal) {
+  return fetch(url, {
+    signal,
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+      "Accept-Language": "pt-BR,pt;q=0.9",
+      Connection: "keep-alive",
+    },
+  });
 }
 
 router.get("/", async (_req, res) => {
   const controller = new AbortController();
-  const timeoutMs = 8000;
+  const timeoutMs = 12000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    let response;
-    let json: any;
+    let json: any = null;
 
-    // 🔥 PRIMEIRA TENTATIVA → GUIDI
+    // ============================
+    // 🔹 1ª API (GUIDI)
+    // ============================
     try {
-      response = await fetch(
+      const response = await safeFetch(
         "https://api.guidi.dev.br/loteria/federal/ultimo",
-        {
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        }
+        controller.signal
       );
 
       if (!response.ok) {
@@ -62,26 +55,48 @@ router.get("/", async (_req, res) => {
 
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
-        throw new Error(`GUIDI_INVALID_CONTENT_${contentType}`);
+        throw new Error("GUIDI_INVALID_RESPONSE");
       }
 
-      json = await response.json();
+      const data = await response.json();
 
       json = {
-        dataApuracao: json?.dataApuracao
-          ? parseDataBR(json.dataApuracao)
+        dataApuracao: data?.dataApuracao
+          ? parseDataBR(data.dataApuracao)
           : null,
         dezenas:
-          json?.premios?.map((p: any) => String(p.numero ?? p)) ||
-          json?.listaDezenas ||
+          data?.premios?.map((p: any) => String(p.numero ?? p)) ||
+          data?.listaDezenas ||
           [],
       };
+
+      console.log("✅ Guidi OK");
     } catch (err) {
       console.error("❌ Guidi falhou:", err);
 
-      // 🔥 SEGUNDA TENTATIVA → HEROKU
+      // ============================
+      // 🔹 2ª API (HEROKU)
+      // ============================
       try {
-        json = await fetchHeroku(controller.signal);
+        const response2 = await safeFetch(
+          "https://loteriascaixa-api.herokuapp.com/api/federal/latest",
+          controller.signal
+        );
+
+        if (!response2.ok) {
+          throw new Error(`HEROKU_HTTP_${response2.status}`);
+        }
+
+        const data2 = await response2.json();
+
+        json = {
+          dataApuracao: data2?.data
+            ? parseDataBR(data2.data)
+            : null,
+          dezenas: data2?.dezenas || [],
+        };
+
+        console.log("✅ Heroku OK");
       } catch (err2) {
         console.error("❌ Heroku também falhou:", err2);
         return res.json({ ok: false });
@@ -89,14 +104,13 @@ router.get("/", async (_req, res) => {
     }
 
     const premios = (json.dezenas || [])
-      .map((n: string) => String(n).replace(/\D/g, ""))
-      .filter((n: string) => /^\d{5,6}$/.test(n))
+      .map((n: any) =>
+        String(n).replace(/\D/g, "").padStart(6, "0")
+      )
       .slice(0, 5);
 
-    if (premios.length !== 5) {
-      console.warn(
-        "ℹ️ [ZLPix-Premiado] Resultado inválido ou incompleto"
-      );
+    if (!premios.length) {
+      console.warn("ℹ️ Nenhum resultado disponível");
       return res.json({ ok: false });
     }
 
