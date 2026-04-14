@@ -83,14 +83,19 @@ app.use(async (req, res, next) => {
       path === "/auth/login" ||
       path === "/auth/recover" ||
       path === "/auth/reset-password" ||
-      path === "/auth/register" || // ✅ CORREÇÃO
-      path === "/auth/admin/login" || // ✅ CORREÇÃO
-      path === "/auth/admin/refresh" || // ✅ CORREÇÃO
-      path === "/auth/admin/verify"; // ✅ CORREÇÃO
+      path === "/auth/register" ||
+      path === "/auth/admin/login" ||
+      path === "/auth/admin/refresh" ||
+      path === "/auth/admin/verify";
 
     const isHealthCheck = path === "/";
 
-    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck) {
+    // 🔥 CORREÇÃO: liberar rota pública federal
+    const isPublicRoute =
+      path === "/api/federal" ||
+      path.startsWith("/api/federal/");
+
+    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck || isPublicRoute) {
       return next();
     }
 
