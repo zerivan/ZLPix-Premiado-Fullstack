@@ -19,59 +19,83 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
+async function fetchHeroku(signal: AbortSignal) {
+  const response = await fetch(
+    "https://loteriascaixa-api.herokuapp.com/api/federal/latest",
+    { signal }
+  );
+
+  if (!response.ok) {
+    throw new Error(`HEROKU_HTTP_${response.status}`);
+  }
+
+  const json: any = await response.json();
+
+  return {
+    dataApuracao: json?.data ? parseDataBR(json.data) : null,
+    dezenas: json?.dezenas || [],
+  };
+}
+
 router.get("/", async (_req, res) => {
   const controller = new AbortController();
   const timeoutMs = 8000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(
-      "https://api.guidi.dev.br/loteria/federal/ultimo",
-      {
-        headers: {
-          Accept: "application/json"
-        },
-        signal: controller.signal
+    let response;
+    let json: any;
+
+    // 🔥 PRIMEIRA TENTATIVA → GUIDI
+    try {
+      response = await fetch(
+        "https://api.guidi.dev.br/loteria/federal/ultimo",
+        {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`GUIDI_HTTP_${response.status}`);
       }
-    );
-    clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      console.error("Erro HTTP Federal API alternativa:", response.status);
-      return res.status(500).json({ ok: false });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`GUIDI_INVALID_CONTENT_${contentType}`);
+      }
+
+      json = await response.json();
+
+      json = {
+        dataApuracao: json?.dataApuracao
+          ? parseDataBR(json.dataApuracao)
+          : null,
+        dezenas:
+          json?.premios?.map((p: any) => String(p.numero ?? p)) ||
+          json?.listaDezenas ||
+          [],
+      };
+    } catch (err) {
+      console.error("❌ Guidi falhou:", err);
+
+      // 🔥 SEGUNDA TENTATIVA → HEROKU
+      try {
+        json = await fetchHeroku(controller.signal);
+      } catch (err2) {
+        console.error("❌ Heroku também falhou:", err2);
+        return res.json({ ok: false });
+      }
     }
 
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-      console.error("Resposta Federal API não é JSON:", contentType);
-      return res.status(502).json({ ok: false });
-    }
-
-    const json: any = await response.json();
-
-    const dataApuracaoISO = json?.dataApuracao
-      ? parseDataBR(json.dataApuracao)
-      : null;
-
-    let premios: string[] = [];
-
-    if (Array.isArray(json?.premios)) {
-      premios = json.premios
-        .map((p: any) => String(p.numero ?? p))
-        .filter((n: string) => /^\d{5,6}$/.test(n))
-        .slice(0, 5);
-    }
-
-    if (Array.isArray(json?.listaDezenas)) {
-      premios = json.listaDezenas
-        .map((n: any) => String(n))
-        .filter((n: string) => /^\d{5,6}$/.test(n))
-        .slice(0, 5);
-    }
+    const premios = (json.dezenas || [])
+      .map((n: string) => String(n).replace(/\D/g, ""))
+      .filter((n: string) => /^\d{5,6}$/.test(n))
+      .slice(0, 5);
 
     if (premios.length !== 5) {
       console.warn(
-        "ℹ️ [ZLPix-Premiado] Não foi possível retornar o resultado da Federal: conjunto de dezenas incompleto ou ausente na fonte oficial. Essa mensagem é normal caso o sorteio ainda não tenha sido publicado ou em caso de alteração na estrutura da API de dados externa."
+        "ℹ️ [ZLPix-Premiado] Resultado inválido ou incompleto"
       );
       return res.json({ ok: false });
     }
@@ -81,20 +105,20 @@ router.get("/", async (_req, res) => {
     return res.json({
       ok: true,
       data: {
-        dataApuracao: dataApuracaoISO,
+        dataApuracao: json.dataApuracao,
         premios,
         proximoSorteio: proximoSorteio.toISOString(),
-        timestampProximoSorteio: proximoSorteio.getTime()
-      }
+        timestampProximoSorteio: proximoSorteio.getTime(),
+      },
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       console.error("Erro Federal: timeout na API externa");
-      return res.status(504).json({ ok: false });
+      return res.json({ ok: false });
     }
 
     console.error("Erro Federal:", error);
-    return res.status(500).json({ ok: false });
+    return res.json({ ok: false });
   } finally {
     clearTimeout(timeoutId);
   }
