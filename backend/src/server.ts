@@ -90,10 +90,12 @@ app.use(async (req, res, next) => {
 
     const isHealthCheck = path === "/";
 
-    // 🔥 CORREÇÃO: liberar rota pública federal
+    // 🔥 CORREÇÃO: liberar federal (API + rota direta)
     const isPublicRoute =
       path === "/api/federal" ||
-      path.startsWith("/api/federal/");
+      path.startsWith("/api/federal/") ||
+      path === "/federal" ||
+      path.startsWith("/federal/");
 
     if (isAdminRoute || isAllowedAuthRoute || isHealthCheck || isPublicRoute) {
       return next();
