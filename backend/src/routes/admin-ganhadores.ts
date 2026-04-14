@@ -5,27 +5,15 @@ const router = Router();
 
 const DIAS_PERMANENCIA = 7;
 
-/**
- * =====================================================
- * ADMIN — RESULTADO DO SORTEIO
- * =====================================================
- * REGRA:
- * - Mostra bilhetes já apurados
- * - Apenas dentro da janela de permanência (7 dias)
- * - Baseado exclusivamente em sorteioData
- * - Apenas ESPELHA o banco
- */
 router.get("/", async (req, res) => {
   try {
     const { sorteioData } = req.query;
 
     const agora = new Date();
 
-    const whereClause: any = {
-      apuradoEm: { not: null },
-    };
+    const whereClause: any = {};
 
-    // 🔒 Filtro opcional por data específica (se informado)
+    // 🔒 Filtro opcional por data específica
     if (sorteioData) {
       const data = new Date(String(sorteioData));
       if (!isNaN(data.getTime())) {
@@ -36,7 +24,7 @@ router.get("/", async (req, res) => {
     const bilhetes = await prisma.bilhete.findMany({
       where: whereClause,
       orderBy: {
-        apuradoEm: "desc",
+        createdAt: "desc",
       },
       include: {
         user: {
@@ -57,8 +45,13 @@ router.get("/", async (req, res) => {
       },
     });
 
-    // 🔥 Aplicação da regra de permanência (7 dias após 17h do sorteio)
+    // 🔥 NOVA REGRA:
+    // ATIVOS + APURADOS (7 dias)
     const bilhetesFiltrados = bilhetes.filter((b) => {
+      // ✔ ATIVO
+      if (!b.apuradoEm) return true;
+
+      // ✔ APURADO (regra de 7 dias)
       if (!b.sorteioData) return false;
 
       const vencimento = new Date(b.sorteioData);
