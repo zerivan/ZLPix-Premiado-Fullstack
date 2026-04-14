@@ -45,6 +45,15 @@ router.get("/", async (req, res) => {
       },
     });
 
+    // 🔥 DEBUG TEMPORÁRIO (NÃO ALTERA COMPORTAMENTO)
+    const ativos = bilhetes.filter((b) => !b.apuradoEm);
+    const apurados = bilhetes.filter((b) => b.apuradoEm);
+
+    console.log("📊 [ADMIN-GANHADORES]");
+    console.log("Total:", bilhetes.length);
+    console.log("Ativos:", ativos.length);
+    console.log("Apurados:", apurados.length);
+
     // 🔥 NOVA REGRA:
     // ATIVOS + APURADOS (7 dias)
     const bilhetesFiltrados = bilhetes.filter((b) => {
