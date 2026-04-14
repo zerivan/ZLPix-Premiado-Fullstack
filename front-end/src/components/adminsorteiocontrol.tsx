@@ -5,6 +5,9 @@ export default function AdminSorteioControl() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // 🔥 NOVO: controle de data manual
+  const [dataSorteio, setDataSorteio] = useState("");
+
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
   async function dispararSorteio() {
@@ -31,19 +34,22 @@ export default function AdminSorteioControl() {
         return;
       }
 
-      // 🔥 Resultado Federal (teste controlado / modo manual)
+      // 🔥 AJUSTADO: padrão oficial (6 dígitos)
       const premiosFederal = [
-        "71900",
-        "90310",
-        "31071",
-        "00000",
-        "11111",
+        "067001",
+        "029390",
+        "015697",
+        "095444",
+        "032892",
       ];
 
-      // ⚠️ DADOS OBRIGATÓRIOS PARA A ROTA
+      // 🔥 AJUSTADO: usa data manual se informada
+      const dataFinal = dataSorteio
+        ? new Date(dataSorteio).toISOString()
+        : new Date().toISOString();
+
       const payload = {
-        sorteioData: new Date().toISOString(),
-        premioTotal: 1000, // ajuste conforme o prêmio real do sorteio
+        sorteioData: dataFinal,
         premiosFederal,
       };
 
@@ -84,6 +90,14 @@ export default function AdminSorteioControl() {
         <br />• Marca premiados
         <br />• Credita carteiras
       </p>
+
+      {/* 🔥 NOVO: campo de data */}
+      <input
+        type="date"
+        value={dataSorteio}
+        onChange={(e) => setDataSorteio(e.target.value)}
+        className="border px-2 py-1 rounded text-black"
+      />
 
       <button
         onClick={dispararSorteio}
