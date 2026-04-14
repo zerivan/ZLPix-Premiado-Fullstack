@@ -51,9 +51,6 @@ export default function AdminGanhadores() {
     loadGanhadores();
   }, []);
 
-  /* ============================
-     FILTRO FINAL (ATIVO + 7 DIAS)
-  ============================ */
   function visivel(g: Ganhador) {
     if (!g.apuradoEm) return true;
 
@@ -67,8 +64,16 @@ export default function AdminGanhadores() {
   const ganhadoresVisiveis = ganhadores.filter(visivel);
 
   /* ============================
-     🔥 NOVO: DOWNLOAD (FORMATO MOTOR)
-     id;dezenas
+     AGRUPAMENTO POR USUÁRIO
+  ============================ */
+  const agrupado = ganhadoresVisiveis.reduce((acc, g) => {
+    if (!acc[g.userId]) acc[g.userId] = [];
+    acc[g.userId].push(g);
+    return acc;
+  }, {} as Record<number, Ganhador[]>);
+
+  /* ============================
+     DOWNLOAD MOTOR (CORRIGIDO)
   ============================ */
   function baixarAtivosMotor() {
     const ativos = ganhadores.filter((g) => !g.apuradoEm);
@@ -78,7 +83,10 @@ export default function AdminGanhadores() {
       return;
     }
 
-    const linhas = ativos.map((g) => `${g.id};${g.dezenas}`);
+    const linhas = ativos.map(
+      (g, index) => `${index + 1};${g.dezenas}`
+    );
+
     const conteudo = linhas.join("\n");
 
     const blob = new Blob([conteudo], {
@@ -95,9 +103,6 @@ export default function AdminGanhadores() {
     URL.revokeObjectURL(url);
   }
 
-  /* ============================
-     COPIAR LISTA
-  ============================ */
   async function copiarListaNumerica() {
     const texto = ganhadoresVisiveis
       .map((g) => `${g.id};${g.dezenas}`)
@@ -129,29 +134,44 @@ export default function AdminGanhadores() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Resultado do Sorteio</h2>
 
-      {/* ===== BLOCO 1 — LISTAGEM VISUAL ===== */}
+      {/* ===== LISTA AGRUPADA ===== */}
       <div className="space-y-3">
-        {ganhadoresVisiveis.map((g) => (
-          <div
-            key={g.id}
-            className="rounded border bg-gray-50 p-3 text-sm space-y-1"
+        {Object.entries(agrupado).map(([userId, lista]) => (
+          <details
+            key={userId}
+            className="border rounded bg-gray-50"
           >
-            <div>
-              <strong>Usuário:</strong> #{g.userId} — {g.nome}
-            </div>
+            <summary className="cursor-pointer px-3 py-2 font-semibold text-sm">
+              👤 #{userId} — {lista[0].nome} ({lista.length} bilhetes)
+            </summary>
 
-            <div>
-              <strong>Dezenas:</strong> {g.dezenas}
-            </div>
+            <div className="p-2 space-y-1">
+              {lista.map((g) => (
+                <div
+                  key={g.id}
+                  className="flex justify-between text-xs border rounded px-2 py-1 bg-white"
+                >
+                  <span>{g.dezenas}</span>
 
-            <div>
-              <strong>Status:</strong> {g.status}
+                  <span
+                    className={`font-bold ${
+                      !g.apuradoEm
+                        ? "text-yellow-600"
+                        : g.premio > 0
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {!g.apuradoEm
+                      ? "ATIVO"
+                      : g.premio > 0
+                      ? "GANHOU"
+                      : "PERDEU"}
+                  </span>
+                </div>
+              ))}
             </div>
-
-            <div>
-              <strong>Prêmio:</strong> R$ {Number(g.premio || 0).toFixed(2)}
-            </div>
-          </div>
+          </details>
         ))}
       </div>
 
@@ -169,7 +189,6 @@ export default function AdminGanhadores() {
             Copiar lista numérica
           </button>
 
-          {/* 🔥 BOTÃO NOVO */}
           <button
             onClick={baixarAtivosMotor}
             className="px-3 py-1 bg-yellow-600 text-white text-xs rounded"
