@@ -52,23 +52,51 @@ export default function AdminGanhadores() {
   }, []);
 
   /* ============================
-     FILTRO DE PERMANÊNCIA (7 DIAS)
+     FILTRO FINAL (ATIVO + 7 DIAS)
   ============================ */
-  function dentroDaPermanencia(g: Ganhador) {
-    if (!g.apuradoEm) return false;
+  function visivel(g: Ganhador) {
+    if (!g.apuradoEm) return true;
 
     const dataApuracao = new Date(g.apuradoEm);
-
     const limite = new Date(dataApuracao);
     limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
 
     return Date.now() <= limite.getTime();
   }
 
-  const ganhadoresVisiveis = ganhadores.filter(dentroDaPermanencia);
+  const ganhadoresVisiveis = ganhadores.filter(visivel);
 
   /* ============================
-     COPIAR LISTA (COM FALLBACK)
+     🔥 NOVO: DOWNLOAD (FORMATO MOTOR)
+     id;dezenas
+  ============================ */
+  function baixarAtivosMotor() {
+    const ativos = ganhadores.filter((g) => !g.apuradoEm);
+
+    if (!ativos.length) {
+      alert("Nenhum bilhete ativo para exportar.");
+      return;
+    }
+
+    const linhas = ativos.map((g) => `${g.id};${g.dezenas}`);
+    const conteudo = linhas.join("\n");
+
+    const blob = new Blob([conteudo], {
+      type: "text/plain;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bilhetes-motor-${Date.now()}.txt`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  /* ============================
+     COPIAR LISTA
   ============================ */
   async function copiarListaNumerica() {
     const texto = ganhadoresVisiveis
@@ -133,12 +161,22 @@ export default function AdminGanhadores() {
           Lista Numérica para Conferência Manual
         </h3>
 
-        <button
-          onClick={copiarListaNumerica}
-          className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
-        >
-          Copiar lista numérica
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={copiarListaNumerica}
+            className="px-3 py-1 bg-blue-600 text-white text-xs rounded"
+          >
+            Copiar lista numérica
+          </button>
+
+          {/* 🔥 BOTÃO NOVO */}
+          <button
+            onClick={baixarAtivosMotor}
+            className="px-3 py-1 bg-yellow-600 text-white text-xs rounded"
+          >
+            Baixar ativos (motor)
+          </button>
+        </div>
 
         <textarea
           readOnly
