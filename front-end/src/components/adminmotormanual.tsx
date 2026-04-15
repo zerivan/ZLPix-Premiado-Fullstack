@@ -3,7 +3,6 @@ import { useState } from "react";
 type BilheteResultado = {
   id: number;
   dezenas: string;
-  nome?: string;
   status: "PREMIADO" | "NAO_PREMIADO";
 };
 
@@ -26,10 +25,7 @@ export default function AdminMotorManual() {
       if (!/^\d{5,6}$/.test(n)) return [];
 
       const milhar = n.slice(-4);
-      const dezenaInicial = milhar.slice(0, 2);
-      const dezenaFinal = milhar.slice(2, 4);
-
-      return [dezenaInicial, dezenaFinal];
+      return [milhar.slice(0, 2), milhar.slice(2, 4)];
     });
 
     return Array.from(new Set(dezenas));
@@ -50,7 +46,7 @@ export default function AdminMotorManual() {
       .map((l) => l.trim())
       .filter(Boolean);
 
-    if (linhasBilhetes.length === 0) {
+    if (!linhasBilhetes.length) {
       alert("Informe ao menos um bilhete.");
       return;
     }
@@ -76,13 +72,10 @@ export default function AdminMotorManual() {
 
     for (const linha of linhasBilhetes) {
       const partes = linha.split(";");
-
-      // 🔥 ACEITA 2 OU 3 CAMPOS
-      if (partes.length < 2) continue;
+      if (partes.length !== 2) continue;
 
       const id = Number(partes[0].trim());
       const dezenasStr = partes[1].trim();
-      const nome = partes[2]?.trim() || undefined;
 
       if (!id || !dezenasStr) continue;
 
@@ -97,19 +90,9 @@ export default function AdminMotorManual() {
 
       if (premiado) {
         idsPremiados.push(id);
-        bilhetes.push({
-          id,
-          dezenas: dezenasStr,
-          nome,
-          status: "PREMIADO",
-        });
+        bilhetes.push({ id, dezenas: dezenasStr, status: "PREMIADO" });
       } else {
-        bilhetes.push({
-          id,
-          dezenas: dezenasStr,
-          nome,
-          status: "NAO_PREMIADO",
-        });
+        bilhetes.push({ id, dezenas: dezenasStr, status: "NAO_PREMIADO" });
       }
     }
 
@@ -118,12 +101,50 @@ export default function AdminMotorManual() {
         ? premioTotal / idsPremiados.length
         : 0;
 
-    setResultado({
+    const resultadoFinal = {
       dezenasValidas,
       bilhetes,
       premioTotal,
       premioIndividual,
+    };
+
+    setResultado(resultadoFinal);
+
+    // 🔥 LIMPAR CAMPOS AUTOMÁTICO
+    setListaBilhetes("");
+    setResultadoFederal("");
+    setValorPremio("");
+  }
+
+  function baixarResultado() {
+    if (!resultado) return;
+
+    const data = new Date().toISOString().slice(0, 10);
+
+    const linhas = resultado.bilhetes.map((b) => {
+      return `${b.id};${b.dezenas};${b.status}`;
     });
+
+    const conteudo = [
+      `DATA: ${data}`,
+      `PREMIO_TOTAL: ${resultado.premioTotal}`,
+      `PREMIO_INDIVIDUAL: ${resultado.premioIndividual}`,
+      "",
+      ...linhas,
+    ].join("\n");
+
+    const blob = new Blob([conteudo], {
+      type: "text/plain;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `resultado-${data}.txt`;
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 
   const totalPremiados =
@@ -135,87 +156,49 @@ export default function AdminMotorManual() {
         Motor de Conferência Manual
       </h2>
 
-      <div>
-        <p className="text-sm font-medium">
-          Lista de Bilhetes (id;dezenas;nome opcional)
-        </p>
-        <textarea
-          value={listaBilhetes}
-          onChange={(e) => setListaBilhetes(e.target.value)}
-          className="w-full h-40 p-2 border rounded text-xs"
-          placeholder="12;59,36,80;Zerivan"
-        />
-      </div>
+      <textarea
+        value={listaBilhetes}
+        onChange={(e) => setListaBilhetes(e.target.value)}
+        className="w-full h-40 p-2 border rounded text-xs"
+        placeholder="1;67,53,47"
+      />
 
-      <div>
-        <p className="text-sm font-medium">
-          Resultado da Federal (5 números)
-        </p>
-        <textarea
-          value={resultadoFederal}
-          onChange={(e) => setResultadoFederal(e.target.value)}
-          className="w-full h-32 p-2 border rounded text-xs"
-          placeholder="009593"
-        />
-      </div>
+      <textarea
+        value={resultadoFederal}
+        onChange={(e) => setResultadoFederal(e.target.value)}
+        className="w-full h-32 p-2 border rounded text-xs"
+        placeholder="67547"
+      />
 
-      <div>
-        <p className="text-sm font-medium">
-          Valor total do prêmio (R$)
-        </p>
-        <input
-          type="text"
-          value={valorPremio}
-          onChange={(e) => setValorPremio(e.target.value)}
-          className="w-full p-2 border rounded text-sm"
-          placeholder="1000.00"
-        />
-      </div>
+      <input
+        type="text"
+        value={valorPremio}
+        onChange={(e) => setValorPremio(e.target.value)}
+        className="w-full p-2 border rounded text-sm"
+        placeholder="1000.00"
+      />
 
-      <button
-        type="button"
-        onClick={conferir}
-        className="px-4 py-2 bg-green-600 text-white rounded text-sm"
-      >
-        Disparar Sorteio Manual
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={conferir}
+          className="px-4 py-2 bg-green-600 text-white rounded text-sm"
+        >
+          Disparar Sorteio Manual
+        </button>
+
+        {/* 🔥 NOVO BOTÃO */}
+        <button
+          onClick={baixarResultado}
+          className="px-4 py-2 bg-blue-600 text-white rounded text-sm"
+        >
+          Baixar Resultado
+        </button>
+      </div>
 
       {resultado && (
-        <div className="border-t pt-4 space-y-3 text-sm">
-          <div>
-            <strong>Dezenas válidas:</strong>{" "}
-            {resultado.dezenasValidas.join(", ")}
-          </div>
-
-          <div>
-            <strong>Total de ganhadores:</strong>{" "}
-            {totalPremiados}
-          </div>
-
-          <div>
-            <strong>Prêmio total:</strong>{" "}
-            R$ {resultado.premioTotal.toFixed(2)}
-          </div>
-
-          <div>
-            <strong>Prêmio individual:</strong>{" "}
-            R$ {resultado.premioIndividual.toFixed(2)}
-          </div>
-
-          <div className="border-t pt-2 space-y-1">
-            <strong>Resultado completo:</strong>
-            {resultado.bilhetes.map((b) => (
-              <div key={b.id}>
-                #{b.id}
-                {b.nome ? ` — ${b.nome}` : ""}
-                {" — "}
-                {b.dezenas} —{" "}
-                {b.status === "PREMIADO"
-                  ? `PREMIADO (R$ ${resultado.premioIndividual.toFixed(2)})`
-                  : "NAO_PREMIADO"}
-              </div>
-            ))}
-          </div>
+        <div className="text-sm space-y-2">
+          <div>Ganhadores: {totalPremiados}</div>
+          <div>Prêmio individual: R$ {resultado.premioIndividual.toFixed(2)}</div>
         </div>
       )}
     </div>
