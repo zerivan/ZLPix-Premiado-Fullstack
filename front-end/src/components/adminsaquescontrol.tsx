@@ -6,6 +6,7 @@ type Saque = {
   valor: number;
   status: string;
   createdAt: string;
+  userId: number; // 🔥 necessário para extrato
   metadata?: {
     tipo?: string;
     pixKey?: string;
@@ -18,6 +19,11 @@ export default function AdminSaquesControl() {
   const [saques, setSaques] = useState<Saque[]>([]);
   const [loading, setLoading] = useState(true);
   const [processando, setProcessando] = useState<number | null>(null);
+
+  // 🔥 NOVO
+  const [extrato, setExtrato] = useState<any[]>([]);
+  const [saldo, setSaldo] = useState<number | null>(null);
+  const [userSelecionado, setUserSelecionado] = useState<number | null>(null);
 
   useEffect(() => {
     carregarSaques();
@@ -36,7 +42,6 @@ export default function AdminSaquesControl() {
     try {
       const headers = getAdminHeaders();
       if (!headers) {
-        console.warn("TOKEN_ZLPIX_ADMIN ausente");
         setSaques([]);
         return;
       }
@@ -79,6 +84,30 @@ export default function AdminSaquesControl() {
     }
   }
 
+  // 🔥 NOVO: carregar extrato
+  async function carregarExtrato(userId: number) {
+    try {
+      const headers = getAdminHeaders();
+      if (!headers) return;
+
+      setUserSelecionado(userId);
+
+      const [saldoRes, histRes] = await Promise.all([
+        axios.get(`${BASE_URL}/wallet/saldo`, {
+          headers: { ...headers, "x-user-id": userId },
+        }),
+        axios.get(`${BASE_URL}/wallet/historico`, {
+          headers: { ...headers, "x-user-id": userId },
+        }),
+      ]);
+
+      setSaldo(saldoRes.data?.saldo ?? 0);
+      setExtrato(histRes.data || []);
+    } catch (err) {
+      console.error("Erro extrato:", err);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-800">💸 Saques</h2>
@@ -102,7 +131,7 @@ export default function AdminSaquesControl() {
         {saques.map((s) => (
           <div
             key={s.id}
-            className="border rounded p-3 bg-gray-50 flex justify-between items-center"
+            className="border rounded p-3 bg-gray-50 space-y-2"
           >
             <div className="text-sm space-y-1">
               <p>
@@ -121,20 +150,65 @@ export default function AdminSaquesControl() {
               </p>
             </div>
 
-            {s.status === "pending" && (
+            <div className="flex gap-2">
               <button
-                onClick={() => marcarComoPago(s.id)}
-                disabled={processando === s.id}
-                className="px-3 py-2 rounded bg-green-600 text-white text-sm font-bold disabled:opacity-50"
+                onClick={() => carregarExtrato(s.userId)}
+                className="px-2 py-1 bg-blue-600 text-white text-xs rounded"
               >
-                {processando === s.id
-                  ? "Processando..."
-                  : "Marcar como PAGO"}
+                Ver extrato
               </button>
-            )}
+
+              {s.status === "pending" && (
+                <button
+                  onClick={() => marcarComoPago(s.id)}
+                  disabled={processando === s.id}
+                  className="px-3 py-1 bg-green-600 text-white text-xs rounded font-bold"
+                >
+                  {processando === s.id
+                    ? "Processando..."
+                    : "Marcar como PAGO"}
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
+
+      {/* 🔥 BLOCO EXTRATO */}
+      {userSelecionado && (
+        <div className="border rounded p-3 bg-white space-y-2">
+          <div className="text-sm font-semibold">
+            Extrato do usuário #{userSelecionado}
+          </div>
+
+          <div className="text-sm">
+            💰 Saldo: <strong>R$ {Number(saldo || 0).toFixed(2)}</strong>
+          </div>
+
+          <div className="max-h-60 overflow-auto text-xs space-y-1">
+            {extrato.map((t) => (
+              <div
+                key={t.id}
+                className="flex justify-between border rounded px-2 py-1"
+              >
+                <span>
+                  {t.tipo} — R$ {Number(t.valor).toFixed(2)}
+                </span>
+
+                <span
+                  className={
+                    t.status === "approved"
+                      ? "text-green-600"
+                      : "text-yellow-600"
+                  }
+                >
+                  {t.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
