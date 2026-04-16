@@ -6,40 +6,57 @@ type ResultadoOficial = {
 };
 
 const PREMIO_BASE = 500;
-const PERCENTUAL_PREMIO = 0.3; // 🔥 30% das vendas
 
-async function obterPremioAtual(): Promise<number> {
-  const row = await prisma.appContent.findUnique({
-    where: { key: "premio_atual" },
-  });
-
-  if (!row || !row.contentHtml) {
-    await prisma.appContent.upsert({
-      where: { key: "premio_atual" },
-      update: { contentHtml: String(PREMIO_BASE) },
-      create: {
-        key: "premio_atual",
-        title: "Prêmio Atual",
-        contentHtml: String(PREMIO_BASE),
+async function calcularPremioAcumulado(): Promise<number> {
+  const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
+    prisma.bilhete.aggregate({
+      _sum: { valor: true },
+      where: { pago: true },
+    }),
+    prisma.transacao_carteira.aggregate({
+      _sum: { valor: true },
+      where: {
+        tipo: "PREMIO",
+        status: "paid",
       },
-    });
-    return PREMIO_BASE;
-  }
+    }),
+  ]);
 
-  const textoLimpo = row.contentHtml.replace(/<[^>]*>/g, "").trim();
-  const valor = Number(textoLimpo);
+  const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
+  const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
+  const acumulado = arrecadado - premiosPagos;
 
-  return isNaN(valor) || valor <= 0 ? PREMIO_BASE : valor;
+  return acumulado > 0 ? Number(acumulado.toFixed(2)) : 0;
 }
 
-async function atualizarPremio(valor: number) {
+async function obterPremioAtual(): Promise<number> {
+  const acumulado = await calcularPremioAcumulado();
+
+  const valorPersistido = acumulado > 0 ? acumulado : PREMIO_BASE;
+
   await prisma.appContent.upsert({
     where: { key: "premio_atual" },
-    update: { contentHtml: String(valor) },
+    update: { contentHtml: String(valorPersistido) },
     create: {
       key: "premio_atual",
       title: "Prêmio Atual",
-      contentHtml: String(valor),
+      contentHtml: String(valorPersistido),
+    },
+  });
+
+  return valorPersistido; // 🔥 CORREÇÃO
+}
+
+async function atualizarPremio(valor: number) {
+  const valorSeguro = valor > 0 ? Number(valor.toFixed(2)) : 0;
+
+  await prisma.appContent.upsert({
+    where: { key: "premio_atual" },
+    update: { contentHtml: String(valorSeguro) },
+    create: {
+      key: "premio_atual",
+      title: "Prêmio Atual",
+      contentHtml: String(valorSeguro),
     },
   });
 }
@@ -60,6 +77,23 @@ function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
+function extrairDezenasValidas(numeroCompleto: string): string[] {
+  const numero = String(numeroCompleto || "").replace(/\D/g, "");
+
+  if (!numero) return [];
+
+  if (numero.length <= 2) {
+    return [normalizarDezena(numero)];
+  }
+
+  const milhar = numero.padStart(5, "0").slice(-4);
+
+  return [
+    normalizarDezena(milhar.slice(0, 2)),
+    normalizarDezena(milhar.slice(2, 4)),
+  ];
+}
+
 export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
@@ -74,6 +108,7 @@ export async function processarSorteio(
 
   const claim = await prisma.bilhete.updateMany({
     where: {
+      pago: true,
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: null,
@@ -100,37 +135,13 @@ export async function processarSorteio(
       return { ok: false, message: "Nenhum bilhete no sorteio" };
     }
 
-    /**
-     * 🔥 CALCULA ARRECADAÇÃO DA RODADA
-     */
-    const totalArrecadado = bilhetes.reduce(
-      (acc, b) => acc + Number(b.valor || 0),
-      0
-    );
-
-    const incrementoPremio = totalArrecadado * PERCENTUAL_PREMIO;
-
-    /**
-     * ============================
-     * DEZENAS (MILHAR)
-     * ============================
-     */
     const dezenasValidas = Array.from(
-      new Set(
-        resultado.dezenas.flatMap((numeroCompleto) => {
-          const numero = numeroCompleto.replace(/\D/g, "").padStart(5, "0");
-          const milhar = numero.slice(-4);
-
-          const dezenaInicial = normalizarDezena(milhar.slice(0, 2));
-          const dezenaFinal = normalizarDezena(milhar.slice(2, 4));
-
-          return [dezenaInicial, dezenaFinal];
-        })
-      )
+      new Set(resultado.dezenas.flatMap((numero) => extrairDezenasValidas(numero)))
     );
 
     const resultadoStr = resultado.dezenas
-      .map((n) => n.replace(/\D/g, ""))
+      .map((n) => String(n || "").replace(/\D/g, ""))
+      .filter(Boolean)
       .join(",");
 
     const agora = new Date();
@@ -148,9 +159,6 @@ export async function processarSorteio(
       );
     });
 
-    /**
-     * 🔁 SEM GANHADOR → ACUMULA DINÂMICO
-     */
     if (!ganhadores.length) {
       await prisma.bilhete.updateMany({
         where: { resultadoFederal: claimToken },
@@ -161,19 +169,13 @@ export async function processarSorteio(
         },
       });
 
-      await atualizarPremio(
-        premioAtual + PREMIO_BASE + incrementoPremio
-      );
+      const novoAcumulado = await calcularPremioAcumulado();
+      await atualizarPremio(novoAcumulado);
 
       return { ok: true, ganhou: false };
     }
 
-    /**
-     * 🏆 COM GANHADOR → DIVIDE
-     */
-    const valorPorGanhador = Number(
-      (premioAtual / ganhadores.length).toFixed(2)
-    );
+    const valorPorGanhador = Number((premioAtual / ganhadores.length).toFixed(2));
 
     for (const bilhete of ganhadores) {
       await garantirCarteira(bilhete.userId);
@@ -192,6 +194,7 @@ export async function processarSorteio(
             valor: valorPorGanhador,
             tipo: "PREMIO",
             status: "paid",
+            metadata: { bilheteId: bilhete.id, sorteioData: inicio.toISOString() },
           },
         }),
 
@@ -207,7 +210,20 @@ export async function processarSorteio(
       ]);
     }
 
-    await atualizarPremio(PREMIO_BASE); // 🔥 RESET
+    await prisma.bilhete.updateMany({
+      where: {
+        resultadoFederal: claimToken,
+        status: "ATIVO",
+      },
+      data: {
+        status: "NAO_PREMIADO",
+        resultadoFederal: resultadoStr,
+        apuradoEm: agora,
+      },
+    });
+
+    const novoAcumulado = await calcularPremioAcumulado();
+    await atualizarPremio(novoAcumulado);
 
     return {
       ok: true,
