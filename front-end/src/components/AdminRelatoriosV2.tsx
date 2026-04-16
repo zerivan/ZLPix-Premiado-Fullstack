@@ -78,10 +78,6 @@ export default function AdminRelatoriosV2() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // 🔹 NOVOS STATES
-  const [limite, setLimite] = useState(20);
-  const [buscaId, setBuscaId] = useState("");
-
   const anosDisponiveis = useMemo(() => {
     const anoAtual = now.getFullYear();
     return Array.from({ length: 5 }, (_, idx) => anoAtual - idx);
@@ -167,14 +163,6 @@ export default function AdminRelatoriosV2() {
     return () => window.clearInterval(interval);
   }, [carregarRelatorio]);
 
-  // 🔹 PROCESSAMENTO
-  const usuariosProcessados = (data?.usuarios || []).filter((u) => {
-    if (!buscaId) return true;
-    return String(u.userId).includes(buscaId);
-  });
-
-  const usuariosVisiveis = usuariosProcessados.slice(0, limite);
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-end justify-between">
@@ -240,52 +228,116 @@ export default function AdminRelatoriosV2() {
       {erro && <div className="text-sm text-red-600">{erro}</div>}
 
       <div id="relatorio" className="space-y-4">
+        <section className="border rounded p-3">
+          <h3 className="font-semibold mb-2">Resumo financeiro</h3>
+
+          {loading && !data ? (
+            <div className="text-sm text-gray-500 animate-pulse">
+              Carregando resumo...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="border rounded p-3 bg-gray-50">
+                <strong>Arrecadado</strong>
+                <div>{formatMoeda(data?.resumo.arrecadado || 0)}</div>
+              </div>
+              <div className="border rounded p-3 bg-gray-50">
+                <strong>Prêmios pagos</strong>
+                <div>{formatMoeda(data?.resumo.premiosPagos || 0)}</div>
+              </div>
+              <div className="border rounded p-3 bg-gray-50">
+                <strong>Saques pagos</strong>
+                <div>{formatMoeda(data?.resumo.saquesPagos || 0)}</div>
+              </div>
+              <div className="border rounded p-3 bg-gray-50">
+                <strong>Lucro líquido</strong>
+                <div>{formatMoeda(data?.resumo.lucroLiquido || 0)}</div>
+              </div>
+            </div>
+          )}
+        </section>
+
         <section className="border rounded p-3 overflow-x-auto">
           <h3 className="font-semibold mb-2">Usuários</h3>
-
-          {/* 🔹 BUSCA */}
-          <div className="mb-2">
-            <input
-              type="text"
-              placeholder="Buscar por ID"
-              value={buscaId}
-              onChange={(e) => setBuscaId(e.target.value)}
-              className="border px-2 py-1 rounded text-sm"
-            />
-          </div>
-
           <table className="min-w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="border px-2 py-2 text-left">User ID</th>
+                <th className="border px-2 py-2 text-left">Nome</th>
+                <th className="border px-2 py-2 text-left">Gastou</th>
+                <th className="border px-2 py-2 text-left">Sacou</th>
+                <th className="border px-2 py-2 text-left">Ganhou</th>
+              </tr>
+            </thead>
             <tbody>
-              {usuariosVisiveis.map((usuario) => {
+              {(data?.usuarios || []).map((usuario) => {
                 const ativo =
                   usuario.totalGasto > 0 ||
                   usuario.totalSacado > 0 ||
                   usuario.totalPremio > 0;
 
                 return (
-                  <tr key={usuario.userId} className={ativo ? "" : "opacity-40"}>
-                    <td className="border px-2 py-2">{usuario.userId}</td>
-                    <td className="border px-2 py-2">{usuario.nome}</td>
-                    <td className="border px-2 py-2">{formatMoeda(usuario.totalGasto)}</td>
-                    <td className="border px-2 py-2">{formatMoeda(usuario.totalSacado)}</td>
-                    <td className="border px-2 py-2">{formatMoeda(usuario.totalPremio)}</td>
+                  <tr
+                    key={usuario.userId}
+                    className={ativo ? "" : "opacity-40"}
+                  >
+                    <td className="border px-2 py-2">
+                      {usuario.userId}
+                    </td>
+                    <td className="border px-2 py-2">
+                      {usuario.nome}
+                    </td>
+                    <td className="border px-2 py-2">
+                      {formatMoeda(usuario.totalGasto)}
+                    </td>
+                    <td className="border px-2 py-2">
+                      {formatMoeda(usuario.totalSacado)}
+                    </td>
+                    <td className="border px-2 py-2">
+                      {formatMoeda(usuario.totalPremio)}
+                    </td>
                   </tr>
                 );
               })}
+
+              {(!data?.usuarios || data.usuarios.length === 0) && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="border px-2 py-3 text-center text-gray-500"
+                  >
+                    Nenhum movimento encontrado para este período.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+        </section>
 
-          {/* 🔹 VER MAIS */}
-          {usuariosProcessados.length > limite && (
-            <div className="mt-2">
-              <button
-                onClick={() => setLimite((prev) => prev + 20)}
-                className="bg-gray-200 px-3 py-1 rounded text-sm"
+        <section className="border rounded p-3">
+          <h3 className="font-semibold mb-2">Prêmios</h3>
+          <ul className="space-y-2 text-sm">
+            {(data?.premios || []).map((premio, idx) => (
+              <li
+                key={`${premio.userId}-${premio.data}-${idx}`}
+                className="border rounded p-2 bg-gray-50"
               >
-                Ver mais
-              </button>
-            </div>
-          )}
+                <span className="font-medium">{premio.nome}</span> ganhou{" "}
+                {formatMoeda(premio.valor)}
+                {premio.bilheteId
+                  ? ` no bilhete ${premio.bilheteId}`
+                  : " em prêmio sem bilhete vinculado"}{" "}
+                —{" "}
+                {new Date(premio.data).toLocaleString("pt-BR")}
+              </li>
+            ))}
+
+            {(!data?.premios || data.premios.length === 0) && (
+              <li className="text-gray-500">
+                Nenhum prêmio pago no período selecionado.
+              </li>
+            )}
+          </ul>
         </section>
       </div>
     </div>
