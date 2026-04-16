@@ -1,4 +1,3 @@
-// backend/src/jobs/sorteio-cron.ts
 import cron from "node-cron";
 import { prisma } from "../lib/prisma";
 import { processarSorteio } from "../services/sorteio-processor";
@@ -10,6 +9,8 @@ type FederalResponse = {
     premios: string[];
   };
 };
+
+let emExecucao = false;
 
 /**
  * Busca resultado oficial da Federal
@@ -42,87 +43,71 @@ async function buscarResultadoFederal(): Promise<{
   }
 }
 
-/**
- * =====================================================
- * CRON — APURAÇÃO BASEADA EM DATA OFICIAL DA FEDERAL
- * =====================================================
- */
-cron.schedule("*/10 * * * *", async () => {
+async function processarSorteiosPendentesAutomatico() {
+  if (emExecucao) return;
+  emExecucao = true;
+
   try {
+    const agora = new Date();
+
+    // 🔥 CORREÇÃO: buscar federal uma vez só
     const federal = await buscarResultadoFederal();
 
     if (!federal) {
-      console.log("ℹ️ [ZLPix-Premiado] Nenhum resultado oficial disponível.");
+      console.log("ℹ️ [ZLPix-Premiado] Sem resultado da Federal para sorteio automático.");
       return;
     }
 
-    const { dataApuracao, numeros } = federal;
-
-    /**
-     * 🔥 AJUSTE PARA HORÁRIO DO BRASIL (UTC-3)
-     */
-    const agoraUtc = new Date();
-    const agoraBrasil = new Date(agoraUtc.getTime() - 3 * 60 * 60 * 1000);
-
-    const hojeBrasil = new Date(agoraBrasil);
-    hojeBrasil.setHours(0, 0, 0, 0);
-
-    const dataFederalBrasil = new Date(dataApuracao);
-    dataFederalBrasil.setHours(0, 0, 0, 0);
-
-    /**
-     * 🔥 REGRA 1: Só processa se for quarta-feira
-     */
-    if (dataFederalBrasil.getDay() !== 3) {
-      console.log("⛔ Resultado ignorado: não é quarta-feira.");
-      return;
-    }
-
-    /**
-     * 🔥 REGRA 2: Só processa se a data da Federal for HOJE (Brasil)
-     */
-    if (dataFederalBrasil.getTime() !== hojeBrasil.getTime()) {
-      console.log("⛔ Resultado ignorado: não é a quarta-feira atual.");
-      return;
-    }
-
-    /**
-     * 🔥 REGRA 3: Só após 20h horário Brasil
-     */
-    if (agoraBrasil.getHours() < 20) {
-      console.log("⏳ Aguardando 20h (horário Brasil) para validar sorteio.");
-      return;
-    }
-
-    const inicio = new Date(dataApuracao);
-    inicio.setHours(0, 0, 0, 0);
-
-    const fim = new Date(dataApuracao);
-    fim.setHours(23, 59, 59, 999);
-
-    const bilhetePendente = await prisma.bilhete.findFirst({
-      where: {
-        status: "ATIVO",
-        apuradoEm: null,
-        sorteioData: {
-          gte: inicio,
-          lte: fim,
+    while (true) {
+      const bilhetePendente = await prisma.bilhete.findFirst({
+        where: {
+          pago: true,
+          status: "ATIVO",
+          apuradoEm: null,
+          resultadoFederal: null,
+          sorteioData: {
+            lt: agora,
+          },
         },
-      },
-    });
+        orderBy: {
+          sorteioData: "asc",
+        },
+        select: {
+          sorteioData: true,
+        },
+      });
 
-    if (!bilhetePendente) {
-      return;
+      if (!bilhetePendente) {
+        break;
+      }
+
+      console.log(
+        "⏳ [ZLPix-Premiado] Processando sorteio automático:",
+        bilhetePendente.sorteioData.toISOString()
+      );
+
+      await processarSorteio(bilhetePendente.sorteioData, {
+        dezenas: federal.numeros,
+      });
+
+      console.log(
+        "✅ [ZLPix-Premiado] Sorteio automático concluído:",
+        bilhetePendente.sorteioData.toISOString()
+      );
     }
-
-    console.log("⏳ Processando sorteio oficial:", dataApuracao);
-
-    await processarSorteio(dataApuracao, {
-      dezenas: numeros,
-    });
-
-    console.log("✅ Sorteio processado com base na Federal:", dataApuracao);
   } catch (err) {
-    console.error("❌ Erro no cron de sorteio:", err);
+    console.error("❌ Erro no processamento automático de sorteio:", err);
+  } finally {
+    emExecucao = false;
   }
+}
+
+// Bootstrap: garante tentativa imediata ao subir o servidor
+setTimeout(() => {
+  void processarSorteiosPendentesAutomatico();
+}, 15_000);
+
+// Execução leve recorrente
+cron.schedule("*/5 * * * *", async () => {
+  await processarSorteiosPendentesAutomatico();
 });
