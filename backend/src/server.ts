@@ -70,6 +70,72 @@ app.options("*", cors());
 app.use(express.json());
 
 // ============================
+// 🔥 MODO MANUTENÇÃO (GLOBAL)
+// ============================
+app.use(async (req, res, next) => {
+  try {
+    const url = req.originalUrl || "";
+    const path = url.split("?")[0].replace(/\/$/, "") || "/";
+
+    const isAdminRoute =
+      path === "/api/admin" || path.startsWith("/api/admin/");
+
+    const isAllowedAuthRoute =
+      path === "/auth/login" ||
+      path === "/auth/recover" ||
+      path === "/auth/reset-password" ||
+      path === "/auth/register" ||
+      path === "/auth/admin/login" ||
+      path === "/auth/admin/refresh" ||
+      path === "/auth/admin/verify";
+
+    const isHealthCheck = path === "/";
+
+    // 🔥 CORREÇÃO: liberar federal (API + rota direta)
+    const isPublicRoute =
+      path === "/api/federal" ||
+      path.startsWith("/api/federal/") ||
+      path === "/federal" ||
+      path.startsWith("/federal/");
+
+    if (isAdminRoute || isAllowedAuthRoute || isHealthCheck || isPublicRoute) {
+      return next();
+    }
+
+    const row = await prisma.appContent.findUnique({
+      where: { key: "configuracoes_gerais" },
+    });
+
+    let modoManutencao = false;
+
+    if (row?.contentHtml) {
+      try {
+        const parsed =
+          typeof row.contentHtml === "string"
+            ? JSON.parse(row.contentHtml)
+            : row.contentHtml;
+
+        modoManutencao = !!parsed.modoManutencao;
+      } catch {
+        modoManutencao = false;
+      }
+    }
+
+    if (modoManutencao) {
+      return res.status(503).json({
+        maintenance: true,
+        message: "Sistema em manutenção",
+      });
+    }
+
+    next();
+  } catch (err) {
+    console.error("Erro ao verificar modo manutenção:", err);
+    next();
+  }
+});
+
+// ============================
 // HEALTHCHECK
 // ============================
 app.get("/", (_req, res) => {
