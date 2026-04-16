@@ -156,30 +156,14 @@ export default function AdminRelatoriosV2() {
   }, [carregarRelatorio]);
 
   return (
-    <button
-      onClick={carregarRelatorio}
-      className={`px-3 py-2 rounded text-sm text-white ${
-        loading ? "bg-gray-400" : "bg-indigo-600"
-      }`}
-    >
-      {loading ? "Atualizando..." : "Atualizar relatório"}
-
+    <div className="flex items-center gap-2">
       <button
-        onClick={baixarPDF}
-        className="bg-emerald-600 text-white px-3 py-2 rounded text-sm"
+        onClick={carregarRelatorio}
+        className={`px-3 py-2 rounded text-sm text-white ${
+          loading ? "bg-gray-400" : "bg-indigo-600"
+        }`}
       >
-        Baixar PDF
+        {loading ? "Atualizando..." : "Atualizar relatório"}
       </button>
 
-      {atualizado && (
-        <div className="text-green-600 text-xs font-semibold">
-          ✔ Relatório atualizado
-        </div>
-      )}
-
-      {erro && <div className="text-red-600 text-sm">{erro}</div>}
-
-      {/* resto do arquivo permanece igual */}
-    </button>
-  );
-}
+      <button
