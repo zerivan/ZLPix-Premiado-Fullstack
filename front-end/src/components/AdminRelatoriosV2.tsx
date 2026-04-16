@@ -43,10 +43,12 @@ if (window.html2pdf) return window.html2pdf;
 
 await new Promise<void>((resolve, reject) => {
 const script = document.createElement("script");
-script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+script.src =
+"https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 script.async = true;
 script.onload = () => resolve();
-script.onerror = () => reject(new Error("Falha ao carregar html2pdf.js"));
+script.onerror = () =>
+reject(new Error("Falha ao carregar html2pdf.js"));
 document.body.appendChild(script);
 });
 
@@ -75,7 +77,7 @@ const [ano, setAno] = useState<number>(now.getFullYear());
 const [data, setData] = useState<RelatorioV2Response | null>(null);
 const [loading, setLoading] = useState(false);
 const [erro, setErro] = useState<string | null>(null);
-const [atualizado, setAtualizado] = useState(false); // ✅ NOVO
+const [atualizado, setAtualizado] = useState(false);
 
 const anosDisponiveis = useMemo(() => {
 const anoAtual = now.getFullYear();
@@ -112,16 +114,16 @@ setAtualizado(false);
     `${API_BASE}/api/admin/relatorios-v2`,
     {
       params: { mes, ano },
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
     }
   );
 
   setData(response.data);
 
-  // ✅ feedback visual
   setAtualizado(true);
   setTimeout(() => setAtualizado(false), 2000);
-
 } catch (error) {
   console.error(error);
   setErro("Erro ao carregar relatório financeiro.");
@@ -142,7 +144,10 @@ try {
   await html2pdfFactory()
     .set({
       margin: 10,
-      filename: `relatorio-${ano}-${String(mes).padStart(2, "0")}.pdf`,
+      filename: `relatorio-${ano}-${String(mes).padStart(
+        2,
+        "0"
+      )}.pdf`,
     })
     .from(el)
     .save();
@@ -180,7 +185,9 @@ className={"px-3 py-2 rounded text-sm text-white ${ loading ? "bg-gray-400" : "b
     </div>
   )}
 
-  {erro && <div className="text-red-600 text-sm">{erro}</div>}
+  {erro && (
+    <div className="text-red-600 text-sm">{erro}</div>
+  )}
 
   {/* resto do arquivo permanece igual */}
 </div>
