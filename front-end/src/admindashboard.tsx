@@ -23,7 +23,7 @@ import AdminUsuariosControl from "./components/adminusuarioscontrol";
 import AdminRelatoriosV2 from "./components/AdminRelatoriosV2";
 import AdminSaquesControl from "./components/adminsaquescontrol";
 import AdminSorteioControl from "./components/adminsorteiocontrol";
-import AdminMotorManual from "./components/adminmotormanual";
+import AdminMotorManual from "./components/adminmotormanual"; // ✅ NOVO
 
 type TabId =
   | "config"
@@ -35,7 +35,7 @@ type TabId =
   | "reports"
   | "withdrawals"
   | "sorteio"
-  | "motorManual";
+  | "motorManual"; // ✅ NOVO
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -65,11 +65,11 @@ export default function AdminDashboard() {
     { id: "content", label: "Conteúdo", icon: FileText },
     { id: "diagnostico", label: "Diagnóstico IA", icon: Brain },
     { id: "sorteio", label: "Sorteio", icon: PlayCircle },
-    { id: "motorManual", label: "Motor Manual", icon: PlayCircle },
+    { id: "motorManual", label: "Motor Manual", icon: PlayCircle }, // ✅ NOVO
     { id: "winners", label: "Ganhadores", icon: Trophy },
     { id: "users", label: "Usuários", icon: Users },
     { id: "withdrawals", label: "Saques", icon: Banknote },
-    { id: "reports", label: "Relatórios", icon: BarChart3 }, // 🔥 agora é V2
+    { id: "reports", label: "Relatórios", icon: BarChart3 },
   ];
 
   function renderTab() {
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
       case "sorteio":
         return <AdminSorteioControl />;
       case "motorManual":
-        return <AdminMotorManual />;
+        return <AdminMotorManual />; // ✅ NOVO
       case "winners":
         return <AdminGanhadores />;
       case "users":
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
       case "withdrawals":
         return <AdminSaquesControl />;
       case "reports":
-        return <AdminRelatoriosV2 />; // 🔥 SUBSTITUÍDO
+        return <AdminRelatoriosV2 />;
       default:
         return null;
     }
