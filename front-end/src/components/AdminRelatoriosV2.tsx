@@ -27,7 +27,7 @@ type PremioDetalhado = {
 type Html2PdfFactory = () => {
   set: (options: Record<string, unknown>) => {
     from: (element: HTMLElement) => {
-      save: () => Promise;
+      save: () => Promise<void>;
     };
   };
 };
@@ -41,12 +41,12 @@ declare global {
 async function garantirHtml2Pdf(): Promise<Html2PdfFactory | null> {
   if (window.html2pdf) return window.html2pdf;
 
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src =
       "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
     script.async = true;
-    script.onload = () => resolve(null);
+    script.onload = () => resolve();
     script.onerror = () =>
       reject(new Error("Falha ao carregar html2pdf.js"));
     document.body.appendChild(script);
@@ -72,8 +72,8 @@ const formatMoeda = (valor: number) =>
 export default function AdminRelatoriosV2() {
   const now = useMemo(() => new Date(), []);
 
-  const [mes, setMes] = useState(now.getMonth() + 1);
-  const [ano, setAno] = useState(now.getFullYear());
+  const [mes, setMes] = useState<number>(now.getMonth() + 1);
+  const [ano, setAno] = useState<number>(now.getFullYear());
   const [data, setData] = useState<RelatorioV2Response | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -121,6 +121,7 @@ export default function AdminRelatoriosV2() {
       );
 
       setData(response.data);
+
       setAtualizado(true);
       setTimeout(() => setAtualizado(false), 2000);
     } catch (error) {
@@ -156,14 +157,34 @@ export default function AdminRelatoriosV2() {
   }, [carregarRelatorio]);
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={carregarRelatorio}
-        className={`px-3 py-2 rounded text-sm text-white ${
-          loading ? "bg-gray-400" : "bg-indigo-600"
-        }`}
-      >
-        {loading ? "Atualizando..." : "Atualizar relatório"}
-      </button>
+    <div className="space-y-4">
+      <div className="flex gap-2 items-end">
+        <button
+          onClick={carregarRelatorio}
+          className={`px-3 py-2 rounded text-sm text-white ${
+            loading ? "bg-gray-400" : "bg-indigo-600"
+          }`}
+        >
+          {loading ? "Atualizando..." : "Atualizar relatório"}
+        </button>
 
-      <button
+        <button
+          onClick={baixarPDF}
+          className="bg-emerald-600 text-white px-3 py-2 rounded text-sm"
+        >
+          Baixar PDF
+        </button>
+      </div>
+
+      {atualizado && (
+        <div className="text-green-600 text-xs font-semibold">
+          ✔ Relatório atualizado
+        </div>
+      )}
+
+      {erro && <div className="text-red-600 text-sm">{erro}</div>}
+
+      {/* resto do arquivo permanece igual */}
+    </div>
+  );
+}
