@@ -77,6 +77,8 @@ export default function AdminRelatoriosV2() {
   const [data, setData] = useState<RelatorioV2Response | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [limiteUsuarios, setLimiteUsuarios] = useState(20);
+  const [buscaUserId, setBuscaUserId] = useState("");
 
   const anosDisponiveis = useMemo(() => {
     const anoAtual = now.getFullYear();
@@ -127,6 +129,25 @@ export default function AdminRelatoriosV2() {
     }
   }, [mes, ano]);
 
+  const usuariosFiltrados = useMemo(() => {
+    const usuarios = data?.usuarios || [];
+
+    if (!buscaUserId.trim()) {
+      return usuarios;
+    }
+
+    return usuarios.filter((usuario) =>
+      String(usuario.userId).includes(buscaUserId.trim())
+    );
+  }, [data?.usuarios, buscaUserId]);
+
+  const usuariosExibidos = useMemo(
+    () => usuariosFiltrados.slice(0, limiteUsuarios),
+    [usuariosFiltrados, limiteUsuarios]
+  );
+
+  const podeVerMais = usuariosFiltrados.length > limiteUsuarios;
+
   async function baixarPDF() {
     const el = document.getElementById("relatorio");
     if (!el) return;
@@ -162,6 +183,10 @@ export default function AdminRelatoriosV2() {
 
     return () => window.clearInterval(interval);
   }, [carregarRelatorio]);
+
+  useEffect(() => {
+    setLimiteUsuarios(20);
+  }, [mes, ano, buscaUserId, data?.usuarios]);
 
   return (
     <div className="space-y-4">
@@ -259,6 +284,18 @@ export default function AdminRelatoriosV2() {
 
         <section className="border rounded p-3 overflow-x-auto">
           <h3 className="font-semibold mb-2">Usuários</h3>
+          <div className="mb-2">
+            <label className="text-sm">
+              <span className="block text-xs text-gray-600 mb-1">Buscar por User ID</span>
+              <input
+                type="text"
+                value={buscaUserId}
+                onChange={(e) => setBuscaUserId(e.target.value)}
+                className="border rounded px-2 py-2 bg-white"
+                placeholder="Digite o User ID"
+              />
+            </label>
+          </div>
           <table className="min-w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50">
@@ -270,7 +307,7 @@ export default function AdminRelatoriosV2() {
               </tr>
             </thead>
             <tbody>
-              {(data?.usuarios || []).map((usuario) => {
+              {usuariosExibidos.map((usuario) => {
                 const ativo =
                   usuario.totalGasto > 0 ||
                   usuario.totalSacado > 0 ||
@@ -300,7 +337,7 @@ export default function AdminRelatoriosV2() {
                 );
               })}
 
-              {(!data?.usuarios || data.usuarios.length === 0) && (
+              {usuariosFiltrados.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
@@ -312,6 +349,16 @@ export default function AdminRelatoriosV2() {
               )}
             </tbody>
           </table>
+          {podeVerMais && (
+            <div className="mt-2">
+              <button
+                onClick={() => setLimiteUsuarios((prev) => prev + 20)}
+                className="px-3 py-2 rounded text-sm text-white bg-indigo-600"
+              >
+                Ver mais
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="border rounded p-3">
