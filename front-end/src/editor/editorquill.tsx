@@ -3,6 +3,9 @@ import ReactQuill from "react-quill";
 import Quill from "quill";
 import "react-quill/dist/quill.snow.css";
 
+/* =========================
+   FONTES CUSTOMIZADAS
+========================= */
 const Font = Quill.import("formats/font");
 
 Font.whitelist = [
@@ -16,6 +19,9 @@ Font.whitelist = [
 
 Quill.register(Font, true);
 
+/* =========================
+   TOOLBAR PADRÃO
+========================= */
 const QUILL_MODULES = {
   toolbar: [
     [{ font: ["inter", "poppins", "montserrat", "bebas", "oswald", "roboto"] }],
@@ -92,6 +98,7 @@ export default function EditorQuill({
     }
   }
 
+  // ⚠️ VERSÃO ORIGINAL (SEM ALTERAÇÃO)
   async function handleSendPush() {
     try {
       setSendingPush(true);
@@ -112,17 +119,10 @@ export default function EditorQuill({
       if (pushType === "broadcast") {
         payload.broadcast = true;
       } else {
-        const normalizedUserId = Number(userId);
-
-        if (!userId || Number.isNaN(normalizedUserId) || normalizedUserId <= 0) {
-          alert("Informe um userId válido.");
-          return;
-        }
-
-        payload.userId = normalizedUserId;
+        payload.userId = Number(userId);
       }
 
-      const response = await fetch(`${API_URL}/api/admin/push/send`, {
+      await fetch(`${API_URL}/api/admin/push/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,24 +131,134 @@ export default function EditorQuill({
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || data?.ok === false) {
-        throw new Error(data?.error || data?.message || "Falha no push");
-      }
-
-      alert(
-        `Sucesso: ${data?.successCount ?? 0} | Falha: ${data?.failureCount ?? 0}`
-      );
-
       setShowPushModal(false);
       setUserId("");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro no push");
+      console.error(err);
     } finally {
       setSendingPush(false);
     }
   }
 
-  return null; // JSX mantido fora para não poluir
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-semibold text-lg">{areaTitle}</h3>
+            <p className="text-xs text-gray-500">
+              Página: <strong>{page}</strong> • Área:{" "}
+              <strong>{areaKey}</strong>
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            {page === "anuncio" && (
+              <button
+                type="button"
+                onClick={() => setShowPushModal(true)}
+                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+              >
+                Disparar Push
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!dirty || saving}
+              className={`px-4 py-2 rounded text-white ${
+                dirty
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
+
+        <ReactQuill
+          theme="snow"
+          value={html}
+          onChange={handleChange}
+          modules={QUILL_MODULES}
+        />
+      </div>
+
+      <div className="relative border rounded overflow-hidden">
+        <div className="bg-gray-800 text-white text-xs px-3 py-2 flex justify-between">
+          <span>Preview real da página</span>
+          <span className="text-yellow-300 font-semibold">
+            Área ativa: {areaKey}
+          </span>
+        </div>
+
+        <iframe
+          key={iframeKey}
+          src={`${SITE_URL}/${page}?preview=1`}
+          className="w-full h-[80vh] bg-white"
+        />
+      </div>
+
+      {showPushModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded w-full max-w-md space-y-4">
+            <h4 className="font-semibold text-lg">
+              Disparar notificação
+            </h4>
+
+            <div className="space-y-2 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "broadcast"}
+                  onChange={() => setPushType("broadcast")}
+                />
+                Enviar para todos
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  checked={pushType === "user"}
+                  onChange={() => setPushType("user")}
+                />
+                Usuário específico
+              </label>
+
+              {pushType === "user" && (
+                <input
+                  type="number"
+                  placeholder="ID do usuário"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  className="w-full border p-2 rounded"
+                />
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPushModal(false)}
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSendPush}
+                disabled={sendingPush}
+                className="px-4 py-2 bg-green-600 text-white rounded"
+              >
+                {sendingPush ? "Enviando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
