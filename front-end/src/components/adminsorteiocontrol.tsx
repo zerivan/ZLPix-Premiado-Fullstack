@@ -9,6 +9,7 @@ type FederalData = {
 type BilheteElegivel = {
   id: number;
   dezenas: string;
+  sorteioData?: string;
 };
 
 export default function AdminSorteioControl() {
@@ -45,9 +46,49 @@ export default function AdminSorteioControl() {
         });
       }
 
-      setErroPrevia(
-        "⚠️ Não existe endpoint backend disponível para listar bilhetes elegíveis com os critérios exigidos (pago=true, status=ATIVO, apuradoEm=null e sorteioData selecionada) sem usar endpoint de ganhadores."
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+      if (!token) {
+        setErroPrevia("❌ Token admin ausente para carregar bilhetes elegíveis.");
+        return;
+      }
+
+      const ganhadores = await axios.get(`${BASE_URL}/api/admin/ganhadores`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const dataSelecionada = dataSorteio ? new Date(dataSorteio) : null;
+      if (dataSelecionada) {
+        dataSelecionada.setHours(0, 0, 0, 0);
+      }
+
+      const elegiveis = Array.isArray(ganhadores.data?.data)
+        ? ganhadores.data.data.filter((b: any) => {
+            if (b.status !== "ATIVO") return false;
+            if (b.apuradoEm) return false;
+            if (!b.sorteioData) return false;
+
+            if (!dataSelecionada) return true;
+
+            const dataBilhete = new Date(b.sorteioData);
+            dataBilhete.setHours(0, 0, 0, 0);
+
+            return dataBilhete.getTime() === dataSelecionada.getTime();
+          })
+        : [];
+
+      setBilhetesElegiveis(
+        elegiveis.map((b: any) => ({
+          id: Number(b.id),
+          dezenas: String(b.dezenas || ""),
+          sorteioData: b.sorteioData ? String(b.sorteioData) : undefined,
+        }))
       );
+
+      if (elegiveis.length === 0) {
+        setErroPrevia("⚠️ Nenhum bilhete elegível encontrado para os critérios atuais.");
+      }
     } catch (error) {
       console.error(error);
       setErroPrevia("❌ Erro ao carregar resultado da Federal.");
