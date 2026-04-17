@@ -9,6 +9,10 @@ type FederalData = {
 type BilheteElegivel = {
   id: number;
   dezenas: string;
+  status?: string;
+  apuradoEm?: string | null;
+  sorteioData?: string;
+  transacaoStatus?: string | null;
 };
 
 export default function AdminSorteioControl() {
@@ -23,6 +27,23 @@ export default function AdminSorteioControl() {
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
+  function dentro7Dias(apuradoEm?: string | null) {
+    if (!apuradoEm) return false;
+
+    const data = new Date(apuradoEm);
+    if (isNaN(data.getTime())) return false;
+
+    const limite = new Date(data);
+    limite.setDate(limite.getDate() + 7);
+
+    return new Date() <= limite;
+  }
+
+  function mesmaData(sorteioData?: string, data?: string) {
+    if (!sorteioData || !data) return false;
+    return new Date(sorteioData).toISOString().slice(0, 10) === data;
+  }
+
   useEffect(() => {
     void carregarPrevia();
   }, [dataSorteio]);
@@ -34,8 +55,16 @@ export default function AdminSorteioControl() {
       setFederalData(null);
       setBilhetesElegiveis([]);
 
-      const federal = await axios.get(`${BASE_URL}/api/federal`);
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
 
+      const [federal, bilhetesRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/federal`),
+        axios.get(`${BASE_URL}/api/admin/ganhadores`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }),
+      ]);
+
+      // Federal
       if (federal.data?.ok && federal.data?.data) {
         setFederalData({
           dataApuracao: federal.data.data.dataApuracao || null,
@@ -45,12 +74,36 @@ export default function AdminSorteioControl() {
         });
       }
 
-      setErroPrevia(
-        "⚠️ Não existe endpoint backend disponível para listar bilhetes elegíveis com os critérios exigidos (pago=true, status=ATIVO, apuradoEm=null e sorteioData selecionada) sem usar endpoint de ganhadores."
+      const lista = Array.isArray(bilhetesRes.data?.data)
+        ? bilhetesRes.data.data
+        : [];
+
+      const bilhetesDaData = lista.filter((b: BilheteElegivel) =>
+        mesmaData(b.sorteioData, dataSorteio)
       );
+
+      // 🔥 PRÉ-SORTEIO
+      const ativos = bilhetesDaData.filter(
+        (b) =>
+          b.status === "ATIVO" &&
+          !b.apuradoEm &&
+          b.transacaoStatus === "paid"
+      );
+
+      if (ativos.length > 0) {
+        setBilhetesElegiveis(ativos);
+        return;
+      }
+
+      // 🔥 PÓS-SORTEIO (com retenção de 7 dias)
+      const historico = bilhetesDaData.filter(
+        (b) => b.apuradoEm && dentro7Dias(b.apuradoEm)
+      );
+
+      setBilhetesElegiveis(historico);
     } catch (error) {
       console.error(error);
-      setErroPrevia("❌ Erro ao carregar resultado da Federal.");
+      setErroPrevia("❌ Erro ao carregar dados do sorteio.");
     } finally {
       setCarregandoPrevia(false);
     }
@@ -58,37 +111,32 @@ export default function AdminSorteioControl() {
 
   const podeDisparar = useMemo(() => {
     const temFederal = !!federalData && federalData.premios.length === 5;
-    const temBilhetes = bilhetesElegiveis.length > 0;
-    return temFederal && temBilhetes && !loading;
-  }, [federalData, bilhetesElegiveis.length, loading]);
+
+    const temBilhetesAtivos = bilhetesElegiveis.some(
+      (b) => b.status === "ATIVO" && !b.apuradoEm
+    );
+
+    return temFederal && temBilhetesAtivos && !loading;
+  }, [federalData, bilhetesElegiveis, loading]);
 
   async function dispararSorteio() {
     const temFederal = !!federalData && federalData.premios.length === 5;
-    const temBilhetes = bilhetesElegiveis.length > 0;
+
+    const temBilhetesAtivos = bilhetesElegiveis.some(
+      (b) => b.status === "ATIVO" && !b.apuradoEm
+    );
 
     if (!temFederal) {
       setStatus("❌ Não foi possível obter resultado da Federal.");
       return;
     }
 
-    if (!temBilhetes) {
-      setStatus(
-        "❌ Não há bilhetes elegíveis disponíveis para apuração com os critérios exigidos."
-      );
+    if (!temBilhetesAtivos) {
+      setStatus("❌ Não há bilhetes ATIVOS para apuração.");
       return;
     }
 
-    const ok = confirm(
-      "⚠️ ATENÇÃO!\n\n" +
-        "Esta ação irá:\n" +
-        "- Apurar os bilhetes\n" +
-        "- Identificar ganhadores\n" +
-        "- Distribuir prêmios\n" +
-        "- Creditar carteiras\n\n" +
-        "Essa ação NÃO PODE ser desfeita.\n\n" +
-        "Deseja continuar?"
-    );
-
+    const ok = confirm("Deseja realmente executar a apuração?");
     if (!ok) return;
 
     try {
@@ -101,13 +149,9 @@ export default function AdminSorteioControl() {
         return;
       }
 
-      const dataFinal = dataSorteio
-        ? new Date(dataSorteio).toISOString()
-        : new Date().toISOString();
-
       const payload = {
-        sorteioData: dataFinal,
-        premiosFederal: federalData.premios,
+        sorteioData: new Date(dataSorteio).toISOString(),
+        premiosFederal: federalData!.premios,
       };
 
       const res = await axios.post(
@@ -122,10 +166,9 @@ export default function AdminSorteioControl() {
 
       if (res.data?.ok) {
         setStatus("✅ Apuração executada com sucesso.");
+        await carregarPrevia();
       } else {
-        setStatus(
-          `⚠️ ${res.data?.error || "Resposta inesperada do servidor."}`
-        );
+        setStatus("⚠️ Erro na resposta do servidor.");
       }
     } catch (err) {
       console.error(err);
@@ -141,13 +184,6 @@ export default function AdminSorteioControl() {
         🎯 Apurar Sorteio (ADMIN)
       </h2>
 
-      <p className="text-sm text-gray-600">
-        Esta ação executa a APURAÇÃO REAL:
-        <br />• Cruza bilhetes
-        <br />• Marca premiados
-        <br />• Credita carteiras
-      </p>
-
       <input
         type="date"
         value={dataSorteio}
@@ -155,55 +191,32 @@ export default function AdminSorteioControl() {
         className="border px-2 py-1 rounded text-black"
       />
 
-      <div className="text-sm text-gray-700 space-y-1">
-        <div className="font-semibold">Resultado da Federal:</div>
-        {federalData ? (
-          <>
-            <div>
-              Data da extração:{" "}
-              {federalData.dataApuracao
-                ? new Date(federalData.dataApuracao).toLocaleDateString("pt-BR")
-                : "N/D"}
-            </div>
-            {federalData.premios.map((premio, index) => (
-              <div key={`${premio}-${index}`}>
-                {index + 1}º prêmio: {premio}
-              </div>
-            ))}
-          </>
-        ) : (
-          <div>Sem resultado disponível.</div>
-        )}
+      <div className="text-sm space-y-1">
+        <div>Data da extração: {federalData?.dataApuracao || "-"}</div>
+        {federalData?.premios.map((p, i) => (
+          <div key={i}>{i + 1}º prêmio: {p}</div>
+        ))}
       </div>
 
-      <div className="text-sm text-gray-700 space-y-1">
-        <div className="font-semibold">Bilhetes que participarão do sorteio:</div>
-        {bilhetesElegiveis.length > 0 ? (
-          bilhetesElegiveis.map((bilhete) => (
-            <div key={bilhete.id}>
-              ID #{bilhete.id} — dezenas: {bilhete.dezenas}
-            </div>
-          ))
-        ) : (
-          <div>Nenhum bilhete elegível encontrado.</div>
-        )}
+      <div className="text-sm space-y-1">
+        <div>Bilhetes:</div>
+        {bilhetesElegiveis.map((b) => (
+          <div key={b.id}>
+            #{b.id} — {b.dezenas}
+            {b.status && ` — ${b.status}`}
+          </div>
+        ))}
       </div>
-
-      {carregandoPrevia && (
-        <div className="text-xs text-gray-500">Carregando prévia...</div>
-      )}
-
-      {erroPrevia && <div className="text-xs text-amber-700">{erroPrevia}</div>}
 
       <button
         onClick={dispararSorteio}
         disabled={!podeDisparar}
-        className="bg-red-600 text-white px-4 py-2 rounded font-bold disabled:opacity-60"
+        className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
       >
-        {loading ? "Processando..." : "🔴 DISPARAR APURAÇÃO"}
+        {loading ? "Processando..." : "DISPARAR"}
       </button>
 
-      {status && <div className="text-sm font-semibold">{status}</div>}
+      {status && <div>{status}</div>}
     </div>
   );
 }
