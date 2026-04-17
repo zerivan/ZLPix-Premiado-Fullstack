@@ -78,6 +78,7 @@ router.get("/", async (req, res) => {
       telefone: b.user.phone,
       pixKey: b.user.pixKey,
       dezenas: b.dezenas,
+      sorteioData: b.sorteioData,
       status: b.status,
       premio: b.premioValor ?? 0,
       resultadoFederal: b.resultadoFederal,
