@@ -8,22 +8,14 @@ type ResultadoOficial = {
 const PREMIO_BASE = 500;
 const PERCENTUAL_PREMIO = 0.3;
 
-async function calcularPremioAcumulado(): Promise<number> {
-  const arrecadadoAgg = await prisma.bilhete.aggregate({
-    _sum: { valor: true },
-    where: { pago: true },
-  });
-
-  const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
-
-  // 🔥 pega prêmio atual salvo
+async function calcularPremioAcumulado(arrecadadoRodada: number): Promise<number> {
   const atual = await prisma.appContent.findUnique({
     where: { key: "premio_atual" },
   });
 
-  const premioAtual = Number(atual?.contentHtml || 0);
+  const premioAtual = Number(atual?.contentHtml || PREMIO_BASE);
 
-  const incremento = arrecadado * PERCENTUAL_PREMIO;
+  const incremento = Number(arrecadadoRodada || 0) * PERCENTUAL_PREMIO;
 
   const acumulado = premioAtual + incremento;
 
@@ -153,6 +145,11 @@ export async function processarSorteio(
     });
 
     if (!ganhadores.length) {
+      const arrecadadoRodada = bilhetes.reduce(
+        (acc, b) => acc + (Number(b.valor) || 0),
+        0
+      );
+
       await prisma.bilhete.updateMany({
         where: { resultadoFederal: claimToken },
         data: {
@@ -162,7 +159,7 @@ export async function processarSorteio(
         },
       });
 
-      const novoAcumulado = await calcularPremioAcumulado();
+      const novoAcumulado = await calcularPremioAcumulado(arrecadadoRodada);
       await atualizarPremio(novoAcumulado);
 
       return { ok: true, ganhou: false };
