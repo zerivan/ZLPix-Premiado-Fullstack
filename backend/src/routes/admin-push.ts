@@ -4,17 +4,9 @@ import { getMessaging } from "../lib/firebase";
 
 const router = Router();
 
-/**
- * =========================================
- * ADMIN PUSH MANUAL
- * POST /api/admin/push/send
- * =========================================
- */
 router.post("/send", async (req, res) => {
   try {
     const { title, body, url, userId, broadcast } = req.body;
-
-    console.log("🔎 [ADMIN PUSH] Body recebido:", req.body);
 
     if (!title || !body) {
       return res.status(400).json({
@@ -23,51 +15,46 @@ router.post("/send", async (req, res) => {
     }
 
     const normalizedUserId =
-      userId !== undefined && userId !== null
+      userId !== undefined && userId !== null && userId !== ""
         ? Number(userId)
         : null;
+
+    const hasValidUserId =
+      normalizedUserId !== null &&
+      Number.isInteger(normalizedUserId) &&
+      normalizedUserId > 0;
 
     const normalizedBroadcast =
       broadcast === true || broadcast === "true";
 
-    console.log(
-      "🔎 normalizedUserId:",
-      normalizedUserId,
-      "typeof:",
-      typeof normalizedUserId
-    );
-    console.log("🔎 normalizedBroadcast:", normalizedBroadcast);
-
-    if (normalizedUserId && normalizedBroadcast) {
-      console.log("❌ Envio ambíguo detectado");
+    if (normalizedUserId !== null && !hasValidUserId) {
       return res.status(400).json({
-        error: "Envio ambíguo: informe userId OU broadcast",
+        error: "userId inválido",
+      });
+    }
+
+    if (hasValidUserId && normalizedBroadcast) {
+      return res.status(400).json({
+        error: "Envio ambíguo",
       });
     }
 
     let tokens: { token: string }[] = [];
 
-    if (normalizedUserId) {
-      console.log("📤 Buscando tokens por userId:", normalizedUserId);
-
+    if (hasValidUserId) {
       tokens = await prisma.pushToken.findMany({
         where: { userId: normalizedUserId },
         select: { token: true },
       });
     } else if (normalizedBroadcast) {
-      console.log("📤 Buscando tokens broadcast (todos)");
-
       tokens = await prisma.pushToken.findMany({
         select: { token: true },
       });
     } else {
-      console.log("❌ Nenhum método válido informado");
       return res.status(400).json({
         error: "Informe userId ou broadcast",
       });
     }
-
-    console.log("📱 Tokens encontrados:", tokens.length);
 
     if (!tokens.length) {
       return res.json({
@@ -89,46 +76,12 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     });
 
-    console.log(
-      "📊 Firebase response:",
-      "success:",
-      response.successCount,
-      "failure:",
-      response.failureCount
-    );
-
-    // 🔥 REMOÇÃO AUTOMÁTICA DE TOKENS INVÁLIDOS
-    const invalidTokens: string[] = [];
-
-    response.responses.forEach((r, idx) => {
-      if (!r.success) {
-        invalidTokens.push(tokens[idx].token);
-        console.warn(
-          "⚠️ Token inválido:",
-          tokens[idx].token.substring(0, 25) + "...",
-          "-",
-          r.error?.message
-        );
-      }
-    });
-
-    if (invalidTokens.length) {
-      await prisma.pushToken.deleteMany({
-        where: { token: { in: invalidTokens } },
-      });
-
-      console.log(
-        `🧹 ${invalidTokens.length} token(s) inválido(s) removido(s)`
-      );
-    }
-
     return res.json({
       ok: true,
       successCount: response.successCount,
       failureCount: response.failureCount,
     });
   } catch (error) {
-    console.error("❌ Erro admin push:", error);
     return res.status(500).json({
       error: "Erro ao enviar push",
     });
