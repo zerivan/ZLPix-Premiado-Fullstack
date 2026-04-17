@@ -6,6 +6,7 @@ type ResultadoOficial = {
 };
 
 const PREMIO_BASE = 500;
+const PERCENTUAL_PREMIO = 0.3;
 
 async function calcularPremioAcumulado(): Promise<number> {
   const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
@@ -24,7 +25,8 @@ async function calcularPremioAcumulado(): Promise<number> {
 
   const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
   const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
-  const acumulado = arrecadado - premiosPagos;
+  const basePremio = arrecadado * PERCENTUAL_PREMIO;
+  const acumulado = basePremio - premiosPagos;
 
   return acumulado > 0 ? Number(acumulado.toFixed(2)) : 0;
 }
