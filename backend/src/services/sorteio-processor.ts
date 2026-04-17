@@ -9,44 +9,35 @@ const PREMIO_BASE = 500;
 const PERCENTUAL_PREMIO = 0.3;
 
 async function calcularPremioAcumulado(): Promise<number> {
-  const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
-    prisma.bilhete.aggregate({
-      _sum: { valor: true },
-      where: { pago: true },
-    }),
-    prisma.transacao_carteira.aggregate({
-      _sum: { valor: true },
-      where: {
-        tipo: "PREMIO",
-        status: "paid",
-      },
-    }),
-  ]);
+  const arrecadadoAgg = await prisma.bilhete.aggregate({
+    _sum: { valor: true },
+    where: { pago: true },
+  });
 
   const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
-  const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
-  const basePremio = arrecadado * PERCENTUAL_PREMIO;
-  const acumulado = basePremio - premiosPagos;
 
-  return acumulado > 0 ? Number(acumulado.toFixed(2)) : 0;
+  // 🔥 pega prêmio atual salvo
+  const atual = await prisma.appContent.findUnique({
+    where: { key: "premio_atual" },
+  });
+
+  const premioAtual = Number(atual?.contentHtml || 0);
+
+  const incremento = arrecadado * PERCENTUAL_PREMIO;
+
+  const acumulado = premioAtual + incremento;
+
+  return Number(acumulado.toFixed(2));
 }
 
 async function obterPremioAtual(): Promise<number> {
-  const acumulado = await calcularPremioAcumulado();
-
-  const valorPersistido = acumulado > 0 ? acumulado : PREMIO_BASE;
-
-  await prisma.appContent.upsert({
+  const atual = await prisma.appContent.findUnique({
     where: { key: "premio_atual" },
-    update: { contentHtml: String(valorPersistido) },
-    create: {
-      key: "premio_atual",
-      title: "Prêmio Atual",
-      contentHtml: String(valorPersistido),
-    },
   });
 
-  return valorPersistido; // 🔥 CORREÇÃO
+  const valorPersistido = Number(atual?.contentHtml || PREMIO_BASE);
+
+  return valorPersistido;
 }
 
 async function atualizarPremio(valor: number) {
@@ -224,8 +215,8 @@ export async function processarSorteio(
       },
     });
 
-    const novoAcumulado = await calcularPremioAcumulado();
-    await atualizarPremio(novoAcumulado);
+    // 🔥 RESET DO PRÊMIO APÓS GANHADOR
+    await atualizarPremio(PREMIO_BASE);
 
     return {
       ok: true,
