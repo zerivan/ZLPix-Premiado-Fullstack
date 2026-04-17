@@ -82,8 +82,9 @@ router.post("/apurar", async (req, res) => {
      */
     const dezenas: string[] = [];
     for (const num of premios) {
-      dezenas.push(num.slice(0, 2));
-      dezenas.push(num.slice(-2));
+      const milhar = String(num).slice(-4);
+      dezenas.push(milhar.slice(0, 2));
+      dezenas.push(milhar.slice(-2));
     }
 
     if (dezenas.length !== 10) {
