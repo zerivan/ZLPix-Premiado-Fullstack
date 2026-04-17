@@ -44,7 +44,6 @@ export default function MeusBilhetes() {
     loadBilhetes();
   }, [userId]);
 
-  // 🔥 ALTERAÇÃO AQUI: agora gera PDF via print
   function baixarHistorico() {
     if (!bilhetes.length) return;
 
@@ -82,11 +81,10 @@ export default function MeusBilhetes() {
     janela.print();
   }
 
+  // ✅ CORREÇÃO: removido setHours (não alterar horário vindo do backend)
   function dataVirada(b: any): Date | null {
     if (!b.sorteioData) return null;
-    const d = new Date(b.sorteioData);
-    d.setHours(20, 0, 0, 0);
-    return d;
+    return new Date(b.sorteioData);
   }
 
   function dentroDaPermanencia(b: any) {
