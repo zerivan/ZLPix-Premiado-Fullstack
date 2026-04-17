@@ -52,23 +52,14 @@ export default function AdminGanhadores() {
   }, []);
 
   function visivel(g: Ganhador) {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    // 🔥 REGRA NOVA: filtrar por data de apuração (ou manter se ainda não foi apurado mas for recente)
-    if (!g.apuradoEm) return true;
+    // 🔥 CORREÇÃO: NÃO mostrar itens sem apuração (remove ativos antigos/lixo)
+    if (!g.apuradoEm) return false;
 
     const dataApuracao = new Date(g.apuradoEm);
+    const limite = new Date(dataApuracao);
+    limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
 
-    // ❌ remove registros muito antigos
-    if (dataApuracao < hoje) {
-      const limite = new Date(dataApuracao);
-      limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
-
-      return Date.now() <= limite.getTime();
-    }
-
-    return true;
+    return Date.now() <= limite.getTime();
   }
 
   const ganhadoresVisiveis = ganhadores.filter(visivel);
