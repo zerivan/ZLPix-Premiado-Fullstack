@@ -183,7 +183,7 @@ Sorteio válido no ZLPIX: ${calcularProximaQuartaValida()}
 
                   <div className="text-center mt-4 text-xs text-blue-100/90">
                     <p>
-                      📌 Sorteio válido para o ZLPIX:
+                      📅 Próximo sorteio: 
                       <span className="text-yellow-300 font-semibold ml-1">
                         {proximaQuartaValida}
                       </span>
