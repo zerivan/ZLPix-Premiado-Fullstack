@@ -52,13 +52,23 @@ export default function AdminGanhadores() {
   }, []);
 
   function visivel(g: Ganhador) {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // 🔥 REGRA NOVA: filtrar por data de apuração (ou manter se ainda não foi apurado mas for recente)
     if (!g.apuradoEm) return true;
 
     const dataApuracao = new Date(g.apuradoEm);
-    const limite = new Date(dataApuracao);
-    limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
 
-    return Date.now() <= limite.getTime();
+    // ❌ remove registros muito antigos
+    if (dataApuracao < hoje) {
+      const limite = new Date(dataApuracao);
+      limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
+
+      return Date.now() <= limite.getTime();
+    }
+
+    return true;
   }
 
   const ganhadoresVisiveis = ganhadores.filter(visivel);
@@ -70,7 +80,7 @@ export default function AdminGanhadores() {
   }, {} as Record<number, Ganhador[]>);
 
   function baixarAtivosMotor() {
-    const ativos = ganhadores.filter((g) => !g.apuradoEm); // 🔥 REMOVIDO reverse()
+    const ativos = ganhadores.filter((g) => !g.apuradoEm);
 
     if (!ativos.length) {
       alert("Nenhum bilhete ativo para exportar.");
