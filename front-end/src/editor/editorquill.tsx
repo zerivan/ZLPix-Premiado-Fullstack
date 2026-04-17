@@ -98,12 +98,11 @@ export default function EditorQuill({
     }
   }
 
-  // ⚠️ VERSÃO ORIGINAL (SEM ALTERAÇÃO)
   async function handleSendPush() {
     try {
       setSendingPush(true);
 
-      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+      const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN")?.trim();
 
       if (!token) {
         alert("Token admin não encontrado.");
@@ -119,10 +118,15 @@ export default function EditorQuill({
       if (pushType === "broadcast") {
         payload.broadcast = true;
       } else {
-        payload.userId = Number(userId);
+        const parsedUserId = Number(userId);
+        if (!Number.isFinite(parsedUserId) || parsedUserId <= 0) {
+          alert("Informe um userId válido.");
+          return;
+        }
+        payload.userId = parsedUserId;
       }
 
-      await fetch(`${API_URL}/api/admin/push/send`, {
+      const response = await fetch(`${API_URL}/api/admin/push/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,9 +135,32 @@ export default function EditorQuill({
         body: JSON.stringify(payload),
       });
 
+      const data = await response
+        .json()
+        .catch(() => ({ ok: false, error: "Resposta inválida do servidor." }));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || data?.message || `Falha HTTP ${response.status}`
+        );
+      }
+
+      if (!data?.ok) {
+        throw new Error(data?.error || data?.message || "Falha ao enviar push.");
+      }
+
+      const successCount = Number(data?.successCount ?? 0);
+      const failureCount = Number(data?.failureCount ?? 0);
+      alert(
+        `Push enviado com sucesso.\nSucessos: ${successCount}\nFalhas: ${failureCount}`
+      );
+
       setShowPushModal(false);
       setUserId("");
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erro inesperado ao enviar push.";
+      alert(message);
       console.error(err);
     } finally {
       setSendingPush(false);
