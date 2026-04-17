@@ -20,7 +20,7 @@ Só vira após 20h
 */
 function ajustarDataSorteio(iso: string) {
   const agora = new Date();
-  const dia = agora.getDay(); // 0=dom, 3=qua, 6=sab
+  const dia = agora.getDay();
   const hora = agora.getHours();
 
   const dataApi = new Date(iso);
@@ -111,17 +111,10 @@ export default function Home() {
           );
         }
 
-        // 🔥 CORREÇÃO AQUI (premio dinâmico seguro)
-        const premio = await api.get("/api/cms/public/premio");
+        // 🔥 NOVO: prêmio vindo direto do backend (fonte única)
+        const premio = await api.get("/api/app/premio");
         if (premio.data?.ok) {
-          const valor =
-            typeof premio.data.valor === "number"
-              ? premio.data.valor
-              : Number(
-                  String(premio.data.valor || "")
-                    .replace(/[^\d.,]/g, "")
-                    .replace(",", ".")
-                );
+          const valor = Number(premio.data.valor);
 
           if (!isNaN(valor) && valor > 0) {
             setPremioAtual(`R$ ${valor.toFixed(2)}`);
@@ -238,7 +231,6 @@ export default function Home() {
               ease: "linear",
             }}
             className="absolute top-2 left-0 text-2xl"
-            style={{ width: "fit-content" }}
           >
             🧝‍♂️💰
           </motion.span>
