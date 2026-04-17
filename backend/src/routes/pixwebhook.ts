@@ -9,27 +9,29 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 function getNextWednesday(): Date {
+  const BR_OFFSET_MS = -3 * 60 * 60 * 1000;
   const now = new Date();
-  const day = now.getDay();
-  const hour = now.getHours();
+  const nowBrClock = new Date(now.getTime() + BR_OFFSET_MS);
 
-  const target = new Date(now);
+  const day = nowBrClock.getUTCDay();
+  const hour = nowBrClock.getUTCHours();
+  const targetBrClock = new Date(nowBrClock);
 
   if (day === 3) {
     if (hour < 17) {
-      target.setHours(20, 0, 0, 0);
-      return target;
+      targetBrClock.setUTCHours(20, 0, 0, 0);
+      return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
     }
-    target.setDate(target.getDate() + 7);
-    target.setHours(20, 0, 0, 0);
-    return target;
+    targetBrClock.setUTCDate(targetBrClock.getUTCDate() + 7);
+    targetBrClock.setUTCHours(20, 0, 0, 0);
+    return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
   }
 
   const diff = (3 - day + 7) % 7;
-  target.setDate(target.getDate() + diff);
-  target.setHours(20, 0, 0, 0);
+  targetBrClock.setUTCDate(targetBrClock.getUTCDate() + diff);
+  targetBrClock.setUTCHours(20, 0, 0, 0);
 
-  return target;
+  return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
 }
 
 async function fetchMpPayment(paymentId: string) {
