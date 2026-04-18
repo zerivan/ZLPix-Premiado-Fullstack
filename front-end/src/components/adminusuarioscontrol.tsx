@@ -6,6 +6,7 @@ type Usuario = {
   name: string;
   email: string;
   phone?: string;
+  pixKey?: string; // ✅ ADICIONADO
   createdAt: string;
 };
 
@@ -14,7 +15,6 @@ export default function UsuariosControl() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // 🔥 NOVO
   const [total, setTotal] = useState<number>(0);
   const [buscaId, setBuscaId] = useState<string>("");
 
@@ -36,7 +36,7 @@ export default function UsuariosControl() {
 
       if (res.data?.ok) {
         setData(res.data.data || []);
-        setTotal(res.data.total || 0); // 🔥 TOTAL
+        setTotal(res.data.total || 0);
       } else {
         setErro("Resposta inválida do servidor.");
       }
@@ -48,7 +48,6 @@ export default function UsuariosControl() {
     }
   }
 
-  // 🔥 NOVO - BUSCA POR ID
   async function buscarPorId() {
     if (!buscaId) return;
 
@@ -100,12 +99,10 @@ export default function UsuariosControl() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Usuários</h2>
 
-      {/* 🔥 TOTAL */}
       <div className="text-sm text-gray-500">
         Total de usuários: <strong>{total}</strong>
       </div>
 
-      {/* 🔥 BUSCA POR ID */}
       <div className="flex gap-2">
         <input
           type="number"
@@ -122,7 +119,6 @@ export default function UsuariosControl() {
           Buscar
         </button>
 
-        {/* 🔥 VOLTAR PRA LISTA */}
         <button
           onClick={loadUsuarios}
           className="bg-gray-500 text-white px-3 rounded"
@@ -158,6 +154,12 @@ export default function UsuariosControl() {
             {u.phone && (
               <div>
                 <strong>Telefone:</strong> {u.phone}
+              </div>
+            )}
+
+            {u.pixKey && ( // ✅ ADICIONADO
+              <div>
+                <strong>Chave PIX:</strong> {u.pixKey}
               </div>
             )}
 
