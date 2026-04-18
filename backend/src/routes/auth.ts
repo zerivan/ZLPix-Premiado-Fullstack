@@ -271,6 +271,12 @@ router.post("/reset-password", async (req, res) => {
 router.post("/login", async (req, res) => {  
   try {  
     const { email, password } = req.body;  
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "E-mail e senha são obrigatórios.",
+      });
+    }
   
     const key = getKey(req, email);  
     const now = Date.now();  
