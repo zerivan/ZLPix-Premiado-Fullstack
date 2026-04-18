@@ -5,45 +5,30 @@ type ResultadoOficial = {
   dezenas: string[];
 };
 
-const PREMIO_BASE = 500;
-const PERCENTUAL_PREMIO = 0.3;
-
-async function calcularPremioAcumulado(arrecadadoRodada: number): Promise<number> {
-  const atual = await prisma.appContent.findUnique({
-    where: { key: "premio_atual" },
-  });
-
-  const premioAtual = Number(atual?.contentHtml || PREMIO_BASE);
-
-  const incremento = Number(arrecadadoRodada || 0) * PERCENTUAL_PREMIO;
-
-  const acumulado = premioAtual + incremento;
-
-  return Number(acumulado.toFixed(2));
-}
-
 async function obterPremioAtual(): Promise<number> {
-  const atual = await prisma.appContent.findUnique({
-    where: { key: "premio_atual" },
-  });
+  const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
+    prisma.transacao.aggregate({
+      _sum: { valor: true },
+      where: {
+        status: "paid",
+        tipo: "BILHETE",
+      },
+    }),
+    prisma.transacao_carteira.aggregate({
+      _sum: { valor: true },
+      where: {
+        status: "paid",
+        tipo: "PREMIO",
+      },
+    }),
+  ]);
 
-  const valorPersistido = Number(atual?.contentHtml || PREMIO_BASE);
+  const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
+  const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
 
-  return valorPersistido;
-}
-
-async function atualizarPremio(valor: number) {
-  const valorSeguro = valor > 0 ? Number(valor.toFixed(2)) : 0;
-
-  await prisma.appContent.upsert({
-    where: { key: "premio_atual" },
-    update: { contentHtml: String(valorSeguro) },
-    create: {
-      key: "premio_atual",
-      title: "Prêmio Atual",
-      contentHtml: String(valorSeguro),
-    },
-  });
+  return Number(
+    Math.max(arrecadado * 0.3 - premiosPagos, 0).toFixed(2)
+  );
 }
 
 async function garantirCarteira(userId: number) {
@@ -145,11 +130,6 @@ export async function processarSorteio(
     });
 
     if (!ganhadores.length) {
-      const arrecadadoRodada = bilhetes.reduce(
-        (acc, b) => acc + (Number(b.valor) || 0),
-        0
-      );
-
       await prisma.bilhete.updateMany({
         where: { resultadoFederal: claimToken },
         data: {
@@ -158,9 +138,6 @@ export async function processarSorteio(
           apuradoEm: agora,
         },
       });
-
-      const novoAcumulado = await calcularPremioAcumulado(arrecadadoRodada);
-      await atualizarPremio(novoAcumulado);
 
       return { ok: true, ganhou: false };
     }
@@ -211,9 +188,6 @@ export async function processarSorteio(
         apuradoEm: agora,
       },
     });
-
-    // 🔥 RESET DO PRÊMIO APÓS GANHADOR
-    await atualizarPremio(PREMIO_BASE);
 
     return {
       ok: true,
