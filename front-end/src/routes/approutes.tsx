@@ -33,6 +33,7 @@ import DynamicPage from "../pages/dynamicpage";
 
 // 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
+import { registerPush } from "../services/push";
 
 function isUserLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -57,6 +58,32 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 }
 
 export default function AppRoutes() {
+  useEffect(() => {
+    const token = localStorage.getItem("TOKEN_ZLPIX");
+    if (!token) return;
+
+    const userIdFromStorage = localStorage.getItem("USER_ID");
+    const userFromStorage = localStorage.getItem("USER_ZLPIX");
+
+    const parsedUserId = Number(userIdFromStorage);
+    if (parsedUserId && !Number.isNaN(parsedUserId)) {
+      registerPush(parsedUserId);
+      return;
+    }
+
+    if (userFromStorage) {
+      try {
+        const parsedUser = JSON.parse(userFromStorage);
+        const userId = Number(parsedUser?.id);
+        if (userId && !Number.isNaN(userId)) {
+          registerPush(userId);
+        }
+      } catch (err) {
+        console.warn("⚠️ Não foi possível ler USER_ZLPIX para push", err);
+      }
+    }
+  }, []);
+
   return (
     <>
       <Routes>
