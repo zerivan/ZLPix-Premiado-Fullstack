@@ -16,6 +16,7 @@ router.get("/", async (req, res) => {
           name: true,
           email: true,
           phone: true,
+          pixKey: true,
           createdAt: true,
         },
       });
@@ -36,6 +37,7 @@ router.get("/", async (req, res) => {
         name: true,
         email: true,
         phone: true,
+        pixKey: true,
         createdAt: true,
       },
     });
