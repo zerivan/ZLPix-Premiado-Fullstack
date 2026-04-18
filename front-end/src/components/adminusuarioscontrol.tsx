@@ -157,11 +157,9 @@ export default function UsuariosControl() {
               </div>
             )}
 
-            {u.pixKey && ( // ✅ ADICIONADO
-              <div>
-                <strong>Chave PIX:</strong> {u.pixKey}
-              </div>
-            )}
+            <div>
+              <strong>Chave PIX:</strong> {u.pixKey ?? "Não informado"}
+            </div>
 
             <div className="text-xs text-gray-500">
               Cadastro: {new Date(u.createdAt).toLocaleString()}
