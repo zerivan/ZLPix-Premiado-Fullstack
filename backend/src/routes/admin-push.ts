@@ -56,6 +56,8 @@ router.post("/send", async (req, res) => {
       });
     }
 
+    console.log(`📱 Tokens encontrados: ${tokens.length}`);
+
     if (!tokens.length) {
       return res.json({
         ok: false,
@@ -76,12 +78,17 @@ router.post("/send", async (req, res) => {
       tokens: tokens.map((t) => t.token),
     });
 
+    console.log(
+      `📊 Firebase response: success=${response.successCount} failure=${response.failureCount}`
+    );
+
     return res.json({
       ok: true,
       successCount: response.successCount,
       failureCount: response.failureCount,
     });
   } catch (error) {
+    console.error("❌ Erro ao enviar push manual:", error);
     return res.status(500).json({
       error: "Erro ao enviar push",
     });
