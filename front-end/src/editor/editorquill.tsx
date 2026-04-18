@@ -61,7 +61,9 @@ export default function EditorQuill({
   const [sendingPush, setSendingPush] = useState(false);
 
   const SITE_URL = window.location.origin;
-  const API_URL = "https://zlpix-premiado-fullstack.onrender.com";
+  const API_URL =
+    (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+    window.location.origin;
 
   useEffect(() => {
     const link = document.createElement("link");
