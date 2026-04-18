@@ -165,6 +165,7 @@ app.use("/api/assistant", assistantRoutes);
 
 // CMS
 app.use("/api/cms/public", cmsPublicRoutes);
+app.use("/api/app", cmsPublicRoutes);
 app.use("/api/cms", cmsPreviewRoutes);
 
 // ============================
