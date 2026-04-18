@@ -27,7 +27,7 @@ async function obterPremioAtual(): Promise<number> {
   const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
 
   return Number(
-    Math.max(arrecadado * 0.3 - premiosPagos, 0).toFixed(2)
+    Math.max(arrecadado * 0.3 - premiosPagos, 500).toFixed(2)
   );
 }
 
