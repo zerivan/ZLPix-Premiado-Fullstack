@@ -1,12 +1,8 @@
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { firebaseApp } from "../lib/firebase";
-import axios from "axios";
+import { api } from "../api/client";
 
 const messaging = getMessaging(firebaseApp);
-
-const BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  "https://zlpix-premiado-fullstack.onrender.com";
 
 /**
  * =====================================================
@@ -15,6 +11,12 @@ const BASE_URL =
  */
 export async function registerPush(userId: number) {
   try {
+    const normalizedUserId = Number(userId);
+    if (!normalizedUserId || Number.isNaN(normalizedUserId)) {
+      console.warn("⚠️ userId inválido para registrar push", userId);
+      return;
+    }
+
     if (!("Notification" in window)) {
       console.warn("🔕 Navegador não suporta notificações");
       return;
@@ -26,10 +28,13 @@ export async function registerPush(userId: number) {
       return;
     }
 
-    // 🔥 REGISTRA EXPLICITAMENTE O SERVICE WORKER CORRETO
-    const registration = await navigator.serviceWorker.register(
+    const existingRegistration = await navigator.serviceWorker.getRegistration(
       "/firebase-messaging-sw.js"
     );
+
+    const registration =
+      existingRegistration ||
+      (await navigator.serviceWorker.register("/firebase-messaging-sw.js"));
 
     await navigator.serviceWorker.ready;
 
@@ -43,9 +48,13 @@ export async function registerPush(userId: number) {
       return;
     }
 
-    await axios.post(`${BASE_URL}/push/token`, {
+    console.log("📲 Registrando push token", {
+      userId: normalizedUserId,
+    });
+
+    await api.post("/push/token", {
       token,
-      userId,
+      userId: normalizedUserId,
     });
 
     console.log("📲 Push registrado com sucesso", token);
