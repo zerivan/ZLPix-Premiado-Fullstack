@@ -42,7 +42,7 @@ router.get("/", async (_req, res) => {
     );
 
     if (!response.ok) {
-      console.error("Erro HTTP Caixa:", response.status);
+      console.error("[FEDERAL] Erro HTTP Caixa:", response.status);
       return res.json({ ok: false });
     }
 
@@ -64,7 +64,7 @@ router.get("/", async (_req, res) => {
       .slice(0, 5);
 
     if (!premios.length) {
-      console.warn("ℹ️ [ZLPix-Premiado] Nenhum resultado disponível");
+      console.warn("[FEDERAL] Nenhum resultado disponível");
       return res.json({ ok: false });
     }
 
@@ -81,12 +81,16 @@ router.get("/", async (_req, res) => {
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      console.error("Erro Federal: timeout na API externa");
+      console.error("[FEDERAL] ERRO: timeout na API externa (8s)");
       return res.json({ ok: false });
     }
 
-    console.error("Erro Federal:", error);
-    return res.json({ ok: false });
+    console.error("[FEDERAL] ERRO REAL:", error);
+    if (error instanceof Error) {
+      console.error("[FEDERAL] Mensagem:", error.message);
+      console.error("[FEDERAL] Stack:", error.stack?.substring(0, 500));
+    }
+    return res.json({ ok: false, error: String(error) });
   } finally {
     clearTimeout(timeoutId);
   }
