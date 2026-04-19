@@ -27,13 +27,16 @@ router.get("/", async (_req, res) => {
   try {
     let json: any;
 
-    // 🔥 NOVO: API OFICIAL CAIXA
+    // 🔥 API OFICIAL CAIXA (COM HEADERS CORRETOS)
     const response = await fetch(
       "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
       {
         signal: controller.signal,
         headers: {
           Accept: "application/json",
+          "User-Agent": "Mozilla/5.0",
+          "Accept-Encoding": "gzip, deflate, br",
+          Connection: "keep-alive",
         },
       }
     );
@@ -45,7 +48,6 @@ router.get("/", async (_req, res) => {
 
     const data: any = await response.json();
 
-    // 🔥 ADAPTAÇÃO: nova estrutura da API
     json = {
       dataApuracao: data?.dataApuracao
         ? parseDataBR(data.dataApuracao)
