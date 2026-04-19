@@ -19,11 +19,11 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
-// 🔥 NOVO: fallback automático (sem alterar estrutura)
-async function fetchFederalComFallback(signal: AbortSignal) {
+// 🔥 NOVO: função isolada de fetch (sem refatorar resto)
+async function fetchFederal(signal: AbortSignal) {
   const urls = [
-    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
-    "https://loteriascaixa-api.herokuapp.com/api/federal/latest",
+    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // oficial
+    "https://loteriascaixa-api.herokuapp.com/api/federal/latest",   // fallback
   ];
 
   for (const url of urls) {
@@ -37,13 +37,13 @@ async function fetchFederalComFallback(signal: AbortSignal) {
       });
 
       if (!response.ok) {
-        console.warn("[FEDERAL] Falhou:", url, response.status);
+        console.warn("[FEDERAL] falhou:", url, response.status);
         continue;
       }
 
       const data: any = await response.json();
 
-      // 🔥 padroniza retorno
+      // adapta formatos diferentes
       if (data?.listaDezenas) {
         return {
           dataApuracao: data.dataApuracao,
@@ -57,7 +57,7 @@ async function fetchFederalComFallback(signal: AbortSignal) {
           dezenas: data.dezenas,
         };
       }
-    } catch (err) {
+    } catch {
       console.warn("[FEDERAL] erro ao tentar:", url);
     }
   }
@@ -71,10 +71,9 @@ router.get("/", async (_req, res) => {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const data = await fetchFederalComFallback(controller.signal);
+    const data = await fetchFederal(controller.signal);
 
     if (!data) {
-      console.error("[FEDERAL] Nenhuma API respondeu");
       return res.json({ ok: false });
     }
 
@@ -94,7 +93,6 @@ router.get("/", async (_req, res) => {
       .slice(0, 5);
 
     if (!premios.length) {
-      console.warn("[FEDERAL] Nenhum resultado disponível");
       return res.json({ ok: false });
     }
 
@@ -111,12 +109,12 @@ router.get("/", async (_req, res) => {
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      console.error("[FEDERAL] timeout (8s)");
+      console.error("[FEDERAL] timeout");
       return res.json({ ok: false });
     }
 
-    console.error("[FEDERAL] ERRO REAL:", error);
-    return res.json({ ok: false, error: String(error) });
+    console.error("[FEDERAL] erro real:", error);
+    return res.json({ ok: false });
   } finally {
     clearTimeout(timeoutId);
   }
