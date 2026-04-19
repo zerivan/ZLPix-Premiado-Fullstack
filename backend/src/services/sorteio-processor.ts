@@ -5,30 +5,65 @@ type ResultadoOficial = {
   dezenas: string[];
 };
 
-async function obterPremioAtual(): Promise<number> {
-  const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
-    prisma.transacao.aggregate({
-      _sum: { valor: true },
-      where: {
-        status: "paid",
-        tipo: "BILHETE",
-      },
-    }),
-    prisma.transacao_carteira.aggregate({
-      _sum: { valor: true },
-      where: {
-        status: "paid",
-        tipo: "PREMIO",
-      },
-    }),
-  ]);
+const PREMIO_INICIAL = 500;
+const PREMIO_ATUAL_KEY = "premio_atual_ciclo";
 
-  const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
-  const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
+async function obterPremioAtualPersistido(): Promise<number> {
+  const row = await prisma.appContent.findUnique({
+    where: { key: PREMIO_ATUAL_KEY },
+  });
 
-  return Number(
-    Math.max(arrecadado * 0.3 - premiosPagos, 500).toFixed(2)
-  );
+  const valor = Number(row?.contentHtml ?? PREMIO_INICIAL);
+
+  if (!Number.isFinite(valor) || valor < 0) {
+    return PREMIO_INICIAL;
+  }
+
+  return Number(valor.toFixed(2));
+}
+
+async function persistirPremioAtual(valor: number): Promise<void> {
+  const valorNormalizado = Number((Number(valor) || PREMIO_INICIAL).toFixed(2));
+
+  await prisma.appContent.upsert({
+    where: { key: PREMIO_ATUAL_KEY },
+    update: {
+      contentHtml: String(valorNormalizado),
+      title: "Prêmio Atual do Ciclo",
+      type: "config",
+      enabled: true,
+      isActive: true,
+    },
+    create: {
+      key: PREMIO_ATUAL_KEY,
+      slug: PREMIO_ATUAL_KEY,
+      title: "Prêmio Atual do Ciclo",
+      type: "config",
+      contentHtml: String(valorNormalizado),
+      enabled: true,
+      isActive: true,
+    },
+  });
+}
+
+async function obterArrecadacaoDaRodada(inicio: Date, fim: Date): Promise<number> {
+  const bilhetesDaRodada = await prisma.bilhete.findMany({
+    where: {
+      pago: true,
+      status: "ATIVO",
+      apuradoEm: null,
+      sorteioData: { gte: inicio, lte: fim },
+    },
+    select: {
+      valor: true,
+    },
+  });
+
+  const arrecadacao = bilhetesDaRodada.reduce((acc, b) => {
+    return acc + (Number(b.valor) || 0);
+  }, 0);
+
+  return Number(arrecadacao.toFixed(2));
 }
 
 async function garantirCarteira(userId: number) {
@@ -115,7 +150,8 @@ export async function processarSorteio(
       .join(",");
 
     const agora = new Date();
-    const premioAtual = await obterPremioAtual();
+    const premioAtual = await obterPremioAtualPersistido();
+    const arrecadacaoDaRodada = await obterArrecadacaoDaRodada(inicio, fim);
 
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas
@@ -138,6 +174,9 @@ export async function processarSorteio(
           apuradoEm: agora,
         },
       });
+
+      const novoPremio = Number((premioAtual + arrecadacaoDaRodada * 0.3).toFixed(2));
+      await persistirPremioAtual(novoPremio);
 
       return { ok: true, ganhou: false };
     }
@@ -188,6 +227,8 @@ export async function processarSorteio(
         apuradoEm: agora,
       },
     });
+
+    await persistirPremioAtual(PREMIO_INICIAL);
 
     return {
       ok: true,
