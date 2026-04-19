@@ -2,6 +2,8 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 
 const router = Router();
+const PREMIO_INICIAL = 500;
+const PREMIO_ATUAL_KEY = "premio_atual_ciclo";
 
 /**
  * =====================================================
@@ -20,33 +22,16 @@ const router = Router();
  */
 router.get("/premio", async (_req, res) => {
   try {
-    const [arrecadadoAgg, premiosPagosAgg] = await Promise.all([
-      prisma.transacao.aggregate({
-        _sum: { valor: true },
-        where: {
-          status: "paid",
-          tipo: "BILHETE",
-        },
-      }),
-      prisma.transacao_carteira.aggregate({
-        _sum: { valor: true },
-        where: {
-          status: "paid",
-          tipo: "PREMIO",
-        },
-      }),
-    ]);
+    const row = await prisma.appContent.findUnique({
+      where: { key: PREMIO_ATUAL_KEY },
+      select: { contentHtml: true },
+    });
 
-    const arrecadado = Number(arrecadadoAgg._sum.valor) || 0;
-    const premiosPagos = Number(premiosPagosAgg._sum.valor) || 0;
-
-    const valor = Number(
-      Math.max(arrecadado * 0.3 - premiosPagos, 0).toFixed(2)
-    );
+    const valor = Number(row?.contentHtml ?? PREMIO_INICIAL);
 
     return res.json({
       ok: true,
-      valor,
+      valor: Number.isFinite(valor) ? Number(valor.toFixed(2)) : PREMIO_INICIAL,
     });
   } catch (error) {
     console.error("Erro prêmio público:", error);
