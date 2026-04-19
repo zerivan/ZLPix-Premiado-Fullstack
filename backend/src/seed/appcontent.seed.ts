@@ -86,6 +86,14 @@ export async function seedAppContentPages() {
       contentHtml: "500",
       enabled: true,
     },
+    {
+      key: "premio_atual_ciclo",
+      type: "config",
+      slug: "premio_atual_ciclo",
+      title: "Prêmio Atual do Ciclo",
+      contentHtml: "500",
+      enabled: true,
+    },
   ];
 
   for (const item of contents) {
