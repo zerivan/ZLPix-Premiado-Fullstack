@@ -27,14 +27,13 @@ router.get("/", async (_req, res) => {
   try {
     let json: any;
 
-    // 🔥 ÚNICA API → CAIXA (HEROKU)
+    // 🔥 NOVO: API OFICIAL CAIXA
     const response = await fetch(
-      "https://loteriascaixa-api.herokuapp.com/api/federal/latest",
+      "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal",
       {
         signal: controller.signal,
         headers: {
           Accept: "application/json",
-          "User-Agent": "Mozilla/5.0",
         },
       }
     );
@@ -46,9 +45,14 @@ router.get("/", async (_req, res) => {
 
     const data: any = await response.json();
 
+    // 🔥 ADAPTAÇÃO: nova estrutura da API
     json = {
-      dataApuracao: data?.data ? parseDataBR(data.data) : null,
-      dezenas: data?.dezenas || [],
+      dataApuracao: data?.dataApuracao
+        ? parseDataBR(data.dataApuracao)
+        : null,
+      dezenas: Array.isArray(data?.listaDezenas)
+        ? data.listaDezenas
+        : [],
     };
 
     const premios = (json.dezenas || [])
