@@ -135,11 +135,11 @@ export default function Login() {
           <p className="text-sm text-center mt-3">
             Não tem conta?{" "}
             <Link
-              to="/cadastro"
-              className="text-yellow-300 cursor-pointer hover:underline"
-            >
-              Cadastre-se
-            </Link>
+  to="/cadastro"
+  className="text-yellow-300 cursor-pointer font-bold underline animate-pulse"
+>
+  👉 Cadastre-se aqui
+</Link>
           </p>
 
           <div className="text-center text-xs text-white/70 mt-6 space-x-2">
