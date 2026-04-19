@@ -10,7 +10,7 @@ const basePrisma =
   new PrismaClient({
     log:
       process.env.NODE_ENV === "production"
-        ? ["error"]
+        ? ["error", "warn"]
         : ["query", "warn", "error"],
   });
 
@@ -32,22 +32,53 @@ function isClosedConnectionError(error: unknown) {
 
   return (
     /\bclosed\b/i.test(message) ||
-    /can't reach database server/i.test(message)
+    /\bkind\s*:\s*Closed\b/i.test(message) ||
+    /can't reach database server/i.test(message) ||
+    /connection refused/i.test(message) ||
+    /timeout/i.test(message)
   );
 }
 
 async function reconnectPrisma() {
   if (!globalForPrisma.prismaReconnectPromise) {
     globalForPrisma.prismaReconnectPromise = (async () => {
-      console.warn("⚠️ Prisma sem conexão válida. Reconectando...");
+      console.warn(
+        "⚠️ [PRISMA] Conexão fechada. Reconectando em 2 segundos..."
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       try {
-        await basePrisma.$disconnect(); // 🔥 IMPORTANTE
-      } catch {}
+        console.log("[PRISMA] Desconectando instância anterior...");
+        await basePrisma.$disconnect();
+        console.log("[PRISMA] ✅ Desconexão bem-sucedida");
+      } catch (disconnectErr) {
+        console.warn("[PRISMA] ⚠️ Erro ao desconectar:", disconnectErr);
+      }
 
-      await basePrisma.$connect();
+      try {
+        console.log("[PRISMA] Criando nova instância...");
 
-      console.log("🟢 Prisma reconectado com sucesso.");
+        const newClient = new PrismaClient({
+          log:
+            process.env.NODE_ENV === "production"
+              ? ["error", "warn"]
+              : ["query", "warn", "error"],
+        });
+
+        await newClient.$connect();
+
+        // 🔥 substitui instância global (sem alterar fluxo existente)
+        globalForPrisma.prisma = newClient;
+
+        console.log("🟢 [PRISMA] ✅ Nova instância conectada com sucesso!");
+      } catch (connectErr) {
+        console.error(
+          "🔴 [PRISMA] ❌ Falha ao recriar conexão:",
+          connectErr instanceof Error ? connectErr.message : connectErr
+        );
+        throw connectErr;
+      }
     })().finally(() => {
       globalForPrisma.prismaReconnectPromise = null;
     });
@@ -58,19 +89,36 @@ async function reconnectPrisma() {
 
 const prismaWithReconnect = basePrisma.$extends({
   query: {
-    async $allOperations({ args, query }) {
+    async $allOperations({ args, query, operation }) {
       try {
         return await query(args);
       } catch (error) {
+        console.error(
+          `[PRISMA] Erro na operação ${operation}:`,
+          error instanceof Error ? error.message : String(error)
+        );
+
         if (!isClosedConnectionError(error)) {
           throw error;
         }
 
-        console.warn("⚠️ Erro de conexão detectado. Tentando reconectar...");
+        console.warn(
+          "[PRISMA] 🔄 Erro de conexão detectado. Iniciando reconexão..."
+        );
 
-        await reconnectPrisma();
-
-        return query(args); // 🔁 retry único
+        try {
+          await reconnectPrisma();
+          console.log("[PRISMA] 🔄 Retry da operação após reconexão");
+          return await query(args);
+        } catch (retryError) {
+          console.error(
+            "[PRISMA] ❌ Falha no retry após reconexão:",
+            retryError instanceof Error
+              ? retryError.message
+              : String(retryError)
+          );
+          throw error;
+        }
       }
     },
   },
@@ -78,20 +126,30 @@ const prismaWithReconnect = basePrisma.$extends({
 
 export const prisma = prismaWithReconnect as PrismaClient;
 
-// 🔥 Mantido apenas para log inicial (opcional)
 async function testConnection() {
   try {
+    console.log("[PRISMA] 🧪 Testando conexão com banco...");
     await basePrisma.$connect();
-    console.log("🟢 Prisma conectado ao banco com sucesso.");
+    console.log("🟢 [PRISMA] ✅ Conectado ao banco com sucesso!");
   } catch (err) {
-    console.error("🔴 Erro ao conectar ao banco via Prisma:", err);
+    console.error(
+      "🔴 [PRISMA] ❌ Erro ao conectar ao banco:",
+      err instanceof Error ? err.message : err
+    );
+    process.exit(1);
   }
 }
 
 testConnection();
 
 export async function ensurePrismaConnection() {
-  await reconnectPrisma();
+  try {
+    await reconnectPrisma();
+    return true;
+  } catch (error) {
+    console.error("[PRISMA] Falha ao garantir conexão:", error);
+    return false;
+  }
 }
 
 export default prisma;
