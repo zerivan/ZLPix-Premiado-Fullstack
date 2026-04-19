@@ -22,62 +22,6 @@ async function obterPremioAtualPersistido(): Promise<number> {
   return Number(valor.toFixed(2));
 }
 
-async function persistirPremioAtual(valor: number): Promise<void> {
-  const valorNormalizado = Number((Number(valor) || PREMIO_INICIAL).toFixed(2));
-
-  await prisma.appContent.upsert({
-    where: { key: PREMIO_ATUAL_KEY },
-    update: {
-      contentHtml: String(valorNormalizado),
-      title: "Prêmio Atual do Ciclo",
-      type: "config",
-      enabled: true,
-      isActive: true,
-    },
-    create: {
-      key: PREMIO_ATUAL_KEY,
-      slug: PREMIO_ATUAL_KEY,
-      title: "Prêmio Atual do Ciclo",
-      type: "config",
-      contentHtml: String(valorNormalizado),
-      enabled: true,
-      isActive: true,
-    },
-  });
-}
-
-async function obterArrecadacaoDaRodada(inicio: Date, fim: Date): Promise<number> {
-  const bilhetesDaRodada = await prisma.bilhete.findMany({
-    where: {
-      pago: true,
-      status: "ATIVO",
-      apuradoEm: null,
-      sorteioData: { gte: inicio, lte: fim },
-    },
-    select: {
-      valor: true,
-    },
-  });
-
-  const arrecadacao = bilhetesDaRodada.reduce((acc, b) => {
-    return acc + (Number(b.valor) || 0);
-  }, 0);
-
-  return Number(arrecadacao.toFixed(2));
-}
-
-async function garantirCarteira(userId: number) {
-  await prisma.wallet.upsert({
-    where: { userId },
-    update: {},
-    create: {
-      userId,
-      saldo: 0,
-      createdAt: new Date(),
-    },
-  });
-}
-
 function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
@@ -151,7 +95,6 @@ export async function processarSorteio(
 
     const agora = new Date();
     const premioAtual = await obterPremioAtualPersistido();
-    const arrecadacaoDaRodada = await obterArrecadacaoDaRodada(inicio, fim);
 
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas
@@ -165,46 +108,97 @@ export async function processarSorteio(
       );
     });
 
-    if (!ganhadores.length) {
-      await prisma.bilhete.updateMany({
-        where: { resultadoFederal: claimToken },
-        data: {
-          status: "NAO_PREMIADO",
-          resultadoFederal: resultadoStr,
-          apuradoEm: agora,
+    await prisma.$transaction(async (tx) => {
+      // 🔥 AGORA A ARRECADAÇÃO É CALCULADA DENTRO DA TRANSACTION
+      const bilhetesDaRodada = await tx.bilhete.findMany({
+        where: {
+          pago: true,
+          status: "ATIVO",
+          apuradoEm: null,
+          sorteioData: { gte: inicio, lte: fim },
         },
+        select: { valor: true },
       });
 
-      const novoPremio = Number((premioAtual + arrecadacaoDaRodada * 0.3).toFixed(2));
-      await persistirPremioAtual(novoPremio);
+      const arrecadacaoDaRodada = Number(
+        bilhetesDaRodada
+          .reduce((acc, b) => acc + (Number(b.valor) || 0), 0)
+          .toFixed(2)
+      );
 
-      return { ok: true, ganhou: false };
-    }
+      if (!ganhadores.length) {
+        await tx.bilhete.updateMany({
+          where: { resultadoFederal: claimToken },
+          data: {
+            status: "NAO_PREMIADO",
+            resultadoFederal: resultadoStr,
+            apuradoEm: agora,
+          },
+        });
 
-    const valorPorGanhador = Number((premioAtual / ganhadores.length).toFixed(2));
+        const novoPremio = Number(
+          (premioAtual + arrecadacaoDaRodada * 0.3).toFixed(2)
+        );
 
-    for (const bilhete of ganhadores) {
-      await garantirCarteira(bilhete.userId);
+        await tx.appContent.upsert({
+          where: { key: PREMIO_ATUAL_KEY },
+          update: {
+            contentHtml: String(novoPremio),
+            title: "Prêmio Atual do Ciclo",
+            type: "config",
+            enabled: true,
+            isActive: true,
+          },
+          create: {
+            key: PREMIO_ATUAL_KEY,
+            slug: PREMIO_ATUAL_KEY,
+            title: "Prêmio Atual do Ciclo",
+            type: "config",
+            contentHtml: String(novoPremio),
+            enabled: true,
+            isActive: true,
+          },
+        });
 
-      await prisma.$transaction([
-        prisma.wallet.updateMany({
+        return;
+      }
+
+      const valorPorGanhador = Number(
+        (premioAtual / ganhadores.length).toFixed(2)
+      );
+
+      for (const bilhete of ganhadores) {
+        await tx.wallet.upsert({
+          where: { userId: bilhete.userId },
+          update: {},
+          create: {
+            userId: bilhete.userId,
+            saldo: 0,
+            createdAt: new Date(),
+          },
+        });
+
+        await tx.wallet.updateMany({
           where: { userId: bilhete.userId },
           data: {
             saldo: { increment: valorPorGanhador },
           },
-        }),
+        });
 
-        prisma.transacao_carteira.create({
+        await tx.transacao_carteira.create({
           data: {
             userId: bilhete.userId,
             valor: valorPorGanhador,
             tipo: "PREMIO",
             status: "paid",
-            metadata: { bilheteId: bilhete.id, sorteioData: inicio.toISOString() },
+            metadata: {
+              bilheteId: bilhete.id,
+              sorteioData: inicio.toISOString(),
+            },
           },
-        }),
+        });
 
-        prisma.bilhete.update({
+        await tx.bilhete.update({
           where: { id: bilhete.id },
           data: {
             status: "PREMIADO",
@@ -212,28 +206,45 @@ export async function processarSorteio(
             resultadoFederal: resultadoStr,
             apuradoEm: agora,
           },
-        }),
-      ]);
-    }
+        });
+      }
 
-    await prisma.bilhete.updateMany({
-      where: {
-        resultadoFederal: claimToken,
-        status: "ATIVO",
-      },
-      data: {
-        status: "NAO_PREMIADO",
-        resultadoFederal: resultadoStr,
-        apuradoEm: agora,
-      },
+      await tx.bilhete.updateMany({
+        where: {
+          resultadoFederal: claimToken,
+          status: "ATIVO",
+        },
+        data: {
+          status: "NAO_PREMIADO",
+          resultadoFederal: resultadoStr,
+          apuradoEm: agora,
+        },
+      });
+
+      await tx.appContent.upsert({
+        where: { key: PREMIO_ATUAL_KEY },
+        update: {
+          contentHtml: String(PREMIO_INICIAL),
+          title: "Prêmio Atual do Ciclo",
+          type: "config",
+          enabled: true,
+          isActive: true,
+        },
+        create: {
+          key: PREMIO_ATUAL_KEY,
+          slug: PREMIO_ATUAL_KEY,
+          title: "Prêmio Atual do Ciclo",
+          type: "config",
+          contentHtml: String(PREMIO_INICIAL),
+          enabled: true,
+          isActive: true,
+        },
+      });
     });
-
-    await persistirPremioAtual(PREMIO_INICIAL);
 
     return {
       ok: true,
       ganhadores: ganhadores.length,
-      valorPorGanhador,
     };
   } catch (error) {
     await prisma.bilhete.updateMany({
