@@ -13,6 +13,9 @@ import pixWebhookRoutes from "./routes/pixwebhook";
 import bilheteRoutes from "./routes/bilhetes";
 import walletRoutes from "./routes/wallet";
 
+// 🔥 NOVO: ZLP
+import zlpRoutes from "./routes/zlp";
+
 // PUSH
 import pushRoutes from "./routes/push";
 
@@ -91,7 +94,6 @@ app.use(async (req, res, next) => {
 
     const isHealthCheck = path === "/";
 
-    // 🔥 CORREÇÃO: liberar federal (API + rota direta)
     const isPublicRoute =
       path === "/api/federal" ||
       path.startsWith("/api/federal/") ||
@@ -150,7 +152,6 @@ app.get("/", (_req, res) => {
 // ============================
 app.use("/auth", authRoutes);
 
-// 🔥 FEDERAL — DUPLA ROTA
 app.use("/api/federal", federalRoutes);
 app.use("/federal", federalRoutes);
 
@@ -158,6 +159,10 @@ app.use("/pix/webhook", pixWebhookRoutes);
 app.use("/pix", pixRoutes);
 app.use("/bilhete", bilheteRoutes);
 app.use("/wallet", walletRoutes);
+
+// 🔥 NOVO: ZLP
+app.use("/zlp", zlpRoutes);
+
 app.use("/push", pushRoutes);
 
 // 🔥 ASSISTENTE
@@ -181,10 +186,8 @@ app.use("/api/admin/configuracoes", adminAuth, adminConfiguracoesRoutes);
 app.use("/api/admin/saques", adminAuth, adminSaquesRoutes);
 app.use("/api/admin/sorteio", adminAuth, adminSorteioRoutes);
 
-// 🔥 ADMIN PUSH
 app.use("/api/admin/push", adminAuth, adminPushRoutes);
 
-// IA ADMIN
 app.use(
   "/api/admin/ia/chat",
   adminAuth,
