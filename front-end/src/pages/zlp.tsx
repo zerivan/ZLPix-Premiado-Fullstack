@@ -91,4 +91,68 @@ export default function ZLPPage() {
 
         {/* SALDO */}
         <div className="bg-blue-800 rounded-2xl p-6 text-center shadow-lg">
-          <h1 className="text-lg mb-2">Suas Moedas ZLP
+          <h1 className="text-lg mb-2">Suas Moedas ZLP</h1>
+
+          <div className="text-4xl font-bold text-yellow-300">
+            {saldo.toLocaleString()} ZLP
+          </div>
+
+          {/* BARRA */}
+          <div className="mt-4">
+            <div className="w-full bg-blue-950 rounded-full h-4 overflow-hidden">
+              <div
+                className="bg-green-400 h-4 transition-all"
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+
+            <p className="text-sm mt-2">
+              {saldo} / {META} ZLP
+            </p>
+
+            {saldo < META && (
+              <p className="text-xs text-blue-200">
+                Faltam {falta} ZLP para 1 bilhete
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* CHECK-IN */}
+        <div className="mt-6">
+          <button
+            onClick={handleCheckin}
+            disabled={jaFezCheckinHoje() || loading}
+            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition ${
+              jaFezCheckinHoje()
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
+          >
+            {jaFezCheckinHoje()
+              ? "Já coletado hoje"
+              : "Coletar moedas do dia"}
+          </button>
+        </div>
+
+        {/* RESGATE */}
+        <div className="mt-4">
+          <button
+            onClick={handleResgatar}
+            disabled={saldo < META || loading}
+            className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition ${
+              saldo >= META
+                ? "bg-blue-500 hover:bg-blue-600"
+                : "bg-gray-600 cursor-not-allowed"
+            }`}
+          >
+            {saldo >= META
+              ? "Resgatar bilhete"
+              : "Necessário 2000 ZLP"}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
