@@ -142,3 +142,12 @@ model PushToken {
 
   @@map("push_tokens")
 }
+
+model UserZLP {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  saldo        Int      @default(0)
+  lastCheckin  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
