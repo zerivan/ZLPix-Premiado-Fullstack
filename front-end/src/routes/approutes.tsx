@@ -20,6 +20,9 @@ import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
 
+// 🔥 NOVO
+import ZLPPage from "../pages/zlp";
+
 import AdminMotorManual from "../components/adminmotormanual";
 
 // Admin
@@ -181,6 +184,16 @@ export default function AppRoutes() {
           }
         />
 
+        {/* 🔥 NOVO: ZLP */}
+        <Route
+          path="/zlp"
+          element={
+            <PrivateRoute>
+              <ZLPPage />
+            </PrivateRoute>
+          }
+        />
+
         {/* Admin */}
         <Route path="/admin" element={<AdminLogin />} />
 
@@ -212,7 +225,6 @@ export default function AppRoutes() {
           }
         />
 
-        {/* 🔥 CORREÇÃO: fallback limpo */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
