@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
+import { api } from "../api/client";
 
 export default function Perfil() {
   const navigate = useNavigate();
@@ -10,13 +11,28 @@ export default function Perfil() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔥 NOVO
+  const [saldoZLP, setSaldoZLP] = useState<number | null>(null);
+
   useEffect(() => {
     try {
       const token = localStorage.getItem("TOKEN_ZLPIX");
       const userData = localStorage.getItem("USER_ZLPIX");
 
       if (token && userData) {
-        setUser(JSON.parse(userData));
+        const parsed = JSON.parse(userData);
+        setUser(parsed);
+
+        // 🔥 NOVO: carregar saldo ZLP
+        const userId = parsed.id;
+        api
+          .get("/zlp/saldo", {
+            headers: { "x-user-id": userId },
+          })
+          .then((res) => {
+            setSaldoZLP(res.data.saldo || 0);
+          })
+          .catch(() => {});
       }
     } catch (error) {
       console.error("Erro ao carregar usuário:", error);
@@ -105,7 +121,6 @@ export default function Perfil() {
         <header className="flex flex-col items-center mb-8">
           <div className="relative">
 
-            {/* AVATAR */}
             {user.avatar ? (
               <img
                 src={user.avatar}
@@ -118,7 +133,6 @@ export default function Perfil() {
               </div>
             )}
 
-            {/* BOTÃO EDITAR */}
             <div
               onClick={handleSelecionarImagem}
               className="absolute bottom-1 right-1 bg-yellow-400 p-1.5 rounded-full border border-blue-900 cursor-pointer shadow-md hover:scale-105 transition-transform"
@@ -126,7 +140,6 @@ export default function Perfil() {
               ✏️
             </div>
 
-            {/* INPUT OCULTO */}
             <input
               type="file"
               accept="image/*"
@@ -141,6 +154,21 @@ export default function Perfil() {
           </h1>
           <p className="text-sm text-yellow-300">{user.email}</p>
         </header>
+
+        {/* 🔥 NOVO BLOCO ZLP */}
+        <div
+          onClick={() => navigate("/zlp")}
+          className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 p-4 rounded-2xl shadow-lg mb-6 flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform"
+        >
+          <div>
+            <p className="font-bold text-lg">💰 Moedas ZLP</p>
+            <p className="text-sm">
+              {saldoZLP !== null ? `${saldoZLP} ZLP` : "Carregando..."}
+            </p>
+          </div>
+
+          <div className="text-xl font-bold">›</div>
+        </div>
 
         <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 shadow-lg mb-6 space-y-3 text-sm">
 
