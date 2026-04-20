@@ -74,4 +74,64 @@ router.post("/checkin", async (req, res) => {
   }
 });
 
+router.post("/resgatar", async (req, res) => {
+  try {
+    const userId =
+      Number(req.headers["x-user-id"]) ||
+      Number(req.query.userId);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    const CUSTO = 2000;
+
+    const zlp = await prisma.userZLP.findUnique({
+      where: { userId },
+    });
+
+    if (!zlp || zlp.saldo < CUSTO) {
+      return res.status(400).json({
+        error: "Saldo insuficiente",
+      });
+    }
+
+    const dezenas = Array.from({ length: 3 })
+      .map(() => String(Math.floor(Math.random() * 100)).padStart(2, "0"))
+      .join(",");
+
+    const sorteioData = new Date();
+    sorteioData.setDate(sorteioData.getDate() + 1);
+    sorteioData.setHours(20, 0, 0, 0);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.userZLP.update({
+        where: { userId },
+        data: {
+          saldo: { decrement: CUSTO },
+        },
+      });
+
+      await tx.bilhete.create({
+        data: {
+          userId,
+          dezenas,
+          valor: 0,
+          pago: true,
+          status: "ATIVO",
+          sorteioData,
+        },
+      });
+    });
+
+    return res.json({
+      ok: true,
+      message: "Bilhete gerado com sucesso",
+    });
+  } catch (error) {
+    console.error("[ZLP] resgatar:", error);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 export default router;
