@@ -13,15 +13,11 @@ router.get("/saldo", async (req, res) => {
       return res.status(401).json({ error: "Usuário não autenticado" });
     }
 
-    let zlp = await prisma.userZLP.findUnique({
+    const zlp = await prisma.userZLP.upsert({
       where: { userId },
+      update: {},
+      create: { userId, saldo: 0 },
     });
-
-    if (!zlp) {
-      zlp = await prisma.userZLP.create({
-        data: { userId, saldo: 0 },
-      });
-    }
 
     return res.json({ saldo: zlp.saldo });
   } catch (error) {
@@ -43,15 +39,11 @@ router.post("/checkin", async (req, res) => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    let zlp = await prisma.userZLP.findUnique({
+    const zlp = await prisma.userZLP.upsert({
       where: { userId },
+      update: {},
+      create: { userId, saldo: 0 },
     });
-
-    if (!zlp) {
-      zlp = await prisma.userZLP.create({
-        data: { userId, saldo: 0 },
-      });
-    }
 
     if (zlp.lastCheckin && zlp.lastCheckin >= hoje) {
       return res.json({
