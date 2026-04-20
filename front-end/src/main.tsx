@@ -26,6 +26,22 @@ function loadGoogleFont(font: string) {
 }
 
 /**
+ * 🔥 ADICIONADO — carregamento dos ícones
+ */
+function loadMaterialIcons() {
+  const id = "material-symbols";
+  if (document.getElementById(id)) return;
+
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined";
+
+  document.head.appendChild(link);
+}
+
+/**
  * Aplica aparência PADRÃO do site
  * (SITE NÃO DEPENDE DE CMS)
  */
@@ -40,6 +56,10 @@ function applyDefaultAppearance() {
 
   // 🔤 Fontes padrão
   loadGoogleFont("Inter");
+
+  // 🔥 ADICIONADO AQUI
+  loadMaterialIcons();
+
   document.body.style.fontFamily = "Inter";
   root.style.setProperty("--font-heading", "Inter");
 
