@@ -15,7 +15,11 @@ export default function ZLPOverlayAlerta() {
         const parsed = JSON.parse(user);
 
         const res = await api.get("/zlp/saldo", {
-          headers: { "x-user-id": parsed.id },
+          headers: {
+            "x-user-id": String(
+              parsed?.id ?? parsed?.user?.id ?? parsed?.userId ?? ""
+            )
+          }
         });
 
         const lastCheckin = res.data.lastCheckin;
