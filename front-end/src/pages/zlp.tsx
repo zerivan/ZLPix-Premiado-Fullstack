@@ -10,12 +10,17 @@ export default function ZLP() {
   const user = JSON.parse(localStorage.getItem("USER_ZLPIX") || "{}");
   const userId = user?.id;
 
+  function normalizarSaldo(valor: unknown) {
+    const saldoNumerico = Number(valor);
+    return Number.isFinite(saldoNumerico) ? saldoNumerico : 0;
+  }
+
   async function carregarSaldo() {
     try {
       const res = await axios.get("/zlp/saldo", {
         headers: { "x-user-id": userId },
       });
-      setSaldo(res.data.saldo);
+      setSaldo(normalizarSaldo(res.data?.saldo));
     } catch (err) {
       console.error("Erro saldo:", err);
     }
@@ -40,7 +45,7 @@ export default function ZLP() {
       );
 
       if (res.data.ok) {
-        setSaldo(res.data.saldo);
+        setSaldo(normalizarSaldo(res.data?.saldo));
         setMessage(`+${res.data.ganho} ZLP recebido`);
       } else {
         setMessage(res.data.message);
@@ -54,7 +59,8 @@ export default function ZLP() {
   }
 
   function handleResgatar() {
-    if (saldo < 2000) {
+    const saldoAtual = normalizarSaldo(saldo);
+    if (saldoAtual < 2000) {
       setMessage("Saldo insuficiente");
       return;
     }
@@ -62,7 +68,9 @@ export default function ZLP() {
     setMessage("Resgate em breve");
   }
 
-  const progresso = Math.min((saldo / 2000) * 100, 100);
+  const saldoAtual = normalizarSaldo(saldo);
+  const progresso = Math.min((saldoAtual / 2000) * 100, 100);
+  const faltam = Math.max(2000 - saldoAtual, 0);
 
   return (
     <div className="bg-[#0b1e5b] min-h-screen relative">
@@ -82,7 +90,7 @@ export default function ZLP() {
 
           <div className="flex items-baseline gap-2">
             <span className="text-5xl font-extrabold text-yellow-300 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)]">
-              {saldo}
+              {saldoAtual}
             </span>
             <span className="text-lg font-bold text-yellow-400/80 uppercase">
               ZLP
@@ -103,7 +111,7 @@ export default function ZLP() {
               </span>
 
               <span className="text-lg font-black text-white">
-                {saldo}{" "}
+                {saldoAtual}{" "}
                 <span className="text-[10px] text-blue-200">
                   / 2000 ZLP
                 </span>
@@ -120,7 +128,7 @@ export default function ZLP() {
             <p className="mt-4 text-center text-blue-100 text-xs">
               Faltam{" "}
               <span className="text-yellow-400 font-bold">
-                {Math.max(2000 - saldo, 0)} ZLP
+                {faltam} ZLP
               </span>{" "}
               para 1 bilhete grátis.
             </p>
@@ -182,7 +190,7 @@ export default function ZLP() {
         <div className="relative w-full h-36 mt-6 overflow-hidden pointer-events-none">
           <img
             src="/assets/moedas-zlp.png"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[130%] max-w-none object-cover"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[540px] h-full object-contain"
             alt="moedas"
           />
         </div>
