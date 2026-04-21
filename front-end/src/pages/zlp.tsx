@@ -18,9 +18,17 @@ export default function ZLP() {
     try {
       const parsed = JSON.parse(stored);
 
-      if (parsed?.id != null) return String(parsed.id);
-      if (parsed?.user?.id != null) return String(parsed.user.id);
-      if (parsed?.userId != null) return String(parsed.userId);
+      if (parsed?.id !== undefined && parsed?.id !== null) {
+        return String(parsed.id);
+      }
+
+      if (parsed?.user?.id !== undefined && parsed?.user?.id !== null) {
+        return String(parsed.user.id);
+      }
+
+      if (parsed?.userId !== undefined && parsed?.userId !== null) {
+        return String(parsed.userId);
+      }
 
       return "";
     } catch {
@@ -28,12 +36,7 @@ export default function ZLP() {
     }
   }
 
-  // 🔥 FIX: userId reativo
-  const [userId, setUserId] = useState("");
-
-  useEffect(() => {
-    setUserId(resolveUserId());
-  }, []);
+  const userId = resolveUserId();
 
   function normalizarSaldo(valor: unknown) {
     const saldoNumerico = Number(valor);
@@ -45,7 +48,7 @@ export default function ZLP() {
 
     try {
       const res = await api.get("/zlp/saldo", {
-        headers: { "x-user-id": userId },
+        headers: { "x-user-id": String(userId) },
       });
       setSaldo(normalizarSaldo(res.data?.saldo));
     } catch (err) {
@@ -71,7 +74,7 @@ export default function ZLP() {
         "/zlp/checkin",
         {},
         {
-          headers: { "x-user-id": userId },
+          headers: { "x-user-id": String(userId) },
         }
       );
 
@@ -110,7 +113,7 @@ export default function ZLP() {
         "/zlp/resgatar",
         {},
         {
-          headers: { "x-user-id": userId },
+          headers: { "x-user-id": String(userId) },
         }
       );
 
@@ -138,10 +141,114 @@ export default function ZLP() {
 
   return (
     <div className="bg-[#0b1e5b] min-h-screen relative">
+
       <main className="pt-10 pb-32 px-6 max-w-lg mx-auto w-full">
 
-        {/* restante do layout permanece igual */}
+        {/* Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-outlined text-yellow-400 text-xl">
+              monetization_on
+            </span>
+            <h1 className="text-blue-200 font-bold uppercase tracking-[0.2em] text-xs">
+              Suas Moedas ZLP
+            </h1>
+          </div>
 
+          <div className="flex items-baseline gap-2">
+            <span className="text-5xl font-extrabold text-yellow-300 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)]">
+              {saldoAtual}
+            </span>
+            <span className="text-lg font-bold text-yellow-400/80 uppercase">
+              ZLP
+            </span>
+          </div>
+        </div>
+
+        {/* Card */}
+        <section className="bg-gradient-to-br from-[#1e40af] to-[#0b1e5b] rounded-2xl p-6 mb-6 relative overflow-hidden shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <div className="flex justify-between items-end mb-3">
+              <span className="text-xs font-semibold text-blue-100">
+                Progresso para 1 bilhete
+              </span>
+
+              <span className="text-lg font-black text-white">
+                {saldoAtual}{" "}
+                <span className="text-[10px] text-blue-200">
+                  / 2000 ZLP
+                </span>
+              </span>
+            </div>
+
+            <div className="h-3 w-full bg-blue-950/60 rounded-full overflow-hidden border border-white/10">
+              <div
+                className="h-full bg-gradient-to-r from-green-400 via-green-300 to-green-200 rounded-full"
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+
+            <p className="mt-4 text-center text-blue-100 text-xs">
+              Faltam{" "}
+              <span className="text-yellow-400 font-bold">
+                {faltam} ZLP
+              </span>{" "}
+              para 1 bilhete grátis.
+            </p>
+          </div>
+        </section>
+
+        {/* Actions */}
+        <div className="space-y-4">
+
+          <button
+            onClick={handleCheckin}
+            disabled={loadingCheckin}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 py-3 rounded-full flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-white text-xl">
+              redeem
+            </span>
+
+            <span className="text-white font-bold text-sm">
+              {loadingCheckin ? "Processando..." : "Coletar moedas"}
+            </span>
+          </button>
+
+          <div className="flex flex-col gap-1">
+
+            <button
+              onClick={handleResgatar}
+              disabled={loadingResgatar}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-3 rounded-full flex items-center justify-center gap-2 text-sm border border-white/10 disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-white text-lg">
+                confirmation_number
+              </span>
+
+              <span className="text-white font-semibold">
+                {loadingResgatar ? "Processando..." : "Resgatar bilhete"}
+              </span>
+            </button>
+
+            <div className="bg-blue-950/40 rounded-full py-1 text-center">
+              <span className="text-[10px] text-blue-200">
+                Necessário 2000 ZLP
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        {message && (
+          <div className="mt-4 text-center text-yellow-300 text-xs">
+            {message}
+          </div>
+        )}
+
+        {/* Moedas */}
         <div className="relative w-full h-80 mt-6 overflow-hidden pointer-events-none">
           <img
             src="/assets/moedas-zlp.png"
@@ -152,9 +259,11 @@ export default function ZLP() {
 
       </main>
 
+      {/* MENU FIXO */}
       <div className="fixed bottom-0 left-0 w-full z-50">
         <NavBottom />
       </div>
+
     </div>
   );
 }
