@@ -183,17 +183,13 @@ export default function ZLP() {
         {message && (
           <div className="mt-4 text-center text-yellow-300 text-xs">
             {message}
-          </div>
-        )}
-
-        {/* Moedas */}
-        <div className="relative w-full h-36 mt-6 overflow-hidden pointer-events-none">
-          <img
-            src="/assets/moedas-zlp.png"
-            className="absolute bottom-0 left-0 w-full h-full object-cover"
-            alt="moedas"
-          />
-        </div>
+          <div className="relative w-full h-56 mt-6 overflow-hidden pointer-events-none">
+  <img
+    src="/assets/moedas-zlp.png"
+    className="absolute bottom-0 left-0 w-full h-full object-cover"
+    alt="moedas"
+  />
+</div>
 
       </main>
 
