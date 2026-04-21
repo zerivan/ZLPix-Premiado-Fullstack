@@ -5,6 +5,7 @@ import NavBottom from "../components/navbottom";
 export default function ZLP() {
   const [saldo, setSaldo] = useState(0);
   const [loadingCheckin, setLoadingCheckin] = useState(false);
+  const [loadingResgatar, setLoadingResgatar] = useState(false);
   const [message, setMessage] = useState("");
 
   const user = JSON.parse(localStorage.getItem("USER_ZLPIX") || "{}");
@@ -58,14 +59,42 @@ export default function ZLP() {
     }
   }
 
-  function handleResgatar() {
+  async function handleResgatar() {
+    if (loadingResgatar) return;
+
     const saldoAtual = normalizarSaldo(saldo);
     if (saldoAtual < 2000) {
       setMessage("Saldo insuficiente");
       return;
     }
 
-    setMessage("Resgate em breve");
+    try {
+      setLoadingResgatar(true);
+
+      const res = await axios.post(
+        "/zlp/resgatar",
+        {},
+        {
+          headers: { "x-user-id": userId },
+        }
+      );
+
+      if (res.data?.ok === true) {
+        await carregarSaldo();
+        setMessage(res.data?.message || "Bilhete gerado com sucesso");
+      } else {
+        setMessage(res.data?.error || res.data?.message || "Erro ao resgatar bilhete");
+      }
+    } catch (err: any) {
+      console.error("Erro resgatar:", err);
+      setMessage(
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Erro ao resgatar bilhete"
+      );
+    } finally {
+      setLoadingResgatar(false);
+    }
   }
 
   const saldoAtual = normalizarSaldo(saldo);
@@ -154,14 +183,15 @@ export default function ZLP() {
 
             <button
               onClick={handleResgatar}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-3 rounded-full flex items-center justify-center gap-2 text-sm border border-white/10"
+              disabled={loadingResgatar}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-3 rounded-full flex items-center justify-center gap-2 text-sm border border-white/10 disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-white text-lg">
                 confirmation_number
               </span>
 
               <span className="text-white font-semibold">
-                Resgatar bilhete
+                {loadingResgatar ? "Processando..." : "Resgatar bilhete"}
               </span>
             </button>
 
