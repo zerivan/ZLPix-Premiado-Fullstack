@@ -36,6 +36,8 @@ import DynamicPage from "../pages/dynamicpage";
 
 // 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
+import ZLPRoletaOverlay from "../components/ZLPRoletaOverlay";
+import ZLPOverlayAlerta from "../components/ZLPOverlayAlerta";
 import { registerPush } from "../services/push";
 
 function isUserLoggedIn() {
@@ -89,6 +91,7 @@ export default function AppRoutes() {
 
   return (
     <>
+      <ZLPRoletaOverlay />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/anuncio" element={<Anuncio />} />
@@ -229,6 +232,7 @@ export default function AppRoutes() {
       </Routes>
 
       <GlobalChatBot />
+      <ZLPOverlayAlerta />
     </>
   );
 }
