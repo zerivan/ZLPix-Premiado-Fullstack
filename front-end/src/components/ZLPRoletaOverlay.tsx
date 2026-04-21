@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 
 export default function ZLPRoletaOverlay() {
+  console.log("ROULETTE RENDER OK");
   const [open, setOpen] = useState(true);
   const [girando, setGirando] = useState(false);
   const [angulo, setAngulo] = useState(0);
