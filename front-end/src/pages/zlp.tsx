@@ -50,7 +50,14 @@ export default function ZLP() {
       const res = await api.get("/zlp/saldo", {
         headers: { "x-user-id": String(userId) },
       });
-      setSaldo(normalizarSaldo(res.data?.saldo));
+      setSaldo(
+        normalizarSaldo(
+          res.data?.saldo ??
+          res.data?.wallet?.saldo ??
+          res.data?.balance ??
+          0
+        )
+      );
     } catch (err) {
       console.error("Erro saldo:", err);
     }
