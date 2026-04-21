@@ -45,11 +45,13 @@ export default function ZLP() {
         }
       );
 
+      // 🔥 SEMPRE atualiza saldo
+      setSaldo(normalizarSaldo(res.data?.saldo));
+
       if (res.data.ok) {
-        setSaldo(normalizarSaldo(res.data?.saldo));
         setMessage(`+${res.data.ganho} ZLP recebido`);
       } else {
-        setMessage(res.data.message);
+        setMessage("Você já arrecadou hoje, volte amanhã para coletar mais 20 ZLP");
       }
     } catch (err) {
       console.error("Erro checkin:", err);
