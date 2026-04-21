@@ -33,6 +33,7 @@ import DynamicPage from "../pages/dynamicpage";
 // 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
 import ZLPOverlayAlerta from "../components/ZLPOverlayAlerta";
+import ZLPRoletaOverlay from "./components/ZLPRoletaOverlay";
 
 function isUserLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -59,6 +60,7 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <>
+      <ZLPRoletaOverlay />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/anuncio" element={<Anuncio />} />
