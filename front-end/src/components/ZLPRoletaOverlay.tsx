@@ -3,17 +3,25 @@ import { api } from "../api/client";
 
 export default function ZLPRoletaOverlay() {
   console.log("ROULETTE RENDER OK");
+
+  const [mounted, setMounted] = useState(false); // 🔥 garante render após mount real
   const [open, setOpen] = useState(true);
   const [girando, setGirando] = useState(false);
   const [angulo, setAngulo] = useState(0);
   const [liberado, setLiberado] = useState(false);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   function resolveUserId() {
-    const stored = localStorage.getItem("USER_ZLPIX");
-    if (!stored) return "";
+    if (typeof window === "undefined") return "";
 
     try {
+      const stored = localStorage.getItem("USER_ZLPIX");
+      if (!stored) return "";
+
       const parsed = JSON.parse(stored);
       return String(parsed?.id ?? parsed?.user?.id ?? parsed?.userId ?? "");
     } catch {
@@ -57,6 +65,9 @@ export default function ZLPRoletaOverlay() {
     }
   }
 
+  // 🔥 evita render antes do mount real (problema comum em produção/mobile)
+  if (!mounted) return null;
+
   if (!open) return null;
 
   return (
@@ -66,9 +77,7 @@ export default function ZLPRoletaOverlay() {
         Gire e ganhe suas moedas!
       </h1>
 
-      {/* ROLETA */}
       <div className="relative mb-8">
-
         <div
           className="w-64 h-64 rounded-full border-4 border-yellow-400 flex items-center justify-center text-2xl font-bold transition-transform duration-[3000ms] ease-out"
           style={{
@@ -79,7 +88,6 @@ export default function ZLPRoletaOverlay() {
         >
           🎯
         </div>
-
       </div>
 
       {!girando && !liberado && (
