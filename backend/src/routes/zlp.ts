@@ -2,6 +2,10 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 
 const router = Router();
+const normalizarSaldo = (valor: unknown): number => {
+  const saldoNumerico = Number(valor);
+  return Number.isFinite(saldoNumerico) ? saldoNumerico : 0;
+};
 
 router.get("/saldo", async (req, res) => {
   try {
@@ -19,7 +23,7 @@ router.get("/saldo", async (req, res) => {
       create: { userId, saldo: 0 },
     });
 
-    return res.json({ saldo: zlp.saldo });
+    return res.json({ saldo: normalizarSaldo(zlp.saldo) });
   } catch (error) {
     console.error("[ZLP] saldo:", error);
     return res.status(500).json({ error: "Erro interno" });
@@ -49,7 +53,7 @@ router.post("/checkin", async (req, res) => {
       return res.json({
         ok: false,
         message: "Já coletou hoje",
-        saldo: zlp.saldo,
+        saldo: normalizarSaldo(zlp.saldo),
       });
     }
 
@@ -66,7 +70,7 @@ router.post("/checkin", async (req, res) => {
     return res.json({
       ok: true,
       ganho,
-      saldo: atualizado.saldo,
+      saldo: normalizarSaldo(atualizado.saldo),
     });
   } catch (error) {
     console.error("[ZLP] checkin:", error);
