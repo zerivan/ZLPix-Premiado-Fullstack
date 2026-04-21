@@ -190,7 +190,7 @@ export default function ZLP() {
         <div className="relative w-full h-36 mt-6 overflow-hidden pointer-events-none">
           <img
             src="/assets/moedas-zlp.png"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[540px] h-full object-contain"
+            className="absolute bottom-0 left-0 w-full h-full object-cover"
             alt="moedas"
           />
         </div>
