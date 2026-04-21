@@ -33,7 +33,7 @@ import DynamicPage from "../pages/dynamicpage";
 // 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
 import ZLPOverlayAlerta from "../components/ZLPOverlayAlerta";
-import ZLPRoletaOverlay from "./components/ZLPRoletaOverlay";
+import ZLPRoletaOverlay from "../components/ZLPRoletaOverlay"; // ✅ CORRIGIDO
 
 function isUserLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
