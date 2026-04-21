@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { useNavigate } from "react-router-dom";
 
 export default function ZLPRoletaOverlay() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [open, setOpen] = useState(true);
-  const [angulo, setAngulo] = useState(0);
-  const [girando, setGirando] = useState(true);
-  const [ganhoVisual, setGanhoVisual] = useState<number | null>(null);
+  const [resultado, setResultado] = useState<number | null>(null);
+  const [saldo, setSaldo] = useState(0);
 
-  const spinAudio = useRef<HTMLAudioElement | null>(null);
-  const winAudio = useRef<HTMLAudioElement | null>(null);
+  const navigate = useNavigate();
+
+  const premios = [10, 20, 30, 50];
 
   function resolveUserId() {
     try {
@@ -23,40 +25,101 @@ export default function ZLPRoletaOverlay() {
 
   const userId = resolveUserId();
 
-  useEffect(() => {
-    // 🔊 Áudios (CDN)
-    spinAudio.current = new Audio("https://assets.mixkit.co/active_storage/sfx/212/212-preview.mp3");
-    winAudio.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3");
+  function normalizar(valor: any) {
+    const n = Number(valor);
+    return Number.isFinite(n) ? n : 0;
+  }
 
-    if (spinAudio.current) {
-      spinAudio.current.loop = true;
-      spinAudio.current.volume = 0.4;
-      spinAudio.current.play().catch(() => {});
+  async function carregarSaldo() {
+    try {
+      const res = await api.get("/zlp/saldo", {
+        headers: { "x-user-id": userId },
+      });
+      setSaldo(normalizar(res.data?.saldo));
+    } catch {}
+  }
+
+  useEffect(() => {
+    carregarSaldo();
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const size = 260;
+    canvas.width = size;
+    canvas.height = size;
+
+    const center = size / 2;
+    const radius = size / 2;
+
+    function drawWheel(rotation: number) {
+      ctx.clearRect(0, 0, size, size);
+
+      premios.forEach((valor, i) => {
+        const angle = (Math.PI * 2) / premios.length;
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+
+        ctx.arc(
+          center,
+          center,
+          radius,
+          i * angle + rotation,
+          (i + 1) * angle + rotation
+        );
+
+        ctx.fillStyle = i % 2 === 0 ? "#facc15" : "#1e3a8a";
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(i * angle + angle / 2 + rotation);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(`${valor}`, radius - 10, 5);
+        ctx.restore();
+      });
     }
 
-    // 🎡 Gira automático
-    const giro = 1440 + Math.floor(Math.random() * 360);
-    setAngulo(giro);
+    let rotation = 0;
+    let velocity = 0.3;
+    let spinning = true;
 
-    setTimeout(() => {
-      setGirando(false);
-      spinAudio.current?.pause();
+    function animate() {
+      if (!spinning) return;
 
-      const grau = giro % 360;
+      rotation += velocity;
+      velocity *= 0.98;
 
-      let ganho = 0;
-      if (grau < 90) ganho = 10;
-      else if (grau < 180) ganho = 20;
-      else if (grau < 270) ganho = 30;
-      else ganho = 50;
+      drawWheel(rotation);
 
-      setGanhoVisual(ganho);
+      if (velocity < 0.002) {
+        spinning = false;
 
-      // 🔔 som vitória
-      winAudio.current?.play().catch(() => {});
+        const finalAngle = rotation % (Math.PI * 2);
+        const sector = Math.floor(
+          (finalAngle / (Math.PI * 2)) * premios.length
+        );
 
-      receber();
-    }, 3000);
+        const ganho = premios[premios.length - 1 - sector];
+        setResultado(ganho);
+
+        receber();
+
+        setTimeout(() => setOpen(false), 3000);
+        return;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    drawWheel(0);
+    setTimeout(() => animate(), 500);
   }, []);
 
   async function receber() {
@@ -66,53 +129,57 @@ export default function ZLPRoletaOverlay() {
         {},
         { headers: { "x-user-id": userId } }
       );
-    } catch {}
 
-    setTimeout(() => setOpen(false), 2500);
+      await carregarSaldo();
+    } catch {}
   }
 
   if (!open) return null;
 
+  const progresso = Math.min((saldo / 2000) * 100, 100);
+  const podeGerar = saldo >= 2000;
+
   return (
     <div className="fixed inset-0 z-50 bg-[#0b1e5b] flex flex-col items-center justify-center text-white px-6">
 
-      <h1 className="text-lg font-bold mb-6">
-        Girando sua recompensa...
+      <h1 className="mb-4 text-lg font-bold">
+        Gire e ganhe moedas
       </h1>
 
-      {/* 🎯 Ponteiro */}
-      <div className="relative mb-8">
-        <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 z-10">
-          <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-b-[20px] border-l-transparent border-r-transparent border-b-red-500" />
+      {/* ponteiro */}
+      <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[20px] border-l-transparent border-r-transparent border-b-red-500 mb-2" />
+
+      <canvas ref={canvasRef} />
+
+      {resultado && (
+        <div className="mt-4 text-yellow-300 font-bold text-xl">
+          +{resultado} ZLP
+        </div>
+      )}
+
+      {/* PROGRESSO */}
+      <div className="w-full max-w-sm mt-6">
+        <div className="flex justify-between text-xs mb-1">
+          <span>{saldo} ZLP</span>
+          <span>2000 ZLP</span>
         </div>
 
-        {/* 🎡 Roleta */}
-        <div
-          className="w-64 h-64 rounded-full border-4 border-yellow-400 transition-transform duration-[3000ms] ease-out shadow-[0_0_40px_rgba(250,204,21,0.3)]"
-          style={{
-            transform: `rotate(${angulo}deg)`,
-            background: `
-              conic-gradient(
-                #facc15 0% 25%,
-                #2563eb 25% 50%,
-                #22c55e 50% 75%,
-                #9333ea 75% 100%
-              )
-            `,
-          }}
-        />
+        <div className="h-3 bg-blue-900 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-green-400 transition-all"
+            style={{ width: `${progresso}%` }}
+          />
+        </div>
       </div>
 
-      {/* RESULTADO */}
-      {!girando && ganhoVisual !== null && (
-        <div className="text-center animate-fadeIn">
-          <p className="text-2xl font-extrabold text-yellow-300">
-            +{ganhoVisual} ZLP
-          </p>
-          <p className="text-sm text-blue-200 mt-1">
-            adicionando ao seu saldo...
-          </p>
-        </div>
+      {/* BOTÃO */}
+      {podeGerar && (
+        <button
+          onClick={() => navigate("/zlp")}
+          className="mt-6 bg-yellow-400 text-black px-6 py-3 rounded-full font-bold"
+        >
+          Gerar bilhete
+        </button>
       )}
     </div>
   );
