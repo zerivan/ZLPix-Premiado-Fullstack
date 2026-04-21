@@ -32,6 +32,7 @@ import DynamicPage from "../pages/dynamicpage";
 
 // 🔥 Chat Global
 import GlobalChatBot from "../components/GlobalChatBot";
+import ZLPOverlayAlerta from "../components/ZLPOverlayAlerta";
 
 function isUserLoggedIn() {
   return !!localStorage.getItem("TOKEN_ZLPIX");
@@ -193,6 +194,7 @@ export default function AppRoutes() {
       </Routes>
 
       <GlobalChatBot />
+      <ZLPOverlayAlerta />
     </>
   );
 }
