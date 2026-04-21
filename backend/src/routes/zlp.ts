@@ -2,16 +2,31 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 
 const router = Router();
+
 const normalizarSaldo = (valor: unknown): number => {
   const saldoNumerico = Number(valor);
   return Number.isFinite(saldoNumerico) ? saldoNumerico : 0;
 };
 
+// 🔥 FUNÇÃO SEGURA PARA PEGAR USER ID
+function getUserId(req: any): number | null {
+  const raw =
+    req.headers["x-user-id"] ??
+    req.query.userId;
+
+  const valor = Array.isArray(raw) ? raw[0] : raw;
+  const userId = Number(valor);
+
+  if (!Number.isFinite(userId) || userId <= 0) {
+    return null;
+  }
+
+  return userId;
+}
+
 router.get("/saldo", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const userId = getUserId(req);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não autenticado" });
@@ -32,9 +47,7 @@ router.get("/saldo", async (req, res) => {
 
 router.post("/checkin", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const userId = getUserId(req);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não autenticado" });
@@ -59,7 +72,8 @@ router.post("/checkin", async (req, res) => {
 
     const ganho = 20;
 
-    const atualizado = await prisma.userZLP.update({
+    // 🔧 ALTERAÇÃO CIRÚRGICA: update seguro
+    await prisma.userZLP.updateMany({
       where: { userId },
       data: {
         saldo: { increment: ganho },
@@ -67,10 +81,15 @@ router.post("/checkin", async (req, res) => {
       },
     });
 
+    // 🔧 GARANTE retorno consistente após update
+    const atualizado = await prisma.userZLP.findUnique({
+      where: { userId },
+    });
+
     return res.json({
       ok: true,
       ganho,
-      saldo: normalizarSaldo(atualizado.saldo),
+      saldo: normalizarSaldo(atualizado?.saldo),
     });
   } catch (error) {
     console.error("[ZLP] checkin:", error);
@@ -80,9 +99,7 @@ router.post("/checkin", async (req, res) => {
 
 router.post("/resgatar", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const userId = getUserId(req);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não autenticado" });
