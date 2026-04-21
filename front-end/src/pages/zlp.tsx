@@ -100,11 +100,9 @@ export default function ZLP() {
 
         {/* Card */}
         <section className="bg-gradient-to-br from-[#1e40af] to-[#0b1e5b] rounded-2xl p-6 mb-6 relative overflow-hidden shadow-2xl border border-white/10">
-
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
           <div className="relative z-10">
-
             <div className="flex justify-between items-end mb-3">
               <span className="text-xs font-semibold text-blue-100">
                 Progresso para 1 bilhete
@@ -132,14 +130,12 @@ export default function ZLP() {
               </span>{" "}
               para 1 bilhete grátis.
             </p>
-
           </div>
         </section>
 
         {/* Actions */}
         <div className="space-y-4">
 
-          {/* Coletar */}
           <button
             onClick={handleCheckin}
             disabled={loadingCheckin}
@@ -154,7 +150,6 @@ export default function ZLP() {
             </span>
           </button>
 
-          {/* Resgatar */}
           <div className="flex flex-col gap-1">
 
             <button
@@ -177,19 +172,22 @@ export default function ZLP() {
             </div>
 
           </div>
-
         </div>
 
         {message && (
           <div className="mt-4 text-center text-yellow-300 text-xs">
             {message}
-          <div className="relative w-full h-56 mt-6 overflow-hidden pointer-events-none">
-  <img
-    src="/assets/moedas-zlp.png"
-    className="absolute bottom-0 left-0 w-full h-full object-cover"
-    alt="moedas"
-  />
-</div>
+          </div>
+        )}
+
+        {/* Moedas */}
+        <div className="relative w-full h-56 mt-6 overflow-hidden pointer-events-none">
+          <img
+            src="/assets/moedas-zlp.png"
+            className="absolute bottom-0 left-0 w-full h-full object-cover"
+            alt="moedas"
+          />
+        </div>
 
       </main>
 
