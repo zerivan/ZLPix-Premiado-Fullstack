@@ -121,26 +121,45 @@ export default function ZLPRoletaOverlay() {
                 }}
               >
 
-                <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
-                  <div className="absolute rotate-0 translate-y-[-100px]">100</div>
-                  <div className="absolute rotate-[60deg] translate-y-[-100px]">20</div>
-                  <div className="absolute rotate-[120deg] translate-y-[-100px]">80</div>
-                  <div className="absolute rotate-[180deg] translate-y-[-100px]">40</div>
-                  <div className="absolute rotate-[240deg] translate-y-[-100px]">60</div>
-                  <div className="absolute rotate-[300deg] translate-y-[-100px] text-yellow-300 text-xs">
-                    TENTE
-                  </div>
+                {/* TEXTOS CORRIGIDOS (CENTRO REAL DE CADA SETOR) */}
+                <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs">
+
+                  {[
+                    { label: "100", rot: 0 },
+                    { label: "20", rot: 60 },
+                    { label: "80", rot: 120 },
+                    { label: "40", rot: 180 },
+                    { label: "60", rot: 240 },
+                    { label: "TENTE", rot: 300 },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2"
+                      style={{
+                        transform: `
+                          rotate(${item.rot}deg)
+                          translateY(-95px)
+                          rotate(-${item.rot}deg)
+                        `,
+                        transformOrigin: "center"
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  ))}
+
                 </div>
 
+                {/* CENTRO */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-8 h-8 bg-white rounded-full"></div>
                 </div>
 
               </div>
 
-              {/* 🔥 PONTEIRO CORRIGIDO (APONTANDO PARA DENTRO) */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
-                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-yellow-400"></div>
+              {/* 🔥 PONTEIRO REALMENTE CENTRAL */}
+              <div className="absolute top-[-6px] left-1/2 -translate-x-1/2 z-20">
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[18px] border-l-transparent border-r-transparent border-b-yellow-400"></div>
               </div>
 
             </div>
