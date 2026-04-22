@@ -91,7 +91,6 @@ export default function AppRoutes() {
 
   return (
     <>
-      <ZLPRoletaOverlay />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/anuncio" element={<Anuncio />} />
@@ -187,7 +186,6 @@ export default function AppRoutes() {
           }
         />
 
-        {/* 🔥 NOVO: ZLP */}
         <Route
           path="/zlp"
           element={
@@ -197,7 +195,6 @@ export default function AppRoutes() {
           }
         />
 
-        {/* Admin */}
         <Route path="/admin" element={<AdminLogin />} />
 
         <Route
@@ -231,8 +228,10 @@ export default function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
+      {/* 🔥 MOVIDO PARA FORA DO ROUTER */}
       <GlobalChatBot />
       <ZLPOverlayAlerta />
+      <ZLPRoletaOverlay />
     </>
   );
 }
