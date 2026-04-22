@@ -136,7 +136,7 @@ export default function ZLPRoletaOverlay() {
       setResultado(setor);
 
       if (setor.bonus === "free-spin") {
-        setMessage("🎉 Giro grátis desbloqueado! Você pode girar novamente.");
+        setMessage("🎉 Giro grátis desbloqueado!");
       }
 
       setGirando(false);
@@ -164,28 +164,17 @@ export default function ZLPRoletaOverlay() {
         setMessage(res.data?.message || "Bilhete criado com sucesso!");
         await carregarSaldo();
       } else {
-        setMessage(
-          res.data?.error ||
-            res.data?.message ||
-            "Falha ao resgatar bilhete."
-        );
+        setMessage(res.data?.error || res.data?.message || "Falha ao resgatar bilhete.");
       }
     } catch (err: any) {
       console.error("Erro resgatar:", err);
-
-      setMessage(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Erro ao resgatar bilhete"
-      );
+      setMessage("Erro ao resgatar bilhete");
     } finally {
       setLoadingResgatar(false);
     }
   }
 
   const progresso = Math.min((saldo / META_RESGATE) * 100, 100);
-  const faltam = Math.max(META_RESGATE - saldo, 0);
-  const podeResgatar = saldo >= META_RESGATE;
 
   const gradienteRoleta = useMemo(() => {
     const passo = 360 / setores.length;
@@ -208,21 +197,74 @@ export default function ZLPRoletaOverlay() {
         {/* HEADER */}
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-200/80">
-              ZL PIX
-            </p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-200/80">ZL PIX</p>
             <h2 className="text-lg font-extrabold">Roleta Premiada</h2>
           </div>
 
-          <button
-            onClick={() => setOpen(false)}
-            className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-sm text-white/70"
-          >
-            ✕
-          </button>
+          <button onClick={() => setOpen(false)}>✕</button>
         </div>
 
-        {/* resto mantido igual */}
+        {/* ROLETA */}
+        <div className="mb-6 flex justify-center">
+          <div className="relative h-72 w-72 rounded-full p-[3px] bg-gradient-to-br from-yellow-300 via-green-300 to-blue-300">
+            <div className="relative h-full w-full rounded-full bg-[#061742] p-2 flex items-center justify-center">
+
+              <div
+                className="relative h-full w-full rounded-full overflow-hidden"
+                style={{ transform: `rotate(${angulo}deg)`, background: gradienteRoleta }}
+              >
+                {setores.map((setor, i) => {
+                  const ang = i * (360 / setores.length);
+
+                  return (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                      style={{ transform: `rotate(${ang}deg) translateY(-95px)` }}
+                    >
+                      <span
+                        className="text-[11px] font-bold text-white"
+                        style={{ transform: `rotate(-${ang}deg)` }}
+                      >
+                        {setor.label}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-white border-4 border-yellow-300" />
+                </div>
+              </div>
+
+              {/* ponteiro */}
+              <div className="absolute top-[4px] left-1/2 -translate-x-1/2 z-20">
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[18px] border-l-transparent border-r-transparent border-b-yellow-300"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* RESULTADO */}
+        {resultado && (
+          <div className="text-center text-yellow-300 font-bold mb-3">
+            {resultado.bonus ? "GIRO GRÁTIS" : `+${resultado.premio} ZLP`}
+          </div>
+        )}
+
+        <button
+          onClick={girar}
+          disabled={girando}
+          className="w-full py-3 bg-yellow-400 text-black font-bold rounded-xl mb-3"
+        >
+          {girando ? "GIRANDO..." : "GIRAR"}
+        </button>
+
+        {/* PROGRESSO */}
+        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+          <div className="h-full bg-green-400" style={{ width: `${progresso}%` }} />
+        </div>
 
       </div>
     </div>
