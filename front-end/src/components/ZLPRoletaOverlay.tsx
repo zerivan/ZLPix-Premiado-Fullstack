@@ -32,13 +32,21 @@ export default function ZLPRoletaOverlay() {
   const { pathname } = useLocation();
 
   function resolveUserId() {
+    const fromStorage =
+      localStorage.getItem("USER_ZLPIX") ||
+      localStorage.getItem("user") ||
+      localStorage.getItem("userData") ||
+      "";
+
+    if (!fromStorage) return "";
+
     try {
-      const stored = localStorage.getItem("USER_ZLPIX");
-      if (!stored) return "";
-      const parsed = JSON.parse(stored);
-      return String(parsed?.id ?? parsed?.user?.id ?? parsed?.userId ?? "");
+      const parsed = JSON.parse(fromStorage);
+      return String(
+        parsed?.id ?? parsed?.user?.id ?? parsed?.userId ?? parsed?._id ?? ""
+      );
     } catch {
-      return "";
+      return String(fromStorage).replaceAll('"', "").trim();
     }
   }
 
