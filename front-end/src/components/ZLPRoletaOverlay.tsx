@@ -40,17 +40,15 @@ export default function ZLPRoletaPage() {
     carregarSaldo();
   }, []);
 
+  // ✅ CORREÇÃO AQUI (alinhamento com ponteiro no topo)
   function calcularPremio(grau: number) {
-    const setores = [
-      { min: 0, max: 72, valor: 100 },
-      { min: 72, max: 144, valor: 20 },
-      { min: 144, max: 216, valor: 80 },
-      { min: 216, max: 288, valor: 40 },
-      { min: 288, max: 360, valor: 60 },
-    ];
+    const setores = [100, 20, 80, 40, 60];
+    const tamanhoSetor = 360 / setores.length;
 
-    const setor = setores.find((s) => grau >= s.min && grau < s.max);
-    return setor?.valor ?? 20;
+    const ajustado = (360 - (grau % 360)) % 360;
+    const index = Math.floor(ajustado / tamanhoSetor);
+
+    return setores[index] ?? 20;
   }
 
   async function girar() {
