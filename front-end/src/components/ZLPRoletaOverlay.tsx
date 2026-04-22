@@ -102,6 +102,7 @@ export default function ZLPRoletaOverlay() {
     const index = Math.floor(ajustado / tamanho);
     return setores[index] ?? setores[1];
   }
+  }
 
   async function girar() {
     if (girando || !userId) return;
