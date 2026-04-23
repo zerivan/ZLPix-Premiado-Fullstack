@@ -81,7 +81,6 @@ export default function MeusBilhetes() {
     janela.print();
   }
 
-  // ✅ CORREÇÃO: removido setHours (não alterar horário vindo do backend)
   function dataVirada(b: any): Date | null {
     if (!b.sorteioData) return null;
     return new Date(b.sorteioData);
@@ -97,14 +96,25 @@ export default function MeusBilhetes() {
     return Date.now() <= limite.getTime();
   }
 
+  // 🔧 CORREÇÃO CIRÚRGICA AQUI
   function isVisivel(b: any) {
     const virada = dataVirada(b);
     if (!virada) return false;
 
-    if (Date.now() < virada.getTime()) {
+    const agora = Date.now();
+
+    // Antes do sorteio → visível
+    if (agora < virada.getTime()) {
       return true;
     }
 
+    // Após sorteio:
+    // mostra se já foi apurado OU ainda está dentro da janela
+    if (b.apuradoEm) {
+      return dentroDaPermanencia(b);
+    }
+
+    // fallback para bilhete não apurado (evita sumir indevidamente)
     return dentroDaPermanencia(b);
   }
 
