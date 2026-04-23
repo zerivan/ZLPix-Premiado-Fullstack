@@ -8,14 +8,14 @@ const router = Router();
  * ============================
  * LISTAR BILHETES DO USUÁRIO (MEUS)
  * ============================
- * Compatibilidade com o front-end
- * GET /bilhete/meus
  */
 router.get("/meus", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const rawUserId = req.headers["x-user-id"] ?? req.query.userId;
+
+    const userId = Array.isArray(rawUserId)
+      ? Number(rawUserId[0])
+      : Number(rawUserId);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado" });
@@ -40,9 +40,11 @@ router.get("/meus", async (req, res) => {
  */
 router.get("/", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const rawUserId = req.headers["x-user-id"] ?? req.query.userId;
+
+    const userId = Array.isArray(rawUserId)
+      ? Number(rawUserId[0])
+      : Number(rawUserId);
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado" });
@@ -67,9 +69,11 @@ router.get("/", async (req, res) => {
  */
 router.get("/:id", async (req, res) => {
   try {
-    const userId =
-      Number(req.headers["x-user-id"]) ||
-      Number(req.query.userId);
+    const rawUserId = req.headers["x-user-id"] ?? req.query.userId;
+
+    const userId = Array.isArray(rawUserId)
+      ? Number(rawUserId[0])
+      : Number(rawUserId);
 
     const id = Number(req.params.id);
 
@@ -99,11 +103,11 @@ router.get("/:id", async (req, res) => {
  * ============================
  * NOTIFICAÇÃO (BACKUP)
  * ============================
- * Caso algum bilhete antigo exista sem notificação
  */
 router.post("/notify/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
+
     const bilhete = await prisma.bilhete.findUnique({
       where: { id },
     });
