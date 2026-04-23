@@ -24,6 +24,12 @@ export default function AdminSorteioControl() {
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
+  // 🔒 VALIDAÇÃO NOVA (CIRÚRGICA)
+  function validarPremiosFederal(premios: string[]): boolean {
+    if (!Array.isArray(premios) || premios.length !== 5) return false;
+    return premios.every((p) => /^\d{5,6}$/.test(String(p)));
+  }
+
   useEffect(() => {
     void carregarPrevia();
   }, [dataSorteio]);
@@ -98,17 +104,19 @@ export default function AdminSorteioControl() {
   }
 
   const podeDisparar = useMemo(() => {
-    const temFederal = !!federalData && federalData.premios.length === 5;
+    const temFederal =
+      !!federalData && validarPremiosFederal(federalData.premios);
     const temBilhetes = bilhetesElegiveis.length > 0;
     return temFederal && temBilhetes && !loading;
   }, [federalData, bilhetesElegiveis.length, loading]);
 
   async function dispararSorteio() {
-    const temFederal = !!federalData && federalData.premios.length === 5;
+    const temFederal =
+      !!federalData && validarPremiosFederal(federalData.premios);
     const temBilhetes = bilhetesElegiveis.length > 0;
 
     if (!temFederal) {
-      setStatus("❌ Não foi possível obter resultado da Federal.");
+      setStatus("❌ Resultado da Federal inválido.");
       return;
     }
 
