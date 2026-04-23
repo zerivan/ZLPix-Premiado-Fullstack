@@ -18,6 +18,7 @@ function getNextWednesday(): Date {
   const targetBrClock = new Date(nowBrClock);
 
   if (day === 3) {
+    // Regra de negócio: corte às 17:00 (horário de Brasília)
     if (hour < 17) {
       targetBrClock.setUTCHours(20, 0, 0, 0);
       return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
@@ -132,11 +133,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     if (carteira) {
-      // 🔒 ALTERAÇÃO: controle de idempotência para crédito em carteira
       let carteiraFoiPagaAgora = false;
 
       await prisma.$transaction(async (db) => {
-        // 🔒 ALTERAÇÃO: updateMany + NOT status paid para evitar reprocessamento
         const carteiraStatusUpdated =
           await db.transacao_carteira.updateMany({
             where: {
@@ -149,7 +148,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         carteiraFoiPagaAgora =
           carteiraStatusUpdated.count > 0;
 
-        // 🔒 ALTERAÇÃO: só credita saldo se acabou de marcar como paid
         if (carteiraFoiPagaAgora) {
           await db.$executeRaw`
             INSERT INTO wallet (user_id, saldo, created_at)
@@ -168,7 +166,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }
       });
 
-      // 🔒 ALTERAÇÃO: notify fora da transação para não afetar confirmação de pagamento
       if (carteiraFoiPagaAgora) {
         await notify({
           type: "CARTEIRA_CREDITO",
@@ -223,11 +220,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         : [];
 
       const sorteioData = getNextWednesday();
-      // 🔒 ALTERAÇÃO: notify fora da transação para não causar rollback
       const bilhetesParaNotificar: string[] = [];
 
       await prisma.$transaction(async (db) => {
-        // 🔒 ALTERAÇÃO: updateMany + NOT status paid para idempotência
         const transacaoStatusUpdated =
           await db.transacao.updateMany({
             where: {
@@ -237,12 +232,10 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             data: { status: "paid" },
           });
 
-        // 🔒 ALTERAÇÃO: só cria bilhetes se acabou de pagar nesta execução
         if (transacaoStatusUpdated.count === 0) {
           return;
         }
 
-        // 🔒 ALTERAÇÃO: evita duplicação de bilhetes por transação
         const bilheteExistente =
           await db.bilhete.findFirst({
             where: { transacaoId: transacao.id },
@@ -281,7 +274,6 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
         }
       });
 
-      // 🔒 ALTERAÇÃO: notify fora da transação
       for (const dezenas of bilhetesParaNotificar) {
         await notify({
           type: "BILHETE_CRIADO",
