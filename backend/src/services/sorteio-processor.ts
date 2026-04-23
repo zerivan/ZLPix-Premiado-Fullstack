@@ -55,6 +55,20 @@ export async function processarSorteio(
 
   const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
 
+  // Recupera bilhetes "travados" por execução interrompida anteriormente
+  await prisma.bilhete.updateMany({
+    where: {
+      pago: true,
+      status: "ATIVO",
+      apuradoEm: null,
+      resultadoFederal: { startsWith: "PROCESSANDO_" },
+      sorteioData: { gte: inicio, lte: fim },
+    },
+    data: {
+      resultadoFederal: null,
+    },
+  });
+
   const claim = await prisma.bilhete.updateMany({
     where: {
       pago: true,
