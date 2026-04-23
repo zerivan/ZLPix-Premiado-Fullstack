@@ -47,11 +47,29 @@ export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
-  const inicio = new Date(sorteioData);
-  inicio.setHours(0, 0, 0, 0);
+  const inicio = new Date(
+    Date.UTC(
+      sorteioData.getUTCFullYear(),
+      sorteioData.getUTCMonth(),
+      sorteioData.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
 
-  const fim = new Date(sorteioData);
-  fim.setHours(23, 59, 59, 999);
+  const fim = new Date(
+    Date.UTC(
+      sorteioData.getUTCFullYear(),
+      sorteioData.getUTCMonth(),
+      sorteioData.getUTCDate() + 1,
+      0,
+      0,
+      0,
+      0
+    )
+  );
 
   const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
 
@@ -62,7 +80,7 @@ export async function processarSorteio(
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: { startsWith: "PROCESSANDO_" },
-      sorteioData: { gte: inicio, lte: fim },
+      sorteioData: { gte: inicio, lt: fim },
     },
     data: {
       resultadoFederal: null,
@@ -75,7 +93,7 @@ export async function processarSorteio(
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: null,
-      sorteioData: { gte: inicio, lte: fim },
+      sorteioData: { gte: inicio, lt: fim },
     },
     data: {
       resultadoFederal: claimToken,
@@ -90,7 +108,7 @@ export async function processarSorteio(
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         resultadoFederal: claimToken,
-        sorteioData: { gte: inicio, lte: fim },
+        sorteioData: { gte: inicio, lt: fim },
       },
     });
 
@@ -129,7 +147,7 @@ export async function processarSorteio(
           pago: true,
           status: "ATIVO",
           apuradoEm: null,
-          sorteioData: { gte: inicio, lte: fim },
+          sorteioData: { gte: inicio, lt: fim },
         },
         select: { valor: true },
       });
