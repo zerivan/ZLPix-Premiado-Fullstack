@@ -64,7 +64,10 @@ async function processarSorteiosPendentesAutomatico() {
           pago: true,
           status: "ATIVO",
           apuradoEm: null,
-          resultadoFederal: null,
+          OR: [
+            { resultadoFederal: null },
+            { resultadoFederal: { startsWith: "PROCESSANDO_" } },
+          ],
           sorteioData: {
             lt: agora,
           },
