@@ -6,65 +6,66 @@ const router = Router();
 type FederalResponse = {
   ok: boolean;
   data?: {
+    dataApuracao: string;
     premios: string[];
   };
 };
 
-router.post("/processar", async (req, res) => {
+router.post("/apurar", async (req, res) => {
   try {
-    const { sorteioData } = req.body;
+    const { sorteioData, premiosFederal } = req.body;
 
     if (!sorteioData) {
       return res.status(400).json({
-        success: false,
-        reason: "Data do sorteio não informada",
+        ok: false,
+        error: "sorteioData é obrigatória",
       });
     }
 
-    const resp = await fetch(
-      `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
-    );
+    let premios: string[] | undefined;
 
-    const json = (await resp.json()) as FederalResponse;
+    if (Array.isArray(premiosFederal) && premiosFederal.length === 5) {
+      premios = premiosFederal;
+    } else {
+      const resp = await fetch(
+        `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
+      );
 
-    if (!json.ok || !Array.isArray(json.data?.premios)) {
-      return res.status(400).json({
-        success: false,
-        reason: "Não foi possível obter resultado da Federal",
-      });
-    }
+      const json = (await resp.json()) as FederalResponse;
 
-    if (json.data.premios.length !== 5) {
-      return res.status(400).json({
-        success: false,
-        reason: "Resultado da Federal inválido",
-      });
-    }
-
-    const dezenas: string[] = [];
-
-    for (const num of json.data.premios) {
-      if (typeof num === "string" && num.length >= 4) {
-        const milhar = num.slice(-4);      // ✅ pega apenas a milhar
-        dezenas.push(milhar.slice(0, 2));  // frente da milhar
-        dezenas.push(milhar.slice(-2));    // fundo da milhar
+      if (!json.ok || !Array.isArray(json.data?.premios)) {
+        return res.status(400).json({
+          ok: false,
+          error: "Não foi possível obter resultado da Federal",
+        });
       }
+
+      if (json.data.premios.length !== 5) {
+        return res.status(400).json({
+          ok: false,
+          error: "Resultado da Federal inválido",
+        });
+      }
+
+      premios = json.data.premios;
     }
 
-    await processarSorteio(
+    // 🔥 CORREÇÃO: NÃO PROCESSAR AQUI
+    const resultado = await processarSorteio(
       new Date(sorteioData),
-      { dezenas }
+      { dezenas: premios }
     );
 
     return res.json({
-      success: true,
-      message: "Sorteio processado com sucesso",
+      ok: true,
+      origem: premiosFederal ? "manual" : "federal",
+      resultado,
     });
-  } catch (err) {
-    console.error("Erro ao processar sorteio manual:", err);
+  } catch (error) {
+    console.error("Erro apuração admin:", error);
     return res.status(500).json({
-      success: false,
-      reason: "Erro interno ao processar sorteio",
+      ok: false,
+      error: "Erro ao apurar sorteio",
     });
   }
 });
