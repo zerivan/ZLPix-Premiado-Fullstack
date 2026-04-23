@@ -47,40 +47,22 @@ export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
-  const inicio = new Date(
-    Date.UTC(
-      sorteioData.getUTCFullYear(),
-      sorteioData.getUTCMonth(),
-      sorteioData.getUTCDate(),
-      0,
-      0,
-      0,
-      0
-    )
-  );
+  // ✅ AJUSTE: usar horário LOCAL (compatível com banco)
+  const inicio = new Date(sorteioData);
+  inicio.setHours(0, 0, 0, 0);
 
-  const fim = new Date(
-    Date.UTC(
-      sorteioData.getUTCFullYear(),
-      sorteioData.getUTCMonth(),
-      sorteioData.getUTCDate() + 1,
-      0,
-      0,
-      0,
-      0
-    )
-  );
+  const fim = new Date(sorteioData);
+  fim.setHours(23, 59, 59, 999);
 
   const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
 
-  // Recupera bilhetes "travados" por execução interrompida anteriormente
   await prisma.bilhete.updateMany({
     where: {
       pago: true,
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: { startsWith: "PROCESSANDO_" },
-      sorteioData: { gte: inicio, lt: fim },
+      sorteioData: { gte: inicio, lte: fim },
     },
     data: {
       resultadoFederal: null,
@@ -93,7 +75,7 @@ export async function processarSorteio(
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: null,
-      sorteioData: { gte: inicio, lt: fim },
+      sorteioData: { gte: inicio, lte: fim },
     },
     data: {
       resultadoFederal: claimToken,
@@ -108,7 +90,7 @@ export async function processarSorteio(
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         resultadoFederal: claimToken,
-        sorteioData: { gte: inicio, lt: fim },
+        sorteioData: { gte: inicio, lte: fim },
       },
     });
 
@@ -117,7 +99,11 @@ export async function processarSorteio(
     }
 
     const dezenasValidas = Array.from(
-      new Set(resultado.dezenas.flatMap((numero) => extrairDezenasValidas(numero)))
+      new Set(
+        resultado.dezenas.flatMap((numero) =>
+          extrairDezenasValidas(numero)
+        )
+      )
     );
 
     const resultadoStr = resultado.dezenas
@@ -136,25 +122,29 @@ export async function processarSorteio(
 
       return (
         dezenasBilhete.length === 3 &&
-        dezenasBilhete.every((d) => dezenasValidas.includes(d))
+        dezenasBilhete.every((d) =>
+          dezenasValidas.includes(d)
+        )
       );
     });
 
     await prisma.$transaction(async (tx) => {
-      // 🔥 AGORA A ARRECADAÇÃO É CALCULADA DENTRO DA TRANSACTION
       const bilhetesDaRodada = await tx.bilhete.findMany({
         where: {
           pago: true,
           status: "ATIVO",
           apuradoEm: null,
-          sorteioData: { gte: inicio, lt: fim },
+          sorteioData: { gte: inicio, lte: fim },
         },
         select: { valor: true },
       });
 
       const arrecadacaoDaRodada = Number(
         bilhetesDaRodada
-          .reduce((acc, b) => acc + (Number(b.valor) || 0), 0)
+          .reduce(
+            (acc, b) => acc + (Number(b.valor) || 0),
+            0
+          )
           .toFixed(2)
       );
 
