@@ -19,11 +19,11 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
-// 🔥 NOVO: função isolada de fetch (sem refatorar resto)
+// 🔥 CORREÇÃO: remove Caixa e adiciona fallback compatível
 async function fetchFederal(signal: AbortSignal) {
   const urls = [
-    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // oficial
-    "https://loteriascaixa-api.herokuapp.com/api/federal/latest",   // fallback
+    "https://loteriascaixa-api.herokuapp.com/api/federal/latest", // principal
+    "https://loteriascaixa-api.herokuapp.com/api/federal",        // fallback
   ];
 
   for (const url of urls) {
@@ -43,7 +43,7 @@ async function fetchFederal(signal: AbortSignal) {
 
       const data: any = await response.json();
 
-      // adapta formatos diferentes
+      // 🔹 formato /latest
       if (data?.listaDezenas) {
         return {
           dataApuracao: data.dataApuracao,
@@ -57,6 +57,27 @@ async function fetchFederal(signal: AbortSignal) {
           dezenas: data.dezenas,
         };
       }
+
+      // 🔹 formato lista
+      if (Array.isArray(data) && data.length > 0) {
+        const ultimo = data[0];
+
+        if (ultimo?.listaDezenas) {
+          return {
+            dataApuracao: ultimo.dataApuracao,
+            dezenas: ultimo.listaDezenas,
+          };
+        }
+
+        if (ultimo?.dezenas) {
+          return {
+            dataApuracao: ultimo.data,
+            dezenas: ultimo.dezenas,
+          };
+        }
+      }
+
+      console.warn("[FEDERAL] formato desconhecido:", url);
     } catch {
       console.warn("[FEDERAL] erro ao tentar:", url);
     }
