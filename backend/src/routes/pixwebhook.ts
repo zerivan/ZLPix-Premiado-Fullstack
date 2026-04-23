@@ -9,30 +9,28 @@ const fetchFn: typeof fetch = (...args: any) =>
   (globalThis as any).fetch(...args);
 
 function getNextWednesday(): Date {
-  const BR_OFFSET_MS = -3 * 60 * 60 * 1000;
   const now = new Date();
-  const nowBrClock = new Date(now.getTime() + BR_OFFSET_MS);
 
-  const day = nowBrClock.getUTCDay();
-  const hour = nowBrClock.getUTCHours();
-  const targetBrClock = new Date(nowBrClock);
+  const day = now.getDay(); // 0=domingo ... 3=quarta
+  const hour = now.getHours();
+  const target = new Date(now);
 
   if (day === 3) {
-    // Regra de negócio: corte às 17:00 (horário de Brasília)
+    // Regra de negócio: corte às 17:00 (horário local)
     if (hour < 17) {
-      targetBrClock.setUTCHours(20, 0, 0, 0);
-      return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
+      target.setHours(20, 0, 0, 0);
+      return target;
     }
-    targetBrClock.setUTCDate(targetBrClock.getUTCDate() + 7);
-    targetBrClock.setUTCHours(20, 0, 0, 0);
-    return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
+    target.setDate(target.getDate() + 7);
+    target.setHours(20, 0, 0, 0);
+    return target;
   }
 
   const diff = (3 - day + 7) % 7;
-  targetBrClock.setUTCDate(targetBrClock.getUTCDate() + diff);
-  targetBrClock.setUTCHours(20, 0, 0, 0);
+  target.setDate(target.getDate() + diff);
+  target.setHours(20, 0, 0, 0);
 
-  return new Date(targetBrClock.getTime() - BR_OFFSET_MS);
+  return target;
 }
 
 async function fetchMpPayment(paymentId: string) {
