@@ -43,10 +43,25 @@ function extrairDezenasValidas(numeroCompleto: string): string[] {
   ];
 }
 
+// 🔒 VALIDAÇÃO ADICIONADA (CIRÚRGICA)
+function isDezenaValida(valor: string): boolean {
+  const numero = String(valor || "").replace(/\D/g, "");
+  return numero.length >= 2 && numero.length <= 5;
+}
+
 export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
+  // 🔒 BLOQUEIO DE RESULTADO INVÁLIDO
+  if (
+    !Array.isArray(resultado.dezenas) ||
+    resultado.dezenas.length === 0 ||
+    resultado.dezenas.some((d) => !isDezenaValida(d))
+  ) {
+    throw new Error("Resultado inválido recebido no sorteio");
+  }
+
   // ✅ AJUSTE: usar horário LOCAL (compatível com banco)
   const inicio = new Date(sorteioData);
   inicio.setHours(0, 0, 0, 0);
