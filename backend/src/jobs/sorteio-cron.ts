@@ -48,8 +48,6 @@ async function processarSorteiosPendentesAutomatico() {
   emExecucao = true;
 
   try {
-    const agora = new Date();
-
     // 🔥 CORREÇÃO: buscar federal uma vez só
     const federal = await buscarResultadoFederal();
 
@@ -68,9 +66,8 @@ async function processarSorteiosPendentesAutomatico() {
             { resultadoFederal: null },
             { resultadoFederal: { startsWith: "PROCESSANDO_" } },
           ],
-          sorteioData: {
-            lt: agora,
-          },
+          // ✅ CORREÇÃO: removido filtro por "agora"
+          // deixa o processor decidir o recorte de data
         },
         orderBy: {
           sorteioData: "asc",
