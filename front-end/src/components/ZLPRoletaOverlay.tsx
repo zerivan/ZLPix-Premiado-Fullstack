@@ -52,7 +52,7 @@ export default function ZLPRoletaOverlay() {
 
   const userId = resolveUserId();
 
-  // ✅ ALTERAÇÃO AQUI — controle por intervalo (15min)
+  // 🔥 ALTERAÇÃO: controle por tempo (15 minutos)
   useEffect(() => {
     const rotasSemOverlay = ["/login", "/cadastro", "/recuperar-senha"];
 
@@ -64,25 +64,18 @@ export default function ZLPRoletaOverlay() {
     const INTERVALO = 15 * 60 * 1000;
     const agora = Date.now();
 
-    const ultimaExibicao = Number(
-      localStorage.getItem("ZLP_ROLETA_OVERLAY_TS") || 0
-    );
+    const ultima = Number(localStorage.getItem("ZLP_ROLETA_OVERLAY_TS") || 0);
 
-    const passouTempo = agora - ultimaExibicao > INTERVALO;
-
-    if (!ultimaExibicao || passouTempo) {
+    if (!ultima || agora - ultima > INTERVALO) {
       const timer = window.setTimeout(() => {
         setOpen(true);
-        localStorage.setItem(
-          "ZLP_ROLETA_OVERLAY_TS",
-          String(Date.now())
-        );
+        localStorage.setItem("ZLP_ROLETA_OVERLAY_TS", String(Date.now()));
       }, 400);
 
       return () => window.clearTimeout(timer);
+    } else {
+      setOpen(false);
     }
-
-    setOpen(false);
   }, [pathname, userId]);
 
   function normalizar(valor: unknown) {
@@ -221,7 +214,7 @@ export default function ZLPRoletaOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#020617]/75 px-4 backdrop-blur-md">
       <div className="w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
-        {/* restante intacto */}
+        {/* layout preservado */}
       </div>
     </div>
   );
