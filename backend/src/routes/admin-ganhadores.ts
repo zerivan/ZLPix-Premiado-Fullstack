@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 
 const router = Router();
 
-const DIAS_PERMANENCIA = 7;
+const DIAS_PERMANENCIA = 8;
 
 /**
 
@@ -15,11 +15,11 @@ const DIAS_PERMANENCIA = 7;
 
 * REGRA:
 
-* - Mostra bilhetes já apurados
+* - Lista deve existir mesmo sem apuração
 
-* - Apenas dentro da janela de permanência (7 dias)
+* - Permanece por 8 dias
 
-* - Baseado exclusivamente em sorteioData
+* - Baseado em sorteioData (fallback: createdAt)
 
 * - Apenas ESPELHA o banco
     */
@@ -29,9 +29,7 @@ const DIAS_PERMANENCIA = 7;
   
   const agora = new Date();
   
-  const whereClause: any = {
-  apuradoEm: { not: null },
-  };
+  const whereClause: any = {};
   
   // 🔒 Filtro opcional por data específica (se informado)
   if (sorteioData) {
@@ -44,7 +42,7 @@ const DIAS_PERMANENCIA = 7;
   const bilhetes = await prisma.bilhete.findMany({
   where: whereClause,
   orderBy: {
-  apuradoEm: "desc",
+  createdAt: "desc",
   },
   include: {
   user: {
@@ -65,20 +63,20 @@ const DIAS_PERMANENCIA = 7;
   },
   });
   
-  // 🔥 Regra de permanência (7 dias após 17h do sorteio)
+  // 🔥 Regra de permanência (8 dias)
   const bilhetesFiltrados = bilhetes.filter((b) => {
-  if (!b.sorteioData) return false;
+  const base = b.sorteioData || b.createdAt;
+  if (!base) return false;
   
-  const vencimento = new Date(b.sorteioData);
-  vencimento.setHours(17, 0, 0, 0);
+  const inicio = new Date(base);
   
-  const limite = new Date(vencimento);
+  const limite = new Date(inicio);
   limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
   
   return agora.getTime() <= limite.getTime();
   });
   
-  // 🔥 AGRUPAMENTO RESTAURADO (ESSENCIAL PARA O FRONT)
+  // 🔥 AGRUPAMENTO (mantido)
   const agrupado: Record<number, any> = {};
   
   for (const b of bilhetesFiltrados) {
