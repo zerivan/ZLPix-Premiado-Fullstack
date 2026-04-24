@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
-const BASE_IDLE = 15000; // 15s inicial
-const AUTO_CLOSE = 15000; // 15s aberto (ANTES estava muito curto)
+const BASE_IDLE = 15000;
+const AUTO_CLOSE = 15000;
 
 export default function ZLPOverlayAlerta() {
   const [open, setOpen] = useState(false);
@@ -15,7 +15,6 @@ export default function ZLPOverlayAlerta() {
   const podeAbrir = useRef(false);
   const tentativas = useRef(0);
 
-  // 🔒 ROTAS PERMITIDAS
   const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
 
   useEffect(() => {
@@ -71,7 +70,6 @@ export default function ZLPOverlayAlerta() {
           setOpen(true);
           tentativas.current += 1;
 
-          // 🔥 NÃO deixar interação fechar o overlay
           if (closeTimer.current) clearTimeout(closeTimer.current);
           closeTimer.current = setTimeout(() => {
             setOpen(false);
@@ -81,7 +79,6 @@ export default function ZLPOverlayAlerta() {
     }
 
     function handleActivity() {
-      // 🔥 NÃO reinicia se overlay estiver aberto
       if (open) return;
       iniciarTimer();
     }
@@ -111,45 +108,16 @@ export default function ZLPOverlayAlerta() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: "url('/assets/images/bilhetes-zlp.png')",
+          backgroundImage: "url('/bilhetes-zlp.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       />
 
-      {/* OVERLAY ESCURO */}
-      <div className="absolute inset-0 bg-black/80" />
+      {/* 🔥 OVERLAY CORRIGIDO (PADRÃO APP) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/90 via-[#0f172a]/60 to-transparent backdrop-blur-[2px]" />
 
       {/* CONTEÚDO */}
-      <div className="relative h-full flex flex-col justify-end text-white p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+      <div className="relative h-full flex flex-col justify-end text-white p-6">
 
-        <h1 className="text-2xl font-bold mb-2">
-          Colete suas moedas diárias!
-        </h1>
-
-        <p className="text-sm text-gray-300 mb-6">
-          Faça seu check-in e acumule ZLP para trocar por bilhetes.
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => setOpen(false)}
-            className="flex-1 py-3 rounded-full bg-gray-700 text-white"
-          >
-            Agora não
-          </button>
-
-          <button
-            onClick={() => {
-              setOpen(false);
-              navigate("/zlp");
-            }}
-            className="flex-1 py-3 rounded-full bg-yellow-400 text-black font-bold"
-          >
-            Coletar agora
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+        <h1 className="text-2
