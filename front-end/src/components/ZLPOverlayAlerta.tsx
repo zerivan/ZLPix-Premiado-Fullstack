@@ -1,20 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
-const BASE_IDLE = 10000; // 10s inicial
-const AUTO_CLOSE = 8000; // fecha sozinho
+const BASE_IDLE = 15000; // 15s inicial
+const AUTO_CLOSE = 15000; // 15s aberto (ANTES estava muito curto)
 
 export default function ZLPOverlayAlerta() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const idleTimer = useRef<any>(null);
   const closeTimer = useRef<any>(null);
   const podeAbrir = useRef(false);
-  const tentativas = useRef(0); // 🔥 controle progressivo
+  const tentativas = useRef(0);
+
+  // 🔒 ROTAS PERMITIDAS
+  const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
 
   useEffect(() => {
+    if (!rotasPermitidas.includes(location.pathname)) {
+      return;
+    }
+
     async function verificar() {
       try {
         const user = localStorage.getItem("USER_ZLPIX");
@@ -26,8 +34,8 @@ export default function ZLPOverlayAlerta() {
           headers: {
             "x-user-id": String(
               parsed?.id ?? parsed?.user?.id ?? parsed?.userId ?? ""
-            )
-          }
+            ),
+          },
         });
 
         const lastCheckin = res.data.lastCheckin;
@@ -46,54 +54,60 @@ export default function ZLPOverlayAlerta() {
     }
 
     verificar();
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
+    if (!rotasPermitidas.includes(location.pathname)) return;
+
     function calcularDelay() {
-      // 🔥 delay cresce a cada tentativa
-      return BASE_IDLE * (tentativas.current + 1);
+      return Math.min(BASE_IDLE * (tentativas.current + 1), 60000);
     }
 
-    function resetTimer() {
+    function iniciarTimer() {
       if (idleTimer.current) clearTimeout(idleTimer.current);
 
-      const delay = calcularDelay();
-
       idleTimer.current = setTimeout(() => {
-        if (podeAbrir.current) {
+        if (podeAbrir.current && !open) {
           setOpen(true);
-          tentativas.current += 1; // 🔥 aumenta delay futuro
+          tentativas.current += 1;
 
-          // auto close
+          // 🔥 NÃO deixar interação fechar o overlay
           if (closeTimer.current) clearTimeout(closeTimer.current);
           closeTimer.current = setTimeout(() => {
             setOpen(false);
           }, AUTO_CLOSE);
         }
-      }, delay);
+      }, calcularDelay());
+    }
+
+    function handleActivity() {
+      // 🔥 NÃO reinicia se overlay estiver aberto
+      if (open) return;
+      iniciarTimer();
     }
 
     const eventos = ["mousemove", "mousedown", "keydown", "touchstart"];
 
-    eventos.forEach((evt) => window.addEventListener(evt, resetTimer));
+    eventos.forEach((evt) => window.addEventListener(evt, handleActivity));
 
-    resetTimer();
+    iniciarTimer();
 
     return () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       if (closeTimer.current) clearTimeout(closeTimer.current);
 
       eventos.forEach((evt) =>
-        window.removeEventListener(evt, resetTimer)
+        window.removeEventListener(evt, handleActivity)
       );
     };
-  }, []);
+  }, [open, location.pathname]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end text-white">
+    <div className="fixed inset-0 z-[9999]">
 
+      {/* BACKGROUND REAL */}
       <div
         className="absolute inset-0"
         style={{
@@ -103,9 +117,11 @@ export default function ZLPOverlayAlerta() {
         }}
       />
 
-      <div className="absolute inset-0 bg-black/70" />
+      {/* OVERLAY ESCURO */}
+      <div className="absolute inset-0 bg-black/80" />
 
-      <div className="relative p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+      {/* CONTEÚDO */}
+      <div className="relative h-full flex flex-col justify-end text-white p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
 
         <h1 className="text-2xl font-bold mb-2">
           Colete suas moedas diárias!
