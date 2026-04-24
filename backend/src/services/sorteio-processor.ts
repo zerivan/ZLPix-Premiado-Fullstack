@@ -43,10 +43,10 @@ function extrairDezenasValidas(numeroCompleto: string): string[] {
   ];
 }
 
-// 🔧 CORREÇÃO CIRÚRGICA: aceitar até 6 dígitos (formato real da Federal)
+// 🔧 CORREÇÃO: dezenas válidas são SEMPRE 2 dígitos
 function isDezenaValida(valor: string): boolean {
   const numero = String(valor || "").replace(/\D/g, "");
-  return numero.length >= 4 && numero.length <= 6;
+  return numero.length === 2;
 }
 
 export async function processarSorteio(
