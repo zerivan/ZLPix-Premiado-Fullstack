@@ -50,10 +50,23 @@ router.post("/apurar", async (req, res) => {
       premios = json.data.premios;
     }
 
-    // 🔥 CORREÇÃO: NÃO PROCESSAR AQUI
+    // 🔧 CORREÇÃO: converter milhar → dezenas (2 dígitos)
+    const dezenas: string[] = [];
+
+    for (const num of premios) {
+      const clean = String(num || "").replace(/\D/g, "");
+
+      if (clean.length < 4) continue;
+
+      const milhar = clean.slice(-4);
+
+      dezenas.push(milhar.slice(0, 2));
+      dezenas.push(milhar.slice(2, 4));
+    }
+
     const resultado = await processarSorteio(
       new Date(sorteioData),
-      { dezenas: premios }
+      { dezenas }
     );
 
     return res.json({
