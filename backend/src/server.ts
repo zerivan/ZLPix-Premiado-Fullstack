@@ -177,7 +177,7 @@ app.use("/api/cms", cmsPreviewRoutes);
 // ROTAS ADMIN
 // ============================
 app.use("/api/admin/usuarios", adminAuth, adminUsuariosRoutes);
-app.use("/api/admin/ganhadores", adminAuth, adminGanhadoresRoutes);
+app.use("/api/admin/ganhadores", adminGanhadoresRoutes);
 app.use("/api/admin/relatorios", adminAuth, adminRelatoriosRoutes);
 app.use("/api/admin/relatorios-v2", adminAuth, adminRelatoriosV2Routes);
 app.use("/api/admin/cms", adminAuth, adminCmsRoutes);
