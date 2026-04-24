@@ -1,118 +1,57 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Router } from "express";
+import { prisma } from "../lib/prisma";
 
-type Bilhete = {
-id?: number;
-dezenas: string;
-status?: string;
-};
+const router = Router();
 
-type Usuario = {
-userId?: number;
-nome?: string;
-bilhetes: Bilhete[];
-};
-
-function extrairUsuarios(data: any): Usuario[] {
-// aceita múltiplos formatos sem quebrar contrato existente
-if (Array.isArray(data?.usuarios)) return data.usuarios;
-if (Array.isArray(data?.ganhadores)) return data.ganhadores;
-if (Array.isArray(data?.data)) return data.data;
-if (Array.isArray(data)) return data;
-
-return [];
-}
-
-export default function AdminGanhadores() {
-const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-const [listaTexto, setListaTexto] = useState("");
-
-useEffect(() => {
-carregar();
-}, []);
-
-async function carregar() {
+router.get("/", async (req, res) => {
 try {
-const res = await axios.get("/admin/ganhadores");
-
-  const lista = extrairUsuarios(res.data);
-
-  setUsuarios(lista);
-  gerarLista(lista);
-
-  console.log("GANHADORES RAW:", res.data);
-} catch (err) {
-  console.error("Erro ao carregar ganhadores", err);
-}
-
-}
-
-function gerarLista(lista: Usuario[]) {
-const linhas: string[] = [];
-
-lista.forEach((user) => {
-  user.bilhetes?.forEach((b) => {
-    linhas.push(`${linhas.length + 1};${b.dezenas}`);
-  });
+const bilhetes = await prisma.bilhete.findMany({
+where: {
+pago: true,
+},
+include: {
+user: true,
+},
+orderBy: {
+id: "desc",
+},
 });
 
-setListaTexto(linhas.reverse().join("\n"));
+const agrupado: Record<number, any> = {};
 
+for (const b of bilhetes) {
+  if (!agrupado[b.userId]) {
+    agrupado[b.userId] = {
+      userId: b.userId,
+      nome: b.user?.nome || "Usuário",
+      bilhetes: [],
+    };
+  }
+
+  agrupado[b.userId].bilhetes.push({
+    id: b.id,
+    dezenas: b.dezenas,
+    status: b.status,
+  });
 }
 
-function copiar() {
-navigator.clipboard.writeText(listaTexto);
+const usuarios = Object.values(agrupado);
+
+console.log("📊 [ADMIN-GANHADORES]");
+console.log("Total:", bilhetes.length);
+console.log("Usuários:", usuarios.length);
+
+return res.json({
+  usuarios,
+});
+
+} catch (error) {
+console.error("Erro admin-ganhadores:", error);
+return res.status(500).json({
+ok: false,
+error: "Erro ao buscar ganhadores",
+});
 }
+});
 
-return (
-<div className="p-4">
-<h2 className="text-xl font-bold mb-4">Resultado do Sorteio</h2>
-
-  {usuarios.map((user, index) => (
-    <div key={index} className="mb-6 border rounded-lg p-3">
-      <div className="font-semibold mb-2">
-        #{user.userId ?? index + 1} — {user.nome ?? "Usuário"} ({user.bilhetes?.length || 0} bilhetes)
-      </div>
-
-      {user.bilhetes?.map((b, i) => (
-        <div
-          key={i}
-          className="flex justify-between border p-2 rounded mb-2"
-        >
-          <span>{b.dezenas}</span>
-          <span className="text-yellow-600 font-semibold">
-            {b.status || "ATIVO"}
-          </span>
-        </div>
-      ))}
-    </div>
-  ))}
-
-  <div className="mt-6">
-    <h3 className="font-semibold mb-2">
-      Lista Numérica para Conferência Manual
-    </h3>
-
-    <div className="flex gap-2 mb-2">
-      <button
-        onClick={copiar}
-        className="bg-blue-600 text-white px-3 py-2 rounded"
-      >
-        Copiar lista numérica
-      </button>
-
-      <button className="bg-yellow-500 text-white px-3 py-2 rounded">
-        Baixar ativos (motor)
-      </button>
-    </div>
-
-    <textarea
-      value={listaTexto}
-      readOnly
-      className="w-full h-40 border p-2 rounded"
-    />
-  </div>
-</div>
-
-);
-}
+export default router;
