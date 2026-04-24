@@ -43,32 +43,19 @@ function extrairDezenasValidas(numeroCompleto: string): string[] {
   ];
 }
 
-// 🔧 CORREÇÃO: dezenas válidas são SEMPRE 2 dígitos
-function isDezenaValida(valor: string): boolean {
-  const numero = String(valor || "").replace(/\D/g, "");
-  return numero.length === 2;
-}
-
 export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
-  if (
-    !Array.isArray(resultado.dezenas) ||
-    resultado.dezenas.length === 0 ||
-    resultado.dezenas.some((d) => !isDezenaValida(d))
-  ) {
-    throw new Error("Resultado inválido recebido no sorteio");
-  }
-
   const inicio = new Date(sorteioData);
-  inicio.setHours(0, 0, 0, 0);
+  inicio.setUTCHours(0, 0, 0, 0);
 
   const fim = new Date(sorteioData);
-  fim.setHours(23, 59, 59, 999);
+  fim.setUTCHours(23, 59, 59, 999);
 
   const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
 
+  // Recupera bilhetes "travados" por execução interrompida anteriormente
   await prisma.bilhete.updateMany({
     where: {
       pago: true,
@@ -142,12 +129,10 @@ export async function processarSorteio(
     });
 
     await prisma.$transaction(async (tx) => {
+      // 🔧 CORREÇÃO: usar apenas o lote atual (claimToken)
       const bilhetesDaRodada = await tx.bilhete.findMany({
         where: {
-          pago: true,
-          status: "ATIVO",
-          apuradoEm: null,
-          sorteioData: { gte: inicio, lte: fim },
+          resultadoFederal: claimToken,
         },
         select: { valor: true },
       });
