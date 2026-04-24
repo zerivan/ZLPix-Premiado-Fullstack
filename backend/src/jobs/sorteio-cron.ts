@@ -48,7 +48,6 @@ async function processarSorteiosPendentesAutomatico() {
   emExecucao = true;
 
   try {
-    // 🔥 CORREÇÃO: buscar federal uma vez só
     const federal = await buscarResultadoFederal();
 
     if (!federal) {
@@ -66,8 +65,6 @@ async function processarSorteiosPendentesAutomatico() {
             { resultadoFederal: null },
             { resultadoFederal: { startsWith: "PROCESSANDO_" } },
           ],
-          // ✅ CORREÇÃO: removido filtro por "agora"
-          // deixa o processor decidir o recorte de data
         },
         orderBy: {
           sorteioData: "asc",
@@ -86,8 +83,22 @@ async function processarSorteiosPendentesAutomatico() {
         bilhetePendente.sorteioData.toISOString()
       );
 
+      // 🔧 CORREÇÃO: converter milhar → dezenas (2 dígitos)
+      const dezenas: string[] = [];
+
+      for (const num of federal.numeros) {
+        const clean = String(num || "").replace(/\D/g, "");
+
+        if (clean.length < 4) continue;
+
+        const milhar = clean.slice(-4);
+
+        dezenas.push(milhar.slice(0, 2));
+        dezenas.push(milhar.slice(2, 4));
+      }
+
       await processarSorteio(bilhetePendente.sorteioData, {
-        dezenas: federal.numeros,
+        dezenas,
       });
 
       console.log(
@@ -102,12 +113,12 @@ async function processarSorteiosPendentesAutomatico() {
   }
 }
 
-// Bootstrap: garante tentativa imediata ao subir o servidor
+// Bootstrap
 setTimeout(() => {
   void processarSorteiosPendentesAutomatico();
 }, 15_000);
 
-// Execução leve recorrente
+// Cron
 cron.schedule("*/5 * * * *", async () => {
   await processarSorteiosPendentesAutomatico();
 });
