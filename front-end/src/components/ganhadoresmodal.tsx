@@ -1,28 +1,103 @@
-import React,{useEffect,useState}from"react";
-import{api}from"../api/client";
-type G={nome:string;premio:string;data:string};
-export default function GanhadoresModal({onClose}:{onClose:()=>void}){
-const[items,setItems]=useState<G[]|null>(null);
-useEffect(()=>{
-let mounted=true;
-api.get("/ganhadores").then(r=>{if(mounted)setItems(r.data)}).catch(()=>{
-if(mounted)setItems([{nome:"João Silva",premio:"Pix R$200",data:"2025-11-10"},{nome:"Maria Souza",premio:"Pix R$100",data:"2025-10-01"}]);});
-return()=>{mounted=false}},[]);
-return(
-<div className="modal-backdrop"onClick={onClose}>
-<div className="modal-card"onClick={e=>e.stopPropagation()}>
-<h2>Ganhadores Recentes</h2>
-<div style={{marginTop:12}}>
-{!items?<p>Carregando...</p>:
-items.length===0?<p className="small-muted">Nenhum ganhador registrado</p>:
-items.map((g,idx)=>(
-<div key={idx}style={{padding:10,borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-<strong>{g.nome}</strong><div className="small-muted">{g.premio} • {g.data}</div>
-</div>))}
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+type Bilhete = {
+id: number;
+dezenas: string;
+status: string;
+};
+
+type Usuario = {
+userId: number;
+nome: string;
+bilhetes: Bilhete[];
+};
+
+export default function AdminGanhadores() {
+const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+const [listaTexto, setListaTexto] = useState("");
+
+useEffect(() => {
+carregar();
+}, []);
+
+async function carregar() {
+const res = await axios.get("/admin/ganhadores");
+
+setUsuarios(res.data.usuarios || []);
+
+gerarLista(res.data.usuarios || []);
+
+}
+
+function gerarLista(lista: Usuario[]) {
+let linhas: string[] = [];
+
+lista.forEach((user) => {
+  user.bilhetes.forEach((b, index) => {
+    linhas.push(`${index + 1};${b.dezenas}`);
+  });
+});
+
+setListaTexto(linhas.reverse().join("\n"));
+
+}
+
+function copiar() {
+navigator.clipboard.writeText(listaTexto);
+}
+
+return (
+<div className="p-4">
+<h2 className="text-xl font-bold mb-4">Resultado do Sorteio</h2>
+
+  {usuarios.map((user, index) => (
+    <div key={index} className="mb-6 border rounded-lg p-3">
+      <div className="font-semibold mb-2">
+        #{user.userId} — {user.nome} ({user.bilhetes.length} bilhetes)
+      </div>
+
+      {user.bilhetes.map((b, i) => (
+        <div
+          key={i}
+          className="flex justify-between border p-2 rounded mb-2"
+        >
+          <span>{b.dezenas}</span>
+          <span className="text-yellow-600 font-semibold">
+            {b.status}
+          </span>
+        </div>
+      ))}
+    </div>
+  ))}
+
+  <div className="mt-6">
+    <h3 className="font-semibold mb-2">
+      Lista Numérica para Conferência Manual
+    </h3>
+
+    <div className="flex gap-2 mb-2">
+      <button
+        onClick={copiar}
+        className="bg-blue-600 text-white px-3 py-2 rounded"
+      >
+        Copiar lista numérica
+      </button>
+
+      <button
+        className="bg-yellow-500 text-white px-3 py-2 rounded"
+      >
+        Baixar ativos (motor)
+      </button>
+    </div>
+
+    <textarea
+      value={listaTexto}
+      readOnly
+      className="w-full h-40 border p-2 rounded"
+    />
+  </div>
 </div>
-<div style={{marginTop:14,display:"flex",justifyContent:"flex-end"}}>
-<button className="btn gray"onClick={onClose}>Fechar</button>
-</div>
-</div>
-</div>
-)}
+
+);
+}
