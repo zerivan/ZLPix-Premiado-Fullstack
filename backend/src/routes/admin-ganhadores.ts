@@ -1,104 +1,118 @@
-import { Router } from "express";
-import { prisma } from "../lib/prisma";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const router = Router();
+type Bilhete = {
+id?: number;
+dezenas: string;
+status?: string;
+};
 
-const DIAS_PERMANENCIA = 7;
+type Usuario = {
+userId?: number;
+nome?: string;
+bilhetes: Bilhete[];
+};
 
-router.get("/", async (req, res) => {
-  try {
-    const { sorteioData } = req.query;
+function extrairUsuarios(data: any): Usuario[] {
+// aceita múltiplos formatos sem quebrar contrato existente
+if (Array.isArray(data?.usuarios)) return data.usuarios;
+if (Array.isArray(data?.ganhadores)) return data.ganhadores;
+if (Array.isArray(data?.data)) return data.data;
+if (Array.isArray(data)) return data;
 
-    const agora = new Date();
+return [];
+}
 
-    const whereClause: any = {};
+export default function AdminGanhadores() {
+const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+const [listaTexto, setListaTexto] = useState("");
 
-    // 🔒 Filtro opcional por data específica
-    if (sorteioData) {
-      const data = new Date(String(sorteioData));
-      if (!isNaN(data.getTime())) {
-        whereClause.sorteioData = data;
-      }
-    }
+useEffect(() => {
+carregar();
+}, []);
 
-    const bilhetes = await prisma.bilhete.findMany({
-      where: whereClause,
-      orderBy: {
-        createdAt: "asc", // 🔥 CORREÇÃO AQUI
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            pixKey: true,
-          },
-        },
-        transacao: {
-          select: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-    });
+async function carregar() {
+try {
+const res = await axios.get("/admin/ganhadores");
 
-    // 🔥 DEBUG TEMPORÁRIO (NÃO ALTERA COMPORTAMENTO)
-    const ativos = bilhetes.filter((b) => !b.apuradoEm);
-    const apurados = bilhetes.filter((b) => b.apuradoEm);
+  const lista = extrairUsuarios(res.data);
 
-    console.log("📊 [ADMIN-GANHADORES]");
-    console.log("Total:", bilhetes.length);
-    console.log("Ativos:", ativos.length);
-    console.log("Apurados:", apurados.length);
+  setUsuarios(lista);
+  gerarLista(lista);
 
-    // 🔥 NOVA REGRA:
-    // ATIVOS + APURADOS (7 dias)
-    const bilhetesFiltrados = bilhetes.filter((b) => {
-      if (!b.apuradoEm) return true;
+  console.log("GANHADORES RAW:", res.data);
+} catch (err) {
+  console.error("Erro ao carregar ganhadores", err);
+}
 
-      if (!b.sorteioData) return false;
+}
 
-      const vencimento = new Date(b.sorteioData);
-      vencimento.setHours(17, 0, 0, 0);
+function gerarLista(lista: Usuario[]) {
+const linhas: string[] = [];
 
-      const limite = new Date(vencimento);
-      limite.setDate(limite.getDate() + DIAS_PERMANENCIA);
-
-      return agora.getTime() <= limite.getTime();
-    });
-
-    const lista = bilhetesFiltrados.map((b) => ({
-      id: b.id,
-      userId: b.user.id,
-      nome: b.user.name,
-      email: b.user.email,
-      telefone: b.user.phone,
-      pixKey: b.user.pixKey,
-      dezenas: b.dezenas,
-      sorteioData: b.sorteioData,
-      status: b.status,
-      premio: b.premioValor ?? 0,
-      resultadoFederal: b.resultadoFederal,
-      apuradoEm: b.apuradoEm,
-      transacaoId: b.transacao?.id ?? null,
-      transacaoStatus: b.transacao?.status ?? null,
-    }));
-
-    return res.json({
-      ok: true,
-      total: lista.length,
-      data: lista,
-    });
-  } catch (error) {
-    console.error("Erro admin resultado:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Erro ao buscar resultado",
-    });
-  }
+lista.forEach((user) => {
+  user.bilhetes?.forEach((b) => {
+    linhas.push(`${linhas.length + 1};${b.dezenas}`);
+  });
 });
 
-export default router;
+setListaTexto(linhas.reverse().join("\n"));
+
+}
+
+function copiar() {
+navigator.clipboard.writeText(listaTexto);
+}
+
+return (
+<div className="p-4">
+<h2 className="text-xl font-bold mb-4">Resultado do Sorteio</h2>
+
+  {usuarios.map((user, index) => (
+    <div key={index} className="mb-6 border rounded-lg p-3">
+      <div className="font-semibold mb-2">
+        #{user.userId ?? index + 1} — {user.nome ?? "Usuário"} ({user.bilhetes?.length || 0} bilhetes)
+      </div>
+
+      {user.bilhetes?.map((b, i) => (
+        <div
+          key={i}
+          className="flex justify-between border p-2 rounded mb-2"
+        >
+          <span>{b.dezenas}</span>
+          <span className="text-yellow-600 font-semibold">
+            {b.status || "ATIVO"}
+          </span>
+        </div>
+      ))}
+    </div>
+  ))}
+
+  <div className="mt-6">
+    <h3 className="font-semibold mb-2">
+      Lista Numérica para Conferência Manual
+    </h3>
+
+    <div className="flex gap-2 mb-2">
+      <button
+        onClick={copiar}
+        className="bg-blue-600 text-white px-3 py-2 rounded"
+      >
+        Copiar lista numérica
+      </button>
+
+      <button className="bg-yellow-500 text-white px-3 py-2 rounded">
+        Baixar ativos (motor)
+      </button>
+    </div>
+
+    <textarea
+      value={listaTexto}
+      readOnly
+      className="w-full h-40 border p-2 rounded"
+    />
+  </div>
+</div>
+
+);
+}
