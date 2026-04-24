@@ -23,8 +23,8 @@ import TermosDeUso from "../pages/termos-de-uso";
 // 🔥 NOVO
 import ZLPPage from "../pages/zlp";
 
-// 🔥 ADICIONADO (GANHADORES)
-import AdminGanhadores from "../pages/adminganhadores";
+// 🔥 CORREÇÃO: É COMPONENTE, NÃO PAGE
+import AdminGanhadores from "../components/adminganhadores";
 
 import AdminMotorManual from "../components/adminmotormanual";
 
@@ -216,7 +216,6 @@ export default function AppRoutes() {
             element={<AdminMotorManual />}
           />
 
-          {/* 🔥 CORREÇÃO: ROTA DOS GANHADORES */}
           <Route
             path="/admin/ganhadores"
             element={<AdminGanhadores />}
