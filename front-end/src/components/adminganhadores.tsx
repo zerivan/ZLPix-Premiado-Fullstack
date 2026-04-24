@@ -11,7 +11,7 @@ type Ganhador = {
   apuradoEm?: string;
 };
 
-const DIAS_PERMANENCIA = 7;
+const DIAS_PERMANENCIA = 8;
 
 export default function AdminGanhadores() {
   const [ganhadores, setGanhadores] = useState<Ganhador[]>([]);
@@ -34,11 +34,34 @@ export default function AdminGanhadores() {
         }
       );
 
-      if (res.data?.ok) {
-        setGanhadores(res.data.data || []);
-      } else {
+      if (!res.data?.ok) {
         setErro("Resposta inválida do servidor.");
+        return;
       }
+
+      let lista: Ganhador[] = [];
+
+      // 🔥 CORREÇÃO PRINCIPAL: aceitar múltiplos formatos
+      if (Array.isArray(res.data.data)) {
+        lista = res.data.data;
+      } else if (Array.isArray(res.data.usuarios)) {
+        // flatten do formato agrupado
+        lista = res.data.usuarios.flatMap((u: any) =>
+          (u.bilhetes || []).map((b: any) => ({
+            id: b.id,
+            userId: u.userId,
+            nome: u.nome,
+            dezenas: b.dezenas,
+            premio: b.premio,
+            status: b.status,
+            apuradoEm: b.apuradoEm,
+          }))
+        );
+      } else {
+        lista = [];
+      }
+
+      setGanhadores(lista);
     } catch (e: any) {
       console.error("Erro ganhadores:", e);
       setErro("Erro ao carregar resultado.");
@@ -52,7 +75,6 @@ export default function AdminGanhadores() {
   }, []);
 
   function visivel(g: Ganhador) {
-    // 🔥 CORREÇÃO: NÃO mostrar itens sem apuração (remove ativos antigos/lixo)
     if (!g.apuradoEm) return false;
 
     const dataApuracao = new Date(g.apuradoEm);
@@ -78,9 +100,7 @@ export default function AdminGanhadores() {
       return;
     }
 
-    const linhas = ativos.map(
-      (g) => `${g.id};${g.dezenas}`
-    );
+    const linhas = ativos.map((g) => `${g.id};${g.dezenas}`);
 
     const conteudo = linhas.join("\n");
 
