@@ -46,15 +46,23 @@ export default function ZLPOverlayAlerta() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col justify-end text-white">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end text-white">
 
-      {/* IMAGEM / ÁREA VISUAL */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-6xl animate-pulse">💰</div>
-      </div>
+      {/* 🔥 BACKGROUND COM IMAGEM */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "url('/assets/images/bilhetes-zlp.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
 
-      {/* CONTEÚDO */}
-      <div className="p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+      {/* 🔥 OVERLAY ESCURO PARA LEGIBILIDADE */}
+      <div className="absolute inset-0 bg-black/70" />
+
+      {/* 🔥 CONTEÚDO */}
+      <div className="relative p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
 
         <h1 className="text-2xl font-bold mb-2">
           Colete suas moedas diárias!
@@ -66,7 +74,6 @@ export default function ZLPOverlayAlerta() {
 
         {/* BOTÕES */}
         <div className="flex gap-3">
-
           <button
             onClick={() => setOpen(false)}
             className="flex-1 py-3 rounded-full bg-gray-700 text-white"
@@ -83,7 +90,6 @@ export default function ZLPOverlayAlerta() {
           >
             Coletar agora
           </button>
-
         </div>
       </div>
     </div>
