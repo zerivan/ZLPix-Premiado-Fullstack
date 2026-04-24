@@ -23,6 +23,9 @@ import TermosDeUso from "../pages/termos-de-uso";
 // 🔥 NOVO
 import ZLPPage from "../pages/zlp";
 
+// 🔥 ADICIONADO (GANHADORES)
+import AdminGanhadores from "../pages/adminganhadores";
+
 import AdminMotorManual from "../components/adminmotormanual";
 
 // Admin
@@ -212,6 +215,12 @@ export default function AppRoutes() {
             path="/admin/motor-manual"
             element={<AdminMotorManual />}
           />
+
+          {/* 🔥 CORREÇÃO: ROTA DOS GANHADORES */}
+          <Route
+            path="/admin/ganhadores"
+            element={<AdminGanhadores />}
+          />
         </Route>
 
         <Route
@@ -228,7 +237,6 @@ export default function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* 🔥 MOVIDO PARA FORA DO ROUTER */}
       <GlobalChatBot />
       <ZLPOverlayAlerta />
       <ZLPRoletaOverlay />
