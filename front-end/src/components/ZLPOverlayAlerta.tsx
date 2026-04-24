@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+
+const BASE_IDLE = 10000; // 10s inicial
+const AUTO_CLOSE = 8000; // fecha sozinho
 
 export default function ZLPOverlayAlerta() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+
+  const idleTimer = useRef<any>(null);
+  const closeTimer = useRef<any>(null);
+  const podeAbrir = useRef(false);
+  const tentativas = useRef(0); // 🔥 controle progressivo
 
   useEffect(() => {
     async function verificar() {
@@ -29,11 +37,8 @@ export default function ZLPOverlayAlerta() {
           ? new Date(lastCheckin).toDateString()
           : null;
 
-        const jaMostrou = localStorage.getItem("ZLP_ALERTA");
-
-        if (data !== hoje && jaMostrou !== hoje) {
-          setOpen(true);
-          localStorage.setItem("ZLP_ALERTA", hoje);
+        if (data !== hoje) {
+          podeAbrir.current = true;
         }
       } catch (err) {
         console.error("Erro alerta ZLP:", err);
@@ -43,12 +48,52 @@ export default function ZLPOverlayAlerta() {
     verificar();
   }, []);
 
+  useEffect(() => {
+    function calcularDelay() {
+      // 🔥 delay cresce a cada tentativa
+      return BASE_IDLE * (tentativas.current + 1);
+    }
+
+    function resetTimer() {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+
+      const delay = calcularDelay();
+
+      idleTimer.current = setTimeout(() => {
+        if (podeAbrir.current) {
+          setOpen(true);
+          tentativas.current += 1; // 🔥 aumenta delay futuro
+
+          // auto close
+          if (closeTimer.current) clearTimeout(closeTimer.current);
+          closeTimer.current = setTimeout(() => {
+            setOpen(false);
+          }, AUTO_CLOSE);
+        }
+      }, delay);
+    }
+
+    const eventos = ["mousemove", "mousedown", "keydown", "touchstart"];
+
+    eventos.forEach((evt) => window.addEventListener(evt, resetTimer));
+
+    resetTimer();
+
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+
+      eventos.forEach((evt) =>
+        window.removeEventListener(evt, resetTimer)
+      );
+    };
+  }, []);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end text-white">
 
-      {/* 🔥 BACKGROUND COM IMAGEM */}
       <div
         className="absolute inset-0"
         style={{
@@ -58,10 +103,8 @@ export default function ZLPOverlayAlerta() {
         }}
       />
 
-      {/* 🔥 OVERLAY ESCURO PARA LEGIBILIDADE */}
       <div className="absolute inset-0 bg-black/70" />
 
-      {/* 🔥 CONTEÚDO */}
       <div className="relative p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
 
         <h1 className="text-2xl font-bold mb-2">
@@ -72,7 +115,6 @@ export default function ZLPOverlayAlerta() {
           Faça seu check-in e acumule ZLP para trocar por bilhetes.
         </p>
 
-        {/* BOTÕES */}
         <div className="flex gap-3">
           <button
             onClick={() => setOpen(false)}
