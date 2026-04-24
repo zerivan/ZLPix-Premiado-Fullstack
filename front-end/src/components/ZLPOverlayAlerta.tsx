@@ -120,4 +120,33 @@ export default function ZLPOverlayAlerta() {
       {/* CONTEÚDO */}
       <div className="relative h-full flex flex-col justify-end text-white p-6">
 
-        <h1 className="text-2
+        <h1 className="text-2xl font-bold mb-2">
+          Colete suas moedas diárias!
+        </h1>
+
+        <p className="text-sm text-gray-300 mb-6">
+          Faça seu check-in e acumule ZLP para trocar por bilhetes.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setOpen(false)}
+            className="flex-1 py-3 rounded-full bg-gray-700 text-white"
+          >
+            Agora não
+          </button>
+
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate("/zlp");
+            }}
+            className="flex-1 py-3 rounded-full bg-yellow-400 text-black font-bold"
+          >
+            Coletar agora
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
