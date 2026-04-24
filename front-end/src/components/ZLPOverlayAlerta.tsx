@@ -18,9 +18,7 @@ export default function ZLPOverlayAlerta() {
   const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
 
   useEffect(() => {
-    if (!rotasPermitidas.includes(location.pathname)) {
-      return;
-    }
+    if (!rotasPermitidas.includes(location.pathname)) return;
 
     async function verificar() {
       try {
@@ -84,7 +82,6 @@ export default function ZLPOverlayAlerta() {
     }
 
     const eventos = ["mousemove", "mousedown", "keydown", "touchstart"];
-
     eventos.forEach((evt) => window.addEventListener(evt, handleActivity));
 
     iniciarTimer();
@@ -104,18 +101,15 @@ export default function ZLPOverlayAlerta() {
   return (
     <div className="fixed inset-0 z-[9999]">
 
-      {/* BACKGROUND REAL */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: "url('/bilhetes-zlp.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      {/* ✅ IMAGEM CORRETA */}
+      <img
+        src="/assets/bilhetes-zlp.png"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
-      {/* 🔥 OVERLAY CORRIGIDO (PADRÃO APP) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/90 via-[#0f172a]/60 to-transparent backdrop-blur-[2px]" />
+      {/* ✅ OVERLAY AJUSTADO */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
       {/* CONTEÚDO */}
       <div className="relative h-full flex flex-col justify-end text-white p-6">
