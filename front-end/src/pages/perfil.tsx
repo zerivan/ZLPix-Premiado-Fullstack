@@ -1,4 +1,3 @@
-// src/pages/perfil.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBottom from "../components/navbottom";
@@ -11,7 +10,6 @@ export default function Perfil() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 NOVO
   const [saldoZLP, setSaldoZLP] = useState<number | null>(null);
 
   useEffect(() => {
@@ -23,7 +21,6 @@ export default function Perfil() {
         const parsed = JSON.parse(userData);
         setUser(parsed);
 
-        // 🔥 NOVO: carregar saldo ZLP
         const userId = parsed.id;
         api
           .get("/zlp/saldo", {
@@ -155,11 +152,9 @@ export default function Perfil() {
           <p className="text-sm text-yellow-300">{user.email}</p>
         </header>
 
-        {/* 🔥 NOVO BLOCO ZLP */}
-        <div
-          onClick={() => navigate("/zlp")}
-          className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 p-4 rounded-2xl shadow-lg mb-6 flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform"
-        >
+        {/* 🔥 BLOCO ZLP AJUSTADO (SEM QUEBRAR NADA) */}
+        <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 p-4 rounded-2xl shadow-lg mb-6 flex items-center justify-between">
+
           <div>
             <p className="font-bold text-lg">💰 Moedas ZLP</p>
             <p className="text-sm">
@@ -167,7 +162,27 @@ export default function Perfil() {
             </p>
           </div>
 
-          <div className="text-xl font-bold">›</div>
+          <div className="flex items-center gap-2">
+
+            {/* CHECK-IN */}
+            <button
+              onClick={() => navigate("/zlp")}
+              className="bg-white/20 hover:bg-white/30 transition p-2 rounded-full"
+              title="Check-in diário"
+            >
+              🎁
+            </button>
+
+            {/* ROLETA */}
+            <button
+              onClick={() => navigate("/zlp-roleta")}
+              className="bg-white/20 hover:bg-white/30 transition p-2 rounded-full animate-pulse"
+              title="Girar roleta"
+            >
+              🎰
+            </button>
+
+          </div>
         </div>
 
         <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 shadow-lg mb-6 space-y-3 text-sm">
