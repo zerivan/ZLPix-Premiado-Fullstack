@@ -11,7 +11,7 @@ type Ganhador = {
   apuradoEm?: string;
 };
 
-const DIAS_PERMANENCIA = 8;
+const DIAS_PERMANENCIA = 7;
 
 export default function AdminGanhadores() {
   const [ganhadores, setGanhadores] = useState<Ganhador[]>([]);
@@ -41,11 +41,10 @@ export default function AdminGanhadores() {
 
       let lista: Ganhador[] = [];
 
-      // 🔥 CORREÇÃO PRINCIPAL: aceitar múltiplos formatos
+      // aceita os dois formatos
       if (Array.isArray(res.data.data)) {
         lista = res.data.data;
       } else if (Array.isArray(res.data.usuarios)) {
-        // flatten do formato agrupado
         lista = res.data.usuarios.flatMap((u: any) =>
           (u.bilhetes || []).map((b: any) => ({
             id: b.id,
@@ -57,8 +56,6 @@ export default function AdminGanhadores() {
             apuradoEm: b.apuradoEm,
           }))
         );
-      } else {
-        lista = [];
       }
 
       setGanhadores(lista);
@@ -75,7 +72,8 @@ export default function AdminGanhadores() {
   }, []);
 
   function visivel(g: Ganhador) {
-    if (!g.apuradoEm) return false;
+    // 🔥 CORREÇÃO: MOSTRA ATIVOS TAMBÉM
+    if (!g.apuradoEm) return true;
 
     const dataApuracao = new Date(g.apuradoEm);
     const limite = new Date(dataApuracao);
@@ -101,7 +99,6 @@ export default function AdminGanhadores() {
     }
 
     const linhas = ativos.map((g) => `${g.id};${g.dezenas}`);
-
     const conteudo = linhas.join("\n");
 
     const blob = new Blob([conteudo], {
@@ -151,10 +148,7 @@ export default function AdminGanhadores() {
 
       <div className="space-y-3">
         {Object.entries(agrupado).map(([userId, lista]) => (
-          <details
-            key={userId}
-            className="border rounded bg-gray-50"
-          >
+          <details key={userId} className="border rounded bg-gray-50">
             <summary className="cursor-pointer px-3 py-2 font-semibold text-sm">
               👤 #{userId} — {lista[0].nome} ({lista.length} bilhetes)
             </summary>
