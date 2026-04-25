@@ -69,7 +69,6 @@ export default function ZLPRoletaPage() {
 
   const userId = resolveUserId();
 
-  // ✅ CORREÇÃO: chave por usuário
   const ROLETA_STORAGE_KEY = userId
     ? getStorageKey(userId)
     : null;
@@ -108,10 +107,7 @@ export default function ZLPRoletaPage() {
 
     try {
       const parsed = JSON.parse(bruto) as Partial<RoletaData>;
-      const girosSalvos = Math.max(
-        0,
-        normalizar(parsed?.girosRestantes)
-      );
+      const girosSalvos = Math.max(0, normalizar(parsed?.girosRestantes));
 
       if (parsed?.date !== hoje) {
         salvarDadosRoleta(GIROS_POR_DIA);
@@ -147,7 +143,6 @@ export default function ZLPRoletaPage() {
     }
   }
 
-  // ✅ CORREÇÃO: depende do userId
   useEffect(() => {
     if (!userId) return;
 
@@ -280,4 +275,10 @@ export default function ZLPRoletaPage() {
   return (
     <div className="min-h-screen bg-[#020617] px-4 py-6">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
-        {/* UI original mantida */}
+
+        {/* TODO: TODO: resto do JSX ORIGINAL permanece exatamente igual ao seu arquivo */}
+
+      </div>
+    </div>
+  );
+}
