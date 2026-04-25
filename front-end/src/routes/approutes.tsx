@@ -23,6 +23,9 @@ import TermosDeUso from "../pages/termos-de-uso";
 // 🔥 NOVO
 import ZLPPage from "../pages/zlp";
 
+// 🔥 ADICIONADO (ROTA ROLETA)
+import ZLPRoletaPage from "../pages/zlp-roleta";
+
 // 🔥 CORREÇÃO: É COMPONENTE, NÃO PAGE
 import AdminGanhadores from "../components/adminganhadores";
 
@@ -194,6 +197,16 @@ export default function AppRoutes() {
           element={
             <PrivateRoute>
               <ZLPPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* 🔥 NOVA ROTA ROLETA */}
+        <Route
+          path="/zlp-roleta"
+          element={
+            <PrivateRoute>
+              <ZLPRoletaPage />
             </PrivateRoute>
           }
         />
