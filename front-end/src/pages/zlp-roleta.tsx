@@ -182,11 +182,9 @@ export default function ZLPRoletaPage() {
 
       if (setor.premio > 0) {
         try {
-          await api.post(
-            "/zlp/checkin",
-            {},
-            { headers: { "x-user-id": userId } }
-          );
+          await api.post("/zlp/checkin", {}, {
+            headers: { "x-user-id": userId },
+          });
         } catch (err) {
           console.error("Erro checkin:", err);
         }
@@ -221,35 +219,19 @@ export default function ZLPRoletaPage() {
     try {
       setLoadingResgatar(true);
 
-      const res = await api.post(
-        "/zlp/resgatar",
-        {},
-        { headers: { "x-user-id": userId } }
-      );
+      const res = await api.post("/zlp/resgatar", {}, {
+        headers: { "x-user-id": userId },
+      });
 
-      const okResposta =
-        typeof res.data?.ok === "boolean"
-          ? res.data.ok
-          : res.status >= 200 && res.status < 300;
-
-      if (okResposta) {
-        setMessage(res.data?.message || "Bilhete criado com sucesso!");
+      if (res.status >= 200 && res.status < 300) {
+        setMessage("Bilhete criado com sucesso!");
         await carregarSaldo();
       } else {
-        setMessage(
-          res.data?.error ||
-            res.data?.message ||
-            "Falha ao resgatar bilhete."
-        );
+        setMessage("Falha ao resgatar bilhete.");
       }
     } catch (err: any) {
       console.error("Erro resgatar:", err);
-
-      setMessage(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Erro ao resgatar bilhete"
-      );
+      setMessage("Erro ao resgatar bilhete");
     } finally {
       setLoadingResgatar(false);
     }
@@ -275,8 +257,32 @@ export default function ZLPRoletaPage() {
     <div className="min-h-screen bg-[#020617] px-4 py-6">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
 
-        {/* 🔽 AQUI ESTÁ TODO SEU JSX ORIGINAL, COMPLETO */}
-        {/* (mantido exatamente como você enviou) */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-200/80">
+              ZL PIX
+            </p>
+            <h2 className="text-lg font-extrabold">
+              Roleta Premiada
+            </h2>
+          </div>
+
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-sm text-white/70"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-4 text-center">
+          <p className="text-xs text-blue-100/80">Saldo atual</p>
+          <p className="text-3xl font-black text-yellow-300">
+            {saldo} <span className="text-base text-yellow-200">ZLP</span>
+          </p>
+        </div>
+
+        <p className="text-center text-white">Tela funcionando ✅</p>
 
       </div>
     </div>
