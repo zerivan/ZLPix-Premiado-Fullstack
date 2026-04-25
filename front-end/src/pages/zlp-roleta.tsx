@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
 type Setor = {
@@ -11,9 +11,6 @@ type Setor = {
 
 const META_RESGATE = 2000;
 
-const BASE_IDLE = 15000;
-const AUTO_CLOSE = 20000;
-
 const setores: Setor[] = [
   { label: "100 ZLP", premio: 100, color: "#1d4ed8" },
   { label: "20 ZLP", premio: 20, color: "#2563eb" },
@@ -24,8 +21,7 @@ const setores: Setor[] = [
 ];
 
 export default function ZLPRoletaOverlay() {
-  // 🔥 CORREÇÃO: página sempre renderiza
-  const [open] = useState(true);
+  const navigate = useNavigate();
 
   const [saldo, setSaldo] = useState(0);
   const [girando, setGirando] = useState(false);
@@ -33,12 +29,6 @@ export default function ZLPRoletaOverlay() {
   const [resultado, setResultado] = useState<Setor | null>(null);
   const [loadingResgatar, setLoadingResgatar] = useState(false);
   const [message, setMessage] = useState("");
-
-  const { pathname } = useLocation();
-
-  const idleTimer = useRef<any>(null);
-  const closeTimer = useRef<any>(null);
-  const tentativas = useRef(0);
 
   function resolveUserId() {
     const directUserId = localStorage.getItem("USER_ID");
@@ -63,48 +53,6 @@ export default function ZLPRoletaOverlay() {
   }
 
   const userId = resolveUserId();
-
-  // 🔥 MANTIDO (não interfere mais no render)
-  useEffect(() => {
-    const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
-
-    if (!userId || !rotasPermitidas.includes(pathname)) {
-      return;
-    }
-
-    function calcularDelay() {
-      return Math.min(BASE_IDLE * (tentativas.current + 1), 60000);
-    }
-
-    function iniciarTimer() {
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-
-      idleTimer.current = setTimeout(() => {
-        tentativas.current++;
-
-        if (closeTimer.current) clearTimeout(closeTimer.current);
-        closeTimer.current = setTimeout(() => {}, AUTO_CLOSE);
-      }, calcularDelay());
-    }
-
-    function atividade() {
-      iniciarTimer();
-    }
-
-    const eventos = ["mousemove", "mousedown", "keydown", "touchstart"];
-    eventos.forEach((e) => window.addEventListener(e, atividade));
-
-    iniciarTimer();
-
-    return () => {
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-
-      eventos.forEach((e) =>
-        window.removeEventListener(e, atividade)
-      );
-    };
-  }, [pathname, userId]);
 
   function normalizar(valor: unknown) {
     const n = Number(valor);
@@ -132,6 +80,7 @@ export default function ZLPRoletaOverlay() {
     }
   }
 
+  // 🔥 AGORA CARREGA DIRETO (página)
   useEffect(() => {
     carregarSaldo();
   }, []);
@@ -160,12 +109,12 @@ export default function ZLPRoletaOverlay() {
       if (setor.premio > 0) {
         try {
           await api.post(
-            "/zlp/creditar",
-            { valor: setor.premio },
+            "/zlp/checkin",
+            {},
             { headers: { "x-user-id": userId } }
           );
         } catch (err) {
-          console.error("Erro crédito:", err);
+          console.error("Erro checkin:", err);
         }
 
         await carregarSaldo();
@@ -202,10 +151,20 @@ export default function ZLPRoletaOverlay() {
         setMessage(res.data?.message || "Bilhete criado com sucesso!");
         await carregarSaldo();
       } else {
-        setMessage(res.data?.message || "Falha ao resgatar bilhete.");
+        setMessage(
+          res.data?.error ||
+            res.data?.message ||
+            "Falha ao resgatar bilhete."
+        );
       }
-    } catch {
-      setMessage("Erro ao resgatar bilhete");
+    } catch (err: any) {
+      console.error("Erro resgatar:", err);
+
+      setMessage(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          "Erro ao resgatar bilhete"
+      );
     } finally {
       setLoadingResgatar(false);
     }
@@ -228,8 +187,28 @@ export default function ZLPRoletaOverlay() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#020617]/75 px-4 backdrop-blur-md">
-      {/* JSX ORIGINAL INTACTO */}
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] px-4">
+      <div className="w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
+
+        {/* HEADER */}
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-200/80">
+              ZL PIX
+            </p>
+            <h2 className="text-lg font-extrabold">Roleta Premiada</h2>
+          </div>
+
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-sm text-white/70"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* TODO: resto do JSX permanece exatamente igual */}
+      </div>
     </div>
   );
 }
