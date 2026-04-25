@@ -104,7 +104,6 @@ export default function ZLPRoletaPage() {
 
     try {
       const parsed = JSON.parse(bruto) as Partial<RoletaData>;
-      const girosSalvos = Math.max(0, normalizar(parsed?.girosRestantes));
 
       if (parsed?.date !== hoje) {
         salvarDadosRoleta(GIROS_POR_DIA);
@@ -112,7 +111,7 @@ export default function ZLPRoletaPage() {
         return;
       }
 
-      setGirosRestantes(girosSalvos);
+      setGirosRestantes(normalizar(parsed?.girosRestantes));
     } catch {
       salvarDadosRoleta(GIROS_POR_DIA);
       setGirosRestantes(GIROS_POR_DIA);
@@ -169,20 +168,10 @@ export default function ZLPRoletaPage() {
     setAngulo(giro);
 
     window.setTimeout(async () => {
-      const grauFinal = giro % 360;
-      const setor = calcularSetor(grauFinal);
+      const setor = calcularSetor(giro % 360);
 
       if (setor.premio > 0) {
-        try {
-          await api.post(
-            "/zlp/checkin",
-            {},
-            { headers: { "x-user-id": userId } }
-          );
-        } catch (err) {
-          console.error("Erro checkin:", err);
-        }
-
+        await api.post("/zlp/checkin", {}, { headers: { "x-user-id": userId } });
         await carregarSaldo();
       }
 
@@ -195,61 +184,12 @@ export default function ZLPRoletaPage() {
           return atualizado;
         });
 
-        setMessage("🎉 Giro grátis desbloqueado! Você ganhou +1 giro.");
+        setMessage("🎉 Giro grátis! Você ganhou +1 giro.");
       }
 
       setGirando(false);
     }, 3000);
   }
-
-  async function handleResgatar() {
-    if (loadingResgatar || !userId) return;
-
-    if (saldo < META_RESGATE) {
-      setMessage("Saldo insuficiente para resgatar bilhete.");
-      return;
-    }
-
-    try {
-      setLoadingResgatar(true);
-
-      const res = await api.post(
-        "/zlp/resgatar",
-        {},
-        { headers: { "x-user-id": userId } }
-      );
-
-      const okResposta =
-        typeof res.data?.ok === "boolean"
-          ? res.data.ok
-          : res.status >= 200 && res.status < 300;
-
-      if (okResposta) {
-        setMessage(res.data?.message || "Bilhete criado com sucesso!");
-        await carregarSaldo();
-      } else {
-        setMessage(
-          res.data?.error ||
-            res.data?.message ||
-            "Falha ao resgatar bilhete."
-        );
-      }
-    } catch (err: any) {
-      console.error("Erro resgatar:", err);
-
-      setMessage(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          "Erro ao resgatar bilhete"
-      );
-    } finally {
-      setLoadingResgatar(false);
-    }
-  }
-
-  const progresso = Math.min((saldo / META_RESGATE) * 100, 100);
-  const faltam = Math.max(META_RESGATE - saldo, 0);
-  const podeResgatar = saldo >= META_RESGATE;
 
   const gradienteRoleta = useMemo(() => {
     const passo = 360 / setores.length;
@@ -264,10 +204,11 @@ export default function ZLPRoletaPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#020617] px-4 py-6">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
-        {/* layout mantido */}
-      </div>
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+      <div
+        className="h-[300px] w-[300px] rounded-full"
+        style={{ background: gradienteRoleta }}
+      />
     </div>
   );
 }
