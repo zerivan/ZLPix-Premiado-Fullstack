@@ -79,17 +79,21 @@ export default function ZLPRoletaPage() {
   }  
   
   function salvarDadosRoleta(novosGiros: number) {  
+    if (!userId) return;  
+
     const payload: RoletaData = {  
       date: dataHoje(),  
       girosRestantes: Math.max(0, normalizar(novosGiros)),  
     };  
   
-    localStorage.setItem(ROLETA_STORAGE_KEY, JSON.stringify(payload));  
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(payload));  
   }  
   
   function carregarDadosRoleta() {  
+    if (!userId) return;  
+
     const hoje = dataHoje();  
-    const bruto = localStorage.getItem(ROLETA_STORAGE_KEY);  
+    const bruto = localStorage.getItem(getStorageKey(userId));  
   
     if (!bruto) {  
       salvarDadosRoleta(GIROS_POR_DIA);  
