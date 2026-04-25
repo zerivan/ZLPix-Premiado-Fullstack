@@ -20,10 +20,10 @@ const GIROS_POR_DIA = 3;
 
 const setores: Setor[] = [
   { label: "100 ZLP", premio: 100, color: "#1d4ed8" },
-  { label: "20 ZLP", premio: 40, color: "#2563eb" },
-  { label: "80 ZLP", premio: 60, color: "#0ea5e9" },
-  { label: "40 ZLP", premio: 20, color: "#059669" },
-  { label: "60 ZLP", premio: 80, color: "#16a34a" },
+  { label: "20 ZLP", premio: 20, color: "#2563eb" },
+  { label: "80 ZLP", premio: 80, color: "#0ea5e9" },
+  { label: "40 ZLP", premio: 40, color: "#059669" },
+  { label: "60 ZLP", premio: 60, color: "#16a34a" },
   { label: "GIRO GRÁTIS", premio: 0, color: "#f59e0b", bonus: "free-spin" },
 ];
 
