@@ -99,8 +99,8 @@ export default function ZLPRoletaPage() {
       if (setor.premio > 0) {
         try {
           await api.post(
-  "/zlp/creditar",
-  { valor: setor.premio },
+  "/zlp/checkin",
+  {},
   { headers: { "x-user-id": userId } }
 );
 
