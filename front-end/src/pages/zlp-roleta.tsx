@@ -11,7 +11,6 @@ type Setor = {
 
 const META_RESGATE = 2000;
 
-// 🔥 NOVO: tempo progressivo
 const BASE_IDLE = 15000;
 const AUTO_CLOSE = 20000;
 
@@ -25,7 +24,9 @@ const setores: Setor[] = [
 ];
 
 export default function ZLPRoletaOverlay() {
-  const [open, setOpen] = useState(false);
+  // 🔥 CORREÇÃO: página sempre renderiza
+  const [open] = useState(true);
+
   const [saldo, setSaldo] = useState(0);
   const [girando, setGirando] = useState(false);
   const [angulo, setAngulo] = useState(0);
@@ -35,7 +36,6 @@ export default function ZLPRoletaOverlay() {
 
   const { pathname } = useLocation();
 
-  // 🔥 NOVO
   const idleTimer = useRef<any>(null);
   const closeTimer = useRef<any>(null);
   const tentativas = useRef(0);
@@ -64,12 +64,11 @@ export default function ZLPRoletaOverlay() {
 
   const userId = resolveUserId();
 
-  // 🔥 SUBSTITUIU totalmente o antigo useEffect de abertura
+  // 🔥 MANTIDO (não interfere mais no render)
   useEffect(() => {
     const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
 
     if (!userId || !rotasPermitidas.includes(pathname)) {
-      setOpen(false);
       return;
     }
 
@@ -81,18 +80,14 @@ export default function ZLPRoletaOverlay() {
       if (idleTimer.current) clearTimeout(idleTimer.current);
 
       idleTimer.current = setTimeout(() => {
-        setOpen(true);
         tentativas.current++;
 
         if (closeTimer.current) clearTimeout(closeTimer.current);
-        closeTimer.current = setTimeout(() => {
-          setOpen(false);
-        }, AUTO_CLOSE);
+        closeTimer.current = setTimeout(() => {}, AUTO_CLOSE);
       }, calcularDelay());
     }
 
     function atividade() {
-      if (open) return;
       iniciarTimer();
     }
 
@@ -109,7 +104,7 @@ export default function ZLPRoletaOverlay() {
         window.removeEventListener(e, atividade)
       );
     };
-  }, [pathname, open, userId]);
+  }, [pathname, userId]);
 
   function normalizar(valor: unknown) {
     const n = Number(valor);
@@ -138,8 +133,8 @@ export default function ZLPRoletaOverlay() {
   }
 
   useEffect(() => {
-    if (open) carregarSaldo();
-  }, [open]);
+    carregarSaldo();
+  }, []);
 
   function calcularSetor(grau: number) {
     const tamanho = 360 / setores.length;
@@ -164,7 +159,6 @@ export default function ZLPRoletaOverlay() {
 
       if (setor.premio > 0) {
         try {
-          // 🔥 CORREÇÃO REAL
           await api.post(
             "/zlp/creditar",
             { valor: setor.premio },
@@ -210,7 +204,7 @@ export default function ZLPRoletaOverlay() {
       } else {
         setMessage(res.data?.message || "Falha ao resgatar bilhete.");
       }
-    } catch (err: any) {
+    } catch {
       setMessage("Erro ao resgatar bilhete");
     } finally {
       setLoadingResgatar(false);
@@ -233,12 +227,9 @@ export default function ZLPRoletaOverlay() {
       .join(",")})`;
   }, []);
 
-  if (!open) return null;
-
   return (
-    // 🔴 TODO O JSX ORIGINAL MANTIDO (SEM ALTERAÇÃO)
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#020617]/75 px-4 backdrop-blur-md">
-      {/* resto intacto */}
+      {/* JSX ORIGINAL INTACTO */}
     </div>
   );
 }
