@@ -9,7 +9,14 @@ type Setor = {
   bonus?: "free-spin";
 };
 
+type RoletaData = {
+  date: string;
+  girosRestantes: number;
+};
+
 const META_RESGATE = 2000;
+const ROLETA_STORAGE_KEY = "ZLP_ROLETA_DATA";
+const GIROS_POR_DIA = 3;
 
 const setores: Setor[] = [
   { label: "100 ZLP", premio: 100, color: "#1d4ed8" },
@@ -29,6 +36,7 @@ export default function ZLPRoletaPage() {
   const [resultado, setResultado] = useState<Setor | null>(null);
   const [loadingResgatar, setLoadingResgatar] = useState(false);
   const [message, setMessage] = useState("");
+  const [girosRestantes, setGirosRestantes] = useState(0);
 
   function resolveUserId() {
     const directUserId = localStorage.getItem("USER_ID");
@@ -63,6 +71,46 @@ export default function ZLPRoletaPage() {
     return Number.isFinite(n) ? n : 0;
   }
 
+  function dataHoje() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function salvarDadosRoleta(novosGiros: number) {
+    const payload: RoletaData = {
+      date: dataHoje(),
+      girosRestantes: Math.max(0, normalizar(novosGiros)),
+    };
+
+    localStorage.setItem(ROLETA_STORAGE_KEY, JSON.stringify(payload));
+  }
+
+  function carregarDadosRoleta() {
+    const hoje = dataHoje();
+    const bruto = localStorage.getItem(ROLETA_STORAGE_KEY);
+
+    if (!bruto) {
+      salvarDadosRoleta(GIROS_POR_DIA);
+      setGirosRestantes(GIROS_POR_DIA);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(bruto) as Partial<RoletaData>;
+      const girosSalvos = Math.max(0, normalizar(parsed?.girosRestantes));
+
+      if (parsed?.date !== hoje) {
+        salvarDadosRoleta(GIROS_POR_DIA);
+        setGirosRestantes(GIROS_POR_DIA);
+        return;
+      }
+
+      setGirosRestantes(girosSalvos);
+    } catch {
+      salvarDadosRoleta(GIROS_POR_DIA);
+      setGirosRestantes(GIROS_POR_DIA);
+    }
+  }
+
   async function carregarSaldo() {
     if (!userId) return;
 
@@ -86,6 +134,7 @@ export default function ZLPRoletaPage() {
 
   useEffect(() => {
     carregarSaldo();
+    carregarDadosRoleta();
   }, []);
 
   function calcularSetor(grau: number) {
@@ -96,7 +145,13 @@ export default function ZLPRoletaPage() {
   }
 
   async function girar() {
-    if (girando || !userId) return;
+    if (girando || !userId || girosRestantes <= 0) return;
+
+    setGirosRestantes((prev) => {
+      const atualizado = Math.max(prev - 1, 0);
+      salvarDadosRoleta(atualizado);
+      return atualizado;
+    });
 
     setGirando(true);
     setResultado(null);
@@ -126,8 +181,14 @@ export default function ZLPRoletaPage() {
       setResultado(setor);
 
       if (setor.bonus === "free-spin") {
+        setGirosRestantes((prev) => {
+          const atualizado = prev + 1;
+          salvarDadosRoleta(atualizado);
+          return atualizado;
+        });
+
         setMessage(
-          "🎉 Giro grátis desbloqueado! Você pode girar novamente."
+          "🎉 Giro grátis desbloqueado! Você ganhou +1 giro."
         );
       }
 
@@ -152,7 +213,12 @@ export default function ZLPRoletaPage() {
         { headers: { "x-user-id": userId } }
       );
 
-      if (res.data?.ok) {
+      const okResposta =
+        typeof res.data?.ok === "boolean"
+          ? res.data.ok
+          : res.status >= 200 && res.status < 300;
+
+      if (okResposta) {
         setMessage(
           res.data?.message || "Bilhete criado com sucesso!"
         );
@@ -233,20 +299,19 @@ export default function ZLPRoletaPage() {
               }}
             >
               {setores.map((setor, i) => {
-                const ang = (360 / setores.length) * i;
+                const passo = 360 / setores.length;
+                const anguloMeio = passo * i + passo / 2;
+
                 return (
-                  <div
+                  <span
                     key={setor.label + i}
-                    className="absolute left-1/2 top-1/2 h-1/2 w-[2px] origin-bottom"
-                    style={{ transform: `translate(-50%, -100%) rotate(${ang}deg)` }}
+                    className="absolute left-1/2 top-1/2 w-[82px] -translate-x-1/2 -translate-y-1/2 text-center text-[10px] font-black leading-tight text-white drop-shadow-[0_0_4px_rgba(2,6,23,0.95)]"
+                    style={{
+                      transform: `translate(-50%, -50%) rotate(${anguloMeio}deg) translateY(-84px) rotate(${-anguloMeio}deg)`,
+                    }}
                   >
-                    <span
-                      className="absolute left-1/2 top-2 -translate-x-1/2 text-[10px] font-black text-white drop-shadow-[0_0_4px_rgba(2,6,23,0.95)]"
-                      style={{ transform: `rotate(${90 + 360 / setores.length / 2}deg)` }}
-                    >
-                      {setor.label}
-                    </span>
-                  </div>
+                    {setor.label}
+                  </span>
                 );
               })}
             </div>
@@ -255,12 +320,20 @@ export default function ZLPRoletaPage() {
           </div>
         </div>
 
+        <p className="mb-3 text-center text-xs text-blue-100/85">
+          Giros restantes hoje: <span className="font-extrabold text-yellow-300">{girosRestantes}</span>
+        </p>
+
         <button
           onClick={girar}
-          disabled={girando || !userId}
+          disabled={girando || !userId || girosRestantes <= 0}
           className="mb-4 w-full rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-300 py-3 text-sm font-extrabold text-[#1e3a8a] shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {girando ? "Girando..." : "Girar roleta"}
+          {girando
+            ? "Girando..."
+            : girosRestantes <= 0
+            ? "Sem giros disponíveis hoje"
+            : "Girar roleta"}
         </button>
 
         {resultado && (
