@@ -98,10 +98,11 @@ export default function ZLPRoletaPage() {
 
       if (setor.premio > 0) {
         try {
-          await api.post("/zlp/checkin", {}, { headers: { "x-user-id": userId } });
-        } catch (err) {
-          console.error("Erro checkin:", err);
-        }
+          await api.post(
+  "/zlp/creditar",
+  { valor: setor.premio },
+  { headers: { "x-user-id": userId } }
+);
 
         await carregarSaldo();
       }
