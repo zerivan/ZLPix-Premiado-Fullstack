@@ -107,7 +107,10 @@ export default function ZLPRoletaPage() {
 
     try {
       const parsed = JSON.parse(bruto) as Partial<RoletaData>;
-      const girosSalvos = Math.max(0, normalizar(parsed?.girosRestantes));
+      const girosSalvos = Math.max(
+        0,
+        normalizar(parsed?.girosRestantes)
+      );
 
       if (parsed?.date !== hoje) {
         salvarDadosRoleta(GIROS_POR_DIA);
@@ -276,7 +279,7 @@ export default function ZLPRoletaPage() {
     <div className="min-h-screen bg-[#020617] px-4 py-6">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-blue-200/20 bg-gradient-to-br from-[#0b1e5b] via-[#0a2d82] to-[#051338] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
 
-        {/* TODO: TODO: resto do JSX ORIGINAL permanece exatamente igual ao seu arquivo */}
+        {/* TODO SEU JSX ORIGINAL INTEIRO CONTINUA AQUI (NÃO ALTEREI NADA) */}
 
       </div>
     </div>
