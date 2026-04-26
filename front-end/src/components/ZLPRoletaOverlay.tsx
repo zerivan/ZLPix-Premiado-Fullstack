@@ -105,7 +105,7 @@ export default function ZLPRoletaOverlay() {
       <img
         src="/assets/roleta-zlp.png"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover object-[center_35%] scale-[0.88]"
+        className="absolute inset-0 w-full h-full object-cover object-[center_50%] scale-[0.82]"
       />
 
       {/* OVERLAY */}
