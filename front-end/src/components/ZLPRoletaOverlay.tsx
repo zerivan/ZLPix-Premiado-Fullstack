@@ -35,7 +35,6 @@ export default function ZLPRoletaOverlay() {
           },
         });
 
-        // Mantém mesma lógica (não alterar comportamento)
         const lastCheckin = res.data.lastCheckin;
 
         const hoje = new Date().toDateString();
@@ -102,11 +101,11 @@ export default function ZLPRoletaOverlay() {
   return (
     <div className="fixed inset-0 z-[9999]">
 
-      {/* IMAGEM (você vai trocar depois) */}
+      {/* IMAGEM AJUSTADA (zoom corrigido) */}
       <img
         src="/assets/roleta-zlp.png"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover object-[center_35%] scale-[0.88]"
       />
 
       {/* OVERLAY */}
