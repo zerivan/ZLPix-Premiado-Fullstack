@@ -57,7 +57,11 @@ export default function ZLPRoletaOverlay() {
     if (!rotasPermitidas.includes(location.pathname)) return;
 
     function calcularDelay() {
-      return Math.min(BASE_IDLE * (tentativas.current + 1), 60000);
+      const OFFSET = 20000; // 20s de diferença
+      return Math.min(
+        BASE_IDLE * (tentativas.current + 1) + OFFSET,
+        60000
+      );
     }
 
     function iniciarTimer() {
