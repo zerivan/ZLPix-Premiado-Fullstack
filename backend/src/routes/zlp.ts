@@ -72,7 +72,6 @@ router.post("/checkin", async (req, res) => {
 
     const ganho = 20;
 
-    // 🔧 ALTERAÇÃO CIRÚRGICA: update seguro
     await prisma.userZLP.updateMany({
       where: { userId },
       data: {
@@ -81,7 +80,6 @@ router.post("/checkin", async (req, res) => {
       },
     });
 
-    // 🔧 GARANTE retorno consistente após update
     const atualizado = await prisma.userZLP.findUnique({
       where: { userId },
     });
@@ -93,6 +91,49 @@ router.post("/checkin", async (req, res) => {
     });
   } catch (error) {
     console.error("[ZLP] checkin:", error);
+    return res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+/* ========================= */
+/* 🔽 NOVA ROTA DA ROLETA */
+/* ========================= */
+
+router.post("/roleta", async (req, res) => {
+  try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    const { premio } = req.body;
+    const valor = Number(premio);
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return res.status(400).json({
+        error: "Prêmio inválido",
+      });
+    }
+
+    await prisma.userZLP.updateMany({
+      where: { userId },
+      data: {
+        saldo: { increment: valor },
+      },
+    });
+
+    const atualizado = await prisma.userZLP.findUnique({
+      where: { userId },
+    });
+
+    return res.json({
+      ok: true,
+      ganho: valor,
+      saldo: normalizarSaldo(atualizado?.saldo),
+    });
+  } catch (error) {
+    console.error("[ZLP] roleta:", error);
     return res.status(500).json({ error: "Erro interno" });
   }
 });
