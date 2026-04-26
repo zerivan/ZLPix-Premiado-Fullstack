@@ -101,11 +101,11 @@ export default function ZLPRoletaOverlay() {
   return (
     <div className="fixed inset-0 z-[9999]">
 
-      {/* IMAGEM AJUSTADA (zoom corrigido) */}
+      {/* IMAGEM AJUSTADA */}
       <img
         src="/assets/roleta-zlp.png"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover object-[center_95%] scale-[0.100]"
+        className="absolute inset-0 w-full h-full object-cover object-[center_55%]"
       />
 
       {/* OVERLAY */}
