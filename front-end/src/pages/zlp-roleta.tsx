@@ -308,13 +308,15 @@ export default function ZLPRoletaPage() {
               {setores.map((setor, i) => {  
                 const passo = 360 / setores.length;  
                 const anguloMeio = passo * i + passo / 2;  
+                const textoInvertido = anguloMeio > 90 && anguloMeio < 270;  
+                const ajusteTexto = textoInvertido ? 180 : 0;  
   
                 return (  
                   <span  
                     key={setor.label + i}  
                     className="absolute left-1/2 top-1/2 w-[82px] -translate-x-1/2 -translate-y-1/2 text-center text-[10px] font-black leading-tight text-white drop-shadow-[0_0_4px_rgba(2,6,23,0.95)]"  
                     style={{  
-                      transform: `translate(-50%, -50%) rotate(${anguloMeio}deg) translateY(-84px) rotate(${-anguloMeio}deg)`,  
+                      transform: `translate(-50%, -50%) rotate(${anguloMeio}deg) translateY(-84px) rotate(${-anguloMeio + ajusteTexto}deg)`,  
                     }}  
                   >  
                     {setor.label}  
