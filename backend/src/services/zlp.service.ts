@@ -49,3 +49,32 @@ export async function realizarCheckinZLP(userId: number) {
     saldo: atualizado.saldo,
   };
 }
+
+/* ========================= */
+/* 🔽 NOVO: SERVIÇO DA ROLETA */
+/* ========================= */
+
+export async function aplicarPremioRoleta(userId: number, valor: number) {
+  if (!valor || valor <= 0) {
+    const saldoAtual = await obterSaldoZLP(userId);
+
+    return {
+      ok: false,
+      saldo: saldoAtual,
+      message: "Prêmio inválido",
+    };
+  }
+
+  const atualizado = await prisma.userZLP.update({
+    where: { userId },
+    data: {
+      saldo: { increment: valor },
+    },
+  });
+
+  return {
+    ok: true,
+    ganho: valor,
+    saldo: atualizado.saldo,
+  };
+}
