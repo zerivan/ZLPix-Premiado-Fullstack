@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
-const BASE_IDLE = 35000;
+const BASE_IDLE = 20000;
 const AUTO_CLOSE = 15000;
 
 export default function ZLPRoletaOverlay() {
