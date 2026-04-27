@@ -146,7 +146,7 @@ export default function ZLPRoletaPage() {
   
   function calcularSetor(grau: number) {  
     const tamanho = 360 / setores.length;  
-    const ajustado = (360 - ((grau + 90) % 360)) % 360;  
+    const ajustado = (360 - ((grau + 270) % 360)) % 360;  
     const index = Math.floor(ajustado / tamanho);  
     return setores[index] ?? setores[1];  
   }  
