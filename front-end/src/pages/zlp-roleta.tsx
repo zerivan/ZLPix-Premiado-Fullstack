@@ -185,7 +185,7 @@ export default function ZLPRoletaPage() {
   }
 }
 
-setResultado(setor);
+    setResultado(setor);                                           
   
       if (setor.bonus === "free-spin") {  
         setGirosRestantes((prev) => {  
