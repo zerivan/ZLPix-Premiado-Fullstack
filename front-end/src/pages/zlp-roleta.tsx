@@ -171,13 +171,20 @@ export default function ZLPRoletaPage() {
       const grauFinal = giro % 360;  
       const setor = calcularSetor(grauFinal);  
   
-      if (setor.premio > 0) {  
-        try {  
-          await api.post(  
-            "/zlp/checkin",  
-            {},  
-            { headers: { "x-user-id": userId } }  
-          );  
+      if (setor.premio > 0) {
+  try {
+    const res = await api.post(
+      "/zlp/roleta",
+      { valor: setor.premio },
+      { headers: { "x-user-id": userId } }
+    );
+
+    setSaldo(normalizar(res.data?.saldo));
+
+  } catch (err) {
+    console.error("Erro roleta:", err);
+  }
+}
         } catch (err) {  
           console.error("Erro checkin:", err);  
         }  
