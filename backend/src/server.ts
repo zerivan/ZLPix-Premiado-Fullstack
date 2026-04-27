@@ -16,6 +16,9 @@ import walletRoutes from "./routes/wallet";
 // 🔥 NOVO: ZLP
 import zlpRoutes from "./routes/zlp";
 
+// 🔥 NOVO: ZLP ROLETA (ADICIONADO)
+import zlpRoletaRoutes from "./routes/zlp-roleta";
+
 // PUSH
 import pushRoutes from "./routes/push";
 
@@ -162,6 +165,9 @@ app.use("/wallet", walletRoutes);
 
 // 🔥 NOVO: ZLP
 app.use("/zlp", zlpRoutes);
+
+// 🔥 NOVO: ZLP ROLETA (APENAS ADIÇÃO)
+app.use("/zlp", zlpRoletaRoutes);
 
 app.use("/push", pushRoutes);
 
