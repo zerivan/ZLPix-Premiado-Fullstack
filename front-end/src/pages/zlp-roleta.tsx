@@ -180,19 +180,12 @@ export default function ZLPRoletaPage() {
     );
 
     setSaldo(normalizar(res.data?.saldo));
-
   } catch (err) {
     console.error("Erro roleta:", err);
   }
 }
-        } catch (err) {  
-          console.error("Erro checkin:", err);  
-        }  
-  
-        await carregarSaldo();  
-      }  
-  
-      setResultado(setor);  
+
+setResultado(setor);
   
       if (setor.bonus === "free-spin") {  
         setGirosRestantes((prev) => {  
