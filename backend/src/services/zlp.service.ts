@@ -65,6 +65,9 @@ export async function aplicarPremioRoleta(userId: number, valor: number) {
     };
   }
 
+  // 🔧 CORREÇÃO: garante que o usuário existe antes do update
+  await obterOuCriarZLP(userId);
+
   const atualizado = await prisma.userZLP.update({
     where: { userId },
     data: {
