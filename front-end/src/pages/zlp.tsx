@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import NavBottom from "../components/navbottom";
 
 export default function ZLP() {
+  const navigate = useNavigate();
+
   const [saldo, setSaldo] = useState(0);
   const [loadingCheckin, setLoadingCheckin] = useState(false);
   const [loadingResgatar, setLoadingResgatar] = useState(false);
@@ -151,7 +154,16 @@ export default function ZLP() {
 
       <main className="pt-10 pb-32 px-6 max-w-lg mx-auto w-full">
 
-        {/* Header */}
+  <div className="flex justify-end mb-4">
+    <button
+      onClick={() => navigate(-1)}
+      className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-white/70"
+    >
+      ✕
+    </button>
+  </div>
+
+  {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 mb-2">
             <span className="material-symbols-outlined text-yellow-400 text-xl">
