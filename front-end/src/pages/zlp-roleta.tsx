@@ -22,11 +22,11 @@ function getStorageKey(userId: string) {
 }  
   
 const setores: Setor[] = [  
-  { label: "100 ZLP", premio: 100, color: "#1d4ed8" },  
-  { label: "20 ZLP", premio: 20, color: "#2563eb" },  
-  { label: "80 ZLP", premio: 80, color: "#0ea5e9" },  
-  { label: "40 ZLP", premio: 40, color: "#059669" },  
-  { label: "60 ZLP", premio: 60, color: "#16a34a" },  
+  { label: "25 ZLP", premio: 25, color: "#1d4ed8" },  
+  { label: "5 ZLP", premio: 5, color: "#2563eb" },  
+  { label: "20 ZLP", premio: 20, color: "#0ea5e9" },  
+  { label: "10 ZLP", premio: 10, color: "#059669" },  
+  { label: "15 ZLP", premio: 15, color: "#16a34a" },  
   { label: "GIRO GRÁTIS", premio: 0, color: "#f59e0b", bonus: "free-spin" },  
 ];  
   
