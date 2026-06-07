@@ -14,6 +14,7 @@ export default function ZLPOverlayAlerta() {
   const closeTimer = useRef<any>(null);
   const podeAbrir = useRef(false);
   const tentativas = useRef(0);
+  const alertaJaExibido = useRef(false);
 
   const rotasPermitidas = ["/home", "/meus-bilhetes", "/"];
 
@@ -64,9 +65,15 @@ export default function ZLPOverlayAlerta() {
       if (idleTimer.current) clearTimeout(idleTimer.current);
 
       idleTimer.current = setTimeout(() => {
-        if (podeAbrir.current && !open) {
-          setOpen(true);
-          tentativas.current += 1;
+  if (
+    podeAbrir.current &&
+    !open &&
+    !alertaJaExibido.current
+  ) {
+    alertaJaExibido.current = true;
+
+    setOpen(true);
+    tentativas.current += 1;
 
           if (closeTimer.current) clearTimeout(closeTimer.current);
           closeTimer.current = setTimeout(() => {
