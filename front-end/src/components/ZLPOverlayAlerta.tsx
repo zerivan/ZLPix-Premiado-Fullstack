@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
 const BASE_IDLE = 15000;
-const AUTO_CLOSE = 7000;
+const AUTO_CLOSE = 15000;
 
 export default function ZLPOverlayAlerta() {
   const [open, setOpen] = useState(false);
