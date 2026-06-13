@@ -113,6 +113,7 @@ export async function processarSorteio(
 
     const agora = new Date();
     const premioAtual = await obterPremioAtualPersistido();
+    let premioAposApuracao = PREMIO_INICIAL;
 
     const ganhadores = bilhetes.filter((b) => {
       const dezenasBilhete = b.dezenas
@@ -129,7 +130,7 @@ export async function processarSorteio(
     });
 
     await prisma.$transaction(async (tx) => {
-      // 🔧 CORREÇÃO: usar apenas o lote atual (claimToken)
+      // Usa apenas o lote atual identificado pelo claimToken
       const bilhetesDaRodada = await tx.bilhete.findMany({
         where: {
           resultadoFederal: claimToken,
@@ -160,25 +161,7 @@ export async function processarSorteio(
           (premioAtual + arrecadacaoDaRodada * 0.3).toFixed(2)
         );
 
-        await tx.appContent.upsert({
-          where: { key: PREMIO_ATUAL_KEY },
-          update: {
-            contentHtml: String(novoPremio),
-            title: "Prêmio Atual do Ciclo",
-            type: "config",
-            enabled: true,
-            isActive: true,
-          },
-          create: {
-            key: PREMIO_ATUAL_KEY,
-            slug: PREMIO_ATUAL_KEY,
-            title: "Prêmio Atual do Ciclo",
-            type: "config",
-            contentHtml: String(novoPremio),
-            enabled: true,
-            isActive: true,
-          },
-        });
+        premioAposApuracao = novoPremio;
 
         return;
       }
@@ -240,11 +223,20 @@ export async function processarSorteio(
           apuradoEm: agora,
         },
       });
+    });
 
-      await tx.appContent.upsert({
+    /*
+     * O prêmio é atualizado somente depois que a transação responsável
+     * por concluir os bilhetes foi confirmada.
+     *
+     * Dessa forma, uma falha isolada no appContent não reverte status,
+     * resultadoFederal e apuradoEm dos bilhetes já processados.
+     */
+    try {
+      await prisma.appContent.upsert({
         where: { key: PREMIO_ATUAL_KEY },
         update: {
-          contentHtml: String(PREMIO_INICIAL),
+          contentHtml: String(premioAposApuracao),
           title: "Prêmio Atual do Ciclo",
           type: "config",
           enabled: true,
@@ -255,12 +247,17 @@ export async function processarSorteio(
           slug: PREMIO_ATUAL_KEY,
           title: "Prêmio Atual do Ciclo",
           type: "config",
-          contentHtml: String(PREMIO_INICIAL),
+          contentHtml: String(premioAposApuracao),
           enabled: true,
           isActive: true,
         },
       });
-    });
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar prêmio atual após apuração:",
+        error
+      );
+    }
 
     return {
       ok: true,
