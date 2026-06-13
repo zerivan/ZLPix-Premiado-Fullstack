@@ -19,21 +19,6 @@ Sorteios válidos: quarta e sábado
 Só vira após 20h
 */
 function ajustarDataSorteio(iso: string) {
-  const agora = new Date();
-  const dia = agora.getDay();
-  const hora = agora.getHours();
-
-  const dataApi = new Date(iso);
-
-  const ehQuarta = dia === 3;
-  const ehSabado = dia === 6;
-
-  if ((ehQuarta || ehSabado) && hora < 20) {
-    const corrigida = new Date(dataApi);
-    corrigida.setDate(corrigida.getDate() - 7);
-    return formatarDataBR(corrigida.toISOString());
-  }
-
   return formatarDataBR(iso);
 }
 
@@ -157,7 +142,7 @@ export default function Home() {
       </button>
 
       {menuOpen && (
-        <div className="absolute top-14 right-6 bg-white text-black rounded-xl shadow-lg w-56 z-50">
+        <div className="absolute top-14 right-5 bg-white text-black rounded-xl shadow-lg w-56 z-50">
           <div className="flex flex-col text-sm">
             <Link to="/politica-privacidade" className="px-4 py-3 hover:bg-gray-100" onClick={() => setMenuOpen(false)}>
               Política de Privacidade
