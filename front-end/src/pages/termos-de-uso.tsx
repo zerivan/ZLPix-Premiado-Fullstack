@@ -34,7 +34,7 @@ export default function TermosDeUso() {
       <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-8 space-y-8">
 
         <p className="text-sm text-white/70">
-          Última atualização: 26/01/2026
+          Última atualização: 14/06/2026
         </p>
 
         <section className="space-y-3 text-sm leading-relaxed">
@@ -68,6 +68,24 @@ export default function TermosDeUso() {
           </p>
           <p>
             É proibida a criação de múltiplas contas com finalidade fraudulenta.
+          </p>
+        </section>
+
+        <section className="space-y-3 text-sm leading-relaxed">
+          <h2 className="text-lg font-semibold text-yellow-300">
+            3.1 Exclusão de Conta
+          </h2>
+
+          <p>
+            O usuário poderá solicitar a exclusão de sua conta pelos canais
+            oficiais de atendimento da plataforma.
+          </p>
+
+          <p>
+            Determinados dados poderão permanecer armazenados pelo prazo exigido
+            pela legislação aplicável, especialmente para fins fiscais,
+            contábeis, prevenção a fraudes, segurança e cumprimento de
+            obrigações legais.
           </p>
         </section>
 
@@ -110,6 +128,12 @@ export default function TermosDeUso() {
           </p>
           <p>
             Os créditos são disponibilizados diretamente na carteira do usuário.
+          </p>
+          <p>
+            A apuração dos resultados poderá ocorrer de forma automática ou
+            manual, utilizando os critérios definidos pela plataforma e os
+            resultados públicos da Loteria Federal como referência de
+            conferência quando aplicável.
           </p>
         </section>
 
@@ -169,6 +193,22 @@ export default function TermosDeUso() {
           <p>
             A plataforma poderá reter valores e bloquear contas em caso de
             suspeita de fraude, uso indevido ou violação destes Termos.
+          </p>
+        </section>
+
+        <section className="space-y-3 text-sm leading-relaxed">
+          <h2 className="text-lg font-semibold text-yellow-300">
+            11. Contato
+          </h2>
+
+          <p>
+            Dúvidas, solicitações, reclamações ou comunicações relacionadas
+            a estes Termos de Uso poderão ser encaminhadas através do canal
+            oficial de atendimento da plataforma.
+          </p>
+
+          <p>
+            <strong>zlpixpremiado.suporte@gmail.com</strong>
           </p>
         </section>
 
