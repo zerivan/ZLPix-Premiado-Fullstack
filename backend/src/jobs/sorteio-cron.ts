@@ -56,11 +56,21 @@ async function processarSorteiosPendentesAutomatico() {
     }
 
     while (true) {
+      const inicioFederal = new Date(federal.dataApuracao);
+      inicioFederal.setUTCHours(0, 0, 0, 0);
+
+      const fimFederal = new Date(inicioFederal);
+      fimFederal.setUTCHours(23, 59, 59, 999);
+
       const bilhetePendente = await prisma.bilhete.findFirst({
         where: {
           pago: true,
           status: "ATIVO",
           apuradoEm: null,
+          sorteioData: {
+            gte: inicioFederal,
+            lte: fimFederal,
+          },
           OR: [
             { resultadoFederal: null },
             { resultadoFederal: { startsWith: "PROCESSANDO_" } },
@@ -83,7 +93,7 @@ async function processarSorteiosPendentesAutomatico() {
         bilhetePendente.sorteioData.toISOString()
       );
 
-      // 🔧 CORREÇÃO: converter milhar → dezenas (2 dígitos)
+      // Converte cada milhar da Federal em duas dezenas de 2 dígitos.
       const dezenas: string[] = [];
 
       for (const num of federal.numeros) {
@@ -97,9 +107,16 @@ async function processarSorteiosPendentesAutomatico() {
         dezenas.push(milhar.slice(2, 4));
       }
 
-      await processarSorteio(bilhetePendente.sorteioData, {
-        dezenas,
-      });
+      const resultado = await processarSorteio(
+        bilhetePendente.sorteioData,
+        {
+          dezenas,
+        }
+      );
+
+      if (!resultado.ok) {
+        break;
+      }
 
       console.log(
         "✅ [ZLPix-Premiado] Sorteio automático concluído:",
