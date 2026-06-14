@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { notify } from "./notify";
+import crypto from "crypto";
 
 type ResultadoOficial = {
   dezenas: string[];
@@ -8,12 +8,18 @@ type ResultadoOficial = {
 const PREMIO_INICIAL = 500;
 const PREMIO_ATUAL_KEY = "premio_atual_ciclo";
 
-async function obterPremioAtualPersistido(): Promise<number> {
-  const row = await prisma.appContent.findUnique({
-    where: { key: PREMIO_ATUAL_KEY },
+async function obterPremioAtualPersistido(
+  db: any = prisma
+): Promise<number> {
+  const row = await db.appContent.findUnique({
+    where: {
+      key: PREMIO_ATUAL_KEY,
+    },
   });
 
-  const valor = Number(row?.contentHtml ?? PREMIO_INICIAL);
+  const valor = Number(
+    row?.contentHtml ?? PREMIO_INICIAL
+  );
 
   if (!Number.isFinite(valor) || valor < 0) {
     return PREMIO_INICIAL;
@@ -26,16 +32,24 @@ function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
-function extrairDezenasValidas(numeroCompleto: string): string[] {
-  const numero = String(numeroCompleto || "").replace(/\D/g, "");
+function extrairDezenasValidas(
+  numeroCompleto: string
+): string[] {
+  const numero = String(
+    numeroCompleto || ""
+  ).replace(/\D/g, "");
 
   if (!numero) return [];
 
   if (numero.length <= 2) {
-    return [normalizarDezena(numero)];
+    return [
+      normalizarDezena(numero),
+    ];
   }
 
-  const milhar = numero.padStart(5, "0").slice(-4);
+  const milhar = numero
+    .padStart(5, "0")
+    .slice(-4);
 
   return [
     normalizarDezena(milhar.slice(0, 2)),
@@ -53,21 +67,63 @@ export async function processarSorteio(
   const fim = new Date(sorteioData);
   fim.setUTCHours(23, 59, 59, 999);
 
-  const claimToken = `PROCESSANDO_${inicio.toISOString()}`;
+  const claimToken =
+    `PROCESSANDO_${new Date().toISOString()}_${crypto.randomUUID()}`;
 
-  // Recupera bilhetes "travados" por execução interrompida anteriormente
-  await prisma.bilhete.updateMany({
-    where: {
-      pago: true,
-      status: "ATIVO",
-      apuradoEm: null,
-      resultadoFederal: { startsWith: "PROCESSANDO_" },
-      sorteioData: { gte: inicio, lte: fim },
-    },
-    data: {
-      resultadoFederal: null,
-    },
-  });
+  const limiteTravamento =
+    Date.now() - 30 * 60 * 1000;
+
+  const possivelmenteTravados =
+    await prisma.bilhete.findMany({
+      where: {
+        pago: true,
+        status: "ATIVO",
+        apuradoEm: null,
+        resultadoFederal: {
+          startsWith: "PROCESSANDO_",
+        },
+        sorteioData: {
+          gte: inicio,
+          lte: fim,
+        },
+      },
+      select: {
+        id: true,
+        resultadoFederal: true,
+      },
+    });
+
+  const idsTravados = possivelmenteTravados
+    .filter((bilhete) => {
+      const timestamp =
+        bilhete.resultadoFederal?.split("_")[1];
+
+      const processandoDesde = timestamp
+        ? new Date(timestamp).getTime()
+        : NaN;
+
+      return (
+        !Number.isFinite(processandoDesde) ||
+        processandoDesde < limiteTravamento
+      );
+    })
+    .map((bilhete) => bilhete.id);
+
+  if (idsTravados.length) {
+    await prisma.bilhete.updateMany({
+      where: {
+        id: {
+          in: idsTravados,
+        },
+        resultadoFederal: {
+          startsWith: "PROCESSANDO_",
+        },
+      },
+      data: {
+        resultadoFederal: null,
+      },
+    });
+  }
 
   const claim = await prisma.bilhete.updateMany({
     where: {
@@ -75,7 +131,10 @@ export async function processarSorteio(
       status: "ATIVO",
       apuradoEm: null,
       resultadoFederal: null,
-      sorteioData: { gte: inicio, lte: fim },
+      sorteioData: {
+        gte: inicio,
+        lte: fim,
+      },
     },
     data: {
       resultadoFederal: claimToken,
@@ -83,19 +142,28 @@ export async function processarSorteio(
   });
 
   if (claim.count === 0) {
-    return { ok: false, message: "Nenhum bilhete no sorteio" };
+    return {
+      ok: false,
+      message: "Nenhum bilhete no sorteio",
+    };
   }
 
   try {
     const bilhetes = await prisma.bilhete.findMany({
       where: {
         resultadoFederal: claimToken,
-        sorteioData: { gte: inicio, lte: fim },
+        sorteioData: {
+          gte: inicio,
+          lte: fim,
+        },
       },
     });
 
     if (!bilhetes.length) {
-      return { ok: false, message: "Nenhum bilhete no sorteio" };
+      return {
+        ok: false,
+        message: "Nenhum bilhete no sorteio",
+      };
     }
 
     const dezenasValidas = Array.from(
@@ -107,41 +175,50 @@ export async function processarSorteio(
     );
 
     const resultadoStr = resultado.dezenas
-      .map((n) => String(n || "").replace(/\D/g, ""))
+      .map((numero) =>
+        String(numero || "").replace(/\D/g, "")
+      )
       .filter(Boolean)
       .join(",");
 
     const agora = new Date();
-    const premioAtual = await obterPremioAtualPersistido();
-    let premioAposApuracao = PREMIO_INICIAL;
 
-    const ganhadores = bilhetes.filter((b) => {
-      const dezenasBilhete = b.dezenas
+    const ganhadores = bilhetes.filter((bilhete) => {
+      const dezenasBilhete = bilhete.dezenas
         .split(",")
-        .map((d) => normalizarDezena(d))
+        .map((dezena) =>
+          normalizarDezena(dezena)
+        )
         .filter(Boolean);
 
       return (
         dezenasBilhete.length === 3 &&
-        dezenasBilhete.every((d) =>
-          dezenasValidas.includes(d)
+        dezenasBilhete.every((dezena) =>
+          dezenasValidas.includes(dezena)
         )
       );
     });
 
     await prisma.$transaction(async (tx) => {
-      // Usa apenas o lote atual identificado pelo claimToken
-      const bilhetesDaRodada = await tx.bilhete.findMany({
-        where: {
-          resultadoFederal: claimToken,
-        },
-        select: { valor: true },
-      });
+      const premioAtual =
+        await obterPremioAtualPersistido(tx);
+
+      // Usa apenas o lote atual identificado pelo claimToken.
+      const bilhetesDaRodada =
+        await tx.bilhete.findMany({
+          where: {
+            resultadoFederal: claimToken,
+          },
+          select: {
+            valor: true,
+          },
+        });
 
       const arrecadacaoDaRodada = Number(
         bilhetesDaRodada
           .reduce(
-            (acc, b) => acc + (Number(b.valor) || 0),
+            (acc, bilhete) =>
+              acc + (Number(bilhete.valor) || 0),
             0
           )
           .toFixed(2)
@@ -149,7 +226,9 @@ export async function processarSorteio(
 
       if (!ganhadores.length) {
         await tx.bilhete.updateMany({
-          where: { resultadoFederal: claimToken },
+          where: {
+            resultadoFederal: claimToken,
+          },
           data: {
             status: "NAO_PREMIADO",
             resultadoFederal: resultadoStr,
@@ -158,21 +237,44 @@ export async function processarSorteio(
         });
 
         const novoPremio = Number(
-          (premioAtual + arrecadacaoDaRodada * 0.3).toFixed(2)
+          (
+            premioAtual +
+            arrecadacaoDaRodada * 0.3
+          ).toFixed(2)
         );
 
-        premioAposApuracao = novoPremio;
+        await persistirPremioAtual(
+          tx,
+          novoPremio
+        );
 
         return;
       }
 
-      const valorPorGanhador = Number(
-        (premioAtual / ganhadores.length).toFixed(2)
+      const premioEmCentavos =
+        Math.round(premioAtual * 100);
+
+      const valorBaseEmCentavos = Math.floor(
+        premioEmCentavos / ganhadores.length
       );
 
-      for (const bilhete of ganhadores) {
+      const centavosRestantes =
+        premioEmCentavos % ganhadores.length;
+
+      for (
+        const [indice, bilhete]
+        of ganhadores.entries()
+      ) {
+        const valorPorGanhador =
+          (
+            valorBaseEmCentavos +
+            (indice < centavosRestantes ? 1 : 0)
+          ) / 100;
+
         await tx.wallet.upsert({
-          where: { userId: bilhete.userId },
+          where: {
+            userId: bilhete.userId,
+          },
           update: {},
           create: {
             userId: bilhete.userId,
@@ -182,9 +284,13 @@ export async function processarSorteio(
         });
 
         await tx.wallet.updateMany({
-          where: { userId: bilhete.userId },
+          where: {
+            userId: bilhete.userId,
+          },
           data: {
-            saldo: { increment: valorPorGanhador },
+            saldo: {
+              increment: valorPorGanhador,
+            },
           },
         });
 
@@ -202,7 +308,9 @@ export async function processarSorteio(
         });
 
         await tx.bilhete.update({
-          where: { id: bilhete.id },
+          where: {
+            id: bilhete.id,
+          },
           data: {
             status: "PREMIADO",
             premioValor: valorPorGanhador,
@@ -223,41 +331,12 @@ export async function processarSorteio(
           apuradoEm: agora,
         },
       });
-    });
 
-    /*
-     * O prêmio é atualizado somente depois que a transação responsável
-     * por concluir os bilhetes foi confirmada.
-     *
-     * Dessa forma, uma falha isolada no appContent não reverte status,
-     * resultadoFederal e apuradoEm dos bilhetes já processados.
-     */
-    try {
-      await prisma.appContent.upsert({
-        where: { key: PREMIO_ATUAL_KEY },
-        update: {
-          contentHtml: String(premioAposApuracao),
-          title: "Prêmio Atual do Ciclo",
-          type: "config",
-          enabled: true,
-          isActive: true,
-        },
-        create: {
-          key: PREMIO_ATUAL_KEY,
-          slug: PREMIO_ATUAL_KEY,
-          title: "Prêmio Atual do Ciclo",
-          type: "config",
-          contentHtml: String(premioAposApuracao),
-          enabled: true,
-          isActive: true,
-        },
-      });
-    } catch (error) {
-      console.error(
-        "Erro ao atualizar prêmio atual após apuração:",
-        error
+      await persistirPremioAtual(
+        tx,
+        PREMIO_INICIAL
       );
-    }
+    });
 
     return {
       ok: true,
@@ -276,4 +355,31 @@ export async function processarSorteio(
 
     throw error;
   }
+}
+
+async function persistirPremioAtual(
+  db: any,
+  valor: number
+) {
+  await db.appContent.upsert({
+    where: {
+      key: PREMIO_ATUAL_KEY,
+    },
+    update: {
+      contentHtml: String(valor),
+      title: "Prêmio Atual do Ciclo",
+      type: "config",
+      enabled: true,
+      isActive: true,
+    },
+    create: {
+      key: PREMIO_ATUAL_KEY,
+      slug: PREMIO_ATUAL_KEY,
+      title: "Prêmio Atual do Ciclo",
+      type: "config",
+      contentHtml: String(valor),
+      enabled: true,
+      isActive: true,
+    },
+  });
 }
