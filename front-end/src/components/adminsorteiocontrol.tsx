@@ -19,15 +19,21 @@ export default function AdminSorteioControl() {
 
   const [carregandoPrevia, setCarregandoPrevia] = useState(false);
   const [federalData, setFederalData] = useState<FederalData | null>(null);
-  const [bilhetesElegiveis, setBilhetesElegiveis] = useState<BilheteElegivel[]>([]);
+  const [bilhetesElegiveis, setBilhetesElegiveis] = useState<
+    BilheteElegivel[]
+  >([]);
   const [erroPrevia, setErroPrevia] = useState<string | null>(null);
 
   const BASE_URL = "https://zlpix-premiado-fullstack.onrender.com";
 
-  // 🔒 VALIDAÇÃO NOVA (CIRÚRGICA)
   function validarPremiosFederal(premios: string[]): boolean {
-    if (!Array.isArray(premios) || premios.length !== 5) return false;
-    return premios.every((p) => /^\d{5,6}$/.test(String(p)));
+    if (!Array.isArray(premios) || premios.length !== 5) {
+      return false;
+    }
+
+    return premios.every((premio) =>
+      /^\d{5,6}$/.test(String(premio))
+    );
   }
 
   useEffect(() => {
@@ -53,53 +59,53 @@ export default function AdminSorteioControl() {
       }
 
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
       if (!token) {
-        setErroPrevia("❌ Token admin ausente para carregar bilhetes elegíveis.");
+        setErroPrevia(
+          "❌ Token admin ausente para carregar bilhetes elegíveis."
+        );
         return;
       }
 
-      const ganhadores = await axios.get(`${BASE_URL}/api/admin/ganhadores`, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-});
+      const apuracao = await axios.get(
+        `${BASE_URL}/api/admin/apuracao`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: dataSorteio
+            ? {
+                sorteioData: dataSorteio,
+              }
+            : undefined,
+        }
+      );
 
-console.log("GANHADORES", ganhadores.data);
-
-      const dataSelecionada = dataSorteio ? new Date(dataSorteio) : null;
-      if (dataSelecionada) {
-        dataSelecionada.setHours(0, 0, 0, 0);
-      }
-
-      const elegiveis = Array.isArray(ganhadores.data?.data)
-        ? ganhadores.data.data.filter((b: any) => {
-            if (b.status !== "ATIVO") return false;
-            if (b.apuradoEm) return false;
-            if (!b.sorteioData) return false;
-
-            if (!dataSelecionada) return true;
-
-            const dataBilhete = new Date(b.sorteioData);
-            dataBilhete.setHours(0, 0, 0, 0);
-
-            return dataBilhete.getTime() === dataSelecionada.getTime();
-          })
+      const elegiveis = Array.isArray(apuracao.data?.data)
+        ? apuracao.data.data
         : [];
 
       setBilhetesElegiveis(
-        elegiveis.map((b: any) => ({
-          id: Number(b.id),
-          dezenas: String(b.dezenas || ""),
-          sorteioData: b.sorteioData ? String(b.sorteioData) : undefined,
+        elegiveis.map((bilhete: any) => ({
+          id: Number(bilhete.id),
+          dezenas: String(bilhete.dezenas || ""),
+          sorteioData: bilhete.sorteioData
+            ? String(bilhete.sorteioData)
+            : undefined,
         }))
       );
 
       if (elegiveis.length === 0) {
-        setErroPrevia("⚠️ Nenhum bilhete elegível encontrado para os critérios atuais.");
+        setErroPrevia(
+          "⚠️ Nenhum bilhete elegível encontrado para os critérios atuais."
+        );
       }
     } catch (error) {
       console.error(error);
-      setErroPrevia("❌ Erro ao carregar resultado da Federal.");
+
+      setErroPrevia(
+        "❌ Erro ao carregar resultado da Federal ou bilhetes elegíveis."
+      );
     } finally {
       setCarregandoPrevia(false);
     }
@@ -108,13 +114,16 @@ console.log("GANHADORES", ganhadores.data);
   const podeDisparar = useMemo(() => {
     const temFederal =
       !!federalData && validarPremiosFederal(federalData.premios);
+
     const temBilhetes = bilhetesElegiveis.length > 0;
+
     return temFederal && temBilhetes && !loading;
   }, [federalData, bilhetesElegiveis.length, loading]);
 
   async function dispararSorteio() {
     const temFederal =
       !!federalData && validarPremiosFederal(federalData.premios);
+
     const temBilhetes = bilhetesElegiveis.length > 0;
 
     if (!temFederal) {
@@ -129,7 +138,7 @@ console.log("GANHADORES", ganhadores.data);
       return;
     }
 
-    const ok = confirm(
+    const confirmou = confirm(
       "⚠️ ATENÇÃO!\n\n" +
         "Esta ação irá:\n" +
         "- Apurar os bilhetes\n" +
@@ -140,13 +149,16 @@ console.log("GANHADORES", ganhadores.data);
         "Deseja continuar?"
     );
 
-    if (!ok) return;
+    if (!confirmou) {
+      return;
+    }
 
     try {
       setLoading(true);
       setStatus(null);
 
       const token = localStorage.getItem("TOKEN_ZLPIX_ADMIN");
+
       if (!token) {
         setStatus("❌ Token admin ausente.");
         return;
@@ -158,10 +170,10 @@ console.log("GANHADORES", ganhadores.data);
 
       const payload = {
         sorteioData: dataFinal,
-        premiosFederal: federalData.premios,
+        premiosFederal: federalData!.premios,
       };
 
-      const res = await axios.post(
+      const resposta = await axios.post(
         `${BASE_URL}/api/admin/apuracao/apurar`,
         payload,
         {
@@ -171,15 +183,18 @@ console.log("GANHADORES", ganhadores.data);
         }
       );
 
-      if (res.data?.ok) {
+      if (resposta.data?.ok) {
         setStatus("✅ Apuração executada com sucesso.");
+        await carregarPrevia();
       } else {
         setStatus(
-          `⚠️ ${res.data?.error || "Resposta inesperada do servidor."}`
+          `⚠️ ${
+            resposta.data?.error || "Resposta inesperada do servidor."
+          }`
         );
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       setStatus("❌ Erro ao executar a apuração.");
     } finally {
       setLoading(false);
@@ -202,20 +217,24 @@ console.log("GANHADORES", ganhadores.data);
       <input
         type="date"
         value={dataSorteio}
-        onChange={(e) => setDataSorteio(e.target.value)}
+        onChange={(event) => setDataSorteio(event.target.value)}
         className="border px-2 py-1 rounded text-black"
       />
 
       <div className="text-sm text-gray-700 space-y-1">
         <div className="font-semibold">Resultado da Federal:</div>
+
         {federalData ? (
           <>
             <div>
               Data da extração:{" "}
               {federalData.dataApuracao
-                ? new Date(federalData.dataApuracao).toLocaleDateString("pt-BR")
+                ? new Date(
+                    federalData.dataApuracao
+                  ).toLocaleDateString("pt-BR")
                 : "N/D"}
             </div>
+
             {federalData.premios.map((premio, index) => (
               <div key={`${premio}-${index}`}>
                 {index + 1}º prêmio: {premio}
@@ -228,7 +247,10 @@ console.log("GANHADORES", ganhadores.data);
       </div>
 
       <div className="text-sm text-gray-700 space-y-1">
-        <div className="font-semibold">Bilhetes que participarão do sorteio:</div>
+        <div className="font-semibold">
+          Bilhetes que participarão do sorteio:
+        </div>
+
         {bilhetesElegiveis.length > 0 ? (
           bilhetesElegiveis.map((bilhete) => (
             <div key={bilhete.id}>
@@ -241,10 +263,14 @@ console.log("GANHADORES", ganhadores.data);
       </div>
 
       {carregandoPrevia && (
-        <div className="text-xs text-gray-500">Carregando prévia...</div>
+        <div className="text-xs text-gray-500">
+          Carregando prévia...
+        </div>
       )}
 
-      {erroPrevia && <div className="text-xs text-amber-700">{erroPrevia}</div>}
+      {erroPrevia && (
+        <div className="text-xs text-amber-700">{erroPrevia}</div>
+      )}
 
       <button
         onClick={dispararSorteio}
@@ -254,7 +280,9 @@ console.log("GANHADORES", ganhadores.data);
         {loading ? "Processando..." : "🔴 DISPARAR APURAÇÃO"}
       </button>
 
-      {status && <div className="text-sm font-semibold">{status}</div>}
+      {status && (
+        <div className="text-sm font-semibold">{status}</div>
+      )}
     </div>
   );
 }
