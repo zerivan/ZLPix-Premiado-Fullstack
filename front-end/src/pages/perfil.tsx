@@ -292,23 +292,30 @@ setEmailExclusao(parsed.email || "");
         </button>
 
         <button
-          onClick={() => {
-            alert(
-              "Solicitação registrada. Em breve esta ação enviará os dados para o suporte."
-            );
+  onClick={async () => {
+    try {
+      await api.post("/auth/request-account-deletion", {
+        email: emailExclusao,
+        motivo: motivoExclusao,
+      });
 
-            console.log({
-              email: emailExclusao,
-              motivo: motivoExclusao,
-              userId: user?.id,
-            });
+      alert(
+        "Solicitação enviada com sucesso. Nossa equipe irá analisar o pedido."
+      );
 
-            setMostrarExclusao(false);
-          }}
-          className="flex-1 py-2 rounded-lg bg-red-600 text-white"
-        >
-          Enviar
-        </button>
+      setMostrarExclusao(false);
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        "Não foi possível enviar a solicitação. Tente novamente."
+      );
+    }
+  }}
+  className="flex-1 py-2 rounded-lg bg-red-600 text-white"
+>
+  Enviar
+</button>
 
       </div>
 
