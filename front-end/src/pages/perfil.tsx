@@ -12,6 +12,10 @@ export default function Perfil() {
 
   const [saldoZLP, setSaldoZLP] = useState<number | null>(null);
 
+const [mostrarExclusao, setMostrarExclusao] = useState(false);
+const [emailExclusao, setEmailExclusao] = useState("");
+const [motivoExclusao, setMotivoExclusao] = useState("");
+
   useEffect(() => {
     try {
       const token = localStorage.getItem("TOKEN_ZLPIX");
@@ -20,6 +24,7 @@ export default function Perfil() {
       if (token && userData) {
         const parsed = JSON.parse(userData);
         setUser(parsed);
+setEmailExclusao(parsed.email || "");
 
         const userId = parsed.id;
         api
@@ -237,7 +242,12 @@ export default function Perfil() {
             </div>
           )}
         </div>
-
+<button
+  onClick={() => setMostrarExclusao(true)}
+  className="w-full py-3 mb-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
+>
+  Excluir Conta
+</button>
         <button
           onClick={handleLogout}
           className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
@@ -245,7 +255,66 @@ export default function Perfil() {
           Sair da Conta
         </button>
       </div>
+{mostrarExclusao && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="bg-white text-black rounded-2xl p-5 w-full max-w-md space-y-4">
 
+      <h2 className="text-lg font-bold text-red-600">
+        Solicitar Exclusão de Conta
+      </h2>
+
+      <p className="text-sm">
+        Tem certeza que deseja solicitar a exclusão da sua conta?
+      </p>
+
+      <input
+        type="email"
+        value={emailExclusao}
+        onChange={(e) => setEmailExclusao(e.target.value)}
+        placeholder="Seu e-mail"
+        className="w-full border rounded-lg p-2"
+      />
+
+      <textarea
+        value={motivoExclusao}
+        onChange={(e) => setMotivoExclusao(e.target.value)}
+        placeholder="Motivo da solicitação (opcional)"
+        className="w-full border rounded-lg p-2 h-24"
+      />
+
+      <div className="flex gap-2">
+
+        <button
+          onClick={() => setMostrarExclusao(false)}
+          className="flex-1 py-2 rounded-lg bg-gray-300"
+        >
+          Cancelar
+        </button>
+
+        <button
+          onClick={() => {
+            alert(
+              "Solicitação registrada. Em breve esta ação enviará os dados para o suporte."
+            );
+
+            console.log({
+              email: emailExclusao,
+              motivo: motivoExclusao,
+              userId: user?.id,
+            });
+
+            setMostrarExclusao(false);
+          }}
+          className="flex-1 py-2 rounded-lg bg-red-600 text-white"
+        >
+          Enviar
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+)}
       <NavBottom />
     </div>
   );
