@@ -363,5 +363,58 @@ router.post("/admin/login", async (req, res) => {
     });  
   }  
 });  
-  
+// ============================
+// 🔥 SOLICITAÇÃO DE EXCLUSÃO DE CONTA
+// ============================
+router.post("/request-account-deletion", async (req, res) => {
+  try {
+    const { email, motivo } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "E-mail é obrigatório.",
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: {
+        email: String(email).toLowerCase(),
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuário não encontrado.",
+      });
+    }
+
+    await resend.emails.send({
+      from: "suporte@mail.zlpixpremiado.com.br",
+      to: "zlpixpremiado.suporte@gmail.com",
+      subject: "Solicitação de Exclusão de Conta",
+      html: `
+        <h2>Solicitação de Exclusão de Conta</h2>
+
+        <p><strong>ID:</strong> ${user.id}</p>
+        <p><strong>Nome:</strong> ${user.name}</p>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Motivo:</strong> ${motivo || "Não informado"}</p>
+        <p><strong>Data:</strong> ${new Date().toLocaleString("pt-BR")}</p>
+      `,
+    });
+
+    return res.json({
+      ok: true,
+      message:
+        "Solicitação enviada com sucesso. Nossa equipe irá analisar o pedido.",
+    });
+  } catch (error) {
+    console.error("Erro ao solicitar exclusão:", error);
+
+    return res.status(500).json({
+      message: "Erro ao enviar solicitação.",
+    });
+  }
+});
+
 export default router;
