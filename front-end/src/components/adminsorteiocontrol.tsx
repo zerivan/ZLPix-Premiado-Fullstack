@@ -59,10 +59,12 @@ export default function AdminSorteioControl() {
       }
 
       const ganhadores = await axios.get(`${BASE_URL}/api/admin/ganhadores`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+console.log("GANHADORES", ganhadores.data);
 
       const dataSelecionada = dataSorteio ? new Date(dataSorteio) : null;
       if (dataSelecionada) {
