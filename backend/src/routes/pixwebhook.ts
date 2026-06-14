@@ -11,24 +11,47 @@ const fetchFn: typeof fetch = (...args: any) =>
 function getNextWednesday(): Date {
   const now = new Date();
 
-  const day = now.getDay(); // 0=domingo ... 3=quarta
-  const hour = now.getHours();
-  const target = new Date(now);
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? "";
+
+  const dias: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  const day = dias[valor("weekday")];
+  const hour = Number(valor("hour"));
+
+  const target = new Date(
+    `${valor("year")}-${valor("month")}-${valor("day")}T20:00:00-03:00`
+  );
 
   if (day === 3) {
-    // Regra de negócio: corte às 17:00 (horário local)
     if (hour < 17) {
-      target.setHours(20, 0, 0, 0);
       return target;
     }
-    target.setDate(target.getDate() + 7);
-    target.setHours(20, 0, 0, 0);
+
+    target.setUTCDate(target.getUTCDate() + 7);
     return target;
   }
 
   const diff = (3 - day + 7) % 7;
-  target.setDate(target.getDate() + diff);
-  target.setHours(20, 0, 0, 0);
+  target.setUTCDate(target.getUTCDate() + diff);
 
   return target;
 }
@@ -104,10 +127,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     );
 
     // =========================
-    // 🔹 CARTEIRA (PRIORIDADE)
+    // CARTEIRA — PRIORIDADE
     // =========================
     let carteira = await prisma.transacao_carteira.findFirst({
-      where: { mpPaymentId: String(paymentId) },
+      where: {
+        mpPaymentId: String(paymentId),
+      },
     });
 
     if (!carteira) {
@@ -118,13 +143,19 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
       if (carteiraId) {
         carteira = await prisma.transacao_carteira.findUnique({
-          where: { id: carteiraId },
+          where: {
+            id: carteiraId,
+          },
         });
 
         if (carteira) {
           await prisma.transacao_carteira.update({
-            where: { id: carteiraId },
-            data: { mpPaymentId: String(paymentId) },
+            where: {
+              id: carteiraId,
+            },
+            data: {
+              mpPaymentId: String(paymentId),
+            },
           });
         }
       }
@@ -138,9 +169,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           await db.transacao_carteira.updateMany({
             where: {
               id: carteira.id,
-              NOT: { status: "paid" },
+              NOT: {
+                status: "paid",
+              },
             },
-            data: { status: "paid" },
+            data: {
+              status: "paid",
+            },
           });
 
         carteiraFoiPagaAgora =
@@ -154,7 +189,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           `;
 
           await db.wallet.updateMany({
-            where: { userId: carteira.userId },
+            where: {
+              userId: carteira.userId,
+            },
             data: {
               saldo: {
                 increment: Number(carteira.valor),
@@ -176,10 +213,12 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
     }
 
     // =========================
-    // 🔹 BILHETE
+    // BILHETE
     // =========================
     let transacao = await prisma.transacao.findFirst({
-      where: { mpPaymentId: String(paymentId) },
+      where: {
+        mpPaymentId: String(paymentId),
+      },
     });
 
     if (!transacao) {
@@ -190,13 +229,19 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
       if (txId) {
         transacao = await prisma.transacao.findUnique({
-          where: { id: txId },
+          where: {
+            id: txId,
+          },
         });
 
         if (transacao) {
           await prisma.transacao.update({
-            where: { id: txId },
-            data: { mpPaymentId: String(paymentId) },
+            where: {
+              id: txId,
+            },
+            data: {
+              mpPaymentId: String(paymentId),
+            },
           });
         }
       }
@@ -225,9 +270,13 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
           await db.transacao.updateMany({
             where: {
               id: transacao.id,
-              NOT: { status: "paid" },
+              NOT: {
+                status: "paid",
+              },
             },
-            data: { status: "paid" },
+            data: {
+              status: "paid",
+            },
           });
 
         if (transacaoStatusUpdated.count === 0) {
@@ -236,7 +285,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 
         const bilheteExistente =
           await db.bilhete.findFirst({
-            where: { transacaoId: transacao.id },
+            where: {
+              transacaoId: transacao.id,
+            },
           });
 
         if (bilheteExistente) {
@@ -250,9 +301,11 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
             Number(transacao.valor) /
             Math.max(bilhetesRaw.length, 1);
 
-          if (typeof item === "string") dezenas = item;
-          else if (typeof item === "object" && item !== null)
+          if (typeof item === "string") {
+            dezenas = item;
+          } else if (typeof item === "object" && item !== null) {
             dezenas = String((item as any).dezenas ?? "");
+          }
 
           if (!dezenas) continue;
 
@@ -291,7 +344,9 @@ router.post("/", express.json(), async (req: Request, res: Response) => {
 });
 
 router.get("/__ping_pixwebhook", (req, res) => {
-  res.json({ ping: true });
+  res.json({
+    ping: true,
+  });
 });
 
 export default router;
