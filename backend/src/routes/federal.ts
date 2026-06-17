@@ -2,14 +2,59 @@ import express from "express";
 
 const router = express.Router();
 
+function getSaoPauloDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const getPart = (type: string) =>
+    parts.find((part) => part.type === type)?.value || "";
+
+  return {
+    year: Number(getPart("year")),
+    month: Number(getPart("month")),
+    day: Number(getPart("day")),
+    weekday: getPart("weekday"),
+    hour: Number(getPart("hour")),
+  };
+}
+
 function getNextWednesday(): Date {
   const now = new Date();
-  const day = now.getDay();
-  const diff = (3 - day + 7) % 7 || 7;
-  const next = new Date(now);
-  next.setDate(now.getDate() + diff);
-  next.setHours(20, 0, 0, 0);
-  return next;
+  const saoPauloNow = getSaoPauloDateParts(now);
+  const weekdays: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  const day = weekdays[saoPauloNow.weekday];
+  let diff = (3 - day + 7) % 7;
+
+  if (diff === 0 && saoPauloNow.hour >= 20) {
+    diff = 7;
+  }
+
+  const nextLocalDate = new Date(
+    Date.UTC(saoPauloNow.year, saoPauloNow.month - 1, saoPauloNow.day)
+  );
+  nextLocalDate.setUTCDate(nextLocalDate.getUTCDate() + diff);
+
+  const year = nextLocalDate.getUTCFullYear();
+  const month = String(nextLocalDate.getUTCMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(nextLocalDate.getUTCDate()).padStart(2, "0");
+
+  return new Date(`${year}-${month}-${dayOfMonth}T20:00:00-03:00`);
 }
 
 function parseDataBR(data: string): string | null {
