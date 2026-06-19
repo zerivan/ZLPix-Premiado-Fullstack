@@ -135,11 +135,11 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24 relative">
 
       <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="absolute top-6 right-5 text-2xl z-50"
-      >
-        ☰
-      </button>
+  onClick={() => setMenuOpen(!menuOpen)}
+  className="absolute top-6 right-5 text-2xl text-white font-bold z-50"
+>
+  ☰
+</button>
 
       {menuOpen && (
         <div className="absolute top-14 right-5 bg-white text-black rounded-xl shadow-lg w-56 z-50">
