@@ -136,10 +136,21 @@ export default function Home() {
 
       <button
   onClick={() => setMenuOpen(!menuOpen)}
-  className="absolute top-6 right-5 text-2xl z-50"
-  style={{ color: "#ffffff" }}
+  className="absolute top-6 right-5 z-50"
 >
-  ☰
+  <svg
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#FFFFFF"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+  >
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
 </button>
 
       {menuOpen && (
