@@ -12,6 +12,25 @@ type FederalResponse = {
 
 let emExecucao = false;
 
+function obterIntervaloDiaSaoPaulo(data: Date) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(data);
+
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? "";
+
+  const dataLocal = `${valor("year")}-${valor("month")}-${valor("day")}`;
+
+  return {
+    inicio: new Date(`${dataLocal}T00:00:00-03:00`),
+    fim: new Date(`${dataLocal}T23:59:59.999-03:00`),
+  };
+}
+
 /**
  * Busca resultado oficial da Federal
  */
@@ -56,11 +75,8 @@ async function processarSorteiosPendentesAutomatico() {
     }
 
     while (true) {
-      const inicioFederal = new Date(federal.dataApuracao);
-      inicioFederal.setUTCHours(0, 0, 0, 0);
-
-      const fimFederal = new Date(inicioFederal);
-      fimFederal.setUTCHours(23, 59, 59, 999);
+      const { inicio: inicioFederal, fim: fimFederal } =
+        obterIntervaloDiaSaoPaulo(federal.dataApuracao);
 
       const bilhetePendente = await prisma.bilhete.findFirst({
         where: {
