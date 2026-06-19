@@ -136,7 +136,8 @@ export default function Home() {
 
       <button
   onClick={() => setMenuOpen(!menuOpen)}
-  className="absolute top-6 right-5 text-2xl text-white font-bold z-50"
+  className="absolute top-6 right-5 text-2xl z-50"
+  style={{ color: "#ffffff" }}
 >
   ☰
 </button>
