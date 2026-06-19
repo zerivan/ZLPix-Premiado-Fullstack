@@ -136,7 +136,7 @@ export default function Home() {
 
       <button
   onClick={() => setMenuOpen(!menuOpen)}
-  className="absolute top-6 right-1 z-50"
+  className="absolute top-6 right-2 z-50"
 >
   <svg
     width="32"
