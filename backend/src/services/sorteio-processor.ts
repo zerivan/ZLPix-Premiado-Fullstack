@@ -32,6 +32,25 @@ function normalizarDezena(valor: string): string {
   return valor.trim().padStart(2, "0");
 }
 
+function obterIntervaloDiaSaoPaulo(data: Date) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(data);
+
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? "";
+
+  const dataLocal = `${valor("year")}-${valor("month")}-${valor("day")}`;
+
+  return {
+    inicio: new Date(`${dataLocal}T00:00:00-03:00`),
+    fim: new Date(`${dataLocal}T23:59:59.999-03:00`),
+  };
+}
+
 function extrairDezenasValidas(
   numeroCompleto: string
 ): string[] {
@@ -61,11 +80,7 @@ export async function processarSorteio(
   sorteioData: Date,
   resultado: ResultadoOficial
 ) {
-  const inicio = new Date(sorteioData);
-  inicio.setUTCHours(0, 0, 0, 0);
-
-  const fim = new Date(sorteioData);
-  fim.setUTCHours(23, 59, 59, 999);
+  const { inicio, fim } = obterIntervaloDiaSaoPaulo(sorteioData);
 
   const claimToken =
     `PROCESSANDO_${new Date().toISOString()}_${crypto.randomUUID()}`;
