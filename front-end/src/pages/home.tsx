@@ -170,13 +170,15 @@ export default function Home() {
       )}
 
       <header className="text-center py-7 border-b border-white/10 shadow-md">
-        <h1 className="text-3xl font-extrabold text-yellow-300">
-          ZLPIX PREMIADO 💰
-        </h1>
-        <p className="text-sm text-blue-100 mt-1">
-          Concorra toda quarta-feira com a Loteria Federal 🎯
-        </p>
-      </header>
+  <h1 className="text-3xl font-extrabold text-yellow-300 flex items-center justify-center gap-1">
+  <span>ZLPIX PREMIADO</span>
+  <span>💰</span>
+</h1>
+
+  <p className="text-sm text-blue-100 mt-1">
+    Concorra toda quarta-feira com a Loteria Federal 🎯
+  </p>
+</header>
 
       <main className="flex-1 px-6 pt-6 space-y-8 flex flex-col items-center text-center">
         <div className="bg-white/10 rounded-2xl p-6 shadow-lg w-full max-w-md">
