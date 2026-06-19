@@ -170,7 +170,7 @@ export default function Home() {
       )}
 
       <header className="text-center py-7 border-b border-white/10 shadow-md">
-  <h1 className="text-3xl font-extrabold text-yellow-300 flex items-center justify-center gap-1">
+  <h1 className="text-3xl font-extrabold text-yellow-300 flex items-center justify-center gap-0">
   <span>ZLPIX PREMIADO</span>
   <span>💰</span>
 </h1>
