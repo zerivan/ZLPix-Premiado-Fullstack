@@ -8,6 +8,7 @@ type Transacao = {
   id: number;
   valor: number;
   status: string;
+  tipo?: string;
   createdAt: string;
   metadata?: {
     tipo?: "deposito" | "saque";
@@ -23,9 +24,20 @@ function formatarDataHora(data: string) {
   );
 }
 
-function traduzirStatus(status: string) {
+function traduzirStatus(
+  status: string,
+  tipo?: string
+) {
   if (status === "pending") return "Em análise";
-  if (status === "paid") return "Pago";
+
+  if (status === "paid") {
+    if (tipo === "PREMIO") {
+      return "Creditado";
+    }
+
+    return "Pago";
+  }
+
   return status;
 }
 
@@ -87,9 +99,15 @@ export default function Carteira() {
       .map((t) => {
         return `
           <div style="margin-bottom:15px;">
-            <strong>${t.metadata?.tipo === "saque" ? "Saque" : "Depósito"}</strong><br/>
-            Valor: R$ ${Number(t.valor).toFixed(2)}<br/>
-            Status: ${traduzirStatus(t.status)}<br/>
+            <strong>${
+  t.tipo === "PREMIO"
+    ? "Prêmio"
+    : t.metadata?.tipo === "saque"
+    ? "Saque"
+    : "Depósito"
+}</strong><br/>
+Valor: R$ ${Number(t.valor).toFixed(2)}<br/>
+Status: ${traduzirStatus(t.status, t.tipo)}<br/>
             Data: ${formatarDataHora(t.createdAt)}
           </div>
         `;
@@ -256,13 +274,17 @@ export default function Carteira() {
           <div key={t.id} className="bg-white/10 p-3 rounded">
             <div className="flex justify-between font-bold">
               <span>
-                {t.metadata?.tipo === "saque" ? "💸 Saque" : "➕ Depósito"}
-              </span>
+  {t.tipo === "PREMIO"
+    ? "🏆 Prêmio"
+    : t.metadata?.tipo === "saque"
+    ? "💸 Saque"
+    : "➕ Depósito"}
+</span>
               <span>R$ {Number(t.valor).toFixed(2)}</span>
             </div>
             <div className="text-xs">{formatarDataHora(t.createdAt)}</div>
             <div className="text-xs">
-              Status: {traduzirStatus(t.status)}
+              Status: {traduzirStatus(t.status, t.tipo)}
             </div>
           </div>
         ))}
