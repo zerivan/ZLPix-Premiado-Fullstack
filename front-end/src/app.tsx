@@ -17,6 +17,7 @@ import RecuperarSenha from "../pages/recuperar-senha";
 import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
+import ExclusaoConta from "../pages/exclusao-conta";
 
 // 🔥 CORREÇÃO: Motor Manual agora está em components
 import AdminMotorManual from "../components/adminmotormanual";
@@ -72,7 +73,10 @@ export default function AppRoutes() {
           path="/termos-de-uso"
           element={<TermosDeUso />}
         />
-
+<Route
+  path="/exclusao-conta"
+  element={<ExclusaoConta />}
+/>
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
