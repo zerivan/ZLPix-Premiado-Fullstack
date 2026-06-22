@@ -65,7 +65,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-700 flex items-center justify-center p-6 text-white font-display">
-      <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm border border-green-400/30">
+      <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-md border border-green-400/30">
 
         <div className="text-center mb-5">
           <img
