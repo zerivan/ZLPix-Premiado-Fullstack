@@ -1,0 +1,160 @@
+// front-end/src/pages/ExclusaoConta.tsx
+
+import { useState } from "react";
+
+export default function ExclusaoConta() {
+const [nome, setNome] = useState("");
+const [email, setEmail] = useState("");
+const [telefone, setTelefone] = useState("");
+const [motivo, setMotivo] = useState("");
+const [tipoExclusao, setTipoExclusao] = useState("total");
+
+const enviarSolicitacao = () => {
+const assunto = encodeURIComponent(
+"Solicitação de Exclusão de Conta - ZLPix Premiado"
+);
+
+const corpo = encodeURIComponent(`
+
+Nome: ${nome}
+
+E-mail: ${email}
+
+Telefone: ${telefone}
+
+Tipo de Solicitação:
+${tipoExclusao}
+
+Motivo:
+${motivo}
+`);
+
+window.location.href =
+  `mailto:zlpixpremiado.suporte@gmail.com?subject=${assunto}&body=${corpo}`;
+
+};
+
+return (
+<div className="min-h-screen bg-gradient-to-b from-blue-900 to-green-700 p-6">
+<div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
+
+    <h1 className="text-3xl font-bold text-red-600 mb-4">
+      Solicitação de Exclusão de Conta
+    </h1>
+
+    <p className="text-gray-700 mb-4">
+      O ZLPix Premiado respeita os direitos dos usuários previstos na
+      Lei Geral de Proteção de Dados (LGPD).
+    </p>
+
+    <p className="text-gray-700 mb-4">
+      Após o envio da solicitação, nossa equipe realizará a análise das
+      informações fornecidas e dará início ao processo de exclusão da conta.
+    </p>
+
+    <p className="text-gray-700 mb-4">
+      O prazo para conclusão do processo poderá ser de até 90 (noventa)
+      dias contados da confirmação da solicitação.
+    </p>
+
+    <p className="text-gray-700 mb-6">
+      Alguns dados poderão permanecer armazenados pelo período exigido
+      pela legislação aplicável, especialmente para fins fiscais,
+      contábeis, prevenção a fraudes, segurança da plataforma e
+      cumprimento de obrigações legais.
+    </p>
+
+    <div className="space-y-4">
+
+      <input
+        type="text"
+        placeholder="Nome completo"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        className="w-full border rounded-xl p-3"
+      />
+
+      <input
+        type="email"
+        placeholder="E-mail"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full border rounded-xl p-3"
+      />
+
+      <input
+        type="text"
+        placeholder="Telefone"
+        value={telefone}
+        onChange={(e) => setTelefone(e.target.value)}
+        className="w-full border rounded-xl p-3"
+      />
+
+      <div className="border rounded-xl p-4">
+
+        <label className="block mb-3">
+          <input
+            type="radio"
+            name="tipo"
+            checked={tipoExclusao === "total"}
+            onChange={() => setTipoExclusao("Excluir conta e dados permitidos por lei")}
+          />
+          <span className="ml-2">
+            Excluir conta e todos os dados permitidos pela legislação
+          </span>
+        </label>
+
+        <label className="block mb-3">
+          <input
+            type="radio"
+            name="tipo"
+            onChange={() =>
+              setTipoExclusao(
+                "Excluir conta mantendo dados exigidos por lei"
+              )
+            }
+          />
+          <span className="ml-2">
+            Excluir conta mantendo apenas os dados obrigatórios
+          </span>
+        </label>
+
+        <label className="block">
+          <input
+            type="radio"
+            name="tipo"
+            onChange={() =>
+              setTipoExclusao(
+                "Solicitar mais informações sobre exclusão"
+              )
+            }
+          />
+          <span className="ml-2">
+            Solicitar mais informações
+          </span>
+        </label>
+
+      </div>
+
+      <textarea
+        placeholder="Motivo da solicitação (opcional)"
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        rows={5}
+        className="w-full border rounded-xl p-3"
+      />
+
+      <button
+        onClick={enviarSolicitacao}
+        className="w-full bg-red-600 text-white font-bold py-4 rounded-xl"
+      >
+        ENVIAR SOLICITAÇÃO
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
+);
+}
