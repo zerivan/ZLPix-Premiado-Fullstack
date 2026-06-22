@@ -19,6 +19,7 @@ import Manutencao from "../pages/manutencao";
 import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
+import ExclusaoConta from "../pages/exclusao-conta";
 
 // 🔥 NOVO
 import ZLPPage from "../pages/zlp";
@@ -102,6 +103,10 @@ export default function AppRoutes() {
         <Route path="/anuncio" element={<Anuncio />} />
         <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/termos-de-uso" element={<TermosDeUso />} />
+<Route
+  path="/exclusao-conta"
+  element={<ExclusaoConta />}
+/>
 
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
