@@ -211,35 +211,12 @@ export default function Cadastro() {
             </div>
 
             {/* TEXTO */}
-            <div
-  style={{
-    fontSize: 11,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-  }}
+            <p
+  className="text-xs text-blue-100 mt-2 text-center leading-relaxed"
 >
-  <span style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
-  8+
-</span>
-
-<span style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>
-  A-Z
-</span>
-
-<span style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>
-  a-z
-</span>
-
-<span style={{ color: regras.number ? "#4ade80" : "#f87171" }}>
-  0-9
-</span>
-
-<span style={{ color: regras.special ? "#4ade80" : "#f87171" }}>
-  @#$
-</span>
-</div>
+  A senha deve conter no mínimo 8 caracteres, incluindo letra maiúscula,
+  letra minúscula, número e caractere especial.
+</p>
 
             {/* CONFIRMAR */}
             <div className="relative">
