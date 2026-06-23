@@ -213,11 +213,11 @@ export default function Cadastro() {
             {/* TEXTO */}
             <div
   style={{
-    fontSize: 12,
+    fontSize: 11,
     display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
   }}
 >
   <span style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
