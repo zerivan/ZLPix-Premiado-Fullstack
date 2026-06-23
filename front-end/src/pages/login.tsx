@@ -142,20 +142,25 @@ export default function Login() {
 </Link>
           </p>
 
-          <div className="text-center text-xs text-white/70 mt-6 space-x-2">
-  <Link to="/politica-privacidade" className="underline">
+          <div className="text-center mt-8 flex flex-col gap-3">
+  <Link
+    to="/politica-privacidade"
+    className="text-white text-sm underline"
+  >
     Política de Privacidade
   </Link>
 
-  <span>|</span>
-
-  <Link to="/termos-de-uso" className="underline">
+  <Link
+    to="/termos-de-uso"
+    className="text-white text-sm underline"
+  >
     Termos de Uso
   </Link>
 
-  <span>|</span>
-
-  <Link to="/exclusao-conta" className="underline">
+  <Link
+    to="/exclusao-conta"
+    className="text-yellow-300 text-sm font-semibold underline"
+  >
     Exclusão de Conta
   </Link>
 </div>
