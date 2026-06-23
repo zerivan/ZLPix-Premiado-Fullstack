@@ -374,7 +374,7 @@ router.post("/request-account-deletion", async (req, res) => {
   };
 
   try {
-    const { email } = req.body;
+    const { nome, email, tipo, motivo } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -397,6 +397,9 @@ router.post("/request-account-deletion", async (req, res) => {
         id: user.id,
         email: user.email,
         action: "account-deletion",
+        nome,
+        tipo,
+        motivo,
       },
       JWT_SECRET,
       { expiresIn: "30m" }
@@ -479,13 +482,16 @@ router.post("/confirm-account-deletion", async (req, res) => {
     await resend.emails.send({
       from: "suporte@mail.zlpixpremiado.com.br",
       to: "zlpixpremiado.suporte@gmail.com",
-      subject: "Solicitação de Exclusão de Conta Confirmada",
+      subject: "Dados da Solicitação de Exclusão de Conta",
       html: `
-        <h2>Solicitação de Exclusão de Conta Confirmada</h2>
+        <h2>Dados da Solicitação de Exclusão de Conta</h2>
 
-        <p><strong>ID:</strong> ${user.id}</p>
-        <p><strong>Nome:</strong> ${user.name}</p>
+        <p><strong>ID do usuário:</strong> ${user.id}</p>
+        <p><strong>Nome cadastrado:</strong> ${user.name}</p>
+        <p><strong>Nome informado no formulário:</strong> ${decoded.nome || "Não informado"}</p>
         <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Tipo de exclusão:</strong> ${decoded.tipo || "Não informado"}</p>
+        <p><strong>Motivo:</strong> ${decoded.motivo || "Não informado"}</p>
         <p><strong>Data da confirmação:</strong> ${new Date().toLocaleString("pt-BR")}</p>
       `,
     });
