@@ -367,8 +367,14 @@ router.post("/admin/login", async (req, res) => {
 // 🔥 SOLICITAÇÃO DE EXCLUSÃO DE CONTA
 // ============================
 router.post("/request-account-deletion", async (req, res) => {
+  const response = {
+    ok: true,
+    message:
+      "Se este e-mail estiver cadastrado, enviaremos instruções para confirmação.",
+  };
+
   try {
-    const { email, motivo } = req.body;
+    const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -383,6 +389,88 @@ router.post("/request-account-deletion", async (req, res) => {
     });
 
     if (!user) {
+      return res.json(response);
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        action: "account-deletion",
+      },
+      JWT_SECRET,
+      { expiresIn: "30m" }
+    );
+
+    await resend.emails.send({
+      from: "suporte@mail.zlpixpremiado.com.br",
+      to: user.email,
+      subject: "Confirmação de Exclusão de Conta",
+      html: `
+        <h2>Confirmação de Exclusão de Conta</h2>
+
+        <p>Olá, ${user.name}</p>
+        <p>Recebemos uma solicitação para exclusão da sua conta no ZLPix Premiado.</p>
+        <p>Para confirmar que esta solicitação foi feita por você, clique no botão abaixo:</p>
+        <p>
+          <a href="https://zlpixpremiado.com.br/exclusao-conta?token=${token}"
+             style="display:inline-block;padding:12px 20px;background:#ffd700;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;">
+            Confirmar exclusão de conta
+          </a>
+        </p>
+        <p>Se o botão não funcionar, copie e cole o link abaixo no navegador:</p>
+        <p style="word-break:break-all;">
+          https://zlpixpremiado.com.br/exclusao-conta?token=${token}
+        </p>
+        <p>Esse link expira em 30 minutos.</p>
+        <p>Se você não solicitou a exclusão da conta, ignore este e-mail.</p>
+      `,
+    });
+
+    return res.json(response);
+  } catch (error) {
+    console.error("Erro ao solicitar exclusão:", error);
+
+    return res.status(500).json({
+      message: "Erro ao enviar solicitação.",
+    });
+  }
+});
+
+// ============================
+// 🔥 CONFIRMAÇÃO DE EXCLUSÃO DE CONTA
+// ============================
+router.post("/confirm-account-deletion", async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        message: "Token é obrigatório.",
+      });
+    }
+
+    let decoded: any;
+
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(400).json({
+        message: "Token inválido ou expirado.",
+      });
+    }
+
+    if (decoded.action !== "account-deletion") {
+      return res.status(400).json({
+        message: "Token inválido.",
+      });
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { id: Number(decoded.id) },
+    });
+
+    if (!user || user.email !== decoded.email) {
       return res.status(404).json({
         message: "Usuário não encontrado.",
       });
@@ -391,28 +479,26 @@ router.post("/request-account-deletion", async (req, res) => {
     await resend.emails.send({
       from: "suporte@mail.zlpixpremiado.com.br",
       to: "zlpixpremiado.suporte@gmail.com",
-      subject: "Solicitação de Exclusão de Conta",
+      subject: "Solicitação de Exclusão de Conta Confirmada",
       html: `
-        <h2>Solicitação de Exclusão de Conta</h2>
+        <h2>Solicitação de Exclusão de Conta Confirmada</h2>
 
         <p><strong>ID:</strong> ${user.id}</p>
         <p><strong>Nome:</strong> ${user.name}</p>
         <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>Motivo:</strong> ${motivo || "Não informado"}</p>
-        <p><strong>Data:</strong> ${new Date().toLocaleString("pt-BR")}</p>
+        <p><strong>Data da confirmação:</strong> ${new Date().toLocaleString("pt-BR")}</p>
       `,
     });
 
     return res.json({
       ok: true,
-      message:
-        "Solicitação enviada com sucesso. Nossa equipe irá analisar o pedido.",
+      message: "Solicitação confirmada com sucesso.",
     });
   } catch (error) {
-    console.error("Erro ao solicitar exclusão:", error);
+    console.error("Erro ao confirmar exclusão:", error);
 
     return res.status(500).json({
-      message: "Erro ao enviar solicitação.",
+      message: "Erro ao confirmar solicitação.",
     });
   }
 });
