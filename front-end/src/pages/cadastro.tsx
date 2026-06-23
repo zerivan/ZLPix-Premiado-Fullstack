@@ -212,10 +212,9 @@ export default function Cadastro() {
 
             {/* TEXTO */}
             <p
-  className="text-xs text-blue-100 mt-2 text-center leading-relaxed"
+  className="text-[11px] text-blue-100 mt-1 text-center"
 >
-  A senha deve conter no mínimo 8 caracteres, incluindo letra maiúscula,
-  letra minúscula, número e caractere especial.
+  Mínimo 8 caracteres com letra maiúscula, minúscula, número e caractere especial.
 </p>
 
             {/* CONFIRMAR */}
