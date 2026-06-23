@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ChatBot from "./ChatBot";
 
 const INACTIVITY_TIME = 30000;
@@ -8,9 +9,24 @@ const ASSISTANT_NAME = "Dayane";
 const AVATAR_URL = "/assets/avatar.png";
 
 const GlobalChatBot: React.FC = () => {
-  const [showAvatar, setShowAvatar] = useState(false);
-  const [openChat, setOpenChat] = useState(false);
-  const timerRef = useRef<number | null>(null);
+const location = useLocation();
+
+const hiddenPages = [
+  "/login",
+  "/cadastro",
+  "/recuperar-senha",
+  "/politica-privacidade",
+  "/termos-de-uso",
+  "/exclusao-conta",
+];
+
+const [showAvatar, setShowAvatar] = useState(false);
+const [openChat, setOpenChat] = useState(false);
+const timerRef = useRef<number | null>(null);
+
+if (hiddenPages.includes(location.pathname)) {
+  return null;
+}
 
   const resetTimer = () => {
     if (timerRef.current) {
