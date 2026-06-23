@@ -71,7 +71,7 @@ setTipo(TIPO_EXCLUIR_DADOS);
 
 setTimeout(() => {
   window.location.href = "/login";
-}, 3000);
+}, 8000);
 } catch (error: any) {
 setErro(
 error?.response?.data?.message ||
