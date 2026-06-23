@@ -1,32 +1,72 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../api/client";
 
 export default function ExclusaoConta() {
 const [nome, setNome] = useState("");
 const [email, setEmail] = useState("");
 const [motivo, setMotivo] = useState("");
 const [tipo, setTipo] = useState("total");
+const [mensagem, setMensagem] = useState("");
+const [erro, setErro] = useState("");
+const [enviando, setEnviando] = useState(false);
+const [confirmando, setConfirmando] = useState(false);
 
-function enviarSolicitacao() {
-const assunto = encodeURIComponent(
-"Solicitação de Exclusão de Conta - ZLPix Premiado"
+const token = new URLSearchParams(window.location.search).get("token");
+
+useEffect(() => {
+if (!token) return;
+
+async function confirmarExclusao() {
+setConfirmando(true);
+setMensagem("");
+setErro("");
+
+try {
+const response = await api.post("/auth/confirm-account-deletion", {
+token,
+});
+
+setMensagem(
+response.data?.message || "Solicitação confirmada com sucesso."
 );
+} catch (error: any) {
+setErro(
+error?.response?.data?.message ||
+"Não foi possível confirmar a solicitação. O link pode estar inválido ou expirado."
+);
+} finally {
+setConfirmando(false);
+}
+}
 
-const mensagem = encodeURIComponent(`
+confirmarExclusao();
+}, [token]);
 
-Nome: ${nome}
+async function enviarSolicitacao() {
+setEnviando(true);
+setMensagem("");
+setErro("");
 
-E-mail: ${email}
+try {
+const response = await api.post("/auth/request-account-deletion", {
+nome,
+email,
+tipo,
+motivo,
+});
 
-Tipo de solicitação:
-${tipo}
-
-Motivo:
-${motivo}
-`);
-
-window.location.href =
-  `mailto:zlpixpremiado.suporte@gmail.com?subject=${assunto}&body=${mensagem}`;
-
+setMensagem(
+response.data?.message ||
+"Se este e-mail estiver cadastrado, enviaremos instruções para confirmação."
+);
+} catch (error: any) {
+setErro(
+error?.response?.data?.message ||
+"Não foi possível enviar a solicitação. Tente novamente."
+);
+} finally {
+setEnviando(false);
+}
 }
 
 return (
@@ -39,6 +79,28 @@ return (
       </h1>
     </div>
 
+    {token ? (
+      <div className="space-y-4 text-sm text-blue-100">
+        {confirmando && (
+          <p className="text-center">
+            Confirmando solicitação de exclusão de conta...
+          </p>
+        )}
+
+        {mensagem && (
+          <div className="bg-green-500/20 border border-green-300/40 rounded-lg p-4 text-green-100">
+            {mensagem}
+          </div>
+        )}
+
+        {erro && (
+          <div className="bg-red-500/20 border border-red-300/40 rounded-lg p-4 text-red-100">
+            {erro}
+          </div>
+        )}
+      </div>
+    ) : (
+      <>
     <div className="space-y-4 text-sm text-blue-100 mb-6">
 
       <p>
@@ -119,14 +181,29 @@ return (
         className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/10 text-white"
       />
 
+      {mensagem && (
+        <div className="bg-green-500/20 border border-green-300/40 rounded-lg p-4 text-green-100 text-sm">
+          {mensagem}
+        </div>
+      )}
+
+      {erro && (
+        <div className="bg-red-500/20 border border-red-300/40 rounded-lg p-4 text-red-100 text-sm">
+          {erro}
+        </div>
+      )}
+
       <button
         onClick={enviarSolicitacao}
+        disabled={enviando}
         className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-3 rounded-full shadow-lg"
       >
-        Enviar Solicitação
+        {enviando ? "Enviando..." : "Enviar Solicitação"}
       </button>
 
     </div>
+    </>
+    )}
 
   </div>
 </div>
