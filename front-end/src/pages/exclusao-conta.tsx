@@ -61,13 +61,17 @@ motivo,
 });
 
 setMensagem(
-response.data?.message ||
-"Se este e-mail estiver cadastrado, enviaremos instruções para confirmação."
+  "Sua solicitação foi registrada. Verifique seu e-mail para confirmar a exclusão da conta. Você será redirecionado para a tela de login."
 );
+
 setNome("");
 setEmail("");
 setMotivo("");
 setTipo(TIPO_EXCLUIR_DADOS);
+
+setTimeout(() => {
+  window.location.href = "/login";
+}, 3000);
 } catch (error: any) {
 setErro(
 error?.response?.data?.message ||
