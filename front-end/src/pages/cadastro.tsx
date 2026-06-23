@@ -221,24 +221,24 @@ export default function Cadastro() {
   }}
 >
   <span style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
-    8+ caracteres
-  </span>
+  8+
+</span>
 
-  <span style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>
-    Maiúscula
-  </span>
+<span style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>
+  A-Z
+</span>
 
-  <span style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>
-    Minúscula
-  </span>
+<span style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>
+  a-z
+</span>
 
-  <span style={{ color: regras.number ? "#4ade80" : "#f87171" }}>
-    Número
-  </span>
+<span style={{ color: regras.number ? "#4ade80" : "#f87171" }}>
+  0-9
+</span>
 
-  <span style={{ color: regras.special ? "#4ade80" : "#f87171" }}>
-    Especial
-  </span>
+<span style={{ color: regras.special ? "#4ade80" : "#f87171" }}>
+  @#$
+</span>
 </div>
 
             {/* CONFIRMAR */}
