@@ -137,14 +137,16 @@ export default function Cadastro() {
       <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/10">
         <div className="text-center mb-5">
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmzrE-Lxoj0vhBEQ06zXmsjgkqYG5YBlM1M9_v6HQ4R4pBfd3yVEEpnp5XPqZRHsJ6dWz1JuQc02890lsQdUljWDlvoMImtzkLgrs2rfv3QL-NrsYiDAzqkXhSdT8rRM9Qu4lphwOalWJNxxBix-212vwFBaU03M53Jrbx14xLnkofjbeXCG_e18RNUcOeh3Cl6sQoV0aDgBHDCX3qM0OG6PFoATVuZ5ban3RA7_evH4W8Qm3m3rKyvSn-shgPw2K9K306pNEzHak"
-            alt="Logo ZLPix"
-            className="mx-auto h-16"
-          />
+  src="/icon-192.png"
+  alt="Logo ZLPix"
+  className="w-28 h-28 mx-auto mb-4 rounded-xl"
+/>
           <h1 className="text-2xl font-bold text-yellow-300 mt-3">
             Crie sua conta
           </h1>
-          <p className="text-sm text-white/80">É rápido e seguro ✨</p>
+          <p className="text-sm text-blue-100">
+  É rápido e seguro
+</p>
         </div>
 
         {!success ? (
