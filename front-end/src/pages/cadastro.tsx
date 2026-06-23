@@ -211,13 +211,35 @@ export default function Cadastro() {
             </div>
 
             {/* TEXTO */}
-            <div style={{ fontSize: 12 }}>
-              <div style={{ color: regras.length ? "#4ade80" : "#f87171" }}>• mínimo 8 caracteres</div>
-              <div style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>• letra maiúscula</div>
-              <div style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>• letra minúscula</div>
-              <div style={{ color: regras.number ? "#4ade80" : "#f87171" }}>• número</div>
-              <div style={{ color: regras.special ? "#4ade80" : "#f87171" }}>• caractere especial</div>
-            </div>
+            <div
+  style={{
+    fontSize: 12,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    justifyContent: "center",
+  }}
+>
+  <span style={{ color: regras.length ? "#4ade80" : "#f87171" }}>
+    8+ caracteres
+  </span>
+
+  <span style={{ color: regras.upper ? "#4ade80" : "#f87171" }}>
+    Maiúscula
+  </span>
+
+  <span style={{ color: regras.lower ? "#4ade80" : "#f87171" }}>
+    Minúscula
+  </span>
+
+  <span style={{ color: regras.number ? "#4ade80" : "#f87171" }}>
+    Número
+  </span>
+
+  <span style={{ color: regras.special ? "#4ade80" : "#f87171" }}>
+    Especial
+  </span>
+</div>
 
             {/* CONFIRMAR */}
             <div className="relative">
