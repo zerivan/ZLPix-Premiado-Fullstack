@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
-const BASE_IDLE = 15000;
+const BASE_IDLE = 25000;
 const AUTO_CLOSE = 15000;
 
-export default function ZLPOverlayAlerta() {
+export default function ZLPRoletaOverlay() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,7 +47,7 @@ export default function ZLPOverlayAlerta() {
           podeAbrir.current = true;
         }
       } catch (err) {
-        console.error("Erro alerta ZLP:", err);
+        console.error("Erro alerta roleta:", err);
       }
     }
 
@@ -58,7 +58,11 @@ export default function ZLPOverlayAlerta() {
     if (!rotasPermitidas.includes(location.pathname)) return;
 
     function calcularDelay() {
-      return Math.min(BASE_IDLE * (tentativas.current + 1), 60000);
+      const OFFSET = 30000; // 30s de diferença
+      return Math.min(
+        BASE_IDLE * (tentativas.current + 1) + OFFSET,
+        60000
+      );
     }
 
     function iniciarTimer() {
@@ -108,25 +112,25 @@ export default function ZLPOverlayAlerta() {
   return (
     <div className="fixed inset-0 z-[9999]">
 
-      {/* ✅ IMAGEM CORRETA */}
+      {/* IMAGEM AJUSTADA */}
       <img
-        src="/assets/bilhetes-zlp.png"
+        src="/assets/roleta-zlp.png"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover object-[center_45%]"
       />
 
-      {/* ✅ OVERLAY AJUSTADO */}
+      {/* OVERLAY */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
       {/* CONTEÚDO */}
       <div className="relative h-full flex flex-col justify-end text-white p-6">
 
         <h1 className="text-2xl font-bold mb-2">
-          Colete suas moedas diárias!
+          Gire a roleta agora!
         </h1>
 
         <p className="text-sm text-gray-300 mb-6">
-          Faça seu check-in e acumule ZLP para trocar por bilhetes.
+          Ganhe ZLP instantaneamente com a roleta diária.
         </p>
 
         <div className="flex gap-3">
@@ -140,11 +144,11 @@ export default function ZLPOverlayAlerta() {
           <button
             onClick={() => {
               setOpen(false);
-              navigate("/zlp");
+              navigate("/zlp-roleta");
             }}
             className="flex-1 py-3 rounded-full bg-yellow-400 text-black font-bold"
           >
-            Coletar agora
+            Girar agora
           </button>
         </div>
       </div>
