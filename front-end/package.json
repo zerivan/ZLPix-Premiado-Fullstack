@@ -16,6 +16,9 @@
   },
 
   "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+
     "axios": "^1.7.3",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.554.0",
@@ -28,6 +31,8 @@
   },
 
   "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.19",
     "patch-package": "^8.0.0",
