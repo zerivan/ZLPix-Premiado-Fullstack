@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import NavBottom from "../components/navbottom";
 import { api } from "../api/client";
@@ -55,13 +55,25 @@ export default function Resultado() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
 
+  // 🔥 CORRIGIDO: Usar AbortController para cleanup
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
+    // 🔥 Criar novo AbortController para este efeito
+    abortControllerRef.current = new AbortController();
+
     async function carregarResultado() {
       setLoading(true);
       setErro("");
 
       try {
         const res = await api.get("/api/federal");
+
+        // 🔥 Verificar se foi abortado
+        if (abortControllerRef.current?.signal.aborted) {
+          console.log("⏹️ Requisição de resultado foi cancelada");
+          return;
+        }
 
         if (!res.data?.ok) {
           setErro("Não foi possível carregar os resultados.");
@@ -76,16 +88,24 @@ export default function Resultado() {
           proximoSorteio: d.proximoSorteio,
           timestampProximoSorteio: d.timestampProximoSorteio,
         });
-      } catch (err) {
-        console.error("Erro ao buscar resultado:", err);
-        setErro("Falha ao conectar ao servidor.");
+      } catch (err: any) {
+        // 🔥 Não settar erro se foi abortado
+        if (!abortControllerRef.current?.signal.aborted) {
+          console.error("Erro ao buscar resultado:", err);
+          setErro("Falha ao conectar ao servidor.");
+        }
       } finally {
         setLoading(false);
       }
     }
 
     carregarResultado();
-  }, []);
+
+    // 🔥 Cleanup: abortar request se componente desmontar
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []); // ← Executar apenas na montagem
 
   function baixarResultado() {
     if (!resultado?.premios || !resultado.dataApuracao) return;
