@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // 🧭 Páginas
@@ -59,7 +59,12 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setReady(true);
+    // 🔥 CORRIGIDO: Adicionar delay mínimo para localStorage estabilizar
+    const timer = setTimeout(() => {
+      setReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (!ready) {
@@ -70,30 +75,66 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
 }
 
 export default function AppRoutes() {
+  const pushRegisteredRef = useRef(false);
+
   useEffect(() => {
-    const token = localStorage.getItem("TOKEN_ZLPIX");
-    if (!token) return;
+    // 🔥 CORRIGIDO: Usar AbortController para cleanup
+    let abortController = new AbortController();
 
-    const userIdFromStorage = localStorage.getItem("USER_ID");
-    const userFromStorage = localStorage.getItem("USER_ZLPIX");
+    async function registerPushOnMount() {
+      // 🔥 Evitar múltiplas chamadas (especialmente em Strict Mode)
+      if (pushRegisteredRef.current) {
+        console.log("⏭️ Push já foi registrado nesta sessão");
+        return;
+      }
 
-    const parsedUserId = Number(userIdFromStorage);
-    if (parsedUserId && !Number.isNaN(parsedUserId)) {
-      registerPush(parsedUserId);
-      return;
-    }
+      const token = localStorage.getItem("TOKEN_ZLPIX");
+      if (!token) {
+        console.log("⏭️ Usuário não autenticado, pulando push registration");
+        return;
+      }
 
-    if (userFromStorage) {
-      try {
-        const parsedUser = JSON.parse(userFromStorage);
-        const userId = Number(parsedUser?.id);
-        if (userId && !Number.isNaN(userId)) {
-          registerPush(userId);
+      pushRegisteredRef.current = true;
+
+      const userIdFromStorage = localStorage.getItem("USER_ID");
+      const userFromStorage = localStorage.getItem("USER_ZLPIX");
+
+      const parsedUserId = Number(userIdFromStorage);
+      if (parsedUserId && !Number.isNaN(parsedUserId)) {
+        console.log("📲 Registrando push com USER_ID:", parsedUserId);
+        registerPush(parsedUserId);
+        return;
+      }
+
+      if (userFromStorage) {
+        try {
+          const parsedUser = JSON.parse(userFromStorage);
+          const userId = Number(parsedUser?.id);
+          if (userId && !Number.isNaN(userId)) {
+            console.log("📲 Registrando push com parsed USER_ZLPIX:", userId);
+            registerPush(userId);
+          }
+        } catch (err) {
+          console.warn(
+            "⚠️ Não foi possível ler USER_ZLPIX para push",
+            err
+          );
+          pushRegisteredRef.current = false;
         }
-      } catch (err) {
-        console.warn("⚠️ Não foi possível ler USER_ZLPIX para push", err);
       }
     }
+
+    // 🔥 Aguardar um pouco para garantir que DOM está pronto
+    const timer = setTimeout(() => {
+      if (!abortController.signal.aborted) {
+        registerPushOnMount();
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, []);
 
   return (
@@ -103,10 +144,7 @@ export default function AppRoutes() {
         <Route path="/anuncio" element={<Anuncio />} />
         <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/termos-de-uso" element={<TermosDeUso />} />
-<Route
-  path="/exclusao-conta"
-  element={<ExclusaoConta />}
-/>
+        <Route path="/exclusao-conta" element={<ExclusaoConta />} />
 
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
@@ -206,7 +244,6 @@ export default function AppRoutes() {
           }
         />
 
-        {/* 🔥 NOVA ROTA ROLETA */}
         <Route
           path="/zlp-roleta"
           element={
