@@ -80,17 +80,45 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 /**
  * ============================
  * SERVICE WORKER — FIREBASE PUSH
+ * 🔥 CORRIGIDO: Adicionar timeout e retry logic
  * ============================
  */
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
+  let swRegistrationAttempts = 0;
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1000;
+
+  function registerServiceWorkerWithRetry() {
+    if (swRegistrationAttempts >= MAX_RETRIES) {
+      console.warn(
+        "⚠️ Service Worker registration falhou após 3 tentativas"
+      );
+      return;
+    }
+
     navigator.serviceWorker
-      .register("/firebase-messaging-sw.js")
+      .register("/firebase-messaging-sw.js", { scope: "/" })
       .then(() => {
-        console.log("Service Worker registrado (Push)");
+        console.log("✅ Service Worker registrado com sucesso");
+        swRegistrationAttempts = 0; // Reset on success
       })
       .catch((err) => {
-        console.warn("Erro ao registrar Service Worker:", err);
+        console.warn(
+          `⚠️ Erro ao registrar SW (tentativa ${swRegistrationAttempts + 1}):`,
+          err
+        );
+        swRegistrationAttempts++;
+
+        if (swRegistrationAttempts < MAX_RETRIES) {
+          setTimeout(registerServiceWorkerWithRetry, RETRY_DELAY);
+        }
       });
-  });
+  }
+
+  // 🔥 Apenas inicia após page completo estar carregado
+  if (document.readyState === "complete") {
+    registerServiceWorkerWithRetry();
+  } else {
+    window.addEventListener("load", registerServiceWorkerWithRetry);
+  }
 }
