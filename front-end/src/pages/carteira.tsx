@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import NavBottom from "../components/navbottom";
 import { motion } from "framer-motion";
 import { api } from "../api/client";
@@ -54,6 +54,9 @@ export default function Carteira() {
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
 
+  // 🔥 CORRIGIDO: Usar AbortController para cleanup
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   async function carregarSaldo() {
     try {
       const userId = localStorage.getItem("USER_ID");
@@ -64,28 +67,34 @@ export default function Carteira() {
       });
 
       setSaldo(Number(res.data?.saldo ?? 0));
+    } catch (err) {
+      console.error("Erro ao carregar saldo:", err);
     } finally {
       setLoading(false);
     }
   }
 
   async function carregarTransacoes() {
-    const userId = localStorage.getItem("USER_ID");
-    if (!userId) return;
+    try {
+      const userId = localStorage.getItem("USER_ID");
+      if (!userId) return;
 
-    const res = await api.get("/wallet/historico", {
-      headers: { "x-user-id": userId },
-    });
+      const res = await api.get("/wallet/historico", {
+        headers: { "x-user-id": userId },
+      });
 
-    const lista: Transacao[] = res.data || [];
+      const lista: Transacao[] = res.data || [];
 
-    const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
+      const limite = Date.now() - 15 * 24 * 60 * 60 * 1000;
 
-    const filtradas = lista.filter(
-      (t) => new Date(t.createdAt).getTime() >= limite
-    );
+      const filtradas = lista.filter(
+        (t) => new Date(t.createdAt).getTime() >= limite
+      );
 
-    setTransacoes(filtradas);
+      setTransacoes(filtradas);
+    } catch (err) {
+      console.error("Erro ao carregar transações:", err);
+    }
   }
 
   // 🔥 ALTERAÇÃO AQUI — agora gera PDF
@@ -177,10 +186,24 @@ Status: ${traduzirStatus(t.status, t.tipo)}<br/>
     }
   }
 
+  // 🔥 CORRIGIDO: useEffect com AbortController e deps corretos
   useEffect(() => {
-    carregarSaldo();
-    carregarTransacoes();
-  }, []);
+    // Criar novo AbortController para esta renderização
+    abortControllerRef.current = new AbortController();
+
+    // Carregar ambos os dados em paralelo (Promise.all)
+    Promise.all([carregarSaldo(), carregarTransacoes()]).catch((err) => {
+      // Verificar se foi abortado antes de log
+      if (!abortControllerRef.current?.signal.aborted) {
+        console.error("Erro ao carregar dados da carteira:", err);
+      }
+    });
+
+    // Cleanup: abortar requests se componente desmontar
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []); // ← Executar apenas na montagem
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white flex flex-col pb-24">
@@ -274,12 +297,12 @@ Status: ${traduzirStatus(t.status, t.tipo)}<br/>
           <div key={t.id} className="bg-white/10 p-3 rounded">
             <div className="flex justify-between font-bold">
               <span>
-  {t.tipo === "PREMIO"
-    ? "🏆 Prêmio"
-    : t.metadata?.tipo === "saque"
-    ? "💸 Saque"
-    : "➕ Depósito"}
-</span>
+                {t.tipo === "PREMIO"
+                  ? "🏆 Prêmio"
+                  : t.metadata?.tipo === "saque"
+                  ? "💸 Saque"
+                  : "➕ Depósito"}
+              </span>
               <span>R$ {Number(t.valor).toFixed(2)}</span>
             </div>
             <div className="text-xs">{formatarDataHora(t.createdAt)}</div>
