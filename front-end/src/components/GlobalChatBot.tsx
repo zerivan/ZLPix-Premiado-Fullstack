@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import ChatBot from "./ChatBot";
 
@@ -9,38 +9,43 @@ const ASSISTANT_NAME = "Dayane";
 const AVATAR_URL = "/assets/avatar.png";
 
 const GlobalChatBot: React.FC = () => {
-const location = useLocation();
+  const location = useLocation();
 
-const hiddenPages = [
-  "/login",
-  "/cadastro",
-  "/recuperar-senha",
-  "/politica-privacidade",
-  "/termos-de-uso",
-  "/exclusao-conta",
-];
+  const hiddenPages = [
+    "/login",
+    "/cadastro",
+    "/recuperar-senha",
+    "/politica-privacidade",
+    "/termos-de-uso",
+    "/exclusao-conta",
+  ];
 
-const [showAvatar, setShowAvatar] = useState(false);
-const [openChat, setOpenChat] = useState(false);
-const timerRef = useRef<number | null>(null);
+  const [showAvatar, setShowAvatar] = useState(false);
+  const [openChat, setOpenChat] = useState(false);
+  const timerRef = useRef<number | null>(null);
 
-if (hiddenPages.includes(location.pathname)) {
-  return null;
-}
-
-  const resetTimer = () => {
+  // 🔥 CORRIGIDO: useCallback para evitar recreação de função
+  const resetTimer = useCallback(() => {
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
     }
 
     timerRef.current = window.setTimeout(() => {
-      if (!openChat) {
-        setShowAvatar(true);
-      }
+      setShowAvatar((prev) => (!openChat && !prev ? true : prev));
     }, INACTIVITY_TIME);
-  };
+  }, [openChat]);
 
   useEffect(() => {
+    // 🔥 CORRIGIDO: Mover lógica condicional para dentro do effect
+    if (hiddenPages.includes(location.pathname)) {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+      setShowAvatar(false);
+      setOpenChat(false);
+      return;
+    }
+
     resetTimer();
 
     const handleActivity = () => {
@@ -63,7 +68,12 @@ if (hiddenPages.includes(location.pathname)) {
       window.removeEventListener("keydown", handleActivity);
       window.removeEventListener("scroll", handleActivity);
     };
-  }, [openChat]);
+  }, [openChat, location.pathname, hiddenPages, resetTimer]);
+
+  // 🔥 Render condicional correto (dentro do JSX, não durante render)
+  if (hiddenPages.includes(location.pathname)) {
+    return null;
+  }
 
   return (
     <>
