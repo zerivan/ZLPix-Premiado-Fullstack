@@ -12,11 +12,17 @@ export default function Perfil() {
 
   const [saldoZLP, setSaldoZLP] = useState<number | null>(null);
 
-const [mostrarExclusao, setMostrarExclusao] = useState(false);
-const [emailExclusao, setEmailExclusao] = useState("");
-const [motivoExclusao, setMotivoExclusao] = useState("");
+  const [mostrarExclusao, setMostrarExclusao] = useState(false);
+  const [emailExclusao, setEmailExclusao] = useState("");
+  const [motivoExclusao, setMotivoExclusao] = useState("");
+
+  // 🔥 CORRIGIDO: Usar AbortController para cleanup
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    // 🔥 Criar novo AbortController para este efeito
+    abortControllerRef.current = new AbortController();
+
     try {
       const token = localStorage.getItem("TOKEN_ZLPIX");
       const userData = localStorage.getItem("USER_ZLPIX");
@@ -24,23 +30,42 @@ const [motivoExclusao, setMotivoExclusao] = useState("");
       if (token && userData) {
         const parsed = JSON.parse(userData);
         setUser(parsed);
-setEmailExclusao(parsed.email || "");
+        setEmailExclusao(parsed.email || "");
 
         const userId = parsed.id;
+
+        // 🔥 CORRIGIDO: Usar AbortController com timeout
+        const timeoutId = setTimeout(() => {
+          abortControllerRef.current?.abort();
+        }, 10000); // 10 segundos de timeout
+
         api
           .get("/zlp/saldo", {
             headers: { "x-user-id": userId },
           })
           .then((res) => {
-            setSaldoZLP(res.data.saldo || 0);
+            if (!abortControllerRef.current?.signal.aborted) {
+              setSaldoZLP(res.data.saldo || 0);
+            }
+            clearTimeout(timeoutId);
           })
-          .catch(() => {});
+          .catch((err) => {
+            if (!abortControllerRef.current?.signal.aborted) {
+              console.error("Erro ao carregar saldo ZLP:", err);
+            }
+            clearTimeout(timeoutId);
+          });
       }
     } catch (error) {
       console.error("Erro ao carregar usuário:", error);
     } finally {
       setLoading(false);
     }
+
+    // 🔥 Cleanup: abortar request se componente desmontar
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, []);
 
   const handleLogout = () => {
@@ -242,12 +267,12 @@ setEmailExclusao(parsed.email || "");
             </div>
           )}
         </div>
-<button
-  onClick={() => setMostrarExclusao(true)}
-  className="w-full py-3 mb-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
->
-  Excluir Conta
-</button>
+        <button
+          onClick={() => setMostrarExclusao(true)}
+          className="w-full py-3 mb-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
+        >
+          Excluir Conta
+        </button>
         <button
           onClick={handleLogout}
           className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-full shadow-lg hover:scale-[1.02] active:scale-95 transition-transform"
@@ -255,73 +280,73 @@ setEmailExclusao(parsed.email || "");
           Sair da Conta
         </button>
       </div>
-{mostrarExclusao && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-    <div className="bg-white text-black rounded-2xl p-5 w-full max-w-md space-y-4">
+      {mostrarExclusao && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white text-black rounded-2xl p-5 w-full max-w-md space-y-4">
 
-      <h2 className="text-lg font-bold text-red-600">
-        Solicitar Exclusão de Conta
-      </h2>
+            <h2 className="text-lg font-bold text-red-600">
+              Solicitar Exclusão de Conta
+            </h2>
 
-      <p className="text-sm">
-        Tem certeza que deseja solicitar a exclusão da sua conta?
-      </p>
+            <p className="text-sm">
+              Tem certeza que deseja solicitar a exclusão da sua conta?
+            </p>
 
-      <input
-        type="email"
-        value={emailExclusao}
-        onChange={(e) => setEmailExclusao(e.target.value)}
-        placeholder="Seu e-mail"
-        className="w-full border rounded-lg p-2"
-      />
+            <input
+              type="email"
+              value={emailExclusao}
+              onChange={(e) => setEmailExclusao(e.target.value)}
+              placeholder="Seu e-mail"
+              className="w-full border rounded-lg p-2"
+            />
 
-      <textarea
-        value={motivoExclusao}
-        onChange={(e) => setMotivoExclusao(e.target.value)}
-        placeholder="Motivo da solicitação (opcional)"
-        className="w-full border rounded-lg p-2 h-24"
-      />
+            <textarea
+              value={motivoExclusao}
+              onChange={(e) => setMotivoExclusao(e.target.value)}
+              placeholder="Motivo da solicitação (opcional)"
+              className="w-full border rounded-lg p-2 h-24"
+            />
 
-      <div className="flex gap-2">
+            <div className="flex gap-2">
 
-        <button
-          onClick={() => setMostrarExclusao(false)}
-          className="flex-1 py-2 rounded-lg bg-gray-300"
-        >
-          Cancelar
-        </button>
+              <button
+                onClick={() => setMostrarExclusao(false)}
+                className="flex-1 py-2 rounded-lg bg-gray-300"
+              >
+                Cancelar
+              </button>
 
-        <button
-  onClick={async () => {
-    try {
-      await api.post("/auth/request-account-deletion", {
-        email: emailExclusao,
-        motivo: motivoExclusao,
-      });
+              <button
+                onClick={async () => {
+                  try {
+                    await api.post("/auth/request-account-deletion", {
+                      email: emailExclusao,
+                      motivo: motivoExclusao,
+                    });
 
-      alert(
-        "Solicitação enviada com sucesso. Nossa equipe irá analisar o pedido."
-      );
+                    alert(
+                      "Solicitação enviada com sucesso. Nossa equipe irá analisar o pedido."
+                    );
 
-      setMostrarExclusao(false);
-    } catch (error) {
-      console.error(error);
+                    setMostrarExclusao(false);
+                  } catch (error) {
+                    console.error(error);
 
-      alert(
-        "Não foi possível enviar a solicitação. Tente novamente."
-      );
-    }
-  }}
-  className="flex-1 py-2 rounded-lg bg-red-600 text-white"
->
-  Enviar
-</button>
+                    alert(
+                      "Não foi possível enviar a solicitação. Tente novamente."
+                    );
+                  }
+                }}
+                className="flex-1 py-2 rounded-lg bg-red-600 text-white"
+              >
+                Enviar
+              </button>
 
-      </div>
+            </div>
 
-    </div>
-  </div>
-)}
+          </div>
+        </div>
+      )}
       <NavBottom />
     </div>
   );
