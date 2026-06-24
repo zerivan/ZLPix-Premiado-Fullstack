@@ -4,12 +4,40 @@ import { api } from "../api/client";
 
 const messaging = getMessaging(firebaseApp);
 
+// 🔥 CONSTANTES DE TIMEOUT
+const FIREBASE_TOKEN_TIMEOUT = 15000; // 15 segundos
+const SERVICE_WORKER_TIMEOUT = 10000; // 10 segundos
+
+/**
+ * =====================================================
+ * HELPER: Promise com timeout
+ * =====================================================
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  name: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Timeout: ${name} excedeu ${timeoutMs}ms`)),
+        timeoutMs
+      )
+    ),
+  ]);
+}
+
 /**
  * =====================================================
  * REGISTRA PUSH PARA USUÁRIO LOGADO
+ * 🔥 CORRIGIDO: Adicionar timeout e AbortController
  * =====================================================
  */
 export async function registerPush(userId: number) {
+  let abortController: AbortController | null = null;
+
   try {
     const normalizedUserId = Number(userId);
     if (!normalizedUserId || Number.isNaN(normalizedUserId)) {
@@ -28,20 +56,58 @@ export async function registerPush(userId: number) {
       return;
     }
 
-    const existingRegistration = await navigator.serviceWorker.getRegistration(
-      "/firebase-messaging-sw.js"
-    );
+    // 🔥 Tentar obter registration com timeout
+    let registration;
+    try {
+      const existingRegistration = await withTimeout(
+        navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js"),
+        SERVICE_WORKER_TIMEOUT,
+        "getRegistration"
+      );
 
-    const registration =
-      existingRegistration ||
-      (await navigator.serviceWorker.register("/firebase-messaging-sw.js"));
+      if (existingRegistration) {
+        registration = existingRegistration;
+        console.log("✅ Usando existing service worker registration");
+      } else {
+        registration = await withTimeout(
+          navigator.serviceWorker.register("/firebase-messaging-sw.js"),
+          SERVICE_WORKER_TIMEOUT,
+          "register"
+        );
+        console.log("✅ Novo service worker registrado");
+      }
+    } catch (err) {
+      console.error("❌ Erro ao registrar/obter service worker:", err);
+      return;
+    }
 
-    await navigator.serviceWorker.ready;
+    // 🔥 Aguardar service worker estar pronto (com timeout)
+    try {
+      await withTimeout(
+        navigator.serviceWorker.ready,
+        SERVICE_WORKER_TIMEOUT,
+        "serviceWorker.ready"
+      );
+    } catch (err) {
+      console.error("❌ Service worker nunca ficou pronto:", err);
+      return;
+    }
 
-    const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: registration,
-    });
+    // 🔥 Obter token do Firebase com timeout
+    let token;
+    try {
+      token = await withTimeout(
+        getToken(messaging, {
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: registration,
+        }),
+        FIREBASE_TOKEN_TIMEOUT,
+        "getToken"
+      );
+    } catch (err) {
+      console.error("❌ Erro ao obter Firebase token:", err);
+      return;
+    }
 
     if (!token) {
       console.warn("⚠️ Token FCM não gerado");
@@ -52,14 +118,24 @@ export async function registerPush(userId: number) {
       userId: normalizedUserId,
     });
 
-    await api.post("/push/token", {
-      token,
-      userId: normalizedUserId,
-    });
+    // 🔥 Registrar token com AbortController
+    abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController?.abort(), 10000);
 
-    console.log("📲 Push registrado com sucesso", token);
+    try {
+      await api.post("/push/token", {
+        token,
+        userId: normalizedUserId,
+      });
+
+      clearTimeout(timeoutId);
+      console.log("✅ Push registrado com sucesso");
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error("❌ Erro ao registrar token no backend:", err);
+    }
   } catch (err) {
-    console.error("❌ Erro ao registrar push:", err);
+    console.error("❌ Erro geral ao registrar push:", err);
   }
 }
 
@@ -69,15 +145,19 @@ export async function registerPush(userId: number) {
  * =====================================================
  */
 export function listenForegroundPush() {
-  onMessage(messaging, (payload) => {
-    console.log("📩 Push em foreground:", payload);
+  try {
+    onMessage(messaging, (payload) => {
+      console.log("📩 Push em foreground:", payload);
 
-    const title =
-      payload.notification?.title || "ZLPix Premiado";
+      const title =
+        payload.notification?.title || "ZLPix Premiado";
 
-    const body =
-      payload.notification?.body || "Você recebeu uma notificação";
+      const body =
+        payload.notification?.body || "Você recebeu uma notificação";
 
-    new Notification(title, { body });
-  });
+      new Notification(title, { body });
+    });
+  } catch (err) {
+    console.error("❌ Erro ao configurar listener de push:", err);
+  }
 }
