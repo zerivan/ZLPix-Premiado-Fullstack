@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 
-const BASE_IDLE = 25000;
+const BASE_IDLE = 15000;
 const AUTO_CLOSE = 15000;
 
-export default function ZLPRoletaOverlay() {
+export default function ZLPOverlayAlerta() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,7 +47,7 @@ export default function ZLPRoletaOverlay() {
           podeAbrir.current = true;
         }
       } catch (err) {
-        console.error("Erro alerta roleta:", err);
+        console.error("Erro alerta ZLP:", err);
       }
     }
 
@@ -58,26 +58,22 @@ export default function ZLPRoletaOverlay() {
     if (!rotasPermitidas.includes(location.pathname)) return;
 
     function calcularDelay() {
-      const OFFSET = 30000; // 30s de diferença
-      return Math.min(
-        BASE_IDLE * (tentativas.current + 1) + OFFSET,
-        60000
-      );
+      return Math.min(BASE_IDLE * (tentativas.current + 1), 60000);
     }
 
     function iniciarTimer() {
       if (idleTimer.current) clearTimeout(idleTimer.current);
 
       idleTimer.current = setTimeout(() => {
-  if (
-    podeAbrir.current &&
-    !open &&
-    !alertaJaExibido.current
-  ) {
-    alertaJaExibido.current = true;
+        if (
+          podeAbrir.current &&
+          !open &&
+          !alertaJaExibido.current
+        ) {
+          alertaJaExibido.current = true;
 
-    setOpen(true);
-    tentativas.current += 1;
+          setOpen(true);
+          tentativas.current += 1;
 
           if (closeTimer.current) clearTimeout(closeTimer.current);
           closeTimer.current = setTimeout(() => {
@@ -105,32 +101,32 @@ export default function ZLPRoletaOverlay() {
         window.removeEventListener(evt, handleActivity)
       );
     };
-  }, [open, location.pathname]);
+  }, [location.pathname]); // 🔥 CORRIGIDO: Removido 'open' das dependências
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[9999]">
 
-      {/* IMAGEM AJUSTADA */}
+      {/* ✅ IMAGEM CORRETA */}
       <img
-        src="/assets/roleta-zlp.png"
+        src="/assets/bilhetes-zlp.png"
         alt=""
-        className="absolute inset-0 w-full h-full object-cover object-[center_45%]"
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
-      {/* OVERLAY */}
+      {/* ✅ OVERLAY AJUSTADO */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
       {/* CONTEÚDO */}
       <div className="relative h-full flex flex-col justify-end text-white p-6">
 
         <h1 className="text-2xl font-bold mb-2">
-          Gire a roleta agora!
+          Colete suas moedas diárias!
         </h1>
 
         <p className="text-sm text-gray-300 mb-6">
-          Ganhe ZLP instantaneamente com a roleta diária.
+          Faça seu check-in e acumule ZLP para trocar por bilhetes.
         </p>
 
         <div className="flex gap-3">
@@ -144,11 +140,11 @@ export default function ZLPRoletaOverlay() {
           <button
             onClick={() => {
               setOpen(false);
-              navigate("/zlp-roleta");
+              navigate("/zlp");
             }}
             className="flex-1 py-3 rounded-full bg-yellow-400 text-black font-bold"
           >
-            Girar agora
+            Coletar agora
           </button>
         </div>
       </div>
