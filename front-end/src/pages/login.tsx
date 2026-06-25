@@ -69,7 +69,7 @@ export default function Login() {
 
         <div className="text-center mb-5">
           <img
-  src="/teste.png"
+  src="/icon-192.png"
   alt="Logo ZLPix"
   className="w-28 h-28 mx-auto mb-4 rounded-xl"
  />
