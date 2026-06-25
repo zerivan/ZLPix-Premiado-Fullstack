@@ -26,23 +26,36 @@ export default function MeusBilhetes() {
     }
   }
 
-  const userId = resolveUserId();
+  const [userId] = useState(() => resolveUserId());
 
-  async function loadBilhetes() {
-    try {
-      if (!userId) return;
+async function loadBilhetes(signal?: AbortSignal) {
+  try {
+    if (!userId) return;
 
-      const res = await axios.get(`${API}/bilhete/meus`, {
-        headers: { "x-user-id": userId },
-      });
+    const res = await axios.get(`${API}/bilhete/meus`, {
+      headers: {
+        "x-user-id": userId,
+      },
+      signal,
+    });
 
-      setBilhetes(res.data || []);
-    } catch {}
+    setBilhetes(res.data || []);
+  } catch (err) {
+    if (!axios.isCancel(err)) {
+      console.error("Erro ao carregar bilhetes:", err);
+    }
   }
+}
 
   useEffect(() => {
-    loadBilhetes();
-  }, [userId]);
+  const controller = new AbortController();
+
+  loadBilhetes(controller.signal);
+
+  return () => {
+    controller.abort();
+  };
+}, [userId]);
 
   function baixarHistorico() {
     if (!bilhetes.length) return;
@@ -118,7 +131,10 @@ export default function MeusBilhetes() {
     return dentroDaPermanencia(b);
   }
 
-  const bilhetesVisiveis = bilhetes.filter(isVisivel);
+  const bilhetesVisiveis = React.useMemo(
+  () => bilhetes.filter(isVisivel),
+  [bilhetes]
+);
 
   function getStatusLabel(b: any) {
     switch (b.status) {
