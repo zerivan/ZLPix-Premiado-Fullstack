@@ -85,6 +85,7 @@ type FederalResponse = {
 
 router.post("/apurar", async (req, res) => {
   try {
+console.log("[MANUAL] Requisição de apuração recebida.");
     const { sorteioData, premiosFederal } = req.body;
 
     if (!sorteioData) {
@@ -135,6 +136,7 @@ router.post("/apurar", async (req, res) => {
       dezenas.push(milhar.slice(0, 2));
       dezenas.push(milhar.slice(2, 4));
     }
+     console.log("[MANUAL] Chamando processarSorteio..."); 
 
     const resultado = await processarSorteio(new Date(sorteioData), {
       dezenas,
