@@ -40,8 +40,11 @@ async function buscarResultadoFederal(): Promise<{
 } | null> {
   try {
     const resp = await fetch(
-      `${process.env.BACKEND_URL || "http://localhost:4000"}/federal`
-    );
+  `${
+    process.env.BACKEND_URL ||
+    `http://127.0.0.1:${process.env.PORT || 4000}`
+  }/federal`
+);
 
     const json = (await resp.json()) as FederalResponse;
 
