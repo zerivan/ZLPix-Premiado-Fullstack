@@ -59,7 +59,7 @@ export default function NavBottom() {
       fixed bottom-0 left-0 right-0
       bg-gradient-to-r from-blue-900 via-blue-800 to-green-800
       border-t border-green-500/20
-      h-20 z-50 shadow-lg backdrop-blur-md
+      h-16 z-50 shadow-lg backdrop-blur-md
     "
     >
       <div className="max-w-4xl mx-auto h-full flex items-center justify-around">
