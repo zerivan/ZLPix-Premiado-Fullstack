@@ -214,3 +214,15 @@ body.admin-area {
 .ql-font-bebas { font-family: 'Bebas Neue', sans-serif; }
 .ql-font-oswald { font-family: 'Oswald', sans-serif; }
 .ql-font-roboto { font-family: 'Roboto', sans-serif; }
+
+/* ================================
+   SAFE AREA (ANDROID / iPHONE)
+   ================================ */
+
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+#root {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
