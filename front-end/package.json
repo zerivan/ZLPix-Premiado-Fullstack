@@ -13,19 +13,20 @@
     "firebase:clean": "rm -rf node_modules/firebase && npm install firebase"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3",
-    "@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
-    "axios": "^1.7.3",
-    "canvas-confetti": "^1.9.4",
-    "firebase": "^10.7.1",
-    "framer-motion": "^11.0.0",
-    "lucide-react": "^0.554.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-quill": "^0.0.2",
-    "react-router-dom": "^6.27.0"
-  },
+  "@capacitor/android": "^7.4.3",
+  "@capacitor/core": "^7.4.3",
+  "@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
+  "axios": "^1.7.3",
+  "canvas-confetti": "^1.9.4",
+  "firebase": "^10.7.1",
+  "framer-motion": "^11.0.0",
+  "lucide-react": "^0.554.0",
+  "quill": "^1.3.7",
+  "react": "^18.3.1",
+  "react-dom": "^18.3.1",
+  "react-quill": "^2.0.0",
+  "react-router-dom": "^6.27.0"
+},
   "devDependencies": {
     "@capacitor/cli": "^7.4.3",
     "@vitejs/plugin-react": "^4.7.0",
