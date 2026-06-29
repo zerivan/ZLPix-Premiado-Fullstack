@@ -56,7 +56,7 @@ export default function NavBottom() {
   return (
     <nav
       className="
-      fixed bottom-0 left-0 right-0
+      fixed bottom-3 left-0 right-0
       bg-gradient-to-r from-blue-900 via-blue-800 to-green-800
       border-t border-green-500/20
       h-16 z-50 shadow-lg backdrop-blur-md
