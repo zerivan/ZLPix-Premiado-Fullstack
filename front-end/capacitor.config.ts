@@ -7,6 +7,10 @@ const config: CapacitorConfig = {
 
   server: {
     url: 'https://zlpixpremiado.com.br'
+  },
+
+  android: {
+    adjustMarginsForEdgeToEdge: "auto"
   }
 };
 
