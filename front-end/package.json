@@ -16,6 +16,7 @@
   },
 
   "dependencies": {
+"@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3",
 
