@@ -13,7 +13,6 @@
     "firebase:clean": "rm -rf node_modules/firebase && npm install firebase"
   },
   "dependencies": {
-"@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
@@ -24,7 +23,7 @@
     "lucide-react": "^0.554.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-quill": "^2.0.0",
+    "react-quill": "^0.0.2",
     "react-router-dom": "^6.27.0"
   },
   "devDependencies": {
