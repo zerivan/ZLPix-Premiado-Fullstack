@@ -7,7 +7,6 @@ import {
   ListOrdered,
   Trophy,
   User,
-  Shield,
   Wallet,
 } from "lucide-react";
 
@@ -40,9 +39,6 @@ export default function NavBottom() {
     } catch {}
   }, []);
 
-  // 🔥 Exibe o botão Admin somente quando existir login de administrador
-  const isAdmin = !!localStorage.getItem("ADMIN_ID");
-
   const items = [
     { icon: Home, label: "Início", path: "/home" },
     { icon: Ticket, label: "Apostar", path: "/aposta" },
@@ -50,10 +46,6 @@ export default function NavBottom() {
     { icon: Wallet, label: "Carteira", path: "/carteira" },
     { icon: Trophy, label: "Resultados", path: "/resultado" },
     { icon: User, label: "Perfil", path: "/perfil" },
-
-    ...(isAdmin
-      ? [{ icon: Shield, label: "Admin", path: "/admin" }]
-      : []),
   ];
 
   return (
