@@ -40,17 +40,20 @@ export default function NavBottom() {
     } catch {}
   }, []);
 
+  // 🔥 Exibe o botão Admin somente quando existir login de administrador
+  const isAdmin = !!localStorage.getItem("ADMIN_ID");
+
   const items = [
     { icon: Home, label: "Início", path: "/home" },
     { icon: Ticket, label: "Apostar", path: "/aposta" },
     { icon: ListOrdered, label: "Bilhetes", path: "/meus-bilhetes" },
-
-    // 💰 NOVO — CARTEIRA
     { icon: Wallet, label: "Carteira", path: "/carteira" },
-
     { icon: Trophy, label: "Resultados", path: "/resultado" },
     { icon: User, label: "Perfil", path: "/perfil" },
-    { icon: Shield, label: "Admin", path: "/admin" },
+
+    ...(isAdmin
+      ? [{ icon: Shield, label: "Admin", path: "/admin" }]
+      : []),
   ];
 
   return (
@@ -65,6 +68,7 @@ export default function NavBottom() {
       <div className="max-w-4xl mx-auto h-full flex items-center justify-around">
         {items.map(({ icon: Icon, label, path }) => {
           const active = location.pathname === path;
+
           return (
             <button
               key={label}
@@ -92,7 +96,10 @@ export default function NavBottom() {
               >
                 <Icon size={22} strokeWidth={2.2} />
               </div>
-              <span className="text-[11px] font-semibold">{label}</span>
+
+              <span className="text-[11px] font-semibold">
+                {label}
+              </span>
             </button>
           );
         })}
