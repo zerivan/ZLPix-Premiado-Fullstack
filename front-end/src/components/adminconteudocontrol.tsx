@@ -67,6 +67,38 @@ const CMS_FOLDERS: Record<string, CmsFolder[]> = {
     },
   ],
 
+federal: [
+  {
+    label: "Resultado Federal",
+    areas: [
+      {
+        key: "federal_data",
+        title: "Data da Apuração",
+      },
+      {
+        key: "federal_premio_1",
+        title: "1º Prêmio",
+      },
+      {
+        key: "federal_premio_2",
+        title: "2º Prêmio",
+      },
+      {
+        key: "federal_premio_3",
+        title: "3º Prêmio",
+      },
+      {
+        key: "federal_premio_4",
+        title: "4º Prêmio",
+      },
+      {
+        key: "federal_premio_5",
+        title: "5º Prêmio",
+      },
+    ],
+  },
+],
+
   // 🔥 NOVA PÁGINA DE ANÚNCIO
   anuncio: [
     {
