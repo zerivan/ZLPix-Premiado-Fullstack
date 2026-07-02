@@ -22,6 +22,14 @@ const CMS_AREAS = [
   { key: "carteira_info", page: "carteira", title: "Carteira – Informações" },
 
   { key: "anuncio_main", page: "anuncio", title: "Anúncio – Conteúdo Principal" },
+
+  { key: "federal_info", page: "federal", title: "Federal – Informações" },
+  { key: "federal_data", page: "federal", title: "Federal – Data da Apuração" },
+  { key: "federal_premio_1", page: "federal", title: "Federal – 1º Prêmio" },
+  { key: "federal_premio_2", page: "federal", title: "Federal – 2º Prêmio" },
+  { key: "federal_premio_3", page: "federal", title: "Federal – 3º Prêmio" },
+  { key: "federal_premio_4", page: "federal", title: "Federal – 4º Prêmio" },
+  { key: "federal_premio_5", page: "federal", title: "Federal – 5º Prêmio" },
 ];
 
 interface CacheEntry<T> {
@@ -50,6 +58,14 @@ const DEFAULT_HTML: Record<string, string> = {
   carteira_info: "",
 
   anuncio_main: "",
+
+federal_info: "",
+federal_data: "",
+federal_premio_1: "",
+federal_premio_2: "",
+federal_premio_3: "",
+federal_premio_4: "",
+federal_premio_5: "",
 };
 
 /**
