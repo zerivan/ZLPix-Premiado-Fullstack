@@ -1,5 +1,4 @@
 import express from "express";
-import { prisma } from "../lib/prisma";
 
 const router = express.Router();
 
@@ -68,7 +67,7 @@ function parseDataBR(data: string): string | null {
 // 🔥 CORREÇÃO: remove Caixa e adiciona fallback compatível
 async function fetchFederal(signal: AbortSignal) {
   const urls = [
-    "https://loteriascaixa-api.herokuapp.com/api/federal/latest", // principal
+    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // principal
     "https://loteriascaixa-api.herokuapp.com/api/federal",        // fallback
   ];
 
@@ -77,9 +76,11 @@ async function fetchFederal(signal: AbortSignal) {
       const response = await fetch(url, {
         signal,
         headers: {
-          Accept: "application/json",
-          "User-Agent": "Mozilla/5.0",
-        },
+  Accept: "application/json",
+  "User-Agent": "Mozilla/5.0",
+  "Cache-Control": "no-cache",
+  "Accept-Language": "pt-BR,pt;q=0.9",
+},
       });
 
       if (!response.ok) {
