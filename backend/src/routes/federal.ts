@@ -64,85 +64,33 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
-// 🔥 CORREÇÃO: Remove Heroku quebrado e adiciona API do Guidi como fallback funcional
+// 🔥 Busca o resultado da Federal a partir do GitHub Pages
 async function fetchFederal(signal: AbortSignal) {
-  const urls = [
-    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // Principal (Caixa)
-    "https://guidi.dev.br",               // Fallback funcional (Guidi)
-  ];
-
-  for (const url of urls) {
+  const url = "https://zerivan.github.io/zlpix-federal-api/api/federal.json";
     try {
-      const response = await fetch(url, {
-        signal,
-        headers: {
-          "Accept": "application/json, text/plain, */*",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-          "Origin": "https://loterias.caixa.gov.br",
-          "Referer": "https://loterias.caixa.gov.br/",
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",
-          "Connection": "keep-alive"
-        }
-      });
+  const response = await fetch(url, {
+    signal,
+    headers: {
+      Accept: "application/json",
+    },
+  });
 
-      if (!response.ok) {
-        console.warn("[FEDERAL] falhou:", url, response.status);
-        continue;
-      }
-
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        console.warn("[FEDERAL] resposta não é JSON:", url);
-        continue;
-      }
-
-      const data: any = await response.json();
-
-      // 🔹 Formato oficial da Caixa (listaDezenas)
-      if (data?.listaDezenas) {
-        return {
-          dataApuracao: data.dataApuracao,
-          dezenas: data.listaDezenas,
-        };
-      }
-
-      // 🔹 Formato da API alternativa do Guidi (listaDezenas ou dezenas)
-      if (data?.dezenas) {
-        return {
-          dataApuracao: data.dataApuracao || data.data,
-          dezenas: data.dezenas,
-        };
-      }
-
-      // 🔹 Formato lista de múltiplos resultados (se houver)
-      if (Array.isArray(data) && data.length > 0) {
-        const ultimo = data[0];
-
-        if (ultimo?.listaDezenas) {
-          return {
-            dataApuracao: ultimo.dataApuracao,
-            dezenas: ultimo.listaDezenas,
-          };
-        }
-
-        if (ultimo?.dezenas) {
-          return {
-            dataApuracao: ultimo.dataApuracao || ultimo.data,
-            dezenas: ultimo.dezenas,
-          };
-        }
-      }
-
-      console.warn("[FEDERAL] formato desconhecido:", url);
-    } catch {
-      console.warn("[FEDERAL] erro ao tentar:", url);
-    }
+  if (!response.ok) {
+    console.warn("[FEDERAL] falhou:", response.status);
+    return null;
   }
 
+  const data: any = await response.json();
+
+  return {
+  dataApuracao: data.dataApuracao,
+  dezenas: data.listaDezenas || data.dezenas,
+};
+} catch (error) {
+  console.warn("[FEDERAL] erro:", error);
   return null;
 }
+  }
 
 router.get("/", async (_req, res) => {
   const controller = new AbortController();
