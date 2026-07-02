@@ -88,7 +88,14 @@ async function fetchFederal(signal: AbortSignal) {
         continue;
       }
 
-      const data: any = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+
+if (!contentType.includes("application/json")) {
+  console.warn("[FEDERAL] resposta não é JSON:", url);
+  continue;
+}
+
+const data: any = await response.json();
 
       // 🔹 formato /latest
       if (data?.listaDezenas) {
