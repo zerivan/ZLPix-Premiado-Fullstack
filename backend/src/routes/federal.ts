@@ -64,11 +64,11 @@ function parseDataBR(data: string): string | null {
   return isNaN(iso.getTime()) ? null : iso.toISOString();
 }
 
-// 🔥 CORREÇÃO: remove Caixa e adiciona fallback compatível
+// 🔥 CORREÇÃO: Remove Heroku quebrado e adiciona API do Guidi como fallback funcional
 async function fetchFederal(signal: AbortSignal) {
   const urls = [
-    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // principal
-    "https://loteriascaixa-api.herokuapp.com/api/federal",        // fallback
+    "https://servicebus2.caixa.gov.br/portaldeloterias/api/federal", // Principal (Caixa)
+    "https://guidi.dev.br",               // Fallback funcional (Guidi)
   ];
 
   for (const url of urls) {
@@ -76,14 +76,15 @@ async function fetchFederal(signal: AbortSignal) {
       const response = await fetch(url, {
         signal,
         headers: {
-  "Accept": "application/json, text/plain, */*",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-  "Origin": "https://loterias.caixa.gov.br",
-  "Referer": "https://loterias.caixa.gov.br/",
-  "Cache-Control": "no-cache",
-  "Connection": "keep-alive"
-}
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+          "Origin": "https://loterias.caixa.gov.br",
+          "Referer": "https://loterias.caixa.gov.br/",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+          "Connection": "keep-alive"
+        }
       });
 
       if (!response.ok) {
@@ -92,15 +93,14 @@ async function fetchFederal(signal: AbortSignal) {
       }
 
       const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        console.warn("[FEDERAL] resposta não é JSON:", url);
+        continue;
+      }
 
-if (!contentType.includes("application/json")) {
-  console.warn("[FEDERAL] resposta não é JSON:", url);
-  continue;
-}
+      const data: any = await response.json();
 
-const data: any = await response.json();
-
-      // 🔹 formato /latest
+      // 🔹 Formato oficial da Caixa (listaDezenas)
       if (data?.listaDezenas) {
         return {
           dataApuracao: data.dataApuracao,
@@ -108,14 +108,15 @@ const data: any = await response.json();
         };
       }
 
+      // 🔹 Formato da API alternativa do Guidi (listaDezenas ou dezenas)
       if (data?.dezenas) {
         return {
-          dataApuracao: data.data,
+          dataApuracao: data.dataApuracao || data.data,
           dezenas: data.dezenas,
         };
       }
 
-      // 🔹 formato lista
+      // 🔹 Formato lista de múltiplos resultados (se houver)
       if (Array.isArray(data) && data.length > 0) {
         const ultimo = data[0];
 
@@ -128,7 +129,7 @@ const data: any = await response.json();
 
         if (ultimo?.dezenas) {
           return {
-            dataApuracao: ultimo.data,
+            dataApuracao: ultimo.dataApuracao || ultimo.data,
             dezenas: ultimo.dezenas,
           };
         }
