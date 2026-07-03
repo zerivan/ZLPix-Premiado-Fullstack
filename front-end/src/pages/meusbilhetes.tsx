@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import NavBottom from "../components/navbottom";
-import axios from "axios";
+import { api } from "../api/client";
 
-const API = import.meta.env.VITE_API_URL;
 const DIAS_PERMANENCIA = 7;
 
 export default function MeusBilhetes() {
   const [bilhetes, setBilhetes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 🔥 CORRIGIDO: Usar AbortController para cleanup
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   function resolveUserId(): string | null {
     try {
@@ -26,36 +29,44 @@ export default function MeusBilhetes() {
     }
   }
 
-  const [userId] = useState(() => resolveUserId());
+  const userId = resolveUserId();
 
-async function loadBilhetes(signal?: AbortSignal) {
-  try {
-    if (!userId) return;
+  async function loadBilhetes() {
+    try {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
 
-    const res = await axios.get(`${API}/bilhete/meus`, {
-      headers: {
-        "x-user-id": userId,
-      },
-      signal,
-    });
+      // 🔥 Usar api client (consistente com resto da app)
+      const res = await api.get("/bilhete/meus", {
+        headers: { "x-user-id": userId },
+      });
 
-    setBilhetes(res.data || []);
-  } catch (err) {
-    if (!axios.isCancel(err)) {
-      console.error("Erro ao carregar bilhetes:", err);
+      // 🔥 Verificar se foi abortado
+      if (!abortControllerRef.current?.signal.aborted) {
+        setBilhetes(res.data || []);
+      }
+    } catch (err) {
+      if (!abortControllerRef.current?.signal.aborted) {
+        console.error("Erro ao carregar bilhetes:", err);
+      }
+    } finally {
+      setLoading(false);
     }
   }
-}
 
   useEffect(() => {
-  const controller = new AbortController();
+    // 🔥 Criar novo AbortController para este efeito
+    abortControllerRef.current = new AbortController();
 
-  loadBilhetes(controller.signal);
+    loadBilhetes();
 
-  return () => {
-    controller.abort();
-  };
-}, [userId]);
+    // 🔥 Cleanup: abortar request se componente desmontar
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [userId]);
 
   function baixarHistorico() {
     if (!bilhetes.length) return;
@@ -131,10 +142,7 @@ async function loadBilhetes(signal?: AbortSignal) {
     return dentroDaPermanencia(b);
   }
 
-  const bilhetesVisiveis = React.useMemo(
-  () => bilhetes.filter(isVisivel),
-  [bilhetes]
-);
+  const bilhetesVisiveis = bilhetes.filter(isVisivel);
 
   function getStatusLabel(b: any) {
     switch (b.status) {
@@ -170,65 +178,75 @@ async function loadBilhetes(signal?: AbortSignal) {
       )}
 
       <main className="px-3 max-w-sm mx-auto space-y-3 pb-10 mt-4">
-        {bilhetesVisiveis.map((b: any) => {
-          const status = getStatusLabel(b);
+        {loading ? (
+          <div className="text-center text-yellow-300 animate-pulse">
+            Carregando bilhetes...
+          </div>
+        ) : bilhetesVisiveis.length === 0 ? (
+          <div className="text-center text-gray-300">
+            Nenhum bilhete disponível
+          </div>
+        ) : (
+          bilhetesVisiveis.map((b: any) => {
+            const status = getStatusLabel(b);
 
-          return (
-            <div
-              key={b.id}
-              className="relative overflow-hidden bg-white/10 border border-white/10 rounded-lg p-3 shadow-md"
-            >
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-white text-4xl font-extrabold opacity-5 rotate-[-25deg] select-none text-center leading-tight">
-                  ZLPIX<br />PREMIADO
-                </span>
-              </div>
-
-              <div className="relative z-10">
-                <div className="mb-2 text-center">
-                  <span className="text-yellow-300 text-sm font-extrabold tracking-wide">
-                    ZLPIX PREMIADO
+            return (
+              <div
+                key={b.id}
+                className="relative overflow-hidden bg-white/10 border border-white/10 rounded-lg p-3 shadow-md"
+              >
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-white text-4xl font-extrabold opacity-5 rotate-[-25deg] select-none text-center leading-tight">
+                    ZLPIX<br />PREMIADO
                   </span>
                 </div>
 
-                <div className="mb-2">
-                  <h2 className="font-bold text-sm text-yellow-300">
-                    Bilhete #{b.id}
-                  </h2>
-                  <p className="text-[10px] text-blue-100">
-                    Criado: {new Date(b.createdAt).toLocaleString("pt-BR")}
-                  </p>
-                  <p className="text-[10px] text-blue-100">
-                    Sorteio: {new Date(b.sorteioData).toLocaleString("pt-BR")}
-                  </p>
-                </div>
-
-                <div className="flex gap-1 mb-3">
-                  {b.dezenas.split(",").map((n: string, i: number) => (
-                    <span
-                      key={i}
-                      className="h-7 w-7 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow text-xs"
-                    >
-                      {n}
+                <div className="relative z-10">
+                  <div className="mb-2 text-center">
+                    <span className="text-yellow-300 text-sm font-extrabold tracking-wide">
+                      ZLPIX PREMIADO
                     </span>
-                  ))}
-                </div>
+                  </div>
 
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-green-400 font-semibold">
-                    R$ {Number(b.valor).toFixed(2)}
-                  </p>
+                  <div className="mb-2">
+                    <h2 className="font-bold text-sm text-yellow-300">
+                      Bilhete #{b.id}
+                    </h2>
+                    <p className="text-[10px] text-blue-100">
+                      Criado: {new Date(b.createdAt).toLocaleString("pt-BR")}
+                    </p>
+                    <p className="text-[10px] text-blue-100">
+                      Sorteio: {new Date(b.sorteioData).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
 
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
-                  >
-                    {status.label}
-                  </span>
+                  <div className="flex gap-1 mb-3">
+                    {b.dezenas.split(",").map((n: string, i: number) => (
+                      <span
+                        key={i}
+                        className="h-7 w-7 flex items-center justify-center bg-yellow-400 text-blue-900 font-bold rounded-full shadow text-xs"
+                      >
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-green-400 font-semibold">
+                      R$ {Number(b.valor).toFixed(2)}
+                    </p>
+
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </main>
 
       <NavBottom />
