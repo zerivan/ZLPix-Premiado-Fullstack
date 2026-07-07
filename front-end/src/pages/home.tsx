@@ -185,7 +185,7 @@ export default function Home() {
 </h1>
 
   <p className="text-sm text-blue-100 mt-1">
-    Participe da próxima apuração utilizando como referência os resultados oficiais da Loteria Federal. 🎯
+    Escolha seu Bilhete Digital e participe da próxima apuração. 🎯
   </p>
 </header>
 
