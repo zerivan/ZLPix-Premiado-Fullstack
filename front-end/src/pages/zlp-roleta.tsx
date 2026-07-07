@@ -383,7 +383,7 @@ export default function ZLPRoletaPage() {
           disabled={loadingResgatar || !podeResgatar || !userId}  
           className="w-full rounded-2xl border border-blue-100/30 bg-gradient-to-r from-blue-500 to-indigo-500 py-3 text-sm font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60"  
         >  
-          {loadingResgatar ? "Processando resgate..." : "Resgatar bilhete"}  
+          {loadingResgatar ? "Processando resgate..." : "Resgatar bilhete Digital"}  
         </button>  
   
         {message && (  
