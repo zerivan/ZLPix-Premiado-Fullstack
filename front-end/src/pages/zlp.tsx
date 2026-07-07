@@ -248,7 +248,7 @@ export default function ZLP() {
               </span>
 
               <span className="text-white font-semibold">
-                {loadingResgatar ? "Processando..." : "Resgatar bilhete"}
+                {loadingResgatar ? "Processando..." : "Resgatar bilhete Digital"}
               </span>
             </button>
 
