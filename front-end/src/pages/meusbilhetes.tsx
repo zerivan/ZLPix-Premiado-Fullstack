@@ -160,7 +160,7 @@ export default function MeusBilhetes() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-green-800 text-white pb-24">
       <header className="text-center pt-5 pb-2">
-        <h1 className="text-lg font-bold text-yellow-300">🎟️ Meus Bilhetes Digital</h1>
+        <h1 className="text-lg font-bold text-yellow-300">🎟️ Meus Bilhetes Digitais</h1>
         <p className="text-xs text-blue-100">
           Bilhetes ativos e vencidos recentes
         </p>
