@@ -140,7 +140,14 @@ export default function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+  path="/"
+  element={
+    isUserLoggedIn()
+      ? <Navigate to="/home" replace />
+      : <Navigate to="/login" replace />
+  }
+/>
         <Route path="/anuncio" element={<Anuncio />} />
         <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/termos-de-uso" element={<TermosDeUso />} />
