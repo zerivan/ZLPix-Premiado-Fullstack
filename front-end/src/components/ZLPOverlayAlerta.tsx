@@ -126,7 +126,7 @@ export default function ZLPOverlayAlerta() {
         </h1>
 
         <p className="text-sm text-gray-300 mb-6">
-          Faça seu check-in e acumule ZLP para trocar por bilhetes.
+          Faça seu check-in e acumule ZLP para trocar por bilhetes Digitais.
         </p>
 
         <div className="flex gap-3">
