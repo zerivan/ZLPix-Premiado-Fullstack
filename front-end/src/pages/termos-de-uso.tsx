@@ -42,9 +42,9 @@ export default function TermosDeUso() {
             1. Aceitação dos Termos
           </h2>
           <p>
-            Ao acessar e utilizar a plataforma ZLPIX-PREMIADO, o usuário
-            declara que leu, compreendeu e concorda integralmente com estes
-            Termos de Uso.
+            Ao acessar e utilizar a plataforma ZLPix Premiado, o usuário declara
+que leu, compreendeu e concorda integralmente com estes Termos de Uso
+e com a Política de Privacidade.
           </p>
         </section>
 
@@ -90,28 +90,39 @@ export default function TermosDeUso() {
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
-          <h2 className="text-lg font-semibold text-yellow-300">
-            4. Funcionamento do Jogo
-          </h2>
-          <p>
-            A plataforma permite a participação em sorteios internos que utilizam
-            como referência os resultados públicos da Loteria Federal.
-          </p>
-          <p>
-            Não há qualquer vínculo com a Caixa Econômica Federal ou com a
-            Loteria Federal, sendo a utilização dos resultados apenas como
-            critério objetivo de apuração.
-          </p>
-        </section>
+  <h2 className="text-lg font-semibold text-yellow-300">
+    4. Funcionamento da Plataforma
+  </h2>
+
+  <p>
+    A plataforma disponibiliza Participações Digitais, cuja apuração utiliza
+    como referência os resultados oficiais da Loteria Federal, conforme o
+    Regulamento da plataforma.
+  </p>
+
+  <p>
+    A utilização dos resultados da Loteria Federal possui exclusivamente a
+    finalidade de estabelecer um critério público, objetivo e verificável para
+    as apurações, não existindo qualquer vínculo, patrocínio, administração ou
+    responsabilidade da Caixa Econômica Federal sobre a plataforma.
+  </p>
+
+  <p>
+    A plataforma observará, quando aplicável, a legislação brasileira vigente,
+    incluindo a Lei nº 5.768/1971, o Decreto nº 70.951/1972 e demais normas
+    relacionadas às promoções comerciais e à proteção do consumidor.
+  </p>
+</section>
 
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-lg font-semibold text-yellow-300">
             5. Pagamentos e Carteira
           </h2>
           <p>
-            Os pagamentos são realizados via PIX. Os valores creditados
-            são utilizados exclusivamente dentro da plataforma.
-          </p>
+  Os pagamentos são realizados por meio dos métodos disponibilizados pela
+  plataforma. Os créditos poderão ser utilizados para aquisição de
+  Participações Digitais e demais funcionalidades disponíveis.
+</p>
           <p>
             A utilização da carteira interna está sujeita às regras vigentes
             no momento da transação.
@@ -123,18 +134,19 @@ export default function TermosDeUso() {
             6. Regras de Premiação
           </h2>
           <p>
-            O valor do prêmio será distribuído conforme as regras estabelecidas
-            na plataforma e poderá ser dividido entre múltiplos ganhadores.
-          </p>
-          <p>
-            Os créditos são disponibilizados diretamente na carteira do usuário.
-          </p>
-          <p>
-            A apuração dos resultados poderá ocorrer de forma automática ou
-            manual, utilizando os critérios definidos pela plataforma e os
-            resultados públicos da Loteria Federal como referência de
-            conferência quando aplicável.
-          </p>
+  A distribuição dos prêmios seguirá o Regulamento vigente da plataforma,
+  podendo ocorrer divisão entre participantes elegíveis, quando aplicável.
+</p>
+
+<p>
+  Os valores dos prêmios serão creditados na carteira virtual do usuário,
+  conforme as regras estabelecidas pela plataforma.
+</p>
+
+<p>
+  A apuração utilizará como referência os resultados oficiais da Loteria
+  Federal, conforme os critérios definidos no Regulamento da plataforma.
+</p>
         </section>
 
         <section className="space-y-3 text-sm leading-relaxed">
@@ -181,10 +193,10 @@ export default function TermosDeUso() {
             carteira interna da plataforma.
           </p>
           <p>
-            Após a confirmação do crédito na carteira, os valores não são
-            reembolsáveis quando já utilizados para participação em sorteios
-            ou demais funcionalidades da plataforma.
-          </p>
+  Após a confirmação do crédito na carteira, os valores não serão
+  reembolsáveis quando já utilizados para aquisição de Participações
+  Digitais ou demais funcionalidades disponibilizadas pela plataforma.
+</p>
           <p>
             Solicitações de cancelamento antes da utilização dos créditos
             poderão ser analisadas individualmente mediante contato pelo
