@@ -282,7 +282,7 @@ export default function ApostaPainel() {
 
         <div className="mt-5 w-full max-w-md">
           <h3 className="text-yellow-300 text-center text-sm font-bold mb-2">
-            Bilhetes Gerados
+            Bilhetes Digitais Gerados
           </h3>
 
           {tickets.length === 0 ? (
