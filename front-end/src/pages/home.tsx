@@ -34,35 +34,44 @@ function hasVisibleHtml(html: string | null) {
 }
 
 const COMO_FUNCIONA_FALLBACK = `
-<h3 class="text-yellow-300 font-bold text-lg">🎯 Como Jogar</h3>
-<p><strong>O bilhete é composto por 03 (três) dezenas de 00 a 99.</strong></p>
+<h3 class="text-yellow-300 font-bold text-lg">🎯 Como Funciona</h3>
+
+<p><strong>O Bilhete Digital é composto por 03 (três) dezenas de 00 a 99.</strong></p>
+
 <p>
-É permitido repetir dezenas. A data do sorteio constará no bilhete.
+É permitido repetir dezenas. A data da apuração constará no Bilhete Digital.
 </p>
+
 <p>
-As dezenas são extraídas com base nos 5 primeiros prêmios da
+A apuração utiliza como referência os 5 primeiros prêmios da
 <strong>Loteria Federal</strong>, considerando apenas:
 </p>
+
 <ul class="list-disc pl-5">
 <li>Dezena inicial (dois primeiros números)</li>
 <li>Dezena final (dois últimos números)</li>
 </ul>
+
 <p>
-Exemplo: 7590 → 75 e 90
+Exemplo: 7590 gera as dezenas 75 e 90.
 </p>
+
 <p>
 Não são consideradas dezenas intermediárias.
 </p>
+
 <p>
-Ganha quem acertar as 3 dezenas escolhidas dentro das dezenas válidas do sorteio.
+Será considerado contemplado o Bilhete Digital que atender aos critérios estabelecidos no Regulamento da plataforma.
 </p>
+
 <p>
-Se ninguém acertar, o prêmio acumula para o próximo sorteio.
-Havendo mais de um ganhador, o valor será dividido igualmente.
+Caso existam múltiplos contemplados, a distribuição dos prêmios seguirá as regras previstas no Regulamento vigente.
 </p>
+
 <hr class="border-white/20"/>
+
 <p class="text-center font-bold text-yellow-300">
-🎯 Clique em Apostar, escolha suas dezenas e boa sorte!
+🎯 Clique nas dezenas, adquira seus Bilhetes Digitais e acompanhe a próxima apuração utilizando como referência os resultados oficiais da Loteria Federal.
 </p>
 `;
 
@@ -176,7 +185,7 @@ export default function Home() {
 </h1>
 
   <p className="text-sm text-blue-100 mt-1">
-    Concorra toda quarta-feira com a Loteria Federal 🎯
+    Participe da próxima apuração utilizando como referência os resultados oficiais da Loteria Federal. 🎯
   </p>
 </header>
 
@@ -195,8 +204,8 @@ export default function Home() {
           )}
 
           <p className="text-sm text-white/90 mt-3 font-semibold">
-            Concorra do 1º ao 5º prêmio da Loteria Federal. Apuração 100% vinculada aos resultados oficiais.
-          </p>
+  As apurações dos Bilhetes Digitais utilizam como referência os resultados oficiais da Loteria Federal, conforme o Regulamento da plataforma.
+</p>
 
           {hasVisibleHtml(homeCardInfoHtml) && (
             <div
@@ -213,7 +222,7 @@ export default function Home() {
           className="bg-gradient-to-r from-yellow-400 to-green-400 text-blue-900 font-extrabold text-lg px-10 py-3 rounded-full shadow-xl w-full max-w-md"
           onClick={() => navigate("/aposta")}
         >
-          🎯 FAZER APOSTA AGORA
+          🎟️ ADQUIRIR BILHETE DIGITAL
         </motion.button>
 
         <motion.div
@@ -235,7 +244,7 @@ export default function Home() {
           </motion.span>
 
           <p className="text-yellow-300 font-bold text-sm">
-            🎉 Agora é com você! Escolha suas três dezenas, confirme sua aposta e aguarde o sorteio oficial da Loteria Federal. O próximo resultado pode ser o seu momento.
+            🎉 Escolha suas três dezenas, adquira seu Bilhete Digital e acompanhe a próxima apuração utilizando como referência os resultados oficiais da Loteria Federal.
           </p>
         </motion.div>
 
@@ -251,7 +260,7 @@ export default function Home() {
             onClick={() => setShowInfo(!showInfo)}
             className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 rounded-full"
           >
-            {showInfo ? "Fechar explicação" : "Como funciona o jogo 🎯"}
+            {showInfo ? "Fechar explicação" : "Como funciona a participação 🎯"}
           </button>
 
           <AnimatePresence>
