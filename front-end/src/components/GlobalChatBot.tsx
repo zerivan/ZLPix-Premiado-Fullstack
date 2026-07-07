@@ -12,13 +12,14 @@ const GlobalChatBot: React.FC = () => {
   const location = useLocation();
 
   const hiddenPages = [
-    "/login",
-    "/cadastro",
-    "/recuperar-senha",
-    "/politica-privacidade",
-    "/termos-de-uso",
-    "/exclusao-conta",
-  ];
+  "/login",
+  "/cadastro",
+  "/recuperar-senha",
+  "/politica-privacidade",
+  "/termos-de-uso",
+  "/exclusao-conta",
+  "/acesso-legal",
+];
 
   const [showAvatar, setShowAvatar] = useState(false);
   const [openChat, setOpenChat] = useState(false);
