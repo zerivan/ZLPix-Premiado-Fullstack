@@ -20,6 +20,7 @@ import Anuncio from "../pages/anuncio";
 import PoliticaPrivacidade from "../pages/politica-privacidade";
 import TermosDeUso from "../pages/termos-de-uso";
 import ExclusaoConta from "../pages/exclusao-conta";
+import AcessoLegal from "../pages/acesso-legal";
 
 // 🔥 NOVO
 import ZLPPage from "../pages/zlp";
@@ -145,7 +146,7 @@ export default function AppRoutes() {
   element={
     isUserLoggedIn()
       ? <Navigate to="/home" replace />
-      : <Navigate to="/login" replace />
+      : <AcessoLegal />
   }
 />
         <Route path="/anuncio" element={<Anuncio />} />
