@@ -5,7 +5,7 @@ type ResultadoOficial = {
   dezenas: string[];
 };
 
-const PREMIO_INICIAL = 500;
+const PREMIO_INICIAL = 1000;
 const PREMIO_ATUAL_KEY = "premio_atual_ciclo";
 
 async function obterPremioAtualPersistido(
