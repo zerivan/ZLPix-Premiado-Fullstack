@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 
 const router = Router();
-const PREMIO_INICIAL = 500;
+const PREMIO_INICIAL = 1000;
 const PREMIO_ATUAL_KEY = "premio_atual_ciclo";
 
 /**
