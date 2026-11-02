@@ -60,27 +60,20 @@ ZLPix-Premiado-Fullstack/
     ├── postcss.config.js
     └── render.yaml            → Configuração Render (frontend)
 
-MIT License
+## 🔒 Licença e direitos autorais
 
-Copyright (c) 2025 Zerivan Lima
+**Licença proprietária — Copyright (c) 2025 Zerivan Lima. Todos os direitos reservados.**
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este projeto não é distribuído sob licença MIT ou outra licença pública de uso livre.
+A visualização ou disponibilização do repositório não concede autorização para
+copiar, modificar, distribuir, publicar, disponibilizar ou explorar o software.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+O uso por terceiros depende de autorização prévia e expressa, por escrito, do titular.
+O uso comercial ou a exploração econômica exige contrato de licença específico,
+com remuneração e condições acordadas entre as partes.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Bibliotecas e componentes de terceiros continuam sujeitos às suas próprias licenças.
+Consulte o arquivo [LICENSE](./LICENSE) para conhecer os termos completos.
 
 # 🙌 Créditos do Projeto ZLPix Premiado
 
